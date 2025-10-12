@@ -84,40 +84,40 @@ MultiView([
     size: { width: 275, height: 200 },
     stackedBars: by_action_owner,
     legend: True
-  }),
-  f"""
-  Disaggregating by department revealed marked disparities in government response. {
-    Link(nat_env_and_infra_depts, "Natural environment and infrastructure sectors")
-  } performed relatively well, with {
-      sum([
-        actions_with_score(action_counts, eval_score)
-        for eval_score in [ "Fully addressed", "Minimally addressed" ]
-        for { segments: action_counts } in by_nat_env_and_infra
-      ])
-  } of {
-      sum([ total_actions(action_counts) for { segments: action_counts } in by_nat_env_and_infra])
-  } actions at least “minimally addressed.”
-  In contrast, business and industry actions lagged sharply, with nearly half unaddressed or only nominally
-  recognized—an institutional lapse in private-sector resilience. Defra (Environment, Food and Rural Affairs)
-  dominated, although only a small portion of actions were fully or significantly addressed. Departments
-  with cross-sectoral mandates such as DSIT (Science & Technology) and HMT (Treasury) had smaller action bases
-  and weaker scores. No department had more than {
-    ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)
-  }% of its actions fully addressed, reinforcing the impression of a fragmented governance system where adaptation
-  remains siloed and under-resourced.
-  """,
-  f"""
-  Of the {
-    Link(
-      [ (risk[ "Chapter" ], risk[ "Risk or Opportunity Descriptor" ])
-        for risk in risks if risk[ "CCC Priority" ] == "Yes"
-      ],
-      "committee's priority risks"
-    )
-  }, the distribution also reveals where policy attention is converging. Chapters 3 and 4 (Nature and
-  Infrastructure) contain the densest clusters of actions, suggesting that physical-system adaptation still
-  dominates the UK’s climate agenda. By contrast, social, business, and interdependency-related risks—those
-  demanding coordination across institutions or behavioural change—show thinner coverage and weaker evaluation
-  scores.
-  """
+  })#,
+  # f"""
+  # Disaggregating by department revealed marked disparities in government response. {
+  #   Link(nat_env_and_infra_depts, "Natural environment and infrastructure sectors")
+  # } performed relatively well, with {
+  #   sum([
+  #     actions_with_score(action_counts, eval_score)
+  #     for eval_score in [ "Fully addressed", "Minimally addressed" ]
+  #     for { segments: action_counts } in by_nat_env_and_infra
+  #   ])
+  # } of {
+  #   sum([ total_actions(action_counts) for { segments: action_counts } in by_nat_env_and_infra])
+  # } actions at least “minimally addressed.”
+  # In contrast, business and industry actions lagged sharply, with nearly half unaddressed or only nominally
+  # recognized—an institutional lapse in private-sector resilience. Defra (Environment, Food and Rural Affairs)
+  # dominated, although only a small portion of were fully or significantly addressed. Departments
+  # with cross-sectoral mandates such as DSIT (Science & Technology) and HMT (Treasury) had smaller action bases
+  # and weaker scores. No department had more than {
+  #   ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)
+  # }% of its actions fully addressed, reinforcing the impression of a fragmented governance system where adaptation
+  # remains siloed and under-resourced.
+  # """,
+  # f"""
+  # Of the {
+  #   Link(
+  #     [ (risk[ "Chapter" ], risk[ "Risk or Opportunity Descriptor" ])
+  #       for risk in risks if risk[ "CCC Priority" ] == "Yes"
+  #     ],
+  #     "committee's priority risks"
+  #   )
+  # }, the distribution also reveals where policy attention is converging. Chapters 3 and 4 (Nature and
+  # Infrastructure) contain the densest clusters of actions, suggesting that physical-system adaptation still
+  # dominates the UK’s climate agenda. By contrast, social, business, and interdependency-related risks—those
+  # demanding coordination across institutions or behavioural change—show thinner coverage and weaker evaluation
+  # scores.
+  # """
 ])

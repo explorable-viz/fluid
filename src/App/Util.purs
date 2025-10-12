@@ -13,10 +13,11 @@ import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
-import Data.String (joinWith)
+import Data.String (joinWith, length)
 import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, snd)
+import Debug (trace)
 import Dict (Dict)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
@@ -205,14 +206,19 @@ selector (EventType ev) v =
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
 colorShade col n =
-   -- remove and reinstate leading "#"
-   "#" <> shade (take 2 $ drop 1 col) <> shade (take 2 $ drop 3 col) <> shade (take 2 $ drop 5 col)
+   trace ("Applying colorShade to " <> col) \_ ->
+      -- remove and reinstate leading "#"
+      let
+         result =
+            "#" <> shade (take 2 $ drop 1 col) <> shade (take 2 $ drop 3 col) <> shade (take 2 $ drop 5 col)
+      in
+         trace ("Returning " <> result) \_ -> result
    where
    shade :: String -> String
    shade rgbComponent =
       definitely' (fromStringAs hexadecimal rgbComponent) + n
          # clamp 0 255
-         # toStringAs hexadecimal
+         # (\x -> let s = toStringAs hexadecimal x in if length s == 1 then "0" <> s else s)
 
 css
    :: { sel ::
