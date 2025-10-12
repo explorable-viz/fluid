@@ -11,6 +11,10 @@
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="../../../shared/util.js"></script>
    <style>
+      :root {
+          --text-pane-width: 700px;
+      }
+
       .data-pane {
          max-width: 400px;
       }
@@ -54,7 +58,7 @@
 
    const jsonSpec = {
       "fluidSrcPath": [ "..", "../../../fluid" ],
-      "inputs": [ "eval_data" ],
+      "inputs": [ "eval_data", "risks" ],
       "query": true,
       "linking": true,
       "rowFilter": "Relevant"
