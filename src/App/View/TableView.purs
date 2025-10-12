@@ -219,7 +219,7 @@ instance Viewable TableView Unit where
             let value = if colName == rowKey then if rowFilter == Relevant then "▸" else "▾" else colName
             row
                # create TH [ classes ([ "table-cell" ] <> cellClasses colName) ]
-               >>= setStyles [ "border-top" ↦ unhighlightedBorder Horiz, "border-left" ↦ unhighlightedBorder Vert ]
+               >>= setStyles [ "border-top" ↦ unhighlightedBorder Vert, "border-left" ↦ unhighlightedBorder Vert ]
                >>= setText value
                >>= setDatum { i: -1, j: j - 1, value, colName: colNames' ! j }
 
