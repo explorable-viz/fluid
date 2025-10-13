@@ -66,11 +66,14 @@ prim (Val _ _ v) = v # case _ of
    Str s -> s
    _ -> error $ "TableView only supports primitive values."
 
-transparentBorder :: String
-transparentBorder = "1px solid transparent"
+data BorderVis = Transparent | Faint
 
-solidBorder :: String
-solidBorder = "1px solid blue"
+unhighlightedBorder :: BorderVis -> String
+unhighlightedBorder Transparent = "1px solid transparent"
+unhighlightedBorder Faint = "1px solid #eee"
+
+highlightedBorder :: BorderVis -> String
+highlightedBorder _ = "1px solid blue"
 
 instance Viewable TableView Unit where
    isLeaf = const false
@@ -87,8 +90,8 @@ instance Viewable TableView Unit where
                >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
                >>= registerMouseListeners listener
          void $ cell # setStyles
-            [ "border-right" ↦ border (hasRightBorder i j) (isNothing $ column_visibleSucc j)
-            , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)
+            [ "border-right" ↦ border Faint (hasRightBorder i j) (isNothing $ column_visibleSucc j)
+            , "border-bottom" ↦ border Transparent (hasBottomBorder i j) (i == length rows - 1)
             ]
       hiddenRows <- hideRows
       hiddenColumns <- hideColumns
@@ -164,10 +167,10 @@ instance Viewable TableView Unit where
          | column_isVisible ! (j - 1) = j - 1
          | otherwise = column_visiblePred (j - 1)
 
-      border :: Boolean -> Boolean -> String
-      border true _ = solidBorder
-      border false true = transparentBorder
-      border false false = ""
+      border :: BorderVis -> Boolean -> Boolean -> String
+      border vis true _ = highlightedBorder vis
+      border vis false true = unhighlightedBorder vis
+      border _ false false = ""
 
       hasRightBorder :: Int -> Int -> Boolean
       hasRightBorder i j =
@@ -205,7 +208,7 @@ instance Viewable TableView Unit where
          row' <- body # create TR [ classes [ "table-row" ] ] >>= setDatum { i }
          forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
             row' # create TD [ classes if j >= 0 then [ "table-cell" ] else [] ]
-               >>= setStyles [ "border-top" ↦ transparentBorder, "border-left" ↦ transparentBorder ]
+               >>= setStyles [ "border-top" ↦ unhighlightedBorder Transparent, "border-left" ↦ unhighlightedBorder Faint ]
                >>= setText value
                >>= setDatum { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
       pure rootElement
@@ -216,6 +219,7 @@ instance Viewable TableView Unit where
             let value = if colName == rowKey then if rowFilter == Relevant then "▸" else "▾" else colName
             row
                # create TH [ classes ([ "table-cell" ] <> cellClasses colName) ]
+               >>= setStyles [ "border-left" ↦ unhighlightedBorder Faint ]
                >>= setText value
                >>= setDatum { i: -1, j: j - 1, value, colName: colNames' ! j }
 

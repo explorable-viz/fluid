@@ -99,10 +99,12 @@ export function xAxis (to) {
 
 export function yAxis (to) {
    return nTicks => {
-      return parent => {
-         return () => {
-            return parent.call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(nTicks).tickFormat(d3.format('.1f')))
-         }
+      return decPlaces => {
+        return parent => {
+          return () => {
+              return parent.call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(nTicks).tickFormat(d3.format(`.${decPlaces}f`)))
+          }
+        }
       }
    }
 }

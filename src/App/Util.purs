@@ -13,7 +13,7 @@ import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
-import Data.String (joinWith)
+import Data.String (joinWith, length)
 import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, snd)
@@ -212,7 +212,7 @@ colorShade col n =
    shade rgbComponent =
       definitely' (fromStringAs hexadecimal rgbComponent) + n
          # clamp 0 255
-         # toStringAs hexadecimal
+         # (\x -> let s = toStringAs hexadecimal x in if length s == 1 then "0" <> s else s)
 
 css
    :: { sel ::

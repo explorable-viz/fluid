@@ -47,9 +47,10 @@ create_xAxis parent' to ticks y orient = do
          setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
    pure x
 
-create_yAxis :: forall a r. D3.Selection -> { y :: a -> Number | r } -> Number -> Orientation -> Effect D3.Selection
-create_yAxis parent' to ticks orient = do
-   y <- yAxis to ticks =<<
+-- numTicks is a "hint" only
+create_yAxis :: forall a r. D3.Selection -> { y :: a -> Number | r } -> Number -> Int -> Orientation -> Effect D3.Selection
+create_yAxis parent' to nTicks decPlaces orient = do
+   y <- yAxis to nTicks decPlaces =<<
       (parent' # create G [ classes [ "y-axis" ] ])
    when (orient == Rotated) do
       labels <- y # selectAll "text"

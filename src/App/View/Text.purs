@@ -53,7 +53,7 @@ textAttrs text =
 
    background :: String
    background
-      | isPrimary sel' && isPersistent sel' = "#93E9BE"
+      | isPrimary sel' && isPersistent sel' = "#93E9BE" -- TODO: set these via CSS
       | isSecondary sel' && isPersistent sel' = "rgb(226, 226, 226)"
       | otherwise = "white"
 

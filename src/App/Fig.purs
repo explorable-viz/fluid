@@ -202,7 +202,7 @@ lift
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
 loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
-loadFig spec@{ inputs, linking } fluidSrc = do
+loadFig options@{ inputs, linking } fluidSrc = do
    { s, e, gconfig } <- prepConfig primitives fluidSrc
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
@@ -263,7 +263,7 @@ loadFig spec@{ inputs, linking } fluidSrc = do
             γ × v × (dvertices g0 αs)
 
    pure
-      { spec
+      { spec: options
       , s
       , γ: selStates <$> inert.γ <*> unselected.γ <*> unselected.γ
       , v: selStates <$> inert.v <*> unselected.v <*> unselected.v

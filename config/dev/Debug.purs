@@ -13,6 +13,7 @@ checking = checkingDefaults
    , edgeListSorted = true
    , inputsAreSinks = true
    , outputsInGraph = true
+   , mustEq = true
    }
 
 testing :: TestingConfig

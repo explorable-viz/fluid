@@ -11,8 +11,21 @@
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="../../../shared/util.js"></script>
    <style>
+      :root {
+          --text-pane-width: 675px;
+      }
+
       .data-pane {
          max-width: 400px;
+      }
+
+      .table-cell.selected-primary-persistent {
+         background-color: rgb(236, 236, 236);
+      }
+
+      .table-cell.selected-primary-transient {
+         color: black;
+         background-color: rgb(230, 230, 255);
       }
    </style>
 </head>
@@ -21,7 +34,7 @@
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <h3>Figure 1</h3>
+      <h3>Independent Assessment of National Adaptation Programme (NAP3)</h3>
    </div>
 
    <div class="flex-right-align data-pane">
@@ -40,14 +53,14 @@
    import { loadCode, loadFigure } from "../../../shared/load-figure.js"
 
    const jsonSpec = {
-      "fluidSrcPath": [ ".", "../../../fluid" ],
-      "inputs": [ "eval_data" ],
+      "fluidSrcPath": [ "..", "../../../fluid" ],
+      "inputs": [ "nap3_actions", "ccra3_risks" ],
       "query": true,
       "linking": true,
       "rowFilter": "Relevant"
    }
 
-   loadFigure(jsonSpec)("figure1.fld")()
+   loadFigure(jsonSpec)("fig")("figure1.fld")()
 </script>
 </body>
 </html>

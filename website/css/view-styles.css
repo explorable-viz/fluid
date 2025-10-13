@@ -5,7 +5,7 @@
 }
 
 .legend-text {
-   font-size: 9pt;
+   font-size: 8pt;
 }
 
 .title-text {
@@ -14,7 +14,11 @@
 }
 
 .table-caption {
-   border-bottom: 0.5px solid lightgray;
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+  background: #fafafa;
+  padding: 0.1em 0.2em;
+  border-radius: 1px;
+  display: inline-block;
 }
 
 .table-view th {
@@ -53,13 +57,6 @@ td, th {
    max-width: 120px;
 }
 
-td, th {
-   white-space: nowrap;
-   overflow: hidden;
-   text-overflow: ellipsis;
-   max-width: 120px;
-}
-
 td.table-cell {
    background-color: white;
 }
@@ -78,7 +75,6 @@ td.table-cell {
 
 .table-cell.selected-primary-transient {
    color: blue;
-   font-weight: 600;
 }
 
 .table-cell.selected-secondary-transient {
@@ -220,12 +216,16 @@ td.table-cell {
    stroke-width: 1;
 }
 
+.para-text + .para-text {
+   margin-top: 0.75em;
+}
+
 .para-text {
    font-size: 10pt;
 }
 
 .bar {
-   stroke-width: 1.5;
+   stroke-width: 1.0;
 }
 
 .tree-node {

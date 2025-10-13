@@ -40,7 +40,7 @@ instance Viewable Segment SegmentContext where
          # create Rect
               [ "x" ⟼ scales.x x
               , "y" ⟼ scales.y (contents z + y)
-              , "height" ⟼ max (toNumber (height - strokeWidth) - scales.y (contents z)) 0.0
+              , "height" ⟼ max (toNumber (height - strokeWidth / 2) - scales.y (contents z)) 0.0
               , "stroke-width" ⟼ strokeWidth
               , "width" ⟼ bandwidth scales.x
               , classes [ "bar" ]
@@ -61,8 +61,8 @@ instance Viewable Segment SegmentContext where
          , "stroke-width" ↦ "1"
          , "stroke-dasharray" ↦ case transient of
               None -> "none"
-              Secondary -> "0.5 1" -- "1 2"
-              Primary -> "0.5 1" -- "2 2"
+              Secondary -> "1 2" -- "0.5 1"
+              Primary -> "1 2" -- "0.5 1"
          , "stroke-linecap" ↦ "round"
          , "stroke" ↦
               if persistent /= None || transient /= None then colorShade col' (-70)

@@ -87,11 +87,11 @@
       "fluidSrcPath": ["../fluid"],
       "inputs": [ "inputImage", "filter" ],
       "query": true,
-      "linking": true
+      "linking": false
    }
 
    loadCode("../fluid/convolution.fld")()
-   loadFigure(jsonSpec)("../fluid/convolution.fld")()
+   loadFigure(jsonSpec)("fig")("../fluid/convolution.fld")()
 </script>
 </body>
 </html>

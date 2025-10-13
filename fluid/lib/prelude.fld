@@ -90,14 +90,14 @@ def elem(x, y :| xs):
   x == y |or| elem(x, xs)
 
 # (a -> Bool) -> List a -> Option a
-def find(p, []): error("not found")
+def find(p, []): None
 def find(p, x :| xs):
   if p(x): Some(x)
   else: find(p, xs)
 
 # String -> String -> List Dict -> Option Dict
-def findWithKey(fname, fval, d):
-  find(lambda y: y[fname] == fval, d)
+def findWithKey(k, v, rs):
+  find(lambda y: y[k] == v, rs)
 
 # Option a -> a
 def fromSome(None): error("Expected Some!")
