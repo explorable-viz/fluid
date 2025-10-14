@@ -20,7 +20,7 @@ import Module (prepConfig)
 import Module.Node (runNodeT)
 import Options.Applicative (Parser, command, execParser, fullDesc, header, help, helper, long, progDesc, short, strOption, subparser, switch, (<**>))
 import Options.Applicative.Builder (info)
-import Parse (parsePy')
+import Parse (parseProgram)
 import Pretty (prettyP)
 import Primitive.Defs (primitives)
 import Util (Endo)
@@ -107,6 +107,6 @@ parse (EvalArgs { local, fileName, fluidSrcPath }) = do
    let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
    runNodeT (FileCxt { fluidSrcPaths }) $ do
       fluidSrc <- loadFile fluidSrcPaths (File fileName)
-      case (parsePy' fluidSrc) of
+      case (parseProgram fluidSrc) of
          Left err -> pure err
          Right expr -> pure $ prettyP (fst expr)

@@ -4,13 +4,14 @@ import Prelude hiding (absurd)
 
 import Control.Alt ((<|>))
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, liftEither, throwError)
 import Control.Monad.Except (Except, ExceptT, runExcept)
 import Control.MonadPlus (class Alt, class Alternative, guard)
 import Data.Array ((!!), updateAt)
 import Data.Array as A
 import Data.Array.NonEmpty (NonEmptyArray, fromArray)
 import Data.Array.NonEmpty as NEA
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
 import Data.Functor.Compose (Compose)
@@ -157,6 +158,9 @@ type MayFailT m = ExceptT Error m
 orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
 orElse s Nothing = throw s
 orElse _ (Just x) = pure x
+
+throwLeft :: forall a e m. MonadError Error m => Show e => Either e a -> m a
+throwLeft = liftEither <<< lmap (E.error <<< show)
 
 defined :: forall a. MayFail a -> a
 defined = runExcept >>> case _ of

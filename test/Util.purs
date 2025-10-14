@@ -19,12 +19,13 @@ import Eval (GraphConfig, graphEval, graphGC, toGC, withOp)
 import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
-import Module (parseProgram', prepConfig)
+import Module (prepConfig)
+import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, withMsg, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, throwLeft, withMsg, (×))
 import Val (class Ann, Env, EnvExpr(..), Val)
 
 type TestSuite m = Array (String × m Unit)
@@ -143,7 +144,7 @@ testPretty :: forall m a. Ann a => Show a => SE.Expr a -> AffError m Unit
 testPretty s = do
    log' ("**** prettyP")
    log' (prettyP s)
-   s' × _ <- withMsg "testPretty" $ parseProgram' (prettyP s)
+   s' × _ <- throwLeft <#> withMsg "testPretty" $ parseProgram (prettyP s)
    unless (eq (erase s) (erase s')) $
       throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
 

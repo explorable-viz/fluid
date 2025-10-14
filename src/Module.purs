@@ -2,10 +2,8 @@ module Module where
 
 import Prelude
 
-import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
-import Data.Bifunctor (lmap)
 import Data.List (List(..), reverse, (:))
 import Data.List as List
 import Data.Map as Map
@@ -16,7 +14,6 @@ import Data.Traversable (traverse)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Effect.Exception (error) as E
 import Eval (GraphConfig, eval_primitives)
 import Expr (class FV, Expr, Module, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
@@ -25,19 +22,13 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
-import Parse (parsePy', parsePyModule')
+import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import SExpr as S
-import Util (type (×), error, withMsg, (×))
+import Util (type (×), error, throwLeft, withMsg, (×))
 import Util.Map (restrict)
 import Util.Set ((∪))
 import Val (Env)
-
-parseProgram' :: forall m. MonadError Error m => String -> m (Raw S.Expr × List ModuleName)
-parseProgram' src = liftEither <<< lmap (E.error <<< show) $ parsePy' src
-
-parseModule' :: forall m. MonadError Error m => String -> m (Raw S.Module × List ModuleName)
-parseModule' src = liftEither <<< lmap (E.error <<< show) $ parsePyModule' src
 
 initialConfig
    :: forall m a
@@ -68,7 +59,7 @@ prelude = "lib/prelude"
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
-   s × imports <- parseProgram' fluidSrc
+   s × imports <- throwLeft $ parseProgram fluidSrc
    moduleCxt <- loadModuleGraph (prelude : imports)
    e <- desug s
    gconfig <- initialConfig e primitives moduleCxt
@@ -106,7 +97,7 @@ loadModuleGraph roots = do
    loadModule path = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
-      mod × imports <- withMsg ("Loading module " <> path) $ parseModule' src
+      mod × imports <- throwLeft <#> withMsg ("Loading module " <> path) $ parseModule src
       mod' <- desugarModuleFwd mod
       let imports' = if path == prelude then imports else prelude : imports
       pure $ mod' × imports'

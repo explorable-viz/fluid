@@ -446,9 +446,6 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             e' <- opTree
             pure $ DocExpr e e'
 
-program :: Parser (Raw Expr)
-program = whitespace *> withPos expr <* whitespace <* eof
-
 defs :: Parser ((Raw VarDefs + Raw RecDefs))
 defs = choose varDefs recDefs
 
@@ -472,11 +469,11 @@ withImports p = topLevel do
    a <- p
    pure $ a × imports
 
-parsePy :: String -> Either String (Raw Expr)
-parsePy input = lmap prettyParseError $ runIndent $ runParserT input program
+parse :: forall a. Parser a -> String -> Either String a
+parse parser input = lmap prettyParseError $ runIndent $ runParserT input parser
 
-parsePy' :: String -> Either String (Raw Expr × List String)
-parsePy' input = lmap prettyParseError $ runIndent $ runParserT input (withImports expr)
+parseProgram :: String -> Either String (Raw Expr × List String)
+parseProgram = parse (withImports expr)
 
-parsePyModule' :: String -> Either String (Raw Module × List String)
-parsePyModule' input = lmap prettyParseError $ runIndent $ runParserT input (withImports module_)
+parseModule :: String -> Either String (Raw Module × List String)
+parseModule = parse (withImports module_)
