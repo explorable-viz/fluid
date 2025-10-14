@@ -14,7 +14,7 @@ import Data.String.CodeUnits as SCU
 import Data.Traversable (foldr)
 import Parse.Constants (opChars)
 import Parsing (ParseError(..), Position(..), fail, position, region)
-import Parsing.Combinators (between, sepBy, sepBy1, skipMany, try, (<?>))
+import Parsing.Combinators (between, sepBy, sepBy1, sepEndBy, skipMany, try, (<?>))
 import Parsing.Combinators.Array (many)
 import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy, string)
@@ -115,6 +115,9 @@ commas p = sepBy p (delim ',')
 
 commas1 :: forall a. Parser a -> Parser (NonEmptyList a)
 commas1 p = sepBy1 p (delim ',')
+
+trailingCommas :: forall a. Parser a -> Parser (List a)
+trailingCommas p = sepEndBy p (delim ',')
 
 -----------------------------------------------------------
 -- String things extracted from "Parsing.Token"

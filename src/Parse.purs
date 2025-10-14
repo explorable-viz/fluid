@@ -21,7 +21,7 @@ import DataType (cPair)
 import Lattice (Raw)
 import Parse.Error (prettyParseError)
 import Parse.Number (float, integer)
-import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, token, variable, whitespace)
+import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, token, trailingCommas, variable, whitespace)
 import Parsing (Position, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, optional, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
@@ -327,7 +327,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          dict :: Parser (Raw Expr)
          dict = context "dict" do
             delim '{'
-            kvs <- commas kv
+            kvs <- trailingCommas kv
             close '}'
             pure $ Dictionary unit kvs
 
@@ -374,10 +374,13 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                     e <- opTree
                     choice
                        [ context "listNonEmpty" do
-                            rest <- many (delim ',' *> opTree)
+                            delim ','
+                            rest <- trailingCommas opTree
                             close ']'
                             pure $ ListNonEmpty unit e (foldr (Next unit) (End unit) rest)
-
+                       , do
+                            close ']'
+                            pure $ ListNonEmpty unit e (End unit)
                        , context "listEnum" do
                             token ".."
                             e' <- opTree
