@@ -19,13 +19,13 @@ import Data.String.Common (joinWith)
 import Data.Traversable (foldl, foldr)
 import DataType (cPair)
 import Lattice (Raw)
-import Parse.Number (float, integer)
-import Parse.Parser (Parser, align, block, braces, brackets, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, token, variable, whitespace)
 import Parse.Error (prettyParseError)
+import Parse.Number (float, integer)
+import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, token, variable, whitespace)
 import Parsing (Position, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, optional, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
-import Parsing.Indent (runIndent, sameLine, sameOrIndented, withPos)
+import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), nonEmpty, (×))
@@ -207,11 +207,10 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       simpleChain = withPos (simple >>= chain)
          where
          chain :: Raw Expr -> Parser (Raw Expr)
-         chain e = project <|> dproject <|> sameLine *> app <|> pure e
+         chain e = sameOrIndented *> (project <|> dproject <|> app) <|> pure e
             where
             project :: Parser (Raw Expr)
             project = do
-               -- TODO: newline/indentation constraints
                k <- try do
                   delim '.'
                   variable
@@ -219,13 +218,16 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
             dproject :: Parser (Raw Expr)
             dproject = do
-               -- TODO: newline/indentation constraints
-               k <- try $ brackets opTree
+               delim '['
+               k <- opTree
+               close ']'
                chain (DProject e k)
 
             app :: Parser (Raw Expr)
             app = do
-               ps <- parens (commas opTree)
+               delim '('
+               ps <- commas opTree
+               close ')'
                case e of
                   (Constr a c es) -> chain (Constr a c (es <> ps <> Nil))
                   _ -> chain (foldl App e ps)
@@ -324,7 +326,9 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          dict :: Parser (Raw Expr)
          dict = context "dict" do
-            kvs <- braces (commas kv)
+            delim '{'
+            kvs <- commas kv
+            close '}'
             pure $ Dictionary unit kvs
 
             where
@@ -364,20 +368,20 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             delim '['
             choice
                [ do
-                    delim ']'
+                    close ']'
                     pure $ ListEmpty unit
                , do
                     e <- opTree
                     choice
                        [ context "listNonEmpty" do
                             rest <- many (delim ',' *> opTree)
-                            delim ']'
+                            close ']'
                             pure $ ListNonEmpty unit e (foldr (Next unit) (End unit) rest)
 
                        , context "listEnum" do
                             token ".."
                             e' <- opTree
-                            delim ']'
+                            close ']'
                             pure $ ListEnum e e'
 
                        , context "listComp" do
@@ -401,7 +405,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                                             pure $ ListCompGen p e'
                                        ]
                                ]
-                            delim ']'
+                            close ']'
                             pure $ ListComp unit e (toList qs)
                        , fail "Expected `]"
                        ]
@@ -414,18 +418,18 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             choice
                [ do
                     op <- operator
-                    delim ')'
+                    close ')'
                     pure $ Op op
                , do
                     e <- opTree
                     choice
                        [ do
-                            delim ')'
+                            close ')'
                             pure e
                        , do
                             delim ','
                             e' <- opTree
-                            delim ')'
+                            close ')'
                             pure $ Constr unit cPair (e : e' : Nil)
                        , fail "Expected `)` or `,` after `(expr`"
                        ]

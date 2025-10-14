@@ -3,6 +3,8 @@ module Parse.Parser where
 import Prelude hiding (between)
 
 import Control.Alt ((<|>))
+import Control.Monad.State.Trans (put)
+import Control.Monad.Trans.Class (lift)
 import Data.Array (cons, elem)
 import Data.Array as Array
 import Data.List.Types (List, NonEmptyList)
@@ -34,10 +36,10 @@ context s p = do
       ParseError (take 200 (msg <> "\n " <> s <> " on line " <> show line <> ", column " <> show column)) pos
 
 block :: forall a. Parser a -> Parser a
-block e = delim ':' *> whitespace *> sameOrIndented *> withPos e
+block e = delim ':' *> sameOrIndented *> withPos e
 
 align :: forall a. Parser a -> Parser a
-align p = whitespace *> checkIndent *> p
+align p = checkIndent *> p
 
 identifier :: Parser Char -> Parser Char -> Parser String
 identifier start letter = lexeme $ do
@@ -76,6 +78,16 @@ reservedOperator expected = try do
 
 delim :: Char -> Parser Unit
 delim c = char c *> whitespace
+
+-- similar to delim but updates the indentation reference
+-- use in combination with withPos - reference should be reset
+-- when finished parsing (not handled here)
+close :: Char -> Parser Unit
+close c = do
+   _ <- char c
+   pos <- position
+   lift (put pos)
+   whitespace
 
 lexeme :: forall a. Parser a -> Parser a
 lexeme p = p <* whitespace
