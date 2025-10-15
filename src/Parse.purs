@@ -21,7 +21,7 @@ import DataType (cPair)
 import Lattice (Raw)
 import Parse.Error (prettyParseError)
 import Parse.Number (float, integer)
-import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, token, trailingCommas, variable, whitespace)
+import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (Position, consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, optional, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
@@ -301,9 +301,9 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          paragraph :: Parser (Raw Expr)
          paragraph = do
-            token "f\"\"\""
+            delim "f\"\"\""
             es <- many $ lexeme paragraphElem
-            token "\"\"\""
+            delim "\"\"\""
             pure $ Paragraph es
             where
             paragraphElem :: Parser (Raw ParagraphElem)
@@ -350,7 +350,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          matrix :: Parser (Raw Expr)
          matrix = context "matrix" do
-            token "[|"
+            delim "[|"
             e <- opTree
             reserved "for"
             delim '('
@@ -360,7 +360,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             delim ')'
             reserved "in"
             e' <- opTree
-            token "|]"
+            delim "|]"
             pure $ Matrix unit e (x × y) e'
 
          bracketsExpr :: Parser (Raw Expr)
@@ -382,7 +382,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                             close ']'
                             pure $ ListNonEmpty unit e (End unit)
                        , context "listEnum" do
-                            token ".."
+                            delim ".."
                             e' <- opTree
                             close ']'
                             pure $ ListEnum e e'
@@ -441,7 +441,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          docExpr :: Parser (Raw Expr)
          docExpr = context "doc expr" do
-            token "@doc"
+            delim "@doc"
             e <- parens opTree
             e' <- opTree
             pure $ DocExpr e e'

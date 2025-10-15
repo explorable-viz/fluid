@@ -23,6 +23,15 @@ import Parsing.Token (oneOf)
 
 type Parser a = IndentParser String a
 
+class Parseable a where
+   parse :: a -> Parser a
+
+instance Parseable String where
+   parse = string
+
+instance Parseable Char where
+   parse = char
+
 keywords :: Array String
 keywords = [ "def", "if", "else", "lambda", "match", "case", "for", "in" ]
 
@@ -76,24 +85,22 @@ reservedOperator expected = try do
    if expected /= received then fail $ "Expected `" <> expected <> "`, received `" <> received <> "`"
    else pure unit
 
-delim :: Char -> Parser Unit
-delim c = char c *> whitespace
+-- shortcut for lexeme throwing away result for primitive parsers
+delim :: forall a. Parseable a => a -> Parser Unit
+delim a = void $ lexeme $ parse a
 
 -- similar to delim but updates the indentation reference
 -- use in combination with withPos - reference should be reset
 -- when finished parsing (not handled here)
-close :: Char -> Parser Unit
-close c = do
-   _ <- char c
+close :: forall a. Parseable a => a -> Parser Unit
+close a = do
+   _ <- parse a
    pos <- position
    lift (put pos)
    whitespace
 
 lexeme :: forall a. Parser a -> Parser a
 lexeme p = p <* whitespace
-
-token :: String -> Parser Unit
-token t = void $ lexeme $ string t
 
 whitespace :: Parser Unit
 whitespace = skipMany (space <|> comment)
