@@ -22,7 +22,7 @@ import Lattice (Raw)
 import Parse.Error (prettyParseError)
 import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, token, trailingCommas, variable, whitespace)
-import Parsing (Position, fail, runParserT)
+import Parsing (Position, consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, optional, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
@@ -200,7 +200,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       pure $ IfElse c t e
 
    opTree :: Parser (Raw Expr)
-   opTree = context "opTree" (buildExprParser opdefs simpleChain)
+   opTree = context "opTree" (buildExprParser opdefs simpleChain) <* consume -- otherwise always `consume: false`
       where
 
       simpleChain :: Parser (Raw Expr)
