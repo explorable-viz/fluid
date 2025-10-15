@@ -24,14 +24,14 @@ import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (Position, consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, optional, sepBy1, try, (<?>))
-import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
+import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), nonEmpty, (×))
 
 pattern :: Parser Pattern
-pattern = defer $ \_ -> buildExprParser popdefs simplePattern
+pattern = defer \_ -> buildExprParser [ [ Infix pConsOp AssocRight ] ] simplePattern
 
 simplePattern :: Parser Pattern
 simplePattern = pVar <|> pConstr <|> pRecord <|> bracketsPattern <|> parensPattern
@@ -66,7 +66,7 @@ simplePattern = pVar <|> pConstr <|> pRecord <|> bracketsPattern <|> parensPatte
       choice
          [ do
               delim ']'
-              pure $ PListEmpty
+              pure PListEmpty
          , do
               p <- pattern
               ps <- many (delim ',' *> pattern)
@@ -89,29 +89,29 @@ simplePattern = pVar <|> pConstr <|> pRecord <|> bracketsPattern <|> parensPatte
               pure $ PConstr cPair (p : p' : Nil)
          ]
 
-binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-binaryOp op = do
-   reservedOperator op
-   pure $ \e e' -> BinaryApp e op e'
-
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = do
    reservedOperator ":|"
-   pure $ \e e' -> PConstr ":" (e : e' : Nil)
+   pure \e e' -> PConstr ":" (e : e' : Nil)
+
+binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
+binaryOp op = do
+   reservedOperator op
+   pure \e e' -> BinaryApp e op e'
 
 infixFn :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 infixFn = do
-   x <- try (delim '|' *> variable)
+   fn <- try (delim '|' *> variable)
    delim '|'
-   pure (\e e' -> BinaryApp e x e')
+   pure \e e' -> BinaryApp e fn e'
 
 consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 consOp = do
    reservedOperator ":|"
-   pure $ \e e' -> Constr unit ":" (e : e' : Nil)
+   pure \e e' -> Constr unit ":" (e : e' : Nil)
 
-opdefs :: Array (Array (Operator (StateT Position Identity) String (Raw Expr)))
-opdefs =
+binaryOps :: OperatorTable (StateT Position Identity) String (Raw Expr)
+binaryOps =
    [ [ Infix (binaryOp "!") AssocLeft
      , Infix (binaryOp "**") AssocRight
      ]
@@ -133,11 +133,8 @@ opdefs =
    , [ Infix infixFn AssocLeft ]
    ]
 
-popdefs :: Array (Array (Operator (StateT Position Identity) String Pattern))
-popdefs = [ [ Infix pConsOp AssocRight ] ]
-
 varDefs :: Parser (Raw VarDefs)
-varDefs = many1 varDef <* optional (delim ';')
+varDefs = many1 varDef <* optional (delim ';') -- TODO: remove ;
    where
    varDef :: Parser (Raw VarDef)
    varDef = do
@@ -146,7 +143,7 @@ varDefs = many1 varDef <* optional (delim ';')
       pure $ VarDef p e
 
 recDefs :: Parser (Raw RecDefs)
-recDefs = many1 recDef <* optional (delim ';')
+recDefs = many1 recDef <* optional (delim ';') -- TODO: remove ;
    where
    recDef :: Parser (Raw Branch)
    recDef = do
@@ -172,23 +169,24 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          reserved "case"
          p <- pattern
          e <- block expr
-         pure $ (p × e)
+         pure (p × e)
 
+   -- TODO: consider capturing 'def' parse for better error handling
    def :: Parser (Raw Expr)
    def = context "def" do
       funDef <|> valDef
       where
       funDef :: Parser (Raw Expr)
       funDef = context "funDef" $ withPos do
-         defs' <- recDefs
-         e' <- align expr
-         pure $ LetRec defs' e'
+         ds <- recDefs
+         e <- align expr
+         pure $ LetRec ds e
 
       valDef :: Parser (Raw Expr)
       valDef = context "valDef" $ withPos do
-         defs' <- varDefs
-         e' <- align expr
-         pure $ Let defs' e'
+         ds <- varDefs
+         e <- align expr
+         pure $ Let ds e
 
    ifElse :: Parser (Raw Expr)
    ifElse = do
@@ -200,7 +198,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       pure $ IfElse c t e
 
    opTree :: Parser (Raw Expr)
-   opTree = context "opTree" (buildExprParser opdefs simpleChain) <* consume -- otherwise always `consume: false`
+   opTree = context "opTree" (buildExprParser binaryOps simpleChain) <* consume -- otherwise always `consume: false`
       where
 
       simpleChain :: Parser (Raw Expr)
@@ -211,6 +209,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             where
             project :: Parser (Raw Expr)
             project = do
+               -- try because '.' can be captured from '..'
                k <- try do
                   delim '.'
                   variable
@@ -252,9 +251,9 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          letExpr :: Parser (Raw Expr)
          letExpr = context "letExpr" do
-            e <- many1 varDef
-            e' <- opTree
-            pure $ Let e e'
+            ds <- many1 varDef
+            e <- opTree
+            pure $ Let ds e
             where
             varDef :: Parser (Raw VarDef)
             varDef = do
@@ -265,9 +264,9 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          letRecExpr :: Parser (Raw Expr)
          letRecExpr = context "letRecExpr" do
-            e <- many1 recDef
-            e' <- opTree
-            pure $ LetRec e e'
+            ds <- many1 recDef
+            e <- opTree
+            pure $ LetRec ds e
             where
             recDef :: Parser (Raw Branch)
             recDef = do
@@ -335,13 +334,13 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             kv :: Parser (Raw DictEntry × Raw Expr)
             kv = do
                k <- exprKey <|> varKey
-               _ <- delim ':'
+               delim ':'
                v <- expr
                pure (k × v)
 
                where
                exprKey :: Parser (Raw DictEntry)
-               exprKey = defer $ \_ -> do
+               exprKey = defer \_ -> do
                   e <- brackets opTree
                   pure $ ExprKey e
 
