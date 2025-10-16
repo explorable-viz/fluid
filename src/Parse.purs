@@ -22,7 +22,7 @@ import Parse.Error (prettyParseError)
 import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (Position, consume, fail, runParserT)
-import Parsing.Combinators (choice, many, many1, option, optional, sepBy1, try, (<?>))
+import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
@@ -114,7 +114,7 @@ binaryOps =
    ]
 
 varDefs :: Parser (Raw VarDefs)
-varDefs = many1 varDef <* optional (delim ';') -- TODO: remove ;
+varDefs = many1 varDef
    where
    varDef :: Parser (Raw VarDef)
    varDef = do
@@ -123,7 +123,7 @@ varDefs = many1 varDef <* optional (delim ';') -- TODO: remove ;
       pure $ VarDef p e
 
 recDefs :: Parser (Raw RecDefs)
-recDefs = many1 recDef <* optional (delim ';') -- TODO: remove ;
+recDefs = many1 recDef
    where
    recDef :: Parser (Raw Branch)
    recDef = do
