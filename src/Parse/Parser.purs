@@ -20,6 +20,7 @@ import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy, string)
 import Parsing.String.Basic (alphaNum, letter, lower, upper)
 import Parsing.Token (oneOf)
+import Util (type (×), (×))
 
 type Parser a = IndentParser String a
 
@@ -125,6 +126,13 @@ commas1 p = sepBy1 p (delim ',')
 
 trailingCommas :: forall a. Parser a -> Parser (List a)
 trailingCommas p = sepEndBy p (delim ',')
+
+fields :: forall k v. Parser k -> Parser v -> Parser (List (k × v))
+fields key val = trailingCommas do
+   k <- key
+   delim ':'
+   v <- val
+   pure $ k × v
 
 -----------------------------------------------------------
 -- String things extracted from "Parsing.Token"

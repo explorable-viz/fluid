@@ -2,7 +2,6 @@ module Parse where
 
 import Prelude
 
-import Bind (Var)
 import Control.Alt ((<|>))
 import Control.Lazy (defer)
 import Control.Monad.State (StateT)
@@ -21,7 +20,7 @@ import DataType (cPair)
 import Lattice (Raw)
 import Parse.Error (prettyParseError)
 import Parse.Number (float, integer)
-import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
+import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (Position, consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, optional, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -34,7 +33,7 @@ pattern :: Parser Pattern
 pattern = defer \_ -> buildExprParser [ [ Infix pConsOp AssocRight ] ] simplePattern
 
 simplePattern :: Parser Pattern
-simplePattern = pVar <|> pConstr <|> pRecord <|> bracketsPattern <|> parensPattern
+simplePattern = pVar <|> pConstr <|> pRecord <|> pList <|> parensPattern
 
    where
 
@@ -48,31 +47,12 @@ simplePattern = pVar <|> pConstr <|> pRecord <|> bracketsPattern <|> parensPatte
       pure $ PConstr c ps
 
    pRecord :: Parser Pattern
-   pRecord = do
-      fs <- braces (commas pField)
-      pure $ PRecord fs
+   pRecord = defer \_ -> braces (fields variable pattern) <#> PRecord
 
-      where
-      pField :: Parser (Var × Pattern)
-      pField = do
-         v <- variable
-         delim ':'
-         p <- pattern
-         pure (v × p)
-
-   bracketsPattern :: Parser Pattern
-   bracketsPattern = do
-      delim '['
-      choice
-         [ do
-              delim ']'
-              pure PListEmpty
-         , do
-              p <- pattern
-              ps <- many (delim ',' *> pattern)
-              delim ']'
-              pure $ PListNonEmpty p (foldr (PListNext) (PListEnd) ps)
-         ]
+   pList :: Parser Pattern
+   pList = defer \_ -> brackets (trailingCommas pattern) <#> case _ of
+      Nil -> PListEmpty
+      (p : ps) -> PListNonEmpty p (foldr PListNext PListEnd ps)
 
    parensPattern :: Parser Pattern
    parensPattern = do
@@ -326,26 +306,16 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          dict :: Parser (Raw Expr)
          dict = context "dict" do
             delim '{'
-            kvs <- trailingCommas kv
+            kvs <- fields (exprKey <|> varKey) expr
             close '}'
             pure $ Dictionary unit kvs
 
             where
-            kv :: Parser (Raw DictEntry × Raw Expr)
-            kv = do
-               k <- exprKey <|> varKey
-               delim ':'
-               v <- expr
-               pure (k × v)
+            exprKey :: Parser (Raw DictEntry)
+            exprKey = defer \_ -> brackets opTree <#> ExprKey
 
-               where
-               exprKey :: Parser (Raw DictEntry)
-               exprKey = defer \_ -> do
-                  e <- brackets opTree
-                  pure $ ExprKey e
-
-               varKey :: Parser (Raw DictEntry)
-               varKey = variable <#> VarKey unit
+            varKey :: Parser (Raw DictEntry)
+            varKey = variable <#> VarKey unit
 
          matrix :: Parser (Raw Expr)
          matrix = context "matrix" do
