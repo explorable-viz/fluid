@@ -34,9 +34,7 @@ pattern = defer \_ -> buildExprParser [ [ Infix pConsOp AssocRight ] ] simplePat
 
 simplePattern :: Parser Pattern
 simplePattern = pVar <|> pConstr <|> pRecord <|> pList <|> parensPattern
-
    where
-
    pVar :: Parser Pattern
    pVar = PVar <$> variable
 
@@ -52,7 +50,7 @@ simplePattern = pVar <|> pConstr <|> pRecord <|> pList <|> parensPattern
    pList :: Parser Pattern
    pList = defer \_ -> brackets (trailingCommas pattern) <#> case _ of
       Nil -> PListEmpty
-      (p : ps) -> PListNonEmpty p (foldr PListNext PListEnd ps)
+      p : ps -> PListNonEmpty p (foldr PListNext PListEnd ps)
 
    parensPattern :: Parser Pattern
    parensPattern = do

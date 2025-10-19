@@ -2,71 +2,70 @@ module Pretty.Constants where
 
 import Prelude ((<>))
 
-import Parse.Constants (keyword, symbol)
 import Pretty.Doc (Doc, text)
 
 _if :: Doc
-_if = text keyword.if
+_if = text "if"
 
 _else :: Doc
-_else = text keyword.else
+_else = text "else"
 
 _def :: Doc
-_def = text keyword.def
+_def = text "def"
 
 _lambda :: Doc
-_lambda = text keyword.lambda
+_lambda = text "lambda"
 
 _match :: Doc
-_match = text keyword.match
+_match = text "match"
 
 _case :: Doc
-_case = text keyword.case
+_case = text "case"
 
 _for :: Doc
-_for = text keyword.for
+_for = text "for"
 
 _in :: Doc
-_in = text keyword.in
+_in = text "in"
 
 _colon :: Doc
-_colon = text symbol.colon
+_colon = text ":"
 
 _comma :: Doc
-_comma = text symbol.comma
+_comma = text ","
 
 _empty :: Doc
-_empty = text symbol.lBracket <> text symbol.rBracket
+_empty = text "[" <> text "]"
 
 _lbrace :: Doc
-_lbrace = text symbol.lBrace
+_lbrace = text "{"
 
 _rbrace :: Doc
-_rbrace = text symbol.rBrace
+_rbrace = text "}"
 
 _lbracket :: Doc
-_lbracket = text symbol.lBracket
+_lbracket = text "["
 
 _rbracket :: Doc
-_rbracket = text symbol.rBracket
+_rbracket = text "]"
 
 _larray :: Doc
-_larray = text symbol.lArray
+_larray = text "[|"
 
 _rarray :: Doc
-_rarray = text symbol.rArray
+_rarray = text "|]"
 
 _lparen :: Doc
-_lparen = text symbol.lParen
+_lparen = text "("
 
 _rparen :: Doc
-_rparen = text symbol.rParen
+_rparen = text ")"
 
 _quote :: Doc
-_quote = text symbol.quote
+_quote = text "\""
 
 _asterisk :: Doc
-_asterisk = text symbol.star
+_asterisk = text "*"
 
 _ellipsis :: Doc
-_ellipsis = text symbol.ellipsis
+_ellipsis = text ".."

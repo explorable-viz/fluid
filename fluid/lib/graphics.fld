@@ -97,8 +97,7 @@ def colours2: [
 def scaleToWidth(w, Rect(x, y, _, h, fill)):
   Rect(x, y, w, h, fill)
 def scaleToWidth(w, Viewport(x, y, w0, h, fill, margin, Scale(x_scale, y_scale), translate, g)):
-  def scale:
-    Scale((x_scale * w) / w0, y_scale)
+  def scale: Scale((x_scale * w) / w0, y_scale)
   Viewport(x, y, w, h, fill, margin, scale, translate, g)
 
 # Float -> List GraphicsElement -> List GraphicsElement
@@ -112,8 +111,7 @@ def groupRight(sep, gs):
 # Heuristic saying how often to place a tick on an axis of length n.
 # Float -> Float
 def tickEvery(n):
-  def m:
-    floor(logBase(10, n))
+  def m: floor(logBase(10, n))
 
   if n <= 2 * 10 ** m: 2 * 10 ** (m - 1)
   else: 10 ** m
@@ -152,25 +150,18 @@ def mkPoint(Vert, x, y): Point(x, y)
 # x is position of this axis on the other axis. Returns axis and position of last tick.
 # Orient -> Float -> Float -> Float -> GraphicsElement
 def axis(orient, x, start, end):
-  def tickSp:
-    tickEvery(end - start)
-  def firstTick:
-    ceilingToNearest(start, tickSp)
-  def lastTick:
-    ceilingToNearest(end, tickSp)
-  def n:
-    floor((end - firstTick) / tickSp) + 1
-  def ys:
-    iterate(n, (+)(tickSp), firstTick)
+  def tickSp: tickEvery(end - start)
+  def firstTick: ceilingToNearest(start, tickSp)
+  def lastTick: ceilingToNearest(end, tickSp)
+  def n: floor((end - firstTick) / tickSp) + 1
+  def ys: iterate(n, (+)(tickSp), firstTick)
   def ys:
     if firstTick > start: start :| ys
     else: ys
   def ys:
-    if lastTick > end:
-      concat2(ys, [lastTick])
+    if lastTick > end: concat2(ys, [lastTick])
     else: ys
-  def ps:
-    map(mkPoint(orient, x), ys)
+  def ps: map(mkPoint(orient, x), ys)
   def ax:
     Group([
       Line(head(ps), last(ps), axisColour, axisStrokeWidth),
@@ -182,10 +173,8 @@ def axis(orient, x, start, end):
 # x is position of this axis on the other axis.
 # Orient -> Float -> List Cat -> GraphicsElement
 def catAxis(orient, x, catValues):
-  def ys:
-    iterate(length(catValues) + 1, (+)(1), 0)
-  def ps:
-    map(mkPoint(orient, x), ys)
+  def ys: iterate(length(catValues) + 1, (+)(1), 0)
+  def ps: map(mkPoint(orient, x), ys)
 
   Group([
     Line(head(ps), last(ps), axisColour, axisStrokeWidth),
@@ -202,8 +191,7 @@ def viewport(x_start, x_finish, y_finish, margin, gs):
 # Bool -> Colours -> Float -> List (Float, List (Cat, Float)) -> GraphicsElement
 def lineChart(withAxes, colours, x_start, data):
   def xs: map(fst, data)
-  def nCat:
-    length(snd(head(data)))
+  def nCat: length(snd(head(data)))
 
   # (Int, Colour) -> GraphicsElement
   def plot((n, colour)):
@@ -253,10 +241,8 @@ def rects(colours, ns):
 # Colours -> List (a, Num) -> GraphicsElement
 def stackedBar(colours, ns):
   def heights: map(snd, ns)
-  def subtotals:
-    scanl1((+), 0, heights)
-  def dims:
-    zip(0 :| subtotals, heights)
+  def subtotals: scanl1((+), 0, heights)
+  def dims: zip(0 :| subtotals, heights)
   def rects:
     map(lambda ((y, height), colour): Rect(0, y, 1, height, colour), zip(dims, colours))
 
