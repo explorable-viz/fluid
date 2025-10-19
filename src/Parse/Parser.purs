@@ -12,7 +12,6 @@ import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (take)
 import Data.String.CodeUnits as SCU
 import Data.Traversable (foldr)
-import Parse.Constants (opChars)
 import Parsing (ParseError(..), Position(..), fail, position, region)
 import Parsing.Combinators (between, sepBy, sepBy1, sepEndBy, skipMany, try, (<?>))
 import Parsing.Combinators.Array (many)
@@ -21,6 +20,30 @@ import Parsing.String (char, satisfy, string)
 import Parsing.String.Basic (alphaNum, letter, lower, upper)
 import Parsing.Token (oneOf)
 import Util (type (×), (×))
+
+opChars :: Array Char
+opChars =
+   [ ':'
+   , '!'
+   , '#'
+   , '$'
+   , '%'
+   , '&'
+   , '*'
+   , '+'
+   , '.'
+   , '/'
+   , '<'
+   , '='
+   , '>'
+   , '?'
+   , '@'
+   , '\\'
+   , '^'
+   , '|'
+   , '-'
+   , '~'
+   ]
 
 type Parser a = IndentParser String a
 
@@ -101,7 +124,7 @@ close a = do
    whitespace
 
 lexeme :: forall a. Parser a -> Parser a
-lexeme p = p <* whitespace
+lexeme = (_ <* whitespace)
 
 whitespace :: Parser Unit
 whitespace = skipMany (space <|> comment)
