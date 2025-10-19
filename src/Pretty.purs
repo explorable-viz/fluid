@@ -14,7 +14,6 @@ import Dict (Dict)
 import Expr (Cont(..), Elim(..))
 import Expr as E
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
-import Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _for, _if, _in, _lambda, _match)
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Primitive.Parse (opDefs)
@@ -117,7 +116,7 @@ binaryApp n (BinaryApp s op s') =
 binaryApp _ e = prettySimple e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
-lambda ps e = _lambda <+> prettyList ps <> _colon <+> pretty e
+lambda ps e = text "lambda" <+> prettyList ps <> text ":" <+> pretty e
 
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
@@ -129,15 +128,16 @@ instance Ann a => Pretty (Expr a) where
    pretty (Constr α c as) = highlightIf α (expr $ prettyConstr c as)
    pretty (Dictionary α Nil) = highlightIf α (text "{}")
    pretty (Dictionary α es) = highlightIf α (expr $ record $ map pretty es)
-   pretty (Matrix α e (x × y) e') = highlightIf α (expr $ matrix (pretty e <+> _for <+> pair text x y <+> _in <+> pretty e'))
+   pretty (Matrix α e (x × y) e') =
+      highlightIf α (expr $ matrix (pretty e <+> text "for" <+> pair text x y <+> text "in" <+> pretty e'))
    pretty (Lambda cs) = pretty cs -- Clauses
    pretty (Project s x) = expr $ prettySimple s <> text "." <> text x
    pretty (DProject e k) = expr $ prettySimple e <> brackets (expr $ pretty k)
    pretty (App s s') = expr $ prettyAppChain (App s s') Nil
    pretty (BinaryApp s op s') = expr $ binaryApp 0 (BinaryApp s op s')
-   pretty (MatchAs s cs) = _match <+> pretty s <> block (pretty cs)
-   pretty (IfElse i t e) = _if <+> expr (pretty i) <> block (pretty t) <++> _else <> block (pretty e)
-
+   pretty (MatchAs s cs) = text "match" <+> pretty s <> block (pretty cs)
+   pretty (IfElse i t e) =
+      text "if" <+> expr (pretty i) <> block (pretty t) <++> text "else" <> block (pretty e)
    pretty (ListEmpty α) = highlightIf α (text "[]")
    pretty (ListNonEmpty α e rest) =
       highlightIf α (text "[")
@@ -149,7 +149,7 @@ instance Ann a => Pretty (Expr a) where
       collect (Next α' e' rest') inline = highlightIf α' (text ",") <> (if inline then text " " <> pretty e' else indent (line <> pretty e')) <> collect rest' inline
       collect (End α') inline = if inline then highlightIf α' (text "]") else line <> highlightIf α' (text "]")
 
-   pretty (ListEnum s s') = brackets $ expr (pretty s <+> _ellipsis <+> pretty s')
+   pretty (ListEnum s s') = brackets $ expr (pretty s <+> text ".." <+> pretty s')
    pretty (ListComp α s qs) = highlightIf α (brackets (expr (pretty s) <+> pretty qs)) -- Qualifier
    pretty (Let ds s) = pretty ds <> (stmtOrExpr (line <> line) (text " ")) <> pretty s
    pretty (LetRec h s) = pretty h <> (stmtOrExpr (line <> line) (text " ")) <> pretty s
@@ -157,9 +157,10 @@ instance Ann a => Pretty (Expr a) where
    pretty (DocExpr p e) = text "@doc" <> parens (pretty p) </> pretty e
 
 instance Ann a => Pretty (List (Qualifier a)) where
-   pretty (Cons (ListCompDecl (VarDef v s)) Nil) = _for <+> pretty v <+> _in <+> brackets (pretty s)
-   pretty (Cons (ListCompGuard s) Nil) = _if <+> pretty s
-   pretty (Cons (ListCompGen p s) Nil) = _for <+> pretty p <+> _in <+> pretty s
+   pretty (Cons (ListCompDecl (VarDef v s)) Nil) =
+      text "for" <+> pretty v <+> text "in" <+> brackets (pretty s)
+   pretty (Cons (ListCompGuard s) Nil) = text "if" <+> pretty s
+   pretty (Cons (ListCompGen p s) Nil) = text "for" <+> pretty p <+> text "in" <+> pretty s
    pretty (Cons q qs) = pretty (singleton q) <+> pretty qs
    pretty Nil = empty
 
@@ -167,7 +168,7 @@ instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
    pretty cs = vsep (toList (pretty <$> cs))
 
 instance Ann a => Pretty (Pattern × Expr a) where
-   pretty (p × e) = _case <+> (pretty p) <> block (pretty e)
+   pretty (p × e) = text "case" <+> (pretty p) <> block (pretty e)
 
 instance Pretty Pattern where
    pretty (PVar x) = text x
@@ -178,15 +179,15 @@ instance Pretty Pattern where
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
 
 instance Pretty (String × Pattern) where
-   pretty (k × v) = text k <> _colon <+> pretty v
+   pretty (k × v) = text k <> text ":" <+> pretty v
 
 instance Pretty ListRestPattern where
    pretty (PListVar x) = text x
-   pretty (PListNext p l) = _comma <+> pretty p <> pretty l
+   pretty (PListNext p l) = text "," <+> pretty p <> pretty l
    pretty PListEnd = empty
 
 instance Ann a => Pretty (VarDef a) where
-   pretty (VarDef v s) = _def <+> pretty v <> block (pretty s)
+   pretty (VarDef v s) = text "def" <+> pretty v <> block (pretty s)
 
 instance Ann a => Pretty (VarDefs a) where
    pretty ds = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> ds))
@@ -202,7 +203,7 @@ instance Ann a => Pretty (RecDefs a) where
 
 instance Ann a => Pretty (Branch a) where
    pretty (v × Clause (ps × e)) =
-      _def
+      text "def"
          <+> text v
          <> parens (prettyList (toList ps))
          <> block (pretty e)
@@ -245,12 +246,12 @@ prettyAppChain f as = prettySimple f <> parens (prettyList as)
 commas :: List Doc -> Doc
 commas Nil = empty
 commas (d : Nil) = d
-commas (d : ds) = d <> _comma <+> commas ds
+commas (d : ds) = d <> text "," <+> commas ds
 
 vcommas :: List Doc -> Doc
 vcommas Nil = empty
 vcommas (d : Nil) = d
-vcommas (d : ds) = d <> _comma <++> vcommas ds
+vcommas (d : ds) = d <> text "," <++> vcommas ds
 
 prettyList :: forall f a. Foldable f => Pretty a => f a -> Doc
 prettyList xs = commas (pretty <$> fromFoldable xs)
@@ -266,7 +267,8 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Str a str) = highlightIf a (string str)
    pretty (E.Dictionary a ees) = highlightIf a $ record (pretty <$> ees)
    pretty (E.Constr a c es) = highlightIf a (prettyConstr c es)
-   pretty (E.Matrix a e1 (i × j) e2) = highlightIf a $ matrix (pretty e1 <+> _for <+> pair text i j <+> _in <+> pretty e2)
+   pretty (E.Matrix a e1 (i × j) e2) =
+      highlightIf a $ matrix (pretty e1 <+> text "for" <+> pair text i j <+> text "in" <+> pretty e2)
    pretty (E.Lambda a o) = highlightIf a (text "lambda") <+> pretty o -- really?
    pretty (E.Project e x) = pretty e <> text "." <> pretty x
    pretty (E.DProject e x) = pretty e <> brackets (pretty x)
