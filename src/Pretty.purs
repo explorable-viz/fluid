@@ -16,7 +16,7 @@ import Expr as E
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _for, _if, _in, _lambda, _match)
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
-import Pretty.Helpers (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
+import Pretty.Util (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (×), isEmpty, (×))
