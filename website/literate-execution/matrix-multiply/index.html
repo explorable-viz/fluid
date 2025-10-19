@@ -74,31 +74,29 @@
          </div>
          <div></div>
       </div>
-      <details>
-         <summary>matrix.fld</summary>
-         <div id="codemirror-matrix"></div>
-      </details>
    </div>
 </div>
 
 <script id="my-code" type="text/plain">
-   import lib.matrix
-   import matrixMultiply.aMatrix
-   import matrixMultiply.bMatrix
-   import matrixMultiply.cMatrix
+import lib.matrix
+import matrixMultiply.matrices
 
-   MultiView {
-      firstMatrix: matMul (matMul aMatrix bMatrix) cMatrix,
-      secondMatrix: matMul aMatrix (matMul bMatrix cMatrix)
-   }
+MultiView([
+  matMul(matMul(a, b), c),
+  matMul(a, matMul(b, c))
+])
 </script>
 
 <script type="module">
-   import { loadFigureSrc, drawCode } from "/shared/load-figure.js"
+   import { loadFigureSrc, loadCode } from "/shared/load-figure.js"
    const src = document.getElementById("my-code").textContent.trim();
-
-   drawCode("../fluid/lib/matrix.fld")()
-   loadFigureSrc("spec.json")(src)()
+   const spec = {
+      "fluidSrcPath": ["../fluid"],
+      "inputs": [ "a", "b", "c" ],
+      "query": true,
+      "linking": false
+  }
+   loadFigureSrc(spec)(src)()
 </script>
 </body>
 </html>

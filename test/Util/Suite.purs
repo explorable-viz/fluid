@@ -4,20 +4,17 @@ import Prelude
 
 import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
-import App.View.Util (Fig, FigSpec)
+import App.View.Util (Fig, Options)
 import Bind (Bind)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
-import Data.List (List(..))
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
 import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
 import File (class LoadFile, File(..), FileCxt, Folder(..), loadFile, (</>))
 import Lattice (botOf)
-import Module (loadProgCxt)
 import Primitive.Defs (primitives)
-import ProgCxt (ProgCxt(..))
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
 import Test.Util (checkEq, test)
 import Test.Util.Debug (timing)
@@ -40,26 +37,27 @@ type TestBwdSpec =
    }
 
 type TestLinkedOutputsSpec =
-   { spec :: FigSpec
+   { spec :: Options
    , δ_out :: Selector Val
    , out_expect :: Selector Val
    , file :: String
    }
 
 type TestLinkedInputsSpec =
-   { spec :: FigSpec
+   { spec :: Options
    , δ_in :: Bind (Selector Val)
    , in_expect :: Selector Env
    , file :: String
    }
+
+type SuiteFactory r m = MonadError Error m => MonadReader FileCxt m => LoadFile m => Array { file :: String | r } -> BenchSuite m
 
 suite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestSpec -> BenchSuite m
 suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
    asTest { file, fwd_expect } = do
-      let progCxt = ProgCxt { primitives, mods: Nil }
-      test (File file) progCxt { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
+      test (File file) primitives { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestBwdSpec -> BenchSuite m
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
@@ -68,9 +66,8 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
 
    asTest :: TestBwdSpec -> m BenchRow
    asTest { file, bwd_expect_file, δv, fwd_expect } = do
-      progCxt <- loadProgCxt
       bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
-      test (folder </> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
+      test (folder </> File file) primitives { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect, file } = do

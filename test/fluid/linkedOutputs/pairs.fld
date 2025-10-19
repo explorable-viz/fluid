@@ -1,4 +1,5 @@
 import linkedOutputs.pairsData
 
-let q = 1 in
-(fun (w, x) -> (w, (w, x))) data
+def q: 1
+
+(lambda (w, x): (w, (w, x)))(data)

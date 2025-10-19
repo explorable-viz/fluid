@@ -1,22 +1,21 @@
-let comp Infty Infty = EQ;
-    comp Infty (FNum y) = GT;
-    comp (FNum x) Infty = LT;
-    comp (FNum x) (FNum y) = compare x y;
+def comp(Infty, Infty): EQ
+def comp(Infty, FNum(y)): GT
+def comp(FNum(x), Infty): LT
+def comp(FNum(x), FNum(y)): compare(x, y)
 
-let fmin x y =
-    match comp x y as {
-        LT -> x;
-        EQ -> x;
-        GT -> y
-    };
+def fmin(x, y):
+  match comp(x, y):
+    case LT: x
+    case EQ: x
+    case GT: y
 
-let minimal = foldl1 fmin;
+def minimal: foldl1(fmin)
 
-let add Infty _ = Infty;
-    add (FNum x) Infty = Infty;
-    add (FNum x) (FNum y) = FNum (x + y);
+def add(Infty, _): Infty
+def add(FNum(x), Infty): Infty
+def add(FNum(x), FNum(y)): FNum(x + y)
 
-let eq Infty Infty = True;
-    eq Infty (FNum x) = False;
-    eq (FNum x) Infty = False;
-    eq (FNum x) (FNum y) = x == y;
+def eq(Infty, Infty): True
+def eq(Infty, FNum(x)): False
+def eq(FNum(x), Infty): False
+def eq(FNum(x), FNum(y)): x == y

@@ -1,1 +1,1 @@
-[ z | x <- [5, 4, 3], let z = x ]
+[z for x in [5, 4, 3] for z in [x]]

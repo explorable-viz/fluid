@@ -6,29 +6,35 @@ import App.Util (Dimensions(..), Selectable, classes, contents)
 import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.Segment (Segment(..), Scales, indexCol)
 import App.View.StackedBar (StackedBar(..), StackedBarContext, barHeight)
-import App.View.Util (class View, Select, createElement, setSelection)
-import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
+import App.View.Util (class Viewable, Select, createElement, setSelection)
+import App.View.Util.Axes (Orientation, create_xAxis, create_yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate)
 import App.View.Util.D3 as D3
+import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
 import Data.Array (range)
 import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
-import Data.Foldable (for_, length)
+import Data.Foldable (length)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
 import Data.Newtype (unwrap)
 import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
 import DataType (f_stackedBars)
-import Effect (Effect)
+import Effect (Effect, foreachE)
 import Util ((!))
 
 newtype BarChart = BarChart
    { caption :: Selectable String
    , size :: Dimensions (Selectable Int)
+   , tickLabels :: Point Orientation
    , stackedBars :: NonEmptyArray StackedBar
+   , legend :: Selectable Boolean
    }
 
-instance View BarChart Unit where
+instance Viewable BarChart Unit where
+   isLeaf = const false
+
    setSelection :: Unit -> BarChart -> Select -> D3.Selection -> Effect Unit
    setSelection _ chart@(BarChart { stackedBars }) select barChart' = do
       let props = barChartProps chart
@@ -40,13 +46,13 @@ instance View BarChart Unit where
             stack
 
    createElement :: Unit -> BarChart -> D3.Selection -> Effect D3.Selection
-   createElement _ barChart@(BarChart { caption, stackedBars }) parent = do
+   createElement _ barChart@(BarChart { caption, stackedBars, tickLabels, legend }) parent = do
       svg <- parent # create SVG [ "width" ⟼ props.width, "height" ⟼ props.height ]
       g <- svg # create G [ translate { x: props.margin.left, y: props.margin.top } ]
       void $ createAxes g
       createStackedBars g
 
-      for_ (range 0 $ length props.ys - 1) \y_index ->
+      foreachE (range 0 $ length props.ys - 1) \y_index ->
          addHatchPattern g y_index $ indexCol y_index
 
       void $ svg
@@ -59,7 +65,8 @@ instance View BarChart Unit where
               ]
          >>= setText (contents caption)
 
-      createLegend props.interior g
+      when (contents legend) $
+         createLegend props.interior g
       pure g
 
       where
@@ -67,21 +74,20 @@ instance View BarChart Unit where
 
       createAxes :: D3.Selection -> Effect (Coord D3.Selection)
       createAxes parent' = do
-         x <- xAxis props.scales props.xs =<<
-            (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap props.interior).height } ])
-         y <- yAxis props.scales 3.0 =<<
-            (parent' # create G [ classes [ "y-axis" ] ])
+         let Point { x: xLabels, y: yLabels } = tickLabels
+         x <- create_xAxis parent' props.scales props.xs (unwrap props.interior).height (contents xLabels)
+         y <- create_yAxis parent' props.scales 3.0 0 (contents yLabels)
          pure { x, y }
 
       createStackedBars :: D3.Selection -> Effect Unit
       createStackedBars parent' =
-         for_ stackedBars \stackedBar ->
-            createElement props.stackedBarContext stackedBar parent'
+         foreachE (toArray stackedBars) \stackedBar ->
+            void $ createElement props.stackedBarContext stackedBar parent'
 
       createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
       createLegend (Dimensions interior') parent' = do
          legend' <- parent' # create G
-            [ translate { x: interior'.width + 30, y: max 0 $ (interior'.height - height) / 2 } ]
+            [ translate { x: interior'.width + 0, y: max 0 $ (interior'.height - height) / 2 } ]
          void $ legend' # create Rect
             [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
          forWithIndex_ props.ys \y_index y -> do
@@ -120,6 +126,9 @@ type BarChartProperties =
    , stackedBarContext :: StackedBarContext
    }
 
+strokeWidth :: Int
+strokeWidth = 2
+
 barChartProps :: BarChart -> BarChartProperties
 barChartProps (BarChart { caption, size, stackedBars }) =
    { width
@@ -136,11 +145,12 @@ barChartProps (BarChart { caption, size, stackedBars }) =
    where
 
    xs = stackedBars <#> \(StackedBar bar) -> contents bar.x
-   ys = (unwrap $ head stackedBars).segments <#> \(Segment seg) -> contents seg.y -- TODO: check uniformity for each bar
+   ys = (unwrap $ head stackedBars).segments <#> \(Segment seg) -> contents seg.y -- TODO: enforce uniformity across bars
    Dimensions { width, height } = size <#> contents
 
    margin :: Margin
-   margin = { top: 3, right: 75, bottom: 20, left: 30 }
+   -- previously some right margin hack to accommodate legend
+   margin = { top: 3, right: 20, bottom: 30, left: 20 }
 
    interior :: Dimensions Int
    interior = Dimensions
@@ -161,4 +171,3 @@ barChartProps (BarChart { caption, size, stackedBars }) =
 
    nearest = 10.0
    y_max = ceil $ nearest * (maximum (barHeight <$> stackedBars) / nearest)
-   strokeWidth = 1

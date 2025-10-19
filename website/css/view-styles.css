@@ -5,12 +5,20 @@
 }
 
 .legend-text {
-   font-size: 9pt;
+   font-size: 8pt;
 }
 
 .title-text {
    fill: Black;
    font-size: 9pt;
+}
+
+.table-caption {
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+  background: #fafafa;
+  padding: 0.1em 0.2em;
+  border-radius: 1px;
+  display: inline-block;
 }
 
 .table-view th {
@@ -32,11 +40,21 @@ table {
 }
 
 thead {
-   border-top: 0.5px solid lightgray;
+}
+
+thead th {
+  vertical-align: top;
 }
 
 .table-cell {
    border-radius: 0px;
+}
+
+td, th {
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   max-width: 120px;
 }
 
 td.table-cell {
@@ -57,7 +75,6 @@ td.table-cell {
 
 .table-cell.selected-primary-transient {
    color: blue;
-   font-weight: 600;
 }
 
 .table-cell.selected-secondary-transient {
@@ -70,6 +87,16 @@ td.table-cell {
 
 .table-row.hidden {
    visibility: collapse;
+}
+
+/* To hide a column, add 'hidden' to every cell in the column. visibility: collapse doesn't work here. */
+.table-cell.hidden {
+   display: none;
+}
+
+/* To hide a column, add 'hidden' to every cell in the column. visibility: collapse doesn't work here. */
+.table-cell.hidden {
+   display: none;
 }
 
 /* hack to match Safari-only */
@@ -134,7 +161,7 @@ td.table-cell {
 
 .matrix-cell-text {
    font-size: 10pt;
-   font-family: "GraphikLight", sans-serif;
+   font-family: "Roboto", sans-serif;
    color: rgb(205, 205, 205)
 }
 
@@ -189,10 +216,59 @@ td.table-cell {
    stroke-width: 1;
 }
 
+.para-text + .para-text {
+   margin-top: 0.75em;
+}
+
 .para-text {
    font-size: 10pt;
 }
 
-.para-text span::after {
-  content: " ";
+.bar {
+   stroke-width: 1.0;
+}
+
+.tree-node {
+   display: grid;
+   grid-template-columns: auto 1fr; /* label on left, children on right */
+   gap: 8px;
+   align-items: start;
+}
+
+.tree-children {
+   display: grid;
+   grid-auto-rows: min-content;
+   gap: 4px;
+   border-left: 2px solid #ccc;
+   padding-left: 8px;
+}
+
+.tree-label {
+  background: #f8f8f8;
+  border: 1px solid #ccc;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.node {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px;
+  align-items: start;
+}
+
+.tree-children.columnar {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 12px;
+  row-gap: 4px;
+}
+
+.tree-children.columnar > .tree-node {
+  display: contents; /* flatten to share grid rows */
+}
+
+.tree-children.columnar .tree-children {
+  border-left: none;
+  padding-left: 0;
 }

@@ -1,5 +1,6 @@
-let better = "better" in
-Paragraph [
-   Text "As shown in Table 3, BiLSTM gives significantly  ",
-   Text better
-]
+def better: "better"
+
+Paragraph([
+  Text("As shown in Table 3, BiLSTM gives significantly  "),
+  Text(better)
+])

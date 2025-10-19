@@ -1,4 +1,3 @@
-
 {-
 Welcome to your new Dhall package-set!
 
@@ -88,39 +87,71 @@ let additions =
   , etc.
   }
 -}
-
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.15.4-20220808/packages.dhall sha256:60eee64b04ca0013fae3e02a69fc3b176105c6baa2f31865c67cd5f881a412fd
+      https://github.com/purescript/package-sets/releases/download/psc-0.15.10-20231023/packages.dhall
+        sha256:b9a482e743055ba8f2d65b08a88cd772b59c6e2084d0e5ad854025fa90417fd4
 
-let overrides =
-{ node-fs =
-    upstream.node-fs // {version = "v9.1.0"}
-}
+let overrides = { parsing = upstream.parsing // { version = "v10.3.1" } }
 
 let additions =
-  { toppokki =
-    { dependencies =
-        [ "aff-promise"
-        , "functions"
-        , "node-buffer"
-        , "node-fs"
-        , "prelude"
-        , "record"
-        , "console"
-        , "effect"
-        , "assert"
-        ]
-    , repo =
-      "https://github.com/JosephBond/purescript-toppokki.git"
-    , version =
-         "v4.0.1"
-    }
-
-  , js-promise-aff =
+      { toppokki =
+        { dependencies =
+          [ "aff-promise"
+          , "functions"
+          , "node-buffer"
+          , "node-fs"
+          , "prelude"
+          , "record"
+          , "console"
+          , "effect"
+          , "assert"
+          ]
+        , repo = "https://github.com/JosephBond/purescript-toppokki.git"
+        , version = "v4.0.1"
+        }
+      , js-promise-aff =
         { dependencies = [ "prelude" ]
-        , repo = "https://github.com/purescript-contrib/purescript-js-promise-aff.git"
+        , repo =
+            "https://github.com/purescript-contrib/purescript-js-promise-aff.git"
         , version = "v4.0.0"
         }
-  }
+      , optparse =
+        { dependencies =
+          [ "aff"
+          , "arrays"
+          , "bifunctors"
+          , "console"
+          , "control"
+          , "effect"
+          , "either"
+          , "enums"
+          , "exists"
+          , "exitcodes"
+          , "foldable-traversable"
+          , "free"
+          , "gen"
+          , "integers"
+          , "lazy"
+          , "lists"
+          , "maybe"
+          , "newtype"
+          , "node-buffer"
+          , "node-process"
+          , "node-streams"
+          , "nonempty"
+          , "numbers"
+          , "open-memoize"
+          , "partial"
+          , "prelude"
+          , "quickcheck"
+          , "strings"
+          , "tailrec"
+          , "transformers"
+          , "tuples"
+          ]
+        , repo = "https://github.com/purescript-contrib/purescript-optparse.git"
+        , version = "v6.0.0"
+        }
+      }
 
 in  upstream // overrides // additions

@@ -9,25 +9,24 @@ import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
-import Data.String (null)
+import Data.String (null, trim)
 import Data.Tuple (fst)
 import Desug (desugGC)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
+import Eval (GraphConfig, graphEval, graphGC, toGC, withOp)
 import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
-import Module (parse, prepConfig)
-import Parse (program)
+import Module (prepConfig)
+import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
-import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, withMsg, (×))
-import Val (class Ann, EnvExpr(..), Val)
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, throwLeft, withMsg, (×))
+import Val (class Ann, Env, EnvExpr(..), Val)
 
 type TestSuite m = Array (String × m Unit)
 
@@ -40,11 +39,11 @@ type SelectionSpec =
 fluidSrcPaths :: Array Folder
 fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
-test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
-test file progCxt spec (n × _) = do
-   log' ("**** prepConfig")
+test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw Env -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test file primitives spec (n × _) = do
    fluidSrc <- loadFile fluidSrcPaths file
-   { s, gconfig } <- prepConfig progCxt fluidSrc
+   log' ("**** prepConfig")
+   { s, gconfig } <- prepConfig primitives fluidSrc
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n
@@ -103,11 +102,11 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let in_top = EnvExpr (topOf in_γ) (topOf in_e)
 
    -- empty string somewhat hacky encoding for "don't care"
-   unless (null bwd_expect) $
-      checkPretty ("bwd_expect") bwd_expect in_s
+   unless (null bwd_expect) $ do
+      withMsg "bwd_expect" $ checkPretty bwd_expect in_s
    unless (null fwd_expect) do
       let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
-      checkPretty ("fwd_expect") fwd_expect (report out1)
+      withMsg "fwd_expect" $ checkPretty fwd_expect (report out1)
 
    recordGraphSize g
 
@@ -145,14 +144,14 @@ testPretty :: forall m a. Ann a => Show a => SE.Expr a -> AffError m Unit
 testPretty s = do
    log' ("**** prettyP")
    log' (prettyP s)
-   s' × _ <- withMsg "testPretty" $ parse (prettyP s) program
+   s' × _ <- throwLeft <#> withMsg "testPretty" $ parseProgram (prettyP s)
    unless (eq (erase s) (erase s')) $
       throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
 
-checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
-checkPretty msg expect x =
-   unless (expect `eq` prettyP x) $
-      throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
+checkPretty :: forall a m. Pretty a => String -> a -> EffectError m Unit
+checkPretty expect x = do
+   unless (trim expect `eq` prettyP x) $
+      throw ("checkPretty:\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
 
 testOutcome :: Boolean -> Endo String
 testOutcome b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s

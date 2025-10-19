@@ -1,3 +1,4 @@
-let city = { name: "Germany" };
-    country = { cities: [ "Germany" ] }
-in city.name `elem` country.cities
+def city: { name: "Germany" }
+def country: { cities: ["Germany"] }
+
+city.name |elem| country.cities

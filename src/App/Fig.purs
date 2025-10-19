@@ -6,12 +6,13 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
 import App.Util.Selector (envVal, ViewSetter)
 import App.View (view')
-import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View', drawView)
+import App.View.Util (Direction(..), Fig, Options, HTMLId, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Maybe (Maybe(..), maybe)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set as Set
@@ -22,15 +23,16 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import EvalGraph (graphEval, graphGC, withOp)
+import Eval (graphEval, graphGC, withOp)
 import File (class LoadFile, File(..), FileCxt)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices, dvertices)
+import Graph (class Graph, DVertex, DVertex', Vertex(..), VertexData, dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
-import Module (loadProgCxt, prepConfig)
+import Module (prepConfig)
 import Partial.Unsafe (unsafePartial)
+import Primitive.Defs (primitives)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
@@ -58,7 +60,7 @@ selectOutput δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
       Transient | dir.transient /= LinkedOutputs -> γ × dir { transient = LinkedOutputs }
       _ -> γ × dir
 
-setOutputView :: ViewSetter Fig View'
+setOutputView :: ViewSetter Fig View
 setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw }
 
@@ -71,7 +73,7 @@ selectInput x δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
       Transient | dir.transient /= LinkedInputs -> v × dir { transient = LinkedInputs }
       _ -> v × dir
 
-setInputView :: Var -> ViewSetter Fig View'
+setInputView :: Var -> ViewSetter Fig View
 setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
@@ -85,7 +87,7 @@ selectIntermediate (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final,
       Transient -> γ × v × dir × ι'
       _ -> γ × v × dir × ι
 
-setIntermediateView :: Vertex -> ViewSetter Fig View'
+setIntermediateView :: Vertex -> ViewSetter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
@@ -150,44 +152,36 @@ selectionResult fig@{ dir, v, γ, ι } =
 
 intermediates :: Fig -> Selection (Set DVertex) -> Env (SelStates 𝔹)
 intermediates { spec, in_roots, inerts } αs =
-   flip (maybe empty) spec.query
-      \query ->
-         let
-            ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
-               $ runQuery query
-               $ αs.persistent ∪ αs.transient
-         in
-            rebuildι inerts αs ια
-
-drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
-drawIntermediates divId (Env ι) unused redraw = do
-   let prefix = divId <> "-" <> str.intermediate
-   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
-   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α <> "-doc") >>= remove
-
-   sequence_ $ flip mapWithKey ι \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' str.intermediate (map to𝕊 <$> v) Nothing }
-         (selectIntermediate (Vertex α))
-         (setIntermediateView (Vertex α))
-         redraw
+   flip (maybe empty) spec.query findIntermediates
+   where
+   findIntermediates :: (VertexData -> Maybe (DVertex' (Val Vertex))) -> Env (SelStates Boolean)
+   findIntermediates query = rebuildι inerts αs
+      $ filterKeys (\α -> not (Vertex α ∈ in_roots))
+      $ runQuery query
+      $ αs.persistent ∪ αs.transient
 
 drawFig :: HTMLId -> Fig -> Effect Unit
-drawFig divId fig = do
-   drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
+drawFig divId fig@{ spec: options } = do
+   drawView { divId, suffix: str.output, view: out_view } (selectOutput >>> redraw)
 
-   sequence_ $ flip mapWithKey in_views \x view -> do
-      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
+   sequence_ $ flip mapWithKey in_views \x view ->
+      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x >>> redraw)
 
-   drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
+   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
+   sequence_ $ flip mapWithKey (unwrap ι) \α v ->
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' options str.intermediate (map to𝕊 <$> v) }
+         (selectIntermediate (Vertex α) >>> redraw)
    where
    { v, γ, ι } = selectionResult fig
-   out_view = unsafePartial $ view' str.output v fig.out_view
-   in_views = (\(Env γ) -> unsafePartial (mapWithKey view' γ) <*> fig.in_views) γ
+   out_view = unsafePartial $ view' options str.output v
+   in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' options) γ)
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
+   unused = keys fig.ι \\ keys ι
+   prefix = divId <> "-" <> str.intermediate
 
 drawFile :: File × String -> Effect Unit
 drawFile (File fileName × src) =
-   addEditorView (codeMirrorDiv fileName) >>= drawCode src
+   addEditorView (codeMirrorDiv fileName) >>= loadCode src
 
 unprojExpr :: forall a. BoundedMeetSemilattice a => Raw EnvExpr -> GaloisConnection (Env a) (EnvExpr a)
 unprojExpr (EnvExpr _ e) = GC
@@ -207,10 +201,9 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> String -> m Fig
-loadFig spec@{ inputs, linking } fluidSrc = do
-   progCxt <- loadProgCxt
-   { s, e, gconfig } <- prepConfig progCxt fluidSrc
+loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
+loadFig options@{ inputs, linking } fluidSrc = do
+   { s, e, gconfig } <- prepConfig primitives fluidSrc
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval
@@ -270,7 +263,7 @@ loadFig spec@{ inputs, linking } fluidSrc = do
             γ × v × (dvertices g0 αs)
 
    pure
-      { spec
+      { spec: options
       , s
       , γ: selStates <$> inert.γ <*> unselected.γ <*> unselected.γ
       , v: selStates <$> inert.v <*> unselected.v <*> unselected.v
@@ -293,6 +286,6 @@ loadFig spec@{ inputs, linking } fluidSrc = do
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
 
-drawCode :: String -> EditorView -> Effect Unit
-drawCode s ed =
+loadCode :: String -> EditorView -> Effect Unit
+loadCode s ed =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]

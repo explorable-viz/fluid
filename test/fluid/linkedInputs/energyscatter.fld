@@ -1,25 +1,38 @@
 import dataset.nonRenewables
 
-let isCountry name x = name == x.country;
-    isYear year x = year == x.year;
+def isCountry(name, x): name == x.country
+def isYear(year, x): year == x.year
 
-let plot year countries =
-  let rens = filter (isYear year) renewables;
-      nonRens = filter (isYear year) nonRenewables;
-  let plotCountry country =
-    let rens' = filter (isCountry country) rens;
-        rensOut = sum (map (fun x -> x.output) rens');
-        rensCap = sum (map (fun x -> x.capacity) rens');
-        x = head (filter (isCountry country) nonRens);
-        nonRensCap = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap
-    in {
+def plot(year, countries):
+  def rens:
+    filter(isYear(year), renewables)
+  def nonRens:
+    filter(isYear(year), nonRenewables)
+
+  def plotCountry(country):
+    def rens':
+      filter(isCountry(country), rens)
+    def rensOut:
+      sum(map(lambda x: x.output, rens'))
+    def rensCap:
+      sum(map(lambda x: x.capacity, rens'))
+    def x:
+      head(filter(isCountry(country), nonRens))
+    def nonRensCap:
+      ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
+
+    {
       x: rensCap / (rensCap + nonRensCap),
       y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
     }
-  in map plotCountry countries
 
-in ScatterPlot {
+  map(plotCountry, countries)
+
+ScatterPlot({
   caption: "Clean energy efficiency vs. proportion of renewable energy capacity",
-  points: plot 2018 [ "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA" ],
-  labels: { x: "Renewables/TotalEnergyCap", y: "Clean Capacity Factor" }
-}
+  points: plot(2018, [ "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA" ]),
+  labels: {
+    x: "Renewables/TotalEnergyCap",
+    y: "Clean Capacity Factor"
+  }
+})

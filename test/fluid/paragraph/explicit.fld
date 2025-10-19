@@ -1,3 +1,4 @@
--- Explicit Paragraph constructor (valid in Surface language)
-let name = "Alice" in
-Paragraph [ Text "Hi ", Text name, Text "!" ]
+def name: "Alice"
+
+# Mix of implicit and explicit coercions
+Paragraph([Text("Hi "), name, 5, "+", numToStr(6), "is", Text(numToStr(5 + 11))])

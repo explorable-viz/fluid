@@ -21,34 +21,27 @@ import Test.Specs.Misc (misc_cases)
 import Test.Specs.Paragraph (paragraph_cases)
 import Test.Util (TestSuite, fluidSrcPaths)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite)
+import Test.Util.Suite (BenchSuite, SuiteFactory, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite)
 import Util ((×))
 
 main :: Effect Unit
 main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> allTests)
 
+tests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
+tests = allTests
+
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 scratchpad = second void <$> suite paragraph_cases (1 × false)
 
-selectedCommentsTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
-selectedCommentsTests = second void <$> suite selectedCases (1 × false)
-   where
-   selectedNames =
-      [ "comments/nested-constr.fld"
-      -- , "comments/dicts.fld"
-      -- , "comments/app-arg.fld"
-      -- , "comments/list-comp.fld"
-      -- , "comments/app.fld"
-      -- , "comments/int.fld"
-      -- , "comments/projection.fld"
-      ]
-   selectedCases = filter (\c -> c.file `elem` selectedNames) comments_cases
+filterSuite :: forall m r. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Array { file :: String | r } -> SuiteFactory r m -> TestSuite m
+filterSuite files cases makeSuite =
+   second void <$> makeSuite (filter (\c -> c.file `elem` files) cases) (1 × false)
 
 allTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
-allTests =
-   concat (benchmarks <#> asTestSuite)
-      <> linkedOutputsSuite linkedOutputs_cases
-      <> linkedInputsSuite linkedInputs_cases
+allTests = concat (benchmarks <#> asTestSuite) <> linkingTests
+
+linkingTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
+linkingTests = linkedOutputsSuite linkedOutputs_cases <> linkedInputsSuite linkedInputs_cases
 
 asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
 asTestSuite suite = second void <$> suite (1 × false)

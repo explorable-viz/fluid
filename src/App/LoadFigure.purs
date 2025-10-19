@@ -2,11 +2,9 @@ module App.LoadFigure where
 
 import Prelude hiding (absurd)
 
-import Affjax.ResponseFormat (json)
-import Affjax.Web (get, printError)
 import App.Fig (drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
-import App.View.Util (FigSpec)
+import App.View.Util (Filter, Options)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Decode.Error (JsonDecodeError)
@@ -16,7 +14,7 @@ import Data.Maybe (Maybe(..))
 import Data.String (split, Pattern(..))
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff_)
+import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import File (File(..), FileCxt(..), Folder(..), loadFileFromPath)
 import Graph (DVertex'(..))
@@ -24,15 +22,17 @@ import Module.Web (runWebT)
 import Util (definitely, definitely', error, (×))
 import Val (Val(..), asVal)
 
-type JsonSpec =
+-- TODO: remove this extra type
+type JsonOptions =
    { fluidSrcPath :: Array String
    , inputs :: Array String
    , query :: Boolean
    , linking :: Boolean
+   , rowFilter :: Maybe Filter
    }
 
-figSpecFromJson :: JsonSpec -> FigSpec
-figSpecFromJson spec@{ inputs, query, linking } =
+optionsFromJson :: JsonOptions -> Options
+optionsFromJson spec@{ inputs, query, linking, rowFilter } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , inputs
    , query:
@@ -42,49 +42,31 @@ figSpecFromJson spec@{ inputs, query, linking } =
               _ -> Nothing
         else Nothing
    , linking
+   , rowFilter
    }
 
-loadSpec :: String -> Aff Json
-loadSpec filename = do
-   result <- get json filename
-   case result of
-      Left err -> error ("Json fetching failed with " <> printError err)
-      Right response -> pure $ response.body
-
-loadFigure :: String -> String -> Effect Unit
-loadFigure specFile srcFile = launchAff_ do
-   jsonSpec <- loadSpec specFile
-   liftEffect $ loadFigureSpec jsonSpec srcFile
-
-loadFigureSrc :: String -> String -> Effect Unit
-loadFigureSrc specFile fluidSrc = launchAff_ do
-   jsonSpec <- loadSpec specFile
-   liftEffect $ loadFigureSpecSrc jsonSpec fluidSrc
-
-loadFigureSpec :: Json -> String -> Effect Unit
-loadFigureSpec jsonSpec srcFile = launchAff_ do
+loadFigure :: Json -> String -> String -> Effect Unit
+loadFigure jsonSpec divId srcFile = launchAff_ do
    fluidSrc <- loadFileFromPath (File srcFile)
-   liftEffect $ loadFigureSpecSrc jsonSpec (definitely' fluidSrc)
+   liftEffect $ loadFigureSrc jsonSpec divId (definitely' fluidSrc)
 
-loadFigureSpecSrc :: Json -> String -> Effect Unit
-loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
-   [ case decodeJson jsonSpec :: Either JsonDecodeError JsonSpec of
+-- TODO: runAffs_ overkill as always a singleton
+loadFigureSrc :: Json -> String -> String -> Effect Unit
+loadFigureSrc options divId fluidSrc = runAffs_ (uncurry drawFig)
+   [ case decodeJson options :: Either JsonDecodeError JsonOptions of
         Left err -> error ("JSON decoding failed with " <> show err)
         Right spec -> do
-           let figSpec@{ fluidSrcPaths } = figSpecFromJson spec
-           ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec fluidSrc)
+           let figSpec@{ fluidSrcPaths } = optionsFromJson spec
+           (divId × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec fluidSrc)
    ]
 
-drawCode :: String -> Effect Unit
-drawCode file = launchAff_ do
+loadCode :: String -> Effect Unit
+loadCode file = launchAff_ do
    fluidSrc <- loadFileFromPath (File file)
-   liftEffect $ drawFile (File (definitely errEmptyName filename) × definitely errNotFound fluidSrc)
+   liftEffect $ drawFile (File filename × definitely ("loadCode: File not found: " <> file) fluidSrc)
    where
-   filename :: Maybe String
-   filename = do
+   filename :: String
+   filename = definitely ("loadCode: Filename cannot be empty: " <> file) do
       splitPath <- last (split (Pattern "/") file)
       filename_ <- head (split (Pattern ".") splitPath)
       if filename_ == "" then Nothing else pure filename_
-
-   errEmptyName = "drawCode: Filename cannot be empty: " <> file
-   errNotFound = "drawCode: File not found: " <> file

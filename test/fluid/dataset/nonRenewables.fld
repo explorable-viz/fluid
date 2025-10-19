@@ -1,2 +1,5 @@
-let renewables = loadJson "dataset/renewables-new.json";
-let nonRenewables = loadJson "dataset/non-renewables.json";
+def renewables:
+  loadJson("dataset/renewables-new.json")
+
+def nonRenewables:
+  loadJson("dataset/non-renewables.json")

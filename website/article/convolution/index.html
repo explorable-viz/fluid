@@ -75,16 +75,23 @@
          <div></div>
       </div>
       <details>
-         <summary>matrix.fld</summary>
-         <div id="codemirror-matrix"></div>
+         <summary>convolution.fld</summary>
+         <div id="codemirror-convolution"></div>
       </details>
    </div>
 </div>
 
 <script type="module">
-   import { loadFigure, drawCode } from "../shared/load-figure.js"
-   drawCode("../fluid/lib/matrix.fld")()
-   loadFigure("spec.json")("../fluid/convolution.fld")()
+   import { loadFigure, loadCode } from "../shared/load-figure.js"
+   const jsonSpec = {
+      "fluidSrcPath": ["../fluid"],
+      "inputs": [ "inputImage", "filter" ],
+      "query": true,
+      "linking": false
+   }
+
+   loadCode("../fluid/convolution.fld")()
+   loadFigure(jsonSpec)("fig")("../fluid/convolution.fld")()
 </script>
 </body>
 </html>

@@ -1,6 +1,0 @@
-{
-    "fluidSrcPath": ["../fluid"],
-    "inputs": [ "inputImage", "filter" ],
-    "query": true,
-    "linking": false
-}

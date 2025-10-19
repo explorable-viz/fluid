@@ -10,6 +10,7 @@
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
+   <script src="/shared-html/util.js"></script>
    <script>
       loadHeader()
       loadSubHeader()
@@ -105,20 +106,22 @@
          <summary>matrix.fld</summary>
          <div id="codemirror-matrix"></div>
       </details>
-      <details>
-         <summary>emboss.fld</summary>
-         <div id="codemirror-emboss"></div>
-      </details>
 
       <p class="right-justified"><a href="../convolution-wrapped/">continued..</a></p>
    </div>
 </div>
 
 <script type="module">
-   import { loadFigure, drawCode } from "/shared/load-figure.js"
-   drawCode("../fluid/lib/matrix.fld")()
-   drawCode("../fluid/convolution/emboss.fld")()
-   loadFigure("spec.json")("../fluid/convolution/emboss.fld")()
+   import { loadFigure, loadCode } from "/shared/load-figure.js"
+   const spec = {
+      "fluidSrcPath": ["../fluid"],
+      "inputs": [ "inputImage", "filter" ],
+      "query": false,
+      "linking": false
+   }
+
+   loadCode("../fluid/lib/matrix.fld")()
+   loadFigure(spec)("fig")("../fluid/convolution.fld")()
 </script>
 </body>
 </html>

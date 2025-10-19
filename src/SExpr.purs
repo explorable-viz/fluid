@@ -22,7 +22,7 @@ import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd, uncurry)
 import Data.Unfoldable (replicate)
-import DataType (Ctr, DataType, arity, cCons, cText, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
+import DataType (Ctr, DataType, arity, cCons, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
 import Effect.Exception (Error)
@@ -259,7 +259,7 @@ paragraphElemsFwd
 paragraphElemsFwd Nil = pure (enil bot)
 paragraphElemsFwd (Token s : elems) = do
    e' <- paragraphElemsFwd elems
-   pure (econs bot (E.Constr bot cText (E.Str bot s : Nil)) e')
+   pure (econs bot (E.Str bot s) e')
 paragraphElemsFwd (Unquote s : elems) = do
    e <- desug s
    e' <- paragraphElemsFwd elems
@@ -274,7 +274,7 @@ paragraphElemsBwd
 paragraphElemsBwd (E.Constr _ c Nil) Nil | c == cNil = Nil
 paragraphElemsBwd (E.Constr _ c (e : e' : Nil)) (elem : elems) | c == cCons =
    case elem, e of
-      Token _, E.Constr _ c' (E.Str _ s : Nil) | c' == cText ->
+      Token _, E.Str _ s ->
          Token s : paragraphElemsBwd e' elems
       Unquote s, _ ->
          Unquote (desugBwd e s) : paragraphElemsBwd e' elems

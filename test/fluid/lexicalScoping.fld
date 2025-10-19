@@ -1,3 +1,7 @@
-let decr = let x = 2 in flip (-) x;
-    x = 8 in
-numToStr (decr x)
+def decr:
+  def x: 2
+
+  flip((-), x)
+def x: 8
+
+numToStr(decr(x))

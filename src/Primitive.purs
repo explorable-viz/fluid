@@ -16,7 +16,7 @@ import Lattice (class BoundedJoinSemilattice, bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), error, singleton, (×))
-import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, Op, Val(..))
+import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, Op, Val(..), val)
 
 -- Mediate between wrapped values and underlying datatype d. Wasn't able to make a typeclass version
 -- work with required higher-rank polymorphism.
@@ -170,7 +170,7 @@ binary id f =
 
    op' :: Partial => Op
    op' (Val α _ v1 : Val β _ v2 : Nil) =
-      new (flip Val Nothing) (singleton α # insert β) $ f.o.pack v'
+      val (singleton α # insert β) $ f.o.pack v'
       where
       v' = f.fwd (f.i1.unpack v1) (f.i2.unpack v2)
 
@@ -184,7 +184,7 @@ binaryZero id f =
 
    op' :: Partial => Op
    op' (Val α _ v1 : Val β _ v2 : Nil) =
-      new (flip Val Nothing) αs $ f.o.pack v'
+      val αs $ f.o.pack v'
       where
       x × y = f.i.unpack v1 × f.i.unpack v2
       v' = f.fwd x y

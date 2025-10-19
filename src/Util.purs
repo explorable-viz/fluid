@@ -4,13 +4,14 @@ import Prelude hiding (absurd)
 
 import Control.Alt ((<|>))
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, liftEither, throwError)
 import Control.Monad.Except (Except, ExceptT, runExcept)
 import Control.MonadPlus (class Alt, class Alternative, guard)
 import Data.Array ((!!), updateAt)
 import Data.Array as A
 import Data.Array.NonEmpty (NonEmptyArray, fromArray)
 import Data.Array.NonEmpty as NEA
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
 import Data.Functor.Compose (Compose)
@@ -40,6 +41,7 @@ import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Foreign.Object as Object
+import Test.Util.Debug (checking)
 
 debug
    :: { logging :: Boolean -- logging via "log"; requires an effect context
@@ -157,6 +159,9 @@ orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
 orElse s Nothing = throw s
 orElse _ (Just x) = pure x
 
+throwLeft :: forall a e m. MonadError Error m => Show e => Either e a -> m a
+throwLeft = liftEither <<< lmap (E.error <<< show)
+
 defined :: forall a. MayFail a -> a
 defined = runExcept >>> case _ of
    Right x -> x
@@ -183,10 +188,7 @@ mayEq :: forall a. Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
 
 mustEq :: forall a. Eq a => Show a => a -> Endo a
-mustEq x x' = definitely (show x <> " equal to " <> show x') (x ≟ x')
-
-mustGeq :: forall a. Ord a => Show a => a -> Endo a
-mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >= x') x)
+mustEq x x' = assertWhen checking.mustEq "mustEq" (\_ -> x == x') x
 
 unionWithMaybe :: forall a b. Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = M.unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
@@ -197,7 +199,6 @@ mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')
 infixl 4 mayEq as ≟
 infixl 4 mayFailEq as ≞
 infixl 4 mustEq as ≜
-infixl 4 mustGeq as ⪄
 
 -- could be more efficient
 intersperse :: forall a. a -> Endo (List a)

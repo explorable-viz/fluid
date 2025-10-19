@@ -1,3 +1,5 @@
-let (x, y) = (3, 3);
-    yss = [| 0 | (i, j) in (x, y) |]
-in dims yss
+def (x, y): (3, 3)
+def yss:
+  [| 0 for (i, j) in (x, y) |]
+
+dims(yss)

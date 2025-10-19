@@ -1,6 +1,0 @@
-{
-    "fluidSrcPath": ["../fluid"],
-    "inputs": ["nonRenewables"],
-    "query": false,
-    "linking": true
-}

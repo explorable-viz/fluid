@@ -5,7 +5,7 @@ import Prelude hiding (join)
 import App.Util (SelStates, Selectable, 𝕊, classes, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
 import App.View.Text (class Textual, textAttrs)
-import App.View.Util (class View, Select, registerMouseListeners)
+import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Data.Foldable (foldr)
@@ -25,7 +25,9 @@ data Link = Link (Val (SelStates 𝕊)) (Selectable String)
 linkContents :: Link -> String
 linkContents (Link _ (s × _)) = s
 
-instance View Link Unit where
+instance Viewable Link Unit where
+   isLeaf = const true
+
    createElement :: Unit -> Link -> D3.Selection -> Effect D3.Selection
    createElement _ link parent = do
       rootElement <- parent # create D3.Text [ classes [ "link" ] ]
@@ -35,11 +37,11 @@ instance View Link Unit where
    setSelection _ link redraw rootElement = do
       listener <- eventListener (redraw <<< uncurry selLink <<< selectionEventData')
       rootElement # setStyles (textAttrs link) >>= registerMouseListeners listener
-
-selLink :: ViewSelSetter Link
-selLink _ δv = unsafePartial $ case _ of
-   (Val α doc (Constr c (v1 : v2 : Nil))) | c == cLink ->
-      first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
+      where
+      selLink :: ViewSelSetter Link
+      selLink _ δv = unsafePartial $ case _ of
+         (Val α doc (Constr c (v1 : v2 : Nil))) | c == cLink ->
+            first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
 
 instance Textual Link where
    getText (Link v (s × _)) = s × foldr join bot v

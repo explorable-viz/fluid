@@ -36,6 +36,7 @@ type CheckingConfig =
    , inputsAreSinks :: Boolean
    , outputsInGraph :: Boolean
    , allocRoundTrip :: Boolean
+   , mustEq :: Boolean
    }
 
 checkingDefaults :: CheckingConfig
@@ -45,9 +46,10 @@ checkingDefaults =
    , inputsAreSinks: false
    , outputsInGraph: false
    , allocRoundTrip: false
+   , mustEq: false
    }
 
--- Should be set to true except when there are specific outstanding problems.
+-- Should be set to false except when there are specific outstanding problems.
 type TestingConfig =
    { fwdPreservesTop :: Boolean
    , bwdDuals :: Boolean

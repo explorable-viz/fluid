@@ -10,6 +10,7 @@
    <link href="css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
+   <script src="/shared-html/util.js"></script>
    <script>
       loadHeader()
       loadSubHeader()
@@ -113,9 +114,16 @@
 </div>
 
 <script type="module">
-   import { drawCode, loadFigure } from "/shared/load-figure.js"
-   drawCode("fluid/non-renewables.fld")()
-   loadFigure("spec.json")("fluid/non-renewables.fld")()
+   import { loadCode, loadFigure } from "/shared/load-figure.js"
+   const spec = {
+      "fluidSrcPath": ["fluid"],
+      "inputs": ["nonRenewables"],
+      "query": false,
+      "linking": true
+   }
+
+   loadCode("fluid/non-renewables.fld")()
+   loadFigure(spec)("fig")("fluid/non-renewables.fld")()
 </script>
 </body>
 </html>

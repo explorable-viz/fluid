@@ -2,4 +2,4 @@ import lib.matrix
 import slicing.convolution.filter.edgeDetect
 import slicing.convolution.testImage
 
-convolve inputImage filter extend
+convolve(inputImage, filter, extend)

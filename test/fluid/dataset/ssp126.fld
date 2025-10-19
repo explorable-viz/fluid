@@ -1,1 +1,2 @@
-let ssp126 = loadJson "dataset/ssp126-2081-2100.json";
+def ssp126:
+  loadJson("dataset/ssp126-2081-2100.json")

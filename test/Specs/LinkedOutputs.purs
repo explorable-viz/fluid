@@ -17,11 +17,12 @@ linkedOutputs_spec1 =
         , inputs: [ "renewables" ]
         , query: Nothing
         , linking: true
+        , rowFilter: Nothing
         }
-   , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 select))
+   , δ_out: multiViewEntry 0 (barChart (barSegment 1 0 select))
    , out_expect:
-        multiViewEntry "barChart" (barChart (barSegment 1 0 select))
-           >.> multiViewEntry "lineChart"
+        multiViewEntry 0 (barChart (barSegment 1 0 select))
+           >.> multiViewEntry 1
               ( lineChart
                    ( dictVal f_plots
                         ( listElement 0 (linePoint 2 (dictVal f_y select))
@@ -42,11 +43,12 @@ linkedOutputs_spec2 =
         , inputs: [ "nonRenewables" ]
         , query: Nothing
         , linking: true
+        , rowFilter: Nothing
         }
-   , δ_out: multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+   , δ_out: multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
    , out_expect:
-        multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
-           >.> multiViewEntry "scatterPlot"
+        multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+           >.> multiViewEntry 1
               ( scatterPlot
                    ( scatterPoint 4 (dictVal f_y select)
                         >.> scatterPoint 6 (dictVal f_y select)
@@ -62,6 +64,7 @@ movingAverages_spec =
         , inputs: [ "methane" ]
         , query: Nothing
         , linking: true
+        , rowFilter: Nothing
         }
    , δ_out: identity >>> (_ × Persistent) -- TODO: make this a non-trivial test
    , out_expect: identity >>> (_ × Persistent)
@@ -75,6 +78,7 @@ linkedOutputs_cases =
           , inputs: [ "data" ]
           , query: Nothing
           , linking: true
+          , rowFilter: Nothing
           }
      , δ_out: snd select
      , out_expect: select
@@ -86,6 +90,7 @@ linkedOutputs_cases =
           , inputs: [ "data" ]
           , query: Nothing
           , linking: true
+          , rowFilter: Nothing
           }
      , δ_out: fst (matrixElement 2 2 select)
      , out_expect:

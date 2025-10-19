@@ -2,24 +2,24 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, Attrs, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
+import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, contents, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
-import App.View.Util (class View, Select, registerMouseListeners)
-import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
+import App.View.Util (class Viewable, Select, registerMouseListeners)
+import App.View.Util.Axes (Orientation, create_xAxis, create_yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
 import Data.Array (concat, elemIndex, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
-import Data.Foldable (for_, length)
+import Data.Foldable (length)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (f_plots)
-import Effect (Effect)
+import Effect (Effect, foreachE)
 import Lattice ((∨), (∧))
 import Util (type (×), Endo, definitely', init, nonEmpty, tail, zipWith, (!), (×))
 import Web.Event.EventTarget (eventListener)
@@ -58,19 +58,21 @@ type PointCoordinate = { i :: Int, j :: Int }
 type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 
-instance View LineChart Unit where
+instance Viewable LineChart Unit where
+   isLeaf = const false
+
    setSelection :: Unit -> LineChart -> Select -> D3.Selection -> Effect Unit
    setSelection _ (LineChart { plots }) redraw rootElement = do
       points <- rootElement # selectAll ".linechart-point"
       listener <- eventListener (redraw <<< uncurry pointSel <<< selectionEventData')
 
-      for_ points \point -> do
+      foreachE points \point -> do
          point' <- datum point
          point # setAttrs (pointAttrs point') >>= registerMouseListeners listener
       segments <- rootElement # selectAll ".linechart-segment"
-      for_ segments \segment -> do
+      foreachE segments \segment -> do
          segment' <- datum segment
-         segment # setAttrs (segmentAttrs segment')
+         void $ segment # setAttrs (segmentAttrs segment')
 
       where
       pointAttrs :: PointCoordinate -> Attrs
@@ -154,24 +156,15 @@ instance View LineChart Unit where
       createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
       createAxes range parent' = do
          let Point { x: xLabels, y: yLabels } = tickLabels
-         x <- xAxis (to range) (nub points.x) =<<
-            (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
-         when (fst xLabels == Rotated) do
-            labels <- x # selectAll "text"
-            for_ labels $
-               setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
-         y <- yAxis (to range) 3.0 =<< (parent' # create G [ classes [ "y-axis" ] ])
-         when (fst yLabels == Rotated) do
-            labels <- y # selectAll "text"
-            for_ labels $
-               setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "end" ]
+         x <- create_xAxis parent' (to range) (nub points.x) (unwrap range).height (contents xLabels)
+         y <- create_yAxis parent' (to range) 3.0 1 (contents yLabels)
          pure { x, y }
 
       createLines :: Dimensions Int -> D3.Selection -> Effect Unit
       createLines range parent' =
-         for_ (concat $ mapWithIndex segments plots)
+         foreachE (concat $ mapWithIndex segments plots)
             \({ start, end } × segmentCoords) ->
-               parent' #
+               void $ parent' #
                   ( create Path [ classes [ "linechart-segment" ], "d" ↦ line (to range) [ start, end ] ]
                        >=> setDatum segmentCoords
                   )
@@ -189,8 +182,8 @@ instance View LineChart Unit where
 
       createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
       createPoints range parent' =
-         for_ entries \(Point { x, y } × { i, j }) ->
-            parent' #
+         foreachE entries \(Point { x, y } × { i, j }) ->
+            void $ parent' #
                ( create Circle
                     [ classes [ "linechart-point" ]
                     , "stroke-width" ⟼ 1
@@ -212,14 +205,14 @@ instance View LineChart Unit where
          void $ legend' # create Rect
             [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
          let circle_centre = lineHeight / 2 - point_smallRadius / 2
-         for_ entries \{ i, name } -> do
+         foreachE entries \{ i, name } -> do
             g <- legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y i } ]
             void $ g #
                -- align text with boxes
                ( create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ]
                     >=> setText name
                )
-            g # create Circle
+            void $ g # create Circle
                [ "fill" ↦ nameCol (definitely' $ elemIndex name (names plots))
                , "r" ⟼ point_smallRadius
                , "cx" ⟼ circle_centre

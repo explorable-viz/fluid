@@ -1,0 +1,54 @@
+def ordinalMap: [
+  { lastDigit: 1, suffix: "st" },
+  { lastDigit: 2, suffix: "nd" },
+  { lastDigit: 3, suffix: "rd" }
+]
+
+def ordinal(n):
+  if n <= 0:
+    error("n <= 0 not supported")
+  else:
+    if n < 4:
+      numToStr(n) ++ findWithKey_("lastDigit", n, ordinalMap).suffix
+    else:
+      if n >= 4 |and| n <= 20:
+         numToStr(n) ++ "th"
+      else:
+        error("n > 20 not supported")
+
+def rankLabel(word, n):
+  def prefix:
+    if n == 1: ""
+    else: ordinal(n) ++ "-"
+  prefix ++ word
+
+def trendWord(n1, n2, compareWord):
+  compareWord(compare(n1, n2))
+
+def growShrink(EQ): "unchanging"
+def growShrink(LT): "shrinking"
+def growShrink(GT): "growing"
+
+def smallerHigher(EQ): "equal"
+def smallerHigher(LT): "smaller"
+def smallerHigher(GT): "larger"
+
+def improve(EQ): "does not further improve"
+def improve(LT): "does not further improve"
+def improve(GT): "further improves"
+
+def improvements(EQ): "no further improvements"
+def improvements(LT): "no further improvements"
+def improvements(GT): "further improvements"
+
+def shorterLonger(EQ): "equal"
+def shorterLonger(LT): "shorter"
+def shorterLonger(GT): "longer"
+
+def betterWorse(EQ): "equal"
+def betterWorse(LT): "worse"
+def betterWorse(GT): "better"
+
+def underOverPerforming(EQ): "performing the same as"
+def underOverPerforming(LT): "performing worse than"
+def underOverPerforming(GT): "outperforming"

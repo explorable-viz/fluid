@@ -1,1 +1,1 @@
-[ z | let z = 5 ]
+[z for z in [5]]

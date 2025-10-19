@@ -61,6 +61,17 @@ export function createChild (parent) {
       }
    }
 }
+
+export function createText (parent) {
+   return text => {
+      return () => {
+        return parent.append(() => {
+          return document.createTextNode(text)
+        })
+      }
+   }
+}
+
 export function remove (element) {
    return () => {
       element.remove()
@@ -80,7 +91,7 @@ export function xAxis (to) {
    return ticks => {
       return parent => {
          return () => {
-            return parent.call(d3.axisBottom(to.x))
+            return parent.call(d3.axisBottom(to.x).ticks(ticks.length).tickFormat(d => d))
          }
       }
    }
@@ -88,10 +99,12 @@ export function xAxis (to) {
 
 export function yAxis (to) {
    return nTicks => {
-      return parent => {
-         return () => {
-            return parent.call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(nTicks).tickFormat(d3.format('.1f')))
-         }
+      return decPlaces => {
+        return parent => {
+          return () => {
+              return parent.call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(nTicks).tickFormat(d3.format(`.${decPlaces}f`)))
+          }
+        }
       }
    }
 }

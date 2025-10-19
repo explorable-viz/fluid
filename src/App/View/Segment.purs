@@ -2,21 +2,21 @@ module App.View.Segment where
 
 import Prelude
 
-import App.Util (Attrs, Dimensions, Selectable, 𝕊(..), classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
+import App.Util (Attrs, Dimensions(..), Selectable, 𝕊(..), classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
 import App.Util.Selector (nthSegment)
-import App.View.Util (class View, Select, registerMouseListeners)
+import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), bandwidth, colorScale, create, setAttrs)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
 import Data.Int (toNumber)
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype)
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Util (Endo)
 import Web.Event.EventTarget (eventListener)
 
 newtype Segment = Segment
-   { y :: Selectable String
+   { y :: Selectable String -- overloading of y here and in SegmentContext needs fixing
    , z :: Selectable Number
    }
 
@@ -31,14 +31,16 @@ type SegmentContext =
    , y_index :: Int
    }
 
-instance View Segment SegmentContext where
+instance Viewable Segment SegmentContext where
+   isLeaf = const false
+
    createElement :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
-   createElement { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
+   createElement { interior: Dimensions { height }, scales, strokeWidth, x, y } (Segment { z }) parent =
       parent
          # create Rect
               [ "x" ⟼ scales.x x
               , "y" ⟼ scales.y (contents z + y)
-              , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y (contents z)
+              , "height" ⟼ max (toNumber (height - strokeWidth / 2) - scales.y (contents z)) 0.0
               , "stroke-width" ⟼ strokeWidth
               , "width" ⟼ bandwidth scales.x
               , classes [ "bar" ]
@@ -59,8 +61,8 @@ instance View Segment SegmentContext where
          , "stroke-width" ↦ "1"
          , "stroke-dasharray" ↦ case transient of
               None -> "none"
-              Secondary -> "0.5 1" -- "1 2"
-              Primary -> "0.5 1" -- "2 2"
+              Secondary -> "1 2" -- "0.5 1"
+              Primary -> "1 2" -- "0.5 1"
          , "stroke-linecap" ↦ "round"
          , "stroke" ↦
               if persistent /= None || transient /= None then colorShade col' (-70)

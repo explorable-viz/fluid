@@ -6,7 +6,7 @@ import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
-import Data.Array (concat, (!!))
+import Data.Array (concat, fromFoldable, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
@@ -15,6 +15,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, unions)
 import Data.Set as Set
+import Data.String (joinWith)
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict)
@@ -26,12 +27,12 @@ import File (class LoadFile, FileCxt)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
-import Graph.WithGraph (class MonadWithGraphAlloc)
+import Graph.WithGraph (class MonadWithGraphAlloc, new)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
+import Pretty.Doc (Doc, text)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
-import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
 
 data Val a = Val a (Maybe (Val a)) (BaseVal a)
@@ -44,6 +45,9 @@ data BaseVal a
    | Dictionary (DictRep a)
    | Matrix (MatrixRep a)
    | Fun (Fun a)
+
+val :: forall m. MonadWithGraphAlloc m => Set Vertex -> BaseVal Vertex -> m (Val Vertex)
+val = new (flip Val Nothing)
 
 asVal :: VertexData -> Maybe (Val Vertex)
 asVal e = if unpack typeName e == "Val" then Just (unpack unsafeCoerce e) else Nothing
@@ -107,14 +111,15 @@ data EnvExpr a = EnvExpr (Env a) (Expr a)
 -- Goes from smaller environment to larger (injection into a biproduct).
 unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
 unrestrictGC γ xs =
-   assertWith (show xs' <> " are in environment ") (isEmpty xs') $ GC
+   assertWith ("Variable(s) " <> joinWith ", " (fromFoldable unfound <#> show) <> " are in environment ")
+      (isEmpty unfound) $ GC
       { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ (topOf γ \\ γ')
       , bwd: \γ' -> assert (keys γ' == keys γ) $ restrict xs γ'
 
       }
    where
-   xs' :: Set Var
-   xs' = xs \\ keys γ
+   unfound :: Set Var
+   unfound = xs \\ keys γ
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (Set.toUnfoldable xs) empty
@@ -160,10 +165,10 @@ instance Highlightable Unit where
 
 instance Highlightable Boolean where
    highlightIf false = identity
-   highlightIf true = \doc -> text "⸨" `beside` doc `beside` text "⸩"
+   highlightIf true = \doc -> text "⸨" <> doc <> text "⸩"
 
 instance Highlightable Vertex where
-   highlightIf (Vertex α) = \doc -> doc `beside` text "_" `beside` text ("⟨" <> α <> "⟩")
+   highlightIf (Vertex α) = \doc -> doc <> text "_" <> text ("⟨" <> α <> "⟩")
 
 -- ======================
 -- boilerplate

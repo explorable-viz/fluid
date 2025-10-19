@@ -52,8 +52,8 @@ some = constr cSome
 multiView :: SelSetter Val Val
 multiView = constrArg cMultiView 0
 
-multiViewEntry :: String -> SelSetter Val Val
-multiViewEntry x = dictVal x >>> multiView
+multiViewEntry :: Int -> SelSetter Val Val
+multiViewEntry n = listElement n >>> multiView
 
 lineChart :: SelSetter Val Val
 lineChart = constrArg cLineChart 0

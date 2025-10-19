@@ -11,3 +11,4 @@ output-es/
 .psc-ide-port
 .vscode/
 artifact/*.tar.gz
+.ipynb_checkpoints/

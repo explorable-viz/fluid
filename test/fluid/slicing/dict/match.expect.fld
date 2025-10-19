@@ -1,6 +1,4 @@
-let f {fst : x,
-        snd : []} = x;
-    f {fst : x,
-        snd : (y : ys)} = y in
-⸨{⸨a⸩ : f {snd : [],
-                fst : ⸨2⸩}}⸩
+def f({ fst: x, snd: [] }): x
+def f({ fst: x, snd: y :| ys }): y
+
+⸨{ ⸨a⸩: f({ snd: [], fst: ⸨2⸩ }) }⸩

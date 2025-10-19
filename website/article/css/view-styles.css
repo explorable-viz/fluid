@@ -13,6 +13,10 @@
    font-size: 9pt;
 }
 
+.table-caption {
+   border-bottom: 0.5px solid lightgray;
+}
+
 .table-view th {
    font-size: 11px;
    text-align: left;
@@ -32,7 +36,6 @@ table {
 }
 
 thead {
-   border-top: 0.5px solid lightgray;
 }
 
 .table-cell {
@@ -57,7 +60,6 @@ td.table-cell {
 
 .table-cell.selected-primary-transient {
    color: blue;
-   font-weight: 600;
 }
 
 .table-cell.selected-secondary-transient {
@@ -70,6 +72,11 @@ td.table-cell {
 
 .table-row.hidden {
    visibility: collapse;
+}
+
+/* To hide a column, add 'hidden' to every cell in the column. visibility: collapse doesn't work here. */
+.table-cell.hidden {
+   display: none;
 }
 
 /* hack to match Safari-only */
@@ -134,7 +141,7 @@ td.table-cell {
 
 .matrix-cell-text {
    font-size: 10pt;
-   font-family: "GraphikLight", sans-serif;
+   font-family: "Roboto", sans-serif;
    color: rgb(205, 205, 205)
 }
 
@@ -193,6 +200,6 @@ td.table-cell {
    font-size: 10pt;
 }
 
-.para-text span::after {
-  content: " ";
+.bar {
+   stroke-width: 1.5;
 }

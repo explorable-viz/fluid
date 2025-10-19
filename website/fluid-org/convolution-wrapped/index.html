@@ -10,6 +10,7 @@
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
+   <script src="/shared-html/util.js"></script>
    <script>
       loadHeader()
       loadSubHeader()
@@ -46,7 +47,14 @@
 
 <script type="module">
    import { loadFigure } from "/shared/load-figure.js"
-   loadFigure("spec.json")("../fluid/convolution/emboss-wrap.fld")()
+   const spec = {
+      "fluidSrcPath": ["../fluid"],
+      "inputs": [ "inputImage", "filter" ],
+      "query": false,
+      "linking": true
+   }
+
+   loadFigure(spec)("fig")("../fluid/convolution-wraped.fld")()
 </script>
 </body>
 </html>
