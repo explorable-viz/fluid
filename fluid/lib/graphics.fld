@@ -163,14 +163,12 @@ def axis(orient, x, start, end):
   def ys:
     iterate(n, (+)(tickSp), firstTick)
   def ys:
-    match firstTick > start:
-      case True: start :| ys
-      case False: ys
+    if firstTick > start: start :| ys
+    else: ys
   def ys:
-    match lastTick > end:
-      case True:
-        concat2(ys, [lastTick])
-      case False: ys
+    if lastTick > end:
+      concat2(ys, [lastTick])
+    else: ys
   def ps:
     map(mkPoint(orient, x), ys)
   def ax:
@@ -224,16 +222,12 @@ def lineChart(withAxes, colours, x_start, data):
   def y_finish:
     maximum(flip(map, data, lambda (_, kvs): maximum(map(snd, kvs))))
 
-  match withAxes:
-    case True:
-      def (x_axis, x_finish):
-        axis(Horiz, 0, x_start, x_finish)
-      def (y_axis, y_finish'):
-        axis(Vert, x_start, 0, y_finish)
-
-      viewport(x_start, x_finish, y_finish', defaultMargin, x_axis :| y_axis :| lines)
-    case False:
-      viewport(x_start, x_finish, y_finish, 0, lines)
+  if withAxes:
+    def (x_axis, x_finish): axis(Horiz, 0, x_start, x_finish)
+    def (y_axis, y_finish_): axis(Vert, x_start, 0, y_finish)
+    viewport(x_start, x_finish, y_finish_, defaultMargin, x_axis :| y_axis :| lines)
+  else:
+    viewport(x_start, x_finish, y_finish, 0, lines)
 
 # Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
 # (Colours -> List a -> GraphicsElement) -> Bool -> Colours -> Float -> List (Cat, a) -> GraphicsElement
@@ -243,15 +237,12 @@ def categoricalChart(plotValue, withAxes, colours, sep, data):
   def w: length(gs)
   def h: maximum(map(height, gs))
 
-  match withAxes:
-    case True:
-      def x_axis:
-        catAxis(Horiz, 0, map(fst, data))
-      def (y_axis, h'): axis(Vert, 0, 0, h)
-
-      viewport(0, w, h', defaultMargin, concat2(gs, [x_axis, y_axis]))
-    case False:
-      viewport(0, w, h, 0, gs)
+  if withAxes:
+    def x_axis: catAxis(Horiz, 0, map(fst, data))
+    def (y_axis, h_): axis(Vert, 0, 0, h)
+    viewport(0, w, h_, defaultMargin, concat2(gs, [x_axis, y_axis]))
+  else:
+    viewport(0, w, h, 0, gs)
 
 # Colours -> List a -> GraphicsElement
 def rects(colours, ns):
@@ -288,10 +279,10 @@ def stackedBarChart:
 # Bit of a hack, but how text fits into our model is a bit unclear at the moment.
 # Str -> GraphicsElement -> GraphicsElement
 def caption(str, Viewport(x, y, w, h, fill, margin, scale, translate, g)):
-  def g':
+  def g_:
     Group([
       String(x + w / 2, -2, str, "middle", "hanging"),
       Viewport(0, 0, w, h, fill, margin, scale, translate, g)
     ])
 
-  Viewport(x, y, w, h, backgroundColour, defaultMargin / 2 + 4, Scale(1, 1), Translate(0, 0), g')
+  Viewport(x, y, w, h, backgroundColour, defaultMargin / 2 + 4, Scale(1, 1), Translate(0, 0), g_)
