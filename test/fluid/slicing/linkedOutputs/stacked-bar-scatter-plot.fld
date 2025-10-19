@@ -47,18 +47,7 @@ MultiView([
     caption:
       "Clean energy efficiency vs proportion of renewable energy capacity",
     points:
-      plot(2018, [
-        "BRA",
-        "CHN",
-        "DEU",
-        "FRA",
-        "EGY",
-        "IND",
-        "JPN",
-        "MEX",
-        "NGA",
-        "USA"
-      ]),
+      plot(2018, [ "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA" ]),
     labels: { x: "Renewables/TotalEnergyCap", y: "Clean Capacity Factor" }
   })
 ])

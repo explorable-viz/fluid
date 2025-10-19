@@ -1,4 +1,8 @@
 def filter:
-  def gaussian: [[1, 4, 1], [4, 16, 4], [1, 4, 1]]
+  def gaussian: [
+      [1, 4, 1],
+      [4, 16, 4],
+      [1, 4, 1]
+    ]
 
   [| nth2(i, j, gaussian) for (i, j) in (3, 3) |]

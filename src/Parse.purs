@@ -18,10 +18,9 @@ import Data.String.Common (joinWith)
 import Data.Traversable (foldl, foldr)
 import DataType (cPair)
 import Lattice (Raw)
-import Parse.Error (prettyParseError)
 import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
-import Parsing (Position, consume, fail, runParserT)
+import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
@@ -437,7 +436,12 @@ withImports p = topLevel do
    pure $ a × imports
 
 parse :: forall a. Parser a -> String -> Either String a
-parse parser input = lmap prettyParseError $ runIndent $ runParserT input parser
+parse parser input =
+   lmap printError $ runIndent $ runParserT input parser
+   where
+   printError :: ParseError -> String
+   printError (ParseError msg (Position { line, column })) =
+      "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
 
 parseProgram :: String -> Either String (Raw Expr × List String)
 parseProgram = parse (withImports expr)

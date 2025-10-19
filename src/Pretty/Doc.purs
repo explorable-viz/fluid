@@ -4,8 +4,16 @@ import Prelude
 
 import Data.String as String
 import Data.Tuple (fst)
-import Pretty.Config (config)
 import Util (type (×), (×))
+
+config
+   :: { indentation :: Int
+      , lineWidth :: Int
+      }
+config =
+   { indentation: 2
+   , lineWidth: 80
+   }
 
 data Doc
    = Empty

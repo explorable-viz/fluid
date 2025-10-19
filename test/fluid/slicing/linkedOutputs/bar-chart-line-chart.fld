@@ -5,11 +5,9 @@ def totalFor(c, rows):
 
 def data2015: [row for row in renewables if row.year == 2015]
 def countryData:
-  [{ x: c, segments: [{ y: "output", z: totalFor(c, data2015) }] } for c in [
-    "China",
-    "USA",
-    "Germany"
-  ]]
+  [ { x: c, segments: [{ y: "output", z: totalFor(c, data2015) }] }
+    for c in [ "China", "USA", "Germany" ]
+  ]
 
 def series(type_, country):
   [ { x: row.year, y: row.output }

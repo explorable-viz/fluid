@@ -8,9 +8,8 @@ import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
 import Data.Foldable (sum)
 import Data.Int (toNumber)
 import Data.List (List(..), fold, length, union)
-import Data.List (singleton) as L
-import Data.Map (Map, singleton, unionWith, keys, values)
-import Data.Map (empty) as M
+import Data.Map (Map, unionWith, keys, values)
+import Data.Map (empty, singleton) as Map
 import Data.Newtype (class Newtype, over2)
 import Data.Number (pow, sqrt)
 import Data.Tuple (snd)
@@ -18,7 +17,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Graph (class Graph, size)
-import Util (type (×), EffectError, Thunk, debug, force, (×))
+import Util (type (×), EffectError, Thunk, debug, force, (×), singleton)
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
@@ -47,7 +46,7 @@ instance Semigroup BenchRow where
    append = unionWith union `flip over2` BenchRow
 
 instance Monoid BenchRow where
-   mempty = BenchRow M.empty
+   mempty = BenchRow Map.empty
 
 foreign import microtime :: Effect Number
 
@@ -75,28 +74,24 @@ benchmark' :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> Eff
 benchmark' name m = do
    when debug.logging $ log ("**** " <> name)
    t × x <- time m
-   tell (BenchRow $ singleton name (L.singleton t))
+   tell (BenchRow $ Map.singleton name (singleton t))
    pure x
 
 recordGraphSize :: forall g m. Graph g => MonadWriter BenchRow m => g -> m Unit
 recordGraphSize g =
-   tell (BenchRow $ singleton "Graph-Nodes" (L.singleton $ toNumber $ size g))
+   tell (BenchRow $ Map.singleton "Graph-Nodes" (singleton $ toNumber $ size g))
 
--- The changes here are definitely some kind of tech debt
 divRow :: BenchRow -> Int -> BenchRow
-divRow (BenchRow row) n = BenchRow ((\x -> (Cons ((sum x) `div` toNumber n) (L.singleton (stdErr x)))) <$> row)
+divRow (BenchRow row) n =
+   BenchRow $ (\x -> Cons (sum x `div` toNumber n) (singleton (stdErr x))) <$> row
 
 stdDev :: List Number -> Number
-stdDev nums = sqrt $ mean deviation
+stdDev ns' = sqrt $ mean deviation
    where
-   average = mean nums
-   deviation = map (\x -> pow (x - average) 2.0) nums
+   deviation = map (\x -> pow (x - mean ns') 2.0) ns'
+
+   mean :: List Number -> Number
+   mean ns = sum ns `div` (toNumber $ length ns)
 
 stdErr :: List Number -> Number
-stdErr nums = errval
-   where
-   root_n = sqrt (toNumber $ length nums)
-   errval = stdDev nums / root_n
-
-mean :: List Number -> Number
-mean nums = sum nums `div` (toNumber $ length nums)
+stdErr nums = stdDev nums / sqrt (toNumber $ length nums)
