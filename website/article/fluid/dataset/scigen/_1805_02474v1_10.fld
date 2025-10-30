@@ -1,2 +1,2 @@
 def tableData:
-   loadJson("/dataset/SciGen/1805.02474v1-10.json")
+   loadJson("../dataset/SciGen/1805.02474v1-10.json")

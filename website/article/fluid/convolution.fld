@@ -19,9 +19,8 @@ def convolve(image, kernel):
   def area: i * j
 
   def interMatrix(m_, n_):
-   #  @doc(f"""average these values to compute element""")
-    [| kernel!(i_, j_) *
-       lookup(m_ + i_ - 1 - half_i, n_ + j_ - 1 - half_j, image)
+    @doc(f"""average these to compute element ({m_}, {n_})""")
+    [| lookup(m_ + i_ - 1 - half_i, n_ + j_ - 1 - half_j, image) * kernel!(i_, j_)
        for (i_, j_) in (i, j) |]
 
   [| matrixSum(interMatrix(m_, n_)) |quot| area for (m_, n_) in (m, n) |]
