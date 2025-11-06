@@ -6,7 +6,6 @@ def lookup(m, n, image):
   if m >= 1 |and| m <= m_max |and| n >= 1 |and| n <= n_max:
     image!(m, n)
   else: 0 # pad with zeros
-#   image!((m - 1 |mod| m_max) + 1, (n - 1 |mod| n_max) + 1)
 
 def matrixSum(matr):
   def (m, n): dims(matr)
@@ -17,7 +16,6 @@ def convolve(image, kernel):
   def (half_i, half_j): (i |quot| 2, j |quot| 2)
 
   def interMatrix(m, n):
-    @doc(f"""average these to compute element ({m}, {n})""")
     [| lookup(m + i_ - 1 - half_i, n + j_ - 1 - half_j, image) * kernel!(i_, j_)
        for (i_, j_) in (i, j) |]
 
