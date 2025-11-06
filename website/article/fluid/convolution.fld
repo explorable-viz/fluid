@@ -12,13 +12,13 @@ def matrixSum(matr):
   foldl((+), 0, [matr!(i, j) for (i, j) in range((1, 1), (m, n))])
 
 def convolve(image, kernel):
-  def (kernel_i, kernel_j): dims(kernel)
-  def (half_i, half_j): (kernel_i |quot| 2, kernel_j |quot| 2)
+  def (k_i, k_j): dims(kernel)
+  def (half_i, half_j): (k_i |quot| 2, k_j |quot| 2)
 
   def interMatrix(m, n):
     [| lookup(m + i - 1 - half_i, n + j - 1 - half_j, image) * kernel!(i, j)
-       for (i, j) in (kernel_i, kernel_j) |]
+       for (i, j) in (k_i, k_j) |]
 
-  [| matrixSum(interMatrix(m, n)) |quot| i * j for (m, n) in dims(image) |]
+  [| matrixSum(interMatrix(m, n)) |quot| k_i * k_j for (m, n) in dims(image) |]
 
 convolve(inputImage, filter)
