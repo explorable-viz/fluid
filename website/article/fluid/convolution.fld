@@ -1,11 +1,11 @@
-import convolution.testImage
-import convolution.emboss
+import convolution.testImage  # defines inputImage
+import convolution.emboss     # defines filter
 
 def lookup(m, n, image):
   def (m_max, n_max): dims(image)
   if m >= 1 |and| m <= m_max |and| n >= 1 |and| n <= n_max:
     image!(m, n)
-  else: 0
+  else: 0 # pad with zeros
 #   image!((m - 1 |mod| m_max) + 1, (n - 1 |mod| n_max) + 1)
 
 def matrixSum(matr):
@@ -13,15 +13,14 @@ def matrixSum(matr):
   foldl((+), 0, [matr!(i, j) for (i, j) in range((1, 1), (m, n))])
 
 def convolve(image, kernel):
-  def (m, n): dims(image)
   def (i, j): dims(kernel)
   def (half_i, half_j): (i |quot| 2, j |quot| 2)
 
-  def interMatrix(m_, n_):
-    @doc(f"""average these to compute element ({m_}, {n_})""")
-    [| lookup(m_ + i_ - 1 - half_i, n_ + j_ - 1 - half_j, image) * kernel!(i_, j_)
+  def interMatrix(m, n):
+    @doc(f"""average these to compute element ({m}, {n})""")
+    [| lookup(m + i_ - 1 - half_i, n + j_ - 1 - half_j, image) * kernel!(i_, j_)
        for (i_, j_) in (i, j) |]
 
-  [| matrixSum(interMatrix(m_, n_)) |quot| i * j for (m_, n_) in (m, n) |]
+  [| matrixSum(interMatrix(m, n)) |quot| i * j for (m, n) in dims(image) |]
 
 convolve(inputImage, filter)
