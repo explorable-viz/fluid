@@ -293,22 +293,22 @@ exprFwd (Float α n) =
    pure $ (E.Float α n)
 exprFwd (Str α s) =
    pure $ E.Str α s
-exprFwd (Constr α c ss) = do
+exprFwd (Constr α c ss) =
    E.Constr α c <$> traverse desug ss
 exprFwd (Dictionary α sss) = do
    let ks × ss = unzip sss
    ks' <- traverse desug ks
    es <- traverse desug ss
    E.Dictionary α <$> pure (zipWith Pair ks' es)
-exprFwd (Matrix α s (x × y) s') = do
+exprFwd (Matrix α s (x × y) s') =
    E.Matrix α <$> desug s <@> x × y <*> desug s'
 exprFwd (Lambda μ) =
    E.Lambda top <$> desug μ
-exprFwd (Project s x) = do
-   E.Project <$> desug s <@> x
-exprFwd (DProject s x) = do
+exprFwd (Project s x) =
+   E.DProject <$> desug s <@> E.Str top x
+exprFwd (DProject s x) =
    E.DProject <$> desug s <*> desug x
-exprFwd (App s1 s2) = do
+exprFwd (App s1 s2) =
    E.App <$> desug s1 <*> desug s2
 exprFwd (BinaryApp s1 op s2) =
    E.App <$> (E.App (E.Op op) <$> desug s1) <*> desug s2
@@ -322,11 +322,11 @@ exprFwd (Paragraph elems) =
    paragraphFwd elems
 exprFwd (ListEmpty α) =
    pure $ enil α
-exprFwd (ListNonEmpty α s l) = do
+exprFwd (ListNonEmpty α s l) =
    econs α <$> desug s <*> desug l
 exprFwd (ListEnum s1 s2) =
    E.App <$> (E.App (E.Var "enumFromTo") <$> desug s1) <*> desug s2
-exprFwd (ListComp α s (ListCompGen p s' : qs)) = unsafePartial $ do
+exprFwd (ListComp α s (ListCompGen p s' : qs)) = unsafePartial $
    listCompFwd (α × (ListCompGen p s' : qs) × s)
 exprFwd (ListComp α s qs) =
    listCompFwd (α × qs × s)
@@ -353,8 +353,8 @@ exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
    Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd (E.Lambda _ σ) (Lambda μ) =
    Lambda (desugBwd σ μ)
-exprBwd (E.Project e x) (Project s _) =
-   Project (desugBwd e s) x
+exprBwd (E.DProject ed _) (Project s x) =
+   Project (desugBwd ed s) x
 exprBwd (E.DProject ed ek) (DProject sd sk) =
    DProject (exprBwd ed sd) (exprBwd ek sk)
 exprBwd (E.App e1 e2) (App s1 s2) =
