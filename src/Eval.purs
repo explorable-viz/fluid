@@ -129,12 +129,6 @@ eval γ e0 αs = do
             withMsg "Variable lookup" $ lookup' x γ
          Op op ->
             withMsg "Variable lookup" $ lookup' op γ
-         Project e x -> do
-            v <- eval γ e αs
-            case v of
-               Val _ _ (V.Dictionary (DictRep d)) ->
-                  withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
-               _ -> throw $ "Found " <> prettyP v <> ", expected dictionary"
          DProject e x -> do
             v <- eval γ e αs
             v' <- eval γ x αs
