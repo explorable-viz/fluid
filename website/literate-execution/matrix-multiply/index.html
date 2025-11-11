@@ -89,14 +89,14 @@ MultiView([
 
 <script type="module">
    import { loadFigureSrc, loadCode } from "/shared/load-figure.js"
-   const src = document.getElementById("my-code").textContent.trim();
+   const src = document.getElementById("my-code").textContent.trim()
    const spec = {
       "fluidSrcPath": ["../fluid"],
       "inputs": [ "a", "b", "c" ],
       "query": true,
       "linking": false
   }
-   loadFigureSrc(spec)(src)()
+   loadFigureSrc(spec)("fig")(src)()
 </script>
 </body>
 </html>
