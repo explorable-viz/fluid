@@ -9,5 +9,6 @@ export const main = async () => {
         page => waitFor("#fig-output > div:nth-of-type(1).para-text")(page),
         page => waitFor("#fig-output > div:nth-of-type(2).para-text")(page)
     ]))()
+    await runTests(testURL("matrix-multiply")([ page => waitFor("svg#fig-output")(page) ]))()
     console.log("Success!")
 }
