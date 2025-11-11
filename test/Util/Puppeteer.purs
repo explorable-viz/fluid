@@ -74,7 +74,7 @@ show' :: T.Selector -> String
 show' (T.Selector sel) = sel
 
 timeout :: Int
-timeout = 240000
+timeout = 60000
 
 -- Should these be Effect (Promise Unit) for better JS integration?
 -- Currently can't really chain JS test conditions that need to wait on each other
