@@ -94,6 +94,8 @@ binaryOps =
      ]
    , [ Infix (binaryOp "*") AssocLeft
      , Infix (binaryOp "/") AssocLeft
+     , Infix (binaryOp "//") AssocLeft
+     , Infix (binaryOp "%") AssocLeft
      ]
    , [ Infix (binaryOp "+") AssocLeft
      , Infix (binaryOp "-") AssocLeft

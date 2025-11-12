@@ -16,6 +16,7 @@ opDef :: Var -> Int -> Assoc -> Var × OpDef
 opDef op prec assoc = op × { op, prec, assoc }
 
 -- Syntactic information only. No requirement that any of these be defined.
+-- TODO: unify with defs in src/Parse.purs (this list is only used by pretty printer)
 opDefs :: Map String OpDef
 opDefs = fromFoldable
    [ opDef "." 8 AssocLeft
@@ -23,6 +24,8 @@ opDefs = fromFoldable
    , opDef "**" 8 AssocRight
    , opDef "*" 7 AssocLeft
    , opDef "/" 7 AssocLeft
+   , opDef "//" 7 AssocLeft
+   , opDef "%" 7 AssocLeft
    , opDef "+" 6 AssocLeft
    , opDef "-" 6 AssocLeft
    , opDef ":" 6 AssocRight

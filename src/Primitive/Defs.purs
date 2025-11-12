@@ -83,8 +83,8 @@ primitives = wrap $ D.fromFoldable
    , extern matrixUpdate
    , extern search
    , extern split
-   , binaryZero "div" { i: int, o: int, fwd: div }
-   , binaryZero "mod" { i: int, o: int, fwd: mod }
+   , binaryZero "//" { i: int, o: int, fwd: div }
+   , binaryZero "%" { i: int, o: int, fwd: mod }
    , binaryZero "quot" { i: int, o: int, fwd: quot }
    , binaryZero "rem" { i: int, o: int, fwd: rem }
    ]
