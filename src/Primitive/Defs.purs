@@ -35,7 +35,6 @@ import Foreign.Object as FO
 import Graph (Vertex)
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
-import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Util (type (+), type (×), Endo, definitely, definitely', error, singleton, throw, (×))
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
@@ -336,11 +335,12 @@ divide :: Int + Number -> Endo (Int + Number)
 divide = (\x y -> toNumber x / toNumber y) `union` (/)
 
 -- See T-, F- and E-definitions discussed at https://github.com/purescript/purescript-prelude/issues/161
+-- and https://github.com/explorable-viz/fluid/issues/1450
 div :: Int -> Endo Int
-div = P.div
+div = (\x y -> floor (toNumber x / toNumber y))
 
 mod :: Int -> Endo Int
-mod = P.mod
+mod = (\x y -> x - y * div x y)
 
 quot :: Int -> Endo Int
 quot = I.quot
