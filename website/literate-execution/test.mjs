@@ -13,5 +13,15 @@ export const main = async () => {
     page => waitFor("#fig-output > svg:nth-of-type(1)")(page),
     page => waitFor("#fig-output > svg:nth-of-type(2)")(page),
   ]))()
+  /*
+  //TEST 1: TS index page has a link to Figure 12
+  await runTests(testURL("ar6-wg1/ts")([
+    page => waitFor("a[href='figure12']")(page),
+  ]))()
+  //TEST 2: TS Figure 12 page has figure container
+  await runTests(testURL("ar6-wg1/ts/figure12")([
+    page => waitFor("#fig")(page),
+  ]))()
+  */
   console.log("Success!")
 }
