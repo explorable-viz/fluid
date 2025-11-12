@@ -33,6 +33,7 @@ misc_cases =
    , { file: "map.fld", fwd_expect: "5 :| 7 :| 13 :| 15 :| 4 :| 3 :| -3 :| []" }
    , { file: "mergeSort.fld", fwd_expect: "1 :| 2 :| 3 :| []" }
    , { file: "normalise.fld", fwd_expect: "(33, 66)" }
+   , { file: "not-parens-op.fld", fwd_expect: """@doc("hello") -42""" }
    , { file: "nub.fld", fwd_expect: "1 :| 2 :| 3 :| 4 :| []" }
    , { file: "paragraph.fld"
      , fwd_expect: """Paragraph(Text("As shown in Table 3, BiLSTM gives significantly  ") :| Text("better") :| [])"""

@@ -30,5 +30,4 @@ comments_cases =
      , fwd_expect: """@doc(Paragraph("Comment" :| "on" :| "1" :| [])) 1"""
      }
    , { file: "comments/projection.fld", fwd_expect: """@doc(Paragraph("Test" :| [])) 1""" }
-   , { file: "comments/not-parens-op.fld", fwd_expect: """@doc("hello") 42""" }
    ]
