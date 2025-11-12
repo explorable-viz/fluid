@@ -386,8 +386,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             delim '('
             choice
                [ do
-                    op <- operator
-                    close ')'
+                    op <- try (operator <* close ')')
                     pure $ Op op
                , do
                     e <- opTree
