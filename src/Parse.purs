@@ -76,6 +76,11 @@ binaryOp op = do
    reservedOperator op
    pure \e e' -> BinaryApp e op e'
 
+binaryOpIdent :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
+binaryOpIdent op = do
+   reserved op
+   pure \e e' -> BinaryApp e op e'
+
 infixFn :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 infixFn = do
    fn <- try (delim '|' *> variable)
@@ -109,6 +114,8 @@ binaryOps =
      , Infix (binaryOp "<=") AssocLeft
      , Infix (binaryOp ">=") AssocLeft
      ]
+   , [ Infix (binaryOpIdent "and") AssocLeft ]
+   , [ Infix (binaryOpIdent "or") AssocLeft ]
    , [ Infix infixFn AssocLeft ]
    ]
 

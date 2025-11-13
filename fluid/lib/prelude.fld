@@ -87,7 +87,7 @@ def tail(_ :| xs): xs
 # Eq a => a -> List a -> Bool
 def elem(x, []): False
 def elem(x, y :| xs):
-  x == y |or| elem(x, xs)
+  x == y or elem(x, xs)
 
 # (a -> Bool) -> List a -> Option a
 def find(p, []): None

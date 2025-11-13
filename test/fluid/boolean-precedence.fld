@@ -1,0 +1,5 @@
+not(
+   (True or False and False) # True
+       and
+   ((True or False) and False) # False
+)

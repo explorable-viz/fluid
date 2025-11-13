@@ -3,7 +3,7 @@ import convolution.emboss     # defines filter
 
 def lookup(m, n, image):
   def (m_max, n_max): dims(image)
-  if m >= 1 |and| m <= m_max |and| n >= 1 |and| n <= n_max:
+  if m >= 1 and m <= m_max and n >= 1 and n <= n_max:
     image!(m, n)
   else: 0 # pad with zeros
 

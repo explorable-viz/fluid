@@ -36,5 +36,6 @@ opDefs = fromFoldable
    , opDef ">" 4 AssocLeft
    , opDef "<=" 4 AssocLeft
    , opDef ">=" 4 AssocLeft
+   , opDef "and" 3 AssocLeft
+   , opDef "or" 2 AssocLeft
    ]
-

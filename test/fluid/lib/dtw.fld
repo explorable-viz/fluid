@@ -5,7 +5,7 @@ def nextIndices(n, m, window):
 
 def costMatrixInit(rows, cols, window):
   def initV(n, m):
-    if (n == 1 |and| m == 1) |or| (abs(n, m) <= window |and| not(n == 1 |or| m == 1)): FNum(0)
+    if (n == 1 and m == 1) or (abs(n, m) <= window and not(n == 1 or m == 1)): FNum(0)
     else: Infty
   [| initV(n, m) for (n, m) in (rows, cols) |]
 
@@ -19,7 +19,7 @@ def minAndPrev((i, j), im1, jm1, ijm1):
     else: ((i, j), minim)
 
 def extractPath(indmatrix, (n, m), accum):
-  if n == 1 |and| m == 1: accum
+  if n == 1 and m == 1: accum
   else:
     extractPath(indmatrix, indmatrix ! (n, m), (n - 1, m - 1) :| accum)
 
