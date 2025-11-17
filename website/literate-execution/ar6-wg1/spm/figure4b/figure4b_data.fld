@@ -1,4 +1,4 @@
-def ssp126Source: loadJson("../../../../dataset/AR6-WG1/SPM/ssp126.json")
-def ssp126preds: loadJson("../../../../dataset/AR6-WG1/SPM/ssp126preds.json")
-def ssp245Source: loadJson("../../../../dataset/AR6-WG1/SPM/ssp245.json")
-def ssp245preds: loadJson("../../../../dataset/AR6-WG1/SPM/ssp245preds.json")
+def ssp126Source: loadJson("../../dataset/SPM/ssp126.json")
+def ssp126preds: loadJson("../../dataset/SPM/ssp126preds.json")
+def ssp245Source: loadJson("../../dataset/SPM/ssp245.json")
+def ssp245preds: loadJson("../../dataset/SPM/ssp245preds.json")

@@ -1,4 +1,4 @@
-def path: "../../../../dataset/AR6-WG1/TS/inputdata_TS_12/v20230301/WaterCyclePanels/"
+def path: "../../dataset/TS/inputdata_TS_12/v20230301/WaterCyclePanels/"
 def hydroData: loadJson(path ++ "Hydro_vars_change_20210201_derived_extra_raw.json")
 
 # extract from data set instead?
