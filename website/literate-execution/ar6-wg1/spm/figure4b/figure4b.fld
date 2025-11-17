@@ -1,5 +1,4 @@
-import lib.stats
-import ar6_wg1.spm.figure4b_data
+import figure4b_data
 
 def stackedBarHeight(stackedBar):
   sum([segment.z for segment in stackedBar.segments])

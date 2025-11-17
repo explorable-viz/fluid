@@ -1,4 +1,4 @@
-import ar6_wg1.ts.figure12_data
+import figure12_data
 
 def temps:
   [ "1.5", "1.75", "2.0", "2.25", "2.5", "2.75", "3.0", "3.25",
