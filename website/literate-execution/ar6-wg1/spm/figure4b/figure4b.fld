@@ -1,3 +1,4 @@
+import lib.stats
 import figure4b_data
 
 def stackedBarHeight(stackedBar):

@@ -1,3 +1,4 @@
+import lib.stats
 import table1_data
 
 def newDataTable(offset):
