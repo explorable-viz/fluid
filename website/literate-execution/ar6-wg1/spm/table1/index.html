@@ -43,12 +43,12 @@
         import { loadFigure } from "../../../shared/load-figure.js"
 
          const jsonSpec = {
-            "fluidSrcPath": ["../../../fluid"],
+            "fluidSrcPath": [ ".", "../../../fluid" ],
             "inputs": ["tableData", "likelihoods"],
             "query": true,
             "linking": true
          }
-        loadFigure(jsonSpec)("fig")("../../../fluid/ar6_wg1/spm/table1.fld")()
+        loadFigure(jsonSpec)("fig")("table1.fld")()
     </script>
 </body>
 </html>
