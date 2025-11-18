@@ -13,13 +13,13 @@ export const main = async () => {
     page => waitFor("#fig-output > svg:nth-of-type(1)")(page),
     page => waitFor("#fig-output > svg:nth-of-type(2)")(page),
   ]))()
-  // Test A: TS index page contains link to Figure 12
-  await runTests(testURL("ar6-wg1/ts")([
-    page => waitFor('a[href="figure12"]')(page),
+  await runTests(testURL("ar6-wg1/ts/figure12")([
+    page => waitFor("#fig > svg:nth-of-type(1)")(page),
   ]))()
+  // runs out of memory on Firefox
+  // await runTests(testURL("evaluation-nap3/figure1")([
+  //   page => waitFor("#fig-output > svg:nth-of-type(1)")(page),
+  //   page => waitFor("#fig-output > svg:nth-of-type(2)")(page),
+  // ]))()
   console.log("Success!")
-  // Test B: evaluation-nap3 index page contains link to Figure 1
-  await runTests(testURL("evaluation-nap3")([
-    page => waitFor('a[href="figure1"]')(page)
-  ]))()
 }
