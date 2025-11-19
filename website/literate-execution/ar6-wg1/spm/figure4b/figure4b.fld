@@ -5,7 +5,7 @@ def stackedBarHeight(stackedBar):
   sum([segment.z for segment in stackedBar.segments])
 
 def get(x, BarChart(record)):
-  fromSome(findWithKey("x", x, record.stackedBars))
+  from_some(find_with_key("x", x, record.stackedBars))
 
 def mkBarChart(scenName, table):
   BarChart({
@@ -43,7 +43,7 @@ def ssp126Total:
   { type: "Total", emissions: sum(map(lambda r: r.emissions, ssp126Source)) }
 def ssp126table: ssp126Total :| ssp126Source
 def ssp245table:
-  { type: "Total", emissions: findPercentile(50, changed245) } :| ssp245Source
+  { type: "Total", emissions: find_percentile(50, changed245) } :| ssp245Source
 def ssp126: mkBarChart("SSP1-2.6", ssp126table)
 def ssp245: mkBarChart("SSP2-4.5", ssp245table)
 def totals: map(stackedBarHeight, map(get("Total"), [ssp126, ssp245]))

@@ -325,7 +325,7 @@ exprFwd (ListEmpty α) =
 exprFwd (ListNonEmpty α s l) =
    econs α <$> desug s <*> desug l
 exprFwd (ListEnum s1 s2) =
-   E.App <$> (E.App (E.Var "enumFromTo") <$> desug s1) <*> desug s2
+   E.App <$> (E.App (E.Var "enum_from_to") <$> desug s1) <*> desug s2
 exprFwd (ListComp α s (ListCompGen p s' : qs)) = unsafePartial $
    listCompFwd (α × (ListCompGen p s' : qs) × s)
 exprFwd (ListComp α s qs) =
@@ -374,7 +374,7 @@ exprBwd (E.Constr α _ Nil) (ListEmpty _) =
    ListEmpty α
 exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
    ListNonEmpty α (desugBwd e1 s) (desugBwd e2 l)
-exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
+exprBwd (E.App (E.App (E.Var "enum_from_to") e1) e2) (ListEnum s1 s2) =
    ListEnum (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd e@(E.App (E.App _ _) _) (ListComp _ s (q@(ListCompGen _ _) : qs)) =
    let α × qs' × s' = listCompBwd e ((q : qs) × s) in ListComp α s' qs'
@@ -401,7 +401,7 @@ listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
 listCompFwd (α × (ListCompGen p s : qs) × s') = do
    let ks = orElseFwd α ((Left p : Nil) × ListComp α s' qs)
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
-   E.App (E.App (E.Var "concatMap") (E.Lambda α (asElim σ))) <$> desug s
+   E.App (E.App (E.Var "concat_map") (E.Lambda α (asElim σ))) <$> desug s
 
 listCompBwd
    :: forall a
@@ -420,7 +420,7 @@ listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0
       # unsafePartial case _ of
            ((Left _ : Nil) × Nil × ListComp α s' qs') : Nil ->
               (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
-listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
+listCompBwd (E.App (E.App (E.Var "concat_map") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
    orElseBwd k (nonEmpty ks <#> unsafePartial \(π × Nil × s') -> π × s')
       # unsafePartial case _ of
            β × ListComp α s' qs' -> (α ∨ α' ∨ β) × (ListCompGen p (desugBwd e s0) : qs') × s'

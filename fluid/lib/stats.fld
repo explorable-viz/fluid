@@ -17,7 +17,7 @@ def mergesort(xs):
     def (ys, zs): split(xs)
     merge(mergesort(ys), mergesort(zs))
 
-def findQuantile(q, p, xs):
+def find_quantile(q, p, xs):
   def rank:
     (p / q) * (length(xs) - 1)
 
@@ -30,49 +30,49 @@ def findQuantile(q, p, xs):
     def right: nth(x2, xs)
     left + (rank - x1) * (right - left)
 
-def findPercentile: findQuantile(100)
+def find_percentile: find_quantile(100)
 
-def accumBins(data, Nil): []
-def accumBins(data, [l]): []
-def accumBins(data, l :| r :| es):
+def accum_bins(data, Nil): []
+def accum_bins(data, [l]): []
+def accum_bins(data, l :| r :| es):
   def (ge, le):
-    splitOn(lambda x: x <= r, data)
-  (le, r - l) :| accumBins(ge, r :| es)
+    split_on(lambda x: x <= r, data)
+  (le, r - l) :| accum_bins(ge, r :| es)
 
 def cut(xs, nbins):
   def low: minimum(xs)
   def binwidth:
     (maximum(xs) - low) / nbins
   def edges:
-    [low + x * binwidth for x in enumFromTo(0, nbins)]
+    [low + x * binwidth for x in enum_from_to(0, nbins)]
 
-  accumBins(xs, edges)
+  accum_bins(xs, edges)
 
 def qcut(xs, qs):
   def (low, high):
     (minimum(xs), maximum(xs))
   def edges:
-    append((low :| [findPercentile(x, xs) for x in qs], [high]))
+    append((low :| [find_percentile(x, xs) for x in qs], [high]))
 
-  accumBins(xs, edges)
+  accum_bins(xs, edges)
 
-def likelihoodLE(xs, target):
+def likelihood_le(xs, target):
   length(filter(lambda x: x <= target, xs)) / length(xs)
 
-def likelihoodGE(xs, target):
+def likelihood_ge(xs, target):
   length(filter(lambda x: x >= target, xs)) / length(xs)
 
-def likelihoodMap(table, prob):
-  fromSome(find(lambda x: x.prob <= prob, table)).msg
+def likelihood_map(table, prob):
+  from_some(find(lambda x: x.prob <= prob, table)).msg
 
-def mkPercent(num):
+def mk_percent(num):
   numToStr(num * 100) ++ "%"
 
-def leqP(n, m):
+def leq_p(n, m):
   if n <= m: "less"
   else: "more"
 
-def gradedLeqP(n, m):
+def graded_leq_p(n, m):
   def ratio: n / m
 
   if ratio <= 1.0:

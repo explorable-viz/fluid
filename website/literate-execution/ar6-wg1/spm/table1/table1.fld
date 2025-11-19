@@ -13,9 +13,9 @@ def newDataTable(offset):
   }, tableData)
 
 def getByScenario(data, scenario):
-  fromSome(findWithKey("scenario", scenario, data))
+  from_some(find_with_key("scenario", scenario, data))
 
-def probAsText: likelihoodMap(likelihoods)
+def probAsText: likelihood_map(likelihoods)
 
 def mean(xs): sum(xs) / length(xs)
 

@@ -2,4 +2,4 @@ import lib.matrix
 import slicing.matrix.leftMatrix
 import slicing.matrix.rightMatrix
 
-(matMul(leftMatrix, rightMatrix), matMul(rightMatrix, leftMatrix))
+(mat_mul(leftMatrix, rightMatrix), mat_mul(rightMatrix, leftMatrix))
