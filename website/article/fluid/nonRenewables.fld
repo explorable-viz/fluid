@@ -1,5 +1,5 @@
 def nonRenewables:
-  loadJson("../dataset/non-renewables.json")
+  load_json("../dataset/non-renewables.json")
 
 def renewables:
-  loadJson("../dataset/renewable.json")
+  load_json("../dataset/renewable.json")

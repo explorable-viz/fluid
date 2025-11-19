@@ -99,7 +99,7 @@ error_ =
 
 debugLog :: ForeignOp
 debugLog =
-   ForeignOp ("debugLog" × ForeignOp' { arity: 1, op })
+   ForeignOp ("debug_log" × ForeignOp' { arity: 1, op })
    where
    op :: Op
    op (x : Nil) = pure $ trace x (const x)
@@ -107,7 +107,7 @@ debugLog =
 
 loadJson :: ForeignOp
 loadJson =
-   ForeignOp ("loadJson" × ForeignOp' { arity: 1, op })
+   ForeignOp ("load_json" × ForeignOp' { arity: 1, op })
    where
    op :: Op
    op (Val _ _ (Str path) : Nil) = do
