@@ -368,20 +368,18 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                                     reserved "if"
                                     e' <- opTree
                                     pure $ ListCompGuard e'
-                               , do
+                               , context "listCompDecl" do
+                                    reserved "def"
+                                    p <- pattern
+                                    delim ':'
+                                    e' <- opTree
+                                    pure $ ListCompDecl (VarDef p e')
+                               , context "listCompGen" do
                                     reserved "for"
                                     p <- pattern
                                     reserved "in"
-                                    choice
-                                       [ context "listCompDecl" $ try do
-                                            delim '['
-                                            e' <- opTree
-                                            delim ']'
-                                            pure $ ListCompDecl (VarDef p e')
-                                       , context "listCompGen" do
-                                            e' <- opTree
-                                            pure $ ListCompGen p e'
-                                       ]
+                                    e' <- opTree
+                                    pure $ ListCompGen p e'
                                ]
                             close ']'
                             pure $ ListComp unit e (toList qs)
