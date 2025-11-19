@@ -158,7 +158,7 @@ instance Ann a => Pretty (Expr a) where
 
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (ListCompDecl (VarDef v s)) Nil) =
-      text "for" <+> pretty v <+> text "in" <+> brackets (pretty s)
+      text "def" <+> pretty v <> text ":" <+> pretty s
    pretty (Cons (ListCompGuard s) Nil) = text "if" <+> pretty s
    pretty (Cons (ListCompGen p s) Nil) = text "for" <+> pretty p <+> text "in" <+> pretty s
    pretty (Cons q qs) = pretty (singleton q) <+> pretty qs
