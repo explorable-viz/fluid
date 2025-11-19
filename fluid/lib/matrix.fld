@@ -17,7 +17,7 @@ def extend(m, n, image):
 
 def matrixSum(matr):
   def (m, n): dims(matr)
-  foldl((+), 0, [matr ! (i, j) for (i, j) in range((1, 1), (m, n))])
+  foldl((+), 0, [matr ! (i, j) for (i, j) in range2((1, 1), (m, n))])
 
 def convolve(image, kernel, lookup):
   def ((m, n), (i, j)):
@@ -37,4 +37,4 @@ def matMul(a, b):
     error("Dimensions don't line up")
   else:
     @doc(f"""Intermediate matrix""")
-    [| sum([a!(i_, k) * b!(k, j_) for k in enumFromTo(1, n)]) for (i_, j_) in (m, j) |]
+    [| sum([a!(i_, k) * b!(k, j_) for k in range(1, n)]) for (i_, j_) in (m, j) |]

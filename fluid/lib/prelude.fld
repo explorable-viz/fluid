@@ -303,15 +303,13 @@ def zipWith(op, x :| xs, y :| ys):
 # List a -> List b -> List (a, b)
 def zip: zipWith(curry(id))
 
-# Rename to 'range'
 # Int -> Int -> List Int
-def enumFromTo(n, m):
+def range(n, m):
   if n <= m: n :| [n + 1 .. m]
   else: []
 
-# Rename to 'range2'
 # (Int, Int) -> (Int, Int) -> List (Int, Int)
-def range((m1, n1), (m2, n2)):
+def range2((m1, n1), (m2, n2)):
   [(i1, i2) for i1 in [m1 .. m2] for i2 in [n1 .. n2]]
 
 # Int -> Int -> Int
