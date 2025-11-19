@@ -14,7 +14,7 @@ bwd_cases =
    , { file: "array/dims.fld", bwd_expect_file: "array/dims.expect.fld", δv: select, fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩" }
    , { file: "convolution/edgeDetect.fld"
      , bwd_expect_file: "convolution/edgeDetect.expect.fld"
-     , δv: matrixElement 1 1 select
+     , δv: matrixElement 0 0 select
      , fwd_expect:
           """⸨0⸩, -1, 2, 0, -1,
 0, 3, -2, 3, -2,
@@ -24,7 +24,7 @@ bwd_cases =
      }
    , { file: "convolution/emboss.fld"
      , bwd_expect_file: "convolution/emboss.expect.fld"
-     , δv: matrixElement 1 1 select
+     , δv: matrixElement 0 0 select
      , fwd_expect:
           """⸨5⸩, 4, 2, 5, 2,
 3, 1, 2, -1, -2,
@@ -34,7 +34,7 @@ bwd_cases =
      }
    , { file: "convolution/gaussian.fld"
      , bwd_expect_file: "convolution/gaussian.expect.fld"
-     , δv: matrixElement 1 1 select
+     , δv: matrixElement 0 0 select
      , fwd_expect:
           """⸨38⸩, 37, 28, 30, 38,
 38, 36, 46, 31, 34,
@@ -44,7 +44,7 @@ bwd_cases =
      }
    , { file: "matrix/matmul.fld"
      , bwd_expect_file: "matrix/matmul.expect.fld"
-     , δv: fst $ matrixElement 1 1 select
+     , δv: fst $ matrixElement 0 0 select
      , fwd_expect:
           """(@doc(Paragraph("Intermediate" :| "matrix" :| [])) ⸨22⸩, 28,
 49, 64, @doc(Paragraph("Intermediate" :| "matrix" :| [])) 9, 12, 15,
@@ -84,9 +84,10 @@ bwd_cases =
      , fwd_expect: "⸨40.22222222222222⸩"
      }
    , { file: "dict/match.fld", bwd_expect_file: "dict/match.expect.fld", δv: select, fwd_expect: "" }
+   -- TODO:  double check this is expected behaviour
    , { file: "dtw/compute-dtw.fld"
      , bwd_expect_file: "dtw/compute-dtw.expect.fld"
-     , fwd_expect: "(1, 1) :| ⸨(⸨2⸩, ⸨2⸩)⸩ :| (2, 3) :| (3, 4) :| (4, 5) :| (5, 6) :| (5, 7) :| []"
+     , fwd_expect: "(0, 0) :| ⸨(⸨1⸩, ⸨1⸩)⸩ :| (1, 2) :| (2, 3) :| (3, 4) :| (4, 5) :| (4, 6) :| []"
      , δv: listElement 1 select
      }
    , { file: "dtw/average-series.fld"
@@ -138,7 +139,7 @@ bwd_cases =
 14, 9, 20, 8, 1,
 4, 10, 3, 7, 19,
 3, 11, 15, 2, 9"""
-     , δv: matrixElement 2 2 select
+     , δv: matrixElement 1 1 select
      }
    , { file: "multiply.fld", bwd_expect_file: "multiply.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
    , { file: "nth.fld", bwd_expect_file: "nth.expect.fld", δv: select, fwd_expect: "⸨4⸩" }
