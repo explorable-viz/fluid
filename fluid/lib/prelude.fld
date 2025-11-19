@@ -262,7 +262,7 @@ def nth(n, x :| xs):
 
 # Matrix Int -> Int -> Int -> Int
 def nth2(i, j, xss):
-  nth(j - 1, nth(i - 1, xss))
+  nth(j, nth(i, xss))
 
 # Partial; requires k to be in the map.
 # Int -> List (Int, b) -> b

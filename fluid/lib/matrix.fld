@@ -1,23 +1,23 @@
 def zero(m, n, image):
-  def (m_max, n_max): dims(image)
-  if m >= 1 and m <= m_max and n >= 1 and n <= n_max: image ! (m, n)
+  def (m_size, n_size): dims(image)
+  if m >= 0 and m < m_size and n >= 0 and n < n_size: image ! (m, n)
   else: 0
 
 def wrap(m, n, image):
-  def (m_max, n_max): dims(image)
-  image ! (((m - 1) % m_max) + 1, ((n - 1) % n_max) + 1)
+  def (m_size, n_size): dims(image)
+  image ! (m % m_size, n % n_size)
 
 def extend(m, n, image):
-  def (m_max, n_max): dims(image)
+  def (m_size, n_size): dims(image)
   def m_:
-    min(max(m, 1), m_max)
+    min(max(m, 0), m_size - 1)
   def n_:
-    min(max(n, 1), n_max)
+    min(max(n, 0), n_size - 1)
   image ! (m_, n_)
 
 def matrix_sum(matr):
   def (m, n): dims(matr)
-  foldl((+), 0, [matr ! (i, j) for (i, j) in range2d((1, 1), (m, n))])
+  foldl((+), 0, [matr ! (i, j) for (i, j) in range2d((0, 0), (m - 1, n - 1))])
 
 def convolve(image, kernel, lookup):
   def ((m, n), (i, j)):
@@ -26,7 +26,7 @@ def convolve(image, kernel, lookup):
     (i |quot| 2, j |quot| 2)
   def area: i * j
   def interMatrix(m_, n_):
-    [| lookup(((m_ + i_) - 1) - half_i, ((n_ + j_) - 1) - half_j, image) * kernel ! (i_, j_) for (i_, j_) in (i, j) |]
+    [| lookup(m_ + i_ - half_i, n_ + j_ - half_j, image) * kernel ! (i_, j_) for (i_, j_) in (i, j) |]
 
   [| matrix_sum(interMatrix(m_, n_)) |quot| area for (m_, n_) in (m, n) |]
 
@@ -37,4 +37,4 @@ def mat_mul(a, b):
     error("Dimensions don't line up")
   else:
     @doc(f"""Intermediate matrix""")
-    [| sum([a!(i_, k) * b!(k, j_) for k in range(1, n)]) for (i_, j_) in (m, j) |]
+    [| sum([a!(i_, k) * b!(k, j_) for k in range(0, n - 1)]) for (i_, j_) in (m, j) |]
