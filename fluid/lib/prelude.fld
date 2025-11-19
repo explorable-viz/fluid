@@ -23,8 +23,8 @@ def compare(x, y):
     else: EQ
 
 # (b -> b -> c) -> (a -> b) -> a -> a -> c
-def on(binOp, prop, x, y):
-  binOp(prop(x), prop(y))
+def on(bin_op, prop, x, y):
+  bin_op(prop(x), prop(y))
 
 # Num -> Num
 def negate: (-)(0)

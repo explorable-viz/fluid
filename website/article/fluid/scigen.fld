@@ -9,10 +9,10 @@ def ordinal(n):
     error("n <= 0 not supported")
   else:
     if n < 4:
-      numToStr(n) ++ find_with_key_("lastDigit", n, ordinalMap).suffix
+      num_to_str(n) ++ find_with_key_("lastDigit", n, ordinalMap).suffix
     else:
       if n >= 4 and n <= 20:
-         numToStr(n) ++ "th"
+         num_to_str(n) ++ "th"
       else:
         error("n > 20 not supported")
 

@@ -165,21 +165,21 @@ def axis(orient, x, start, end):
   def ax:
     Group([
       Line(head(ps), last(ps), axis_colour, axis_stroke_width),
-      Polymarkers(ps, flip(map, ys, compose(labelled_tick(orient, axis_colour, tick_length), numToStr)))
+      Polymarkers(ps, flip(map, ys, compose(labelled_tick(orient, axis_colour, tick_length), num_to_str)))
     ])
 
   (ax, last_tick)
 
 # x is position of this axis on the other axis.
 # Orient -> Float -> List Cat -> GraphicsElement
-def cat_axis(orient, x, catValues):
-  def ys: iterate(length(catValues) + 1, (+)(1), 0)
+def cat_axis(orient, x, cat_values):
+  def ys: iterate(length(cat_values) + 1, (+)(1), 0)
   def ps: map(mk_point(orient, x), ys)
 
   Group([
     Line(head(ps), last(ps), axis_colour, axis_stroke_width),
-    Polymarkers(tail(ps), map(const(tick(orient, axis_colour, tick_length)), catValues)),
-    Polymarkers(flip(map, tail(ps), lambda Point(x, y): Point(x - 0.5, y)), map(label(orient, -0.5, 0), catValues))
+    Polymarkers(tail(ps), map(const(tick(orient, axis_colour, tick_length)), cat_values)),
+    Polymarkers(flip(map, tail(ps), lambda Point(x, y): Point(x - 0.5, y)), map(label(orient, -0.5, 0), cat_values))
   ])
 
 # Float -> Float -> Float -> Float -> List GraphicsElement -> GraphicsElement
@@ -189,7 +189,7 @@ def viewport(x_start, x_finish, y_finish, margin, gs):
 # Plot a map of x values to lists of (categorical value, y value) pairs. Importantly, assume all data is uniform
 # (categorical keys are the same for each x value and are ordered the same each time).
 # Bool -> Colours -> Float -> List (Float, List (Cat, Float)) -> GraphicsElement
-def line_chart(withAxes, colours, x_start, data):
+def line_chart(with_axes, colours, x_start, data):
   def xs: map(fst, data)
   def n_cat: length(snd(head(data)))
 
@@ -210,7 +210,7 @@ def line_chart(withAxes, colours, x_start, data):
   def y_finish:
     maximum(flip(map, data, lambda (_, kvs): maximum(map(snd, kvs))))
 
-  if withAxes:
+  if with_axes:
     def (x_axis, x_finish): axis(Horiz, 0, x_start, x_finish)
     def (y_axis, y_finish_): axis(Vert, x_start, 0, y_finish)
     viewport(x_start, x_finish, y_finish_, default_margin, x_axis :| y_axis :| lines)
@@ -219,13 +219,13 @@ def line_chart(withAxes, colours, x_start, data):
 
 # Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
 # (Colours -> List a -> GraphicsElement) -> Bool -> Colours -> Float -> List (Cat, a) -> GraphicsElement
-def categorical_chart(plotValue, withAxes, colours, sep, data):
+def categorical_chart(plot_value, with_axes, colours, sep, data):
   def gs:
-    stack_right(sep, plotValue(colours, map(snd, data)))
+    stack_right(sep, plot_value(colours, map(snd, data)))
   def w: length(gs)
   def h: maximum(map(height, gs))
 
-  if withAxes:
+  if with_axes:
     def x_axis: cat_axis(Horiz, 0, map(fst, data))
     def (y_axis, h_): axis(Vert, 0, 0, h)
     viewport(0, w, h_, default_margin, concat2(gs, [x_axis, y_axis]))

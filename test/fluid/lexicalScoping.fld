@@ -4,4 +4,4 @@ def decr:
   flip((-), x)
 def x: 8
 
-numToStr(decr(x))
+num_to_str(decr(x))
