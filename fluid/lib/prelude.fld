@@ -309,7 +309,7 @@ def range(n, m):
   else: []
 
 # (Int, Int) -> (Int, Int) -> List (Int, Int)
-def range2((m1, n1), (m2, n2)):
+def range2d((m1, n1), (m2, n2)):
   [(i1, i2) for i1 in [m1 .. m2] for i2 in [n1 .. n2]]
 
 # Int -> Int -> Int
