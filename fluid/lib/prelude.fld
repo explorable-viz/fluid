@@ -23,18 +23,18 @@ def compare(x, y):
     else: EQ
 
 # (b -> b -> c) -> (a -> b) -> a -> a -> c
-def on(binOp, prop, x, y):
-  binOp(prop(x), prop(y))
+def on(bin_op, prop, x, y):
+  bin_op(prop(x), prop(y))
 
 # Num -> Num
 def negate: (-)(0)
 
 # Log of x in base y.
 # Float -> Float -> Float
-def logBase(x, y): log(y) / log(x)
+def log_base(x, y): log(y) / log(x)
 
 # Float -> Float -> Float
-def ceilingToNearest(n, m): ceiling(n / m) * m
+def ceiling_to_nearest(n, m): ceiling(n / m) * m
 
 # (b -> c) -> (a -> b) -> a -> c
 # Want infix <<<
@@ -96,16 +96,16 @@ def find(p, x :| xs):
   else: find(p, xs)
 
 # String -> String -> List Dict -> Option Dict
-def findWithKey(k, v, rs):
+def find_with_key(k, v, rs):
   find(lambda y: y[k] == v, rs)
 
 # Option a -> a
-def fromSome(None): error("Expected Some!")
-def fromSome(Some(x)): x
+def from_some(None): error("Expected Some!")
+def from_some(Some(x)): x
 
 # Option a -> a -> a
-def fromOption(None, y): y
-def fromOption(Some(x), _): x
+def from_option(None, y): y
+def from_option(Some(x), _): x
 
 # (a -> Bool) -> List a -> List a
 def filter(p, []): []
@@ -116,12 +116,12 @@ def filter(p, x :| xs):
   else: ys
 
 # (a -> Option b) -> List a -> List b
-def filterMap(p, []): []
-def filterMap(p, x :| xs):
+def filter_map(p, []): []
+def filter_map(p, x :| xs):
   match p(x):
-    case None: filterMap(f, xs)
+    case None: filter_map(f, xs)
     case Some(y):
-      y :| filterMap(f, xs)
+      y :| filter_map(f, xs)
 
 # Equivalent to but more efficient than length ∘ filter(p)
 def count_if(p):
@@ -142,10 +142,10 @@ def span(p, x :| xs_):
 
 # Each returned list is non-empty.
 # (a -> a -> Bool) -> List a -> List (List a)
-def groupBy(eq, Nil): Nil
-def groupBy(eq, x :| xs):
+def group_by(eq, Nil): Nil
+def group_by(eq, x :| xs):
   def { init: ys, rest: zs }: span(eq(x), xs)
-  (x :| ys) :| groupBy(eq, zs)
+  (x :| ys) :| group_by(eq, zs)
 
 # (a -> b -> a) -> a -> List b -> a
 def foldl(op, z, []): z
@@ -195,7 +195,7 @@ def concat2(x :| xs, ys):
 def concat: foldl(concat2, [])
 
 # (a -> List b) -> List a -> List b
-def concatMap(f, xs): concat(map(f, xs))
+def concat_map(f, xs): concat(map(f, xs))
 
 # List a -> a -> List a
 def intersperse([], _): []
@@ -251,7 +251,7 @@ def drop(n, xs):
       case _ :| xs: drop(n - 1, xs)
 
 # Int -> List a -> List a
-def lastN(n, xs):
+def last_n(n, xs):
   foldl(compose(const, drop(1)), xs, drop(n, xs))
 
 # Expects non-negative integer as first argument and non-empty list as second argument.
@@ -295,13 +295,13 @@ def unzip((x, y) :| zs):
   (x :| xs, y :| ys)
 
 # (a -> b -> c) -> List a -> List b -> List c
-def zipWith(op, [], ys): []
-def zipWith(op, x :| xs, []): []
-def zipWith(op, x :| xs, y :| ys):
-  op(x, y) :| zipWith(op, xs, ys)
+def zip_with(op, [], ys): []
+def zip_with(op, x :| xs, []): []
+def zip_with(op, x :| xs, y :| ys):
+  op(x, y) :| zip_with(op, xs, ys)
 
 # List a -> List b -> List (a, b)
-def zip: zipWith(curry(id))
+def zip: zip_with(curry(id))
 
 # Int -> Int -> List Int
 def range(n, m):
@@ -333,7 +333,7 @@ def slice(begin, end, xs):
   take(end - begin, drop(begin, xs))
 
 # (a -> Boolean) -> List a -> (List a, List a)
-def splitOn(p, data):
+def split_on(p, data):
   def go(fls, trs, []):
     (reverse(fls), reverse(trs))
   def go(fls, trs, x :| xs):

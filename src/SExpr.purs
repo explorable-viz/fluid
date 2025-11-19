@@ -401,7 +401,7 @@ listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
 listCompFwd (α × (ListCompGen p s : qs) × s') = do
    let ks = orElseFwd α ((Left p : Nil) × ListComp α s' qs)
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
-   E.App (E.App (E.Var "concatMap") (E.Lambda α (asElim σ))) <$> desug s
+   E.App (E.App (E.Var "concat_map") (E.Lambda α (asElim σ))) <$> desug s
 
 listCompBwd
    :: forall a
@@ -420,7 +420,7 @@ listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0
       # unsafePartial case _ of
            ((Left _ : Nil) × Nil × ListComp α s' qs') : Nil ->
               (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
-listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
+listCompBwd (E.App (E.App (E.Var "concat_map") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
    orElseBwd k (nonEmpty ks <#> unsafePartial \(π × Nil × s') -> π × s')
       # unsafePartial case _ of
            β × ListComp α s' qs' -> (α ∨ α' ∨ β) × (ListCompGen p (desugBwd e s0) : qs') × s'

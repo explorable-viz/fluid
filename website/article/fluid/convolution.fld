@@ -7,7 +7,7 @@ def lookup(m, n, image):
     image!(m, n)
   else: 0 # pad with zeros
 
-def matrixSum(matr):
+def matrix_sum(matr):
   def (m, n): dims(matr)
   foldl((+), 0, [matr!(i, j) for (i, j) in range2d((1, 1), (m, n))])
 
@@ -15,11 +15,11 @@ def convolve(image, kernel):
   def (k_i, k_j): dims(kernel)
   def (half_i, half_j): (k_i |quot| 2, k_j |quot| 2)
 
-  def interMatrix(m, n):
+  def inter_matrix(m, n):
     @doc(f"""average these to compute element ({m}, {n})""")
     [| lookup(m + i - 1 - half_i, n + j - 1 - half_j, image) * kernel!(i, j)
        for (i, j) in (k_i, k_j) |]
 
-  [| matrixSum(interMatrix(m, n)) |quot| k_i * k_j for (m, n) in dims(image) |]
+  [| matrix_sum(inter_matrix(m, n)) |quot| k_i * k_j for (m, n) in dims(image) |]
 
 convolve(inputImage, filter)

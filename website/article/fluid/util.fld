@@ -17,14 +17,14 @@ def findIndex(fName, x, y :| ys):
   else:
     findIndex(fName, x, ys) + 1
 
-def findWithKey_(fName, x, table):
-  fromSome(findWithKey(fName, x, table))
+def find_with_key_(fName, x, table):
+  from_some(find_with_key(fName, x, table))
 
 def findWhere(pred, table):
-  fromSome(find(pred, table))
+  from_some(find(pred, table))
 
 def model(m, t):
-  findWithKey_("model", m, t)
+  find_with_key_("model", m, t)
 
 def maximumBy(f, []):
   error("Empty list!")

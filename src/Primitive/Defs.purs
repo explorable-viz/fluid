@@ -57,7 +57,7 @@ primitives = wrap $ D.fromFoldable
    , unary "float" { i: string, o: number, fwd: definitely' <<< fromString }
    , unary "floor" { i: number, o: int, fwd: floor }
    , unary "log" { i: intOrNumber, o: number, fwd: log }
-   , unary "numToStr" { i: intOrNumber, o: string, fwd: numToStr } -- rename to 'str' (more Pythonic)
+   , unary "num_to_str" { i: intOrNumber, o: string, fwd: numToStr } -- rename to 'str' (more Pythonic)
    , binary "+" { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: plus }
    , binary "-" { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: minus }
    , binaryZero "*" { i: intOrNumber, o: intOrNumber, fwd: times }
@@ -99,7 +99,7 @@ error_ =
 
 debugLog :: ForeignOp
 debugLog =
-   ForeignOp ("debugLog" × ForeignOp' { arity: 1, op })
+   ForeignOp ("debug_log" × ForeignOp' { arity: 1, op })
    where
    op :: Op
    op (x : Nil) = pure $ trace x (const x)
@@ -107,7 +107,7 @@ debugLog =
 
 loadJson :: ForeignOp
 loadJson =
-   ForeignOp ("loadJson" × ForeignOp' { arity: 1, op })
+   ForeignOp ("load_json" × ForeignOp' { arity: 1, op })
    where
    op :: Op
    op (Val _ _ (Str path) : Nil) = do

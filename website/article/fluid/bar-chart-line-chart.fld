@@ -30,7 +30,7 @@ MultiView([
     plots: [
      LinePlot({
        name: energyType,
-       points: zipWith(lambda p1, p2: { x: p1.x, y: p1.y / p2.y }, usa, china)
+       points: zip_with(lambda p1, p2: { x: p1.x, y: p1.y / p2.y }, usa, china)
      })
      for energyType in ["Bio", "Hydro", "Solar", "Wind"]
      for (usa, china) in [(series(energyType, "USA"), series(energyType, "China"))]
