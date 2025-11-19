@@ -1,4 +1,4 @@
-def image':
+def image_:
   [
     [15, 13, 6, 9, 16],
     [12, 5, 15, 4, 13],
@@ -6,7 +6,7 @@ def image':
     [4, 10, 3, 7, 19],
     [3, 11, 15, 2, 9]
   ]
-def image: [| nth2(i, j, image') for (i, j) in (5, 5)|]
+def image: [| nth2(i, j, image_) for (i, j) in (5, 5)|]
 def index: (2, 2)
 def pair: ⸨4000⸩
 
