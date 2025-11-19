@@ -4,7 +4,7 @@ def incHead:
   lambda xs: head(xs) + x
 def d: { a: [5, 6], b: [9, 10], c: [3, 4] }
 def e: { c: [] }
-def d':
+def d_:
   dict_map(incHead, dict_difference(d, e))
 
-d'.a + d'.b
+d_.a + d_.b

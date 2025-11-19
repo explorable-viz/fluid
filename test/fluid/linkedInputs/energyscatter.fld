@@ -10,12 +10,12 @@ def plot(year, countries):
     filter(isYear(year), nonRenewables)
 
   def plotCountry(country):
-    def rens':
+    def rens_:
       filter(isCountry(country), rens)
     def rensOut:
-      sum(map(lambda x: x.output, rens'))
+      sum(map(lambda x: x.output, rens_))
     def rensCap:
-      sum(map(lambda x: x.capacity, rens'))
+      sum(map(lambda x: x.capacity, rens_))
     def x:
       head(filter(isCountry(country), nonRens))
     def nonRensCap:

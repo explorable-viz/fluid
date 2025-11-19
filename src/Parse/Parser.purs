@@ -86,14 +86,14 @@ unreserved p = do
    else pure name
 
 variable :: Parser String
-variable = unreserved $ identifier (lower <|> char '_') (alphaNum <|> oneOf [ '_', '\'' ])
+variable = unreserved $ identifier (lower <|> char '_') (alphaNum <|> char '_')
 
 constructor :: Parser String
-constructor = unreserved $ identifier upper (alphaNum <|> oneOf [ '_', '\'' ])
+constructor = unreserved $ identifier upper (alphaNum <|> char '_')
 
 reserved :: String -> Parser Unit
 reserved expected = try do
-   received <- identifier (letter <|> char '_') (alphaNum <|> oneOf [ '_', '\'' ])
+   received <- identifier (letter <|> char '_') (alphaNum <|> char '_')
    if expected /= received then fail $ "Expected `" <> expected <> "`, received `" <> received <> "`"
    else pure unit
 
