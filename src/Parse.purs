@@ -23,15 +23,16 @@ import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
-import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
+import Parsing.Expr (OperatorTable, buildExprParser)
+import Parsing.Expr (Assoc(..), Operator(..)) as P
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
-import Primitive.Parse (OpDef, OpType(..), opDefs)
+import Primitive.Parse (InfixParser(..), OpDef(..), opDefs, prec)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), nonEmpty, (×))
 
 pattern :: Parser Pattern
-pattern = defer \_ -> buildExprParser [ [ Infix pConsOp AssocRight ] ] simplePattern
+pattern = defer \_ -> buildExprParser [ [ P.Infix pConsOp P.AssocRight ] ] simplePattern
 
 simplePattern :: Parser Pattern
 simplePattern = pVar <|> pConstr <|> pRecord <|> pList <|> parensPattern
@@ -73,18 +74,18 @@ pConsOp = do
    reservedOperator ":|"
    pure \e e' -> PConstr ":" (e : e' : Nil)
 
-binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-binaryOp op = do
+infixSymbol :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
+infixSymbol op = do
    reservedOperator op
    pure \e e' -> BinaryApp e op e'
 
-binaryOpIdent :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-binaryOpIdent op = do
+infixIdent :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
+infixIdent op = do
    reserved op
    pure \e e' -> BinaryApp e op e'
 
-infixFn :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
-infixFn = do
+infixCustom :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
+infixCustom = do
    fn <- try (delim '|' *> variable)
    delim '|'
    pure \e e' -> BinaryApp e fn e'
@@ -94,21 +95,21 @@ consOp = do
    reservedOperator ":|"
    pure \e e' -> Constr unit ":" (e : e' : Nil)
 
-binaryOps :: OperatorTable (StateT Position Identity) String (Raw Expr)
-binaryOps =
+opTable :: OperatorTable (StateT Position Identity) String (Raw Expr)
+opTable =
    opDefs
-      # groupBy (\a b -> a.prec == b.prec)
-      # sortBy (comparing (\grp -> negate (head grp).prec)) -- sort high -> low
+      # groupBy (\a b -> prec a == prec b)
+      # sortBy (comparing (\grp -> negate (prec (head grp)))) -- sort high -> low
       # map (toArray <$> map toOperator)
    where
-   toOperator :: OpDef -> Operator (StateT Position Identity) String (Raw Expr)
-   toOperator def = Infix (infixParser def.type def.op) def.assoc
+   toOperator :: OpDef -> P.Operator (StateT Position Identity) String (Raw Expr)
+   toOperator (Infix parser op assoc _) = P.Infix (infixParser parser op) assoc
 
-   infixParser :: OpType -> String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-   infixParser BinaryOp op = binaryOp op
-   infixParser BinaryId op = binaryOpIdent op
-   infixParser BinaryCons _ = consOp
-   infixParser CustomInfix _ = infixFn
+   infixParser :: InfixParser -> String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
+   infixParser Symbol op = infixSymbol op
+   infixParser Ident op = infixIdent op
+   infixParser ConsOp _ = consOp
+   infixParser Custom _ = infixCustom
 
 varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
@@ -175,7 +176,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       pure $ IfElse c t e
 
    opTree :: Parser (Raw Expr)
-   opTree = context "opTree" (buildExprParser binaryOps simpleChain) <* consume -- otherwise always `consume: false`
+   opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
       where
 
       simpleChain :: Parser (Raw Expr)
