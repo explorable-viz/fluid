@@ -8,6 +8,7 @@ misc_cases =
    , { file: "array.fld", fwd_expect: "(1, (3, 3))" }
    , { file: "boolean-precedence.fld", fwd_expect: "True" }
    , { file: "compose.fld", fwd_expect: "5" }
+   , { file: "custom-infix.fld", fwd_expect: "True" }
    , { file: "dicts.fld"
      , fwd_expect: "{ d: {}, e: { a: 5, ab: 6 }, e_ab: 6, f: { a: 6, ab: 7 }, g: { a: 5 } }"
      }
