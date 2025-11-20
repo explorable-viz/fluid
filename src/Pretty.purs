@@ -16,7 +16,7 @@ import Expr as E
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
-import Primitive.Parse (opDefs)
+import Primitive.Parse (opMap, prec)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (×), isEmpty, (×))
 import Util.Map (toUnfoldable)
@@ -100,8 +100,8 @@ prettyP :: forall a. Pretty a => a -> String
 prettyP x = render (pretty x)
 
 getPrec :: String -> Int
-getPrec x = case lookup x opDefs of
-   Just y -> y.prec
+getPrec x = case lookup x opMap of
+   Just y -> prec y
    Nothing -> -1
 
 binaryApp :: forall a. Ann a => Int -> Expr a -> Doc

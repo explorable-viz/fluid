@@ -1,41 +1,48 @@
 module Primitive.Parse where
 
+import Prelude
+
+import Bind (Var)
 import Data.Map (Map, fromFoldable)
 import Parsing.Expr (Assoc(..))
-import Bind (Var)
-import Util (type (×), (×))
+import Util ((×))
 
--- name in user land, precedence 0 from 9 (similar to Haskell 98), associativity
-type OpDef =
-   { op :: Var
-   , prec :: Int
-   , assoc :: Assoc
-   }
+data OpDef =
+   Infix InfixParser Var Assoc Int
 
-opDef :: Var -> Int -> Assoc -> Var × OpDef
-opDef op prec assoc = op × { op, prec, assoc }
+data InfixParser = Symbol | Ident | ConsOp | Custom
 
--- Syntactic information only. No requirement that any of these be defined.
--- TODO: unify with defs in src/Parse.purs (this list is only used by pretty printer)
-opDefs :: Map String OpDef
-opDefs = fromFoldable
-   [ opDef "." 8 AssocLeft
-   , opDef "!" 8 AssocLeft
-   , opDef "**" 8 AssocRight
-   , opDef "*" 7 AssocLeft
-   , opDef "/" 7 AssocLeft
-   , opDef "//" 7 AssocLeft
-   , opDef "%" 7 AssocLeft
-   , opDef "+" 6 AssocLeft
-   , opDef "-" 6 AssocLeft
-   , opDef ":" 6 AssocRight
-   , opDef "++" 5 AssocRight
-   , opDef "==" 4 AssocNone
-   , opDef "/=" 4 AssocNone
-   , opDef "<" 4 AssocLeft
-   , opDef ">" 4 AssocLeft
-   , opDef "<=" 4 AssocLeft
-   , opDef ">=" 4 AssocLeft
-   , opDef "and" 3 AssocLeft
-   , opDef "or" 2 AssocLeft
+name :: OpDef -> Var
+name (Infix _ n _ _) = n
+
+prec :: OpDef -> Int
+prec (Infix _ _ _ p) = p
+
+-- Aim to match Python operator precedence and associativty as defined in:
+-- https://docs.python.org/3/reference/expressions.html#operator-precedence
+opDefs :: Array OpDef
+opDefs =
+   [ Infix Symbol "!" AssocLeft 9
+   , Infix Symbol "**" AssocRight 8
+   , Infix Symbol "*" AssocLeft 7
+   , Infix Symbol "/" AssocLeft 7
+   , Infix Symbol "//" AssocLeft 7
+   , Infix Symbol "%" AssocLeft 7
+   , Infix Symbol "+" AssocLeft 6
+   , Infix Symbol "-" AssocLeft 6
+   , Infix ConsOp ":" AssocRight 5
+   , Infix Symbol "++" AssocRight 4
+   , Infix Symbol "==" AssocNone 3
+   , Infix Symbol "/=" AssocNone 3
+   , Infix Symbol "<" AssocLeft 3
+   , Infix Symbol ">" AssocLeft 3
+   , Infix Symbol "<=" AssocLeft 3
+   , Infix Symbol ">=" AssocLeft 3
+   , Infix Ident "and" AssocLeft 2
+   , Infix Ident "or" AssocLeft 1
+   , Infix Custom "|x|" AssocLeft 0
    ]
+
+-- for lookup by name
+opMap :: Map String OpDef
+opMap = fromFoldable $ map (\def -> name def × def) opDefs
