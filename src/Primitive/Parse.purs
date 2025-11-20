@@ -15,7 +15,7 @@ type OpDef =
    , type :: OpType
    }
 
-data OpType = BinaryOp | BinaryId | BinaryCons
+data OpType = BinaryOp | BinaryId | BinaryCons | CustomInfix
 
 opDef :: Var -> Int -> Assoc -> OpType -> OpDef
 opDef op prec assoc ty = { op, prec, assoc, type: ty }
@@ -42,6 +42,7 @@ opDefs =
    , opDef ">=" 3 AssocLeft BinaryOp
    , opDef "and" 2 AssocLeft BinaryId
    , opDef "or" 1 AssocLeft BinaryId
+   , opDef "|x|" 0 AssocLeft CustomInfix
    ]
 
 -- for lookup by name

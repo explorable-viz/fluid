@@ -5,7 +5,8 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Lazy (defer)
 import Control.Monad.State (StateT)
-import Data.Array (fromFoldable, some)
+import Data.Array (fromFoldable, groupBy, some, sortBy)
+import Data.Array.NonEmpty (head, toArray)
 import Data.Bifunctor (lmap)
 import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either, choose)
@@ -25,6 +26,7 @@ import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
+import Primitive.Parse (OpDef, OpType(..), opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), nonEmpty, (×))
 
@@ -94,30 +96,19 @@ consOp = do
 
 binaryOps :: OperatorTable (StateT Position Identity) String (Raw Expr)
 binaryOps =
-   [ [ Infix (binaryOp "!") AssocLeft
-     , Infix (binaryOp "**") AssocRight
-     ]
-   , [ Infix (binaryOp "*") AssocLeft
-     , Infix (binaryOp "/") AssocLeft
-     , Infix (binaryOp "//") AssocLeft
-     , Infix (binaryOp "%") AssocLeft
-     ]
-   , [ Infix (binaryOp "+") AssocLeft
-     , Infix (binaryOp "-") AssocLeft
-     ]
-   , [ Infix consOp AssocRight ]
-   , [ Infix (binaryOp "++") AssocRight ]
-   , [ Infix (binaryOp "==") AssocNone
-     , Infix (binaryOp "/=") AssocNone
-     , Infix (binaryOp "<") AssocLeft
-     , Infix (binaryOp ">") AssocLeft
-     , Infix (binaryOp "<=") AssocLeft
-     , Infix (binaryOp ">=") AssocLeft
-     ]
-   , [ Infix (binaryOpIdent "and") AssocLeft ]
-   , [ Infix (binaryOpIdent "or") AssocLeft ]
-   , [ Infix infixFn AssocLeft ]
-   ]
+   opDefs
+      # groupBy (\a b -> a.prec == b.prec)
+      # sortBy (comparing (\grp -> negate (head grp).prec)) -- sort high -> low
+      # map (toArray <$> map toOperator)
+   where
+   toOperator :: OpDef -> Operator (StateT Position Identity) String (Raw Expr)
+   toOperator def = Infix (infixParser def.type def.op) def.assoc
+
+   infixParser :: OpType -> String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
+   infixParser BinaryOp op = binaryOp op
+   infixParser BinaryId op = binaryOpIdent op
+   infixParser BinaryCons _ = consOp
+   infixParser CustomInfix _ = infixFn
 
 varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
