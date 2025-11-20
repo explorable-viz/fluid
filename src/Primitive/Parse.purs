@@ -1,40 +1,49 @@
 module Primitive.Parse where
 
+import Prelude
+
+import Bind (Var)
 import Data.Map (Map, fromFoldable)
 import Parsing.Expr (Assoc(..))
-import Bind (Var)
-import Util (type (×), (×))
+import Util ((×))
 
--- name in user land, precedence 0 from 9 (similar to Haskell 98), associativity
+-- name in user land, precedence, associativity, type (for parser)
 type OpDef =
    { op :: Var
    , prec :: Int
    , assoc :: Assoc
+   , type :: OpType
    }
 
-opDef :: Var -> Int -> Assoc -> Var × OpDef
-opDef op prec assoc = op × { op, prec, assoc }
+data OpType = BinaryOp | BinaryId | BinaryCons
 
--- Syntactic information only. No requirement that any of these be defined.
--- TODO: unify with defs in src/Parse.purs (this list is only used by pretty printer)
-opDefs :: Map String OpDef
-opDefs = fromFoldable
-   [ opDef "!" 9 AssocLeft
-   , opDef "**" 8 AssocRight
-   , opDef "*" 7 AssocLeft
-   , opDef "/" 7 AssocLeft
-   , opDef "//" 7 AssocLeft
-   , opDef "%" 7 AssocLeft
-   , opDef "+" 6 AssocLeft
-   , opDef "-" 6 AssocLeft
-   , opDef ":" 5 AssocRight
-   , opDef "++" 4 AssocRight
-   , opDef "==" 3 AssocNone
-   , opDef "/=" 3 AssocNone
-   , opDef "<" 3 AssocLeft
-   , opDef ">" 3 AssocLeft
-   , opDef "<=" 3 AssocLeft
-   , opDef ">=" 3 AssocLeft
-   , opDef "and" 2 AssocLeft
-   , opDef "or" 1 AssocLeft
+opDef :: Var -> Int -> Assoc -> OpType -> OpDef
+opDef op prec assoc ty = { op, prec, assoc, type: ty }
+
+-- Aim to match Python operator precedence and associativty as defined in:
+-- https://docs.python.org/3/reference/expressions.html#operator-precedence
+opDefs :: Array OpDef
+opDefs =
+   [ opDef "!" 9 AssocLeft BinaryOp
+   , opDef "**" 8 AssocRight BinaryOp
+   , opDef "*" 7 AssocLeft BinaryOp
+   , opDef "/" 7 AssocLeft BinaryOp
+   , opDef "//" 7 AssocLeft BinaryOp
+   , opDef "%" 7 AssocLeft BinaryOp
+   , opDef "+" 6 AssocLeft BinaryOp
+   , opDef "-" 6 AssocLeft BinaryOp
+   , opDef ":" 5 AssocRight BinaryCons
+   , opDef "++" 4 AssocRight BinaryOp
+   , opDef "==" 3 AssocNone BinaryOp
+   , opDef "/=" 3 AssocNone BinaryOp
+   , opDef "<" 3 AssocLeft BinaryOp
+   , opDef ">" 3 AssocLeft BinaryOp
+   , opDef "<=" 3 AssocLeft BinaryOp
+   , opDef ">=" 3 AssocLeft BinaryOp
+   , opDef "and" 2 AssocLeft BinaryId
+   , opDef "or" 1 AssocLeft BinaryId
    ]
+
+-- for lookup by name
+opMap :: Map String OpDef
+opMap = fromFoldable $ map (\def -> def.op × def) opDefs
