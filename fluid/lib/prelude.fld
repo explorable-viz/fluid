@@ -308,10 +308,6 @@ def range(n, m):
   if n < m: n :| range(n + 1, m)
   else: []
 
-# Int -> Int -> List Int
-def range_inclusive(n, m):
-    range(n, m + 1)
-
 # (Int, Int) -> (Int, Int) -> List (Int, Int)
 def range2d((m1, n1), (m2, n2)):
   [(i1, i2) for i1 in range(m1, m2) for i2 in range(n1, n2)]
