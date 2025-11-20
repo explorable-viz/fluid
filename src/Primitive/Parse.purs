@@ -19,8 +19,7 @@ opDef op prec assoc = op × { op, prec, assoc }
 -- TODO: unify with defs in src/Parse.purs (this list is only used by pretty printer)
 opDefs :: Map String OpDef
 opDefs = fromFoldable
-   [ opDef "." 8 AssocLeft
-   , opDef "!" 8 AssocLeft
+   [ opDef "!" 9 AssocLeft
    , opDef "**" 8 AssocRight
    , opDef "*" 7 AssocLeft
    , opDef "/" 7 AssocLeft
@@ -28,14 +27,14 @@ opDefs = fromFoldable
    , opDef "%" 7 AssocLeft
    , opDef "+" 6 AssocLeft
    , opDef "-" 6 AssocLeft
-   , opDef ":" 6 AssocRight
-   , opDef "++" 5 AssocRight
-   , opDef "==" 4 AssocNone
-   , opDef "/=" 4 AssocNone
-   , opDef "<" 4 AssocLeft
-   , opDef ">" 4 AssocLeft
-   , opDef "<=" 4 AssocLeft
-   , opDef ">=" 4 AssocLeft
-   , opDef "and" 3 AssocLeft
-   , opDef "or" 2 AssocLeft
+   , opDef ":" 5 AssocRight
+   , opDef "++" 4 AssocRight
+   , opDef "==" 3 AssocNone
+   , opDef "/=" 3 AssocNone
+   , opDef "<" 3 AssocLeft
+   , opDef ">" 3 AssocLeft
+   , opDef "<=" 3 AssocLeft
+   , opDef ">=" 3 AssocLeft
+   , opDef "and" 2 AssocLeft
+   , opDef "or" 1 AssocLeft
    ]
