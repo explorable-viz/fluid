@@ -260,7 +260,7 @@ def nth(n, x :| xs):
   if n == 0: x
   else: nth(n - 1, xs)
 
-# Matrix Int -> Int -> Int -> Int
+# Int -> Int -> List (List Int) -> Int
 def nth2(i, j, xss):
   nth(j, nth(i, xss))
 
