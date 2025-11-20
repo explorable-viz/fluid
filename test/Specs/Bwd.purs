@@ -84,7 +84,6 @@ bwd_cases =
      , fwd_expect: "⸨40.22222222222222⸩"
      }
    , { file: "dict/match.fld", bwd_expect_file: "dict/match.expect.fld", δv: select, fwd_expect: "" }
-   -- TODO:  double check this is expected behaviour
    , { file: "dtw/compute-dtw.fld"
      , bwd_expect_file: "dtw/compute-dtw.expect.fld"
      , fwd_expect: "(0, 0) :| ⸨(⸨1⸩, ⸨1⸩)⸩ :| (1, 2) :| (2, 3) :| (3, 4) :| (4, 5) :| (4, 6) :| []"
