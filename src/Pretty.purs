@@ -107,7 +107,9 @@ getPrec x = case lookup x opMap of
 binaryApp :: forall a. Ann a => Int -> Expr a -> Doc
 binaryApp n (BinaryApp s op s') =
    case getPrec op of
-      -1 -> binaryApp 0 s <+> text "|" <> text op <> text "|" <+> binaryApp 0 s'
+      -1 -> binaryApp customPrec s <+> text "|" <> text op <> text "|" <+> binaryApp customPrec s'
+         where
+         customPrec = getPrec "|x|"
       n' ->
          if n' <= n then
             parens (binaryApp n' s <+> text op <+> binaryApp n' s')

@@ -32,15 +32,15 @@ opDefs =
    , Infix Symbol "-" AssocLeft 6
    , Infix ConsOp ":" AssocRight 5
    , Infix Symbol "++" AssocRight 4
-   , Infix Symbol "==" AssocNone 3
-   , Infix Symbol "/=" AssocNone 3
-   , Infix Symbol "<" AssocLeft 3
-   , Infix Symbol ">" AssocLeft 3
-   , Infix Symbol "<=" AssocLeft 3
-   , Infix Symbol ">=" AssocLeft 3
-   , Infix Ident "and" AssocLeft 2
-   , Infix Ident "or" AssocLeft 1
-   , Infix Custom "|x|" AssocLeft 0
+   , Infix Custom "|x|" AssocLeft 3
+   , Infix Symbol "==" AssocNone 2
+   , Infix Symbol "/=" AssocNone 2
+   , Infix Symbol "<" AssocLeft 2
+   , Infix Symbol ">" AssocLeft 2
+   , Infix Symbol "<=" AssocLeft 2
+   , Infix Symbol ">=" AssocLeft 2
+   , Infix Ident "and" AssocLeft 1
+   , Infix Ident "or" AssocLeft 0
    ]
 
 -- for lookup by name
