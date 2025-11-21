@@ -193,9 +193,9 @@ evalVal γ (Matrix α e (x × y) e') αs = do
       (i' × j' >= 1 × 1)
       ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    vss <- sequence do
-      i <- A.range 1 i'
+      i <- A.range 0 (i' - 1)
       singleton $ sequence do
-         j <- A.range 1 j'
+         j <- A.range 0 (j' - 1)
          let γ' = maplet x (Val β Nothing (V.Int i)) `disjointUnion` (maplet y (Val β' Nothing (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
    pure $ Just (α × V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))

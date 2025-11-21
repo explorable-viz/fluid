@@ -146,16 +146,16 @@ type Array2 a = Array (Array a)
 
 matrixGet :: forall a. Int -> Int -> MatrixRep a -> Val a
 matrixGet i j (MatrixRep (vss × _ × _)) = definitely "index out of bounds!" $ do
-   us <- vss !! (i - 1)
-   us !! (j - 1)
+   us <- vss !! i
+   us !! j
 
 matrixPut :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
 matrixPut i j δv (MatrixRep (vss × h × w)) =
    MatrixRep (vss' × h × w)
    where
-   vs_i = vss ! (i - 1)
-   v_j = vs_i ! (j - 1)
-   vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (δv v_j) vs_i) vss
+   vs_i = vss ! i
+   v_j = vs_i ! j
+   vss' = unsafeUpdateAt i (unsafeUpdateAt j (δv v_j) vs_i) vss
 
 class Highlightable a where
    highlightIf :: a -> Endo Doc

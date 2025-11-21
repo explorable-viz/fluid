@@ -260,9 +260,9 @@ def nth(n, x :| xs):
   if n == 0: x
   else: nth(n - 1, xs)
 
-# Matrix Int -> Int -> Int -> Int
+# Int -> Int -> List (List Int) -> Int
 def nth2(i, j, xss):
-  nth(j - 1, nth(i - 1, xss))
+  nth(j, nth(i, xss))
 
 # Partial; requires k to be in the map.
 # Int -> List (Int, b) -> b
@@ -305,12 +305,12 @@ def zip: zip_with(curry(id))
 
 # Int -> Int -> List Int
 def range(n, m):
-  if n <= m: n :| [n + 1 .. m]
+  if n < m: n :| range(n + 1, m)
   else: []
 
 # (Int, Int) -> (Int, Int) -> List (Int, Int)
 def range2d((m1, n1), (m2, n2)):
-  [(i1, i2) for i1 in [m1 .. m2] for i2 in [n1 .. n2]]
+  [(i1, i2) for i1 in range(m1, m2) for i2 in range(n1, n2)]
 
 # Int -> Int -> Int
 def abs(x, y):

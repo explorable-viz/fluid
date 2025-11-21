@@ -1,11 +1,11 @@
 import lib.fnum
 
 def nextIndices(n, m, window):
-  [(i, j) for i in [1 .. n] for j in [max(1, i - window) .. min(m, i + window)]]
+  [(i, j) for i in [0 .. n - 1] for j in [max(0, i - window) .. min(m - 1, i + window)]]
 
 def costMatrixInit(rows, cols, window):
   def initV(n, m):
-    if (n == 1 and m == 1) or (abs(n, m) <= window and not(n == 1 or m == 1)): FNum(0)
+    if (n == 0 and m == 0) or (abs(n, m) <= window and not(n == 0 or m == 0)): FNum(0)
     else: Infty
   [| initV(n, m) for (n, m) in (rows, cols) |]
 
@@ -19,13 +19,13 @@ def minAndPrev((i, j), im1, jm1, ijm1):
     else: ((i, j), minim)
 
 def extractPath(indmatrix, (n, m), accum):
-  if n == 1 and m == 1: accum
+  if n == 0 and m == 0: accum
   else:
     extractPath(indmatrix, indmatrix ! (n, m), (n - 1, m - 1) :| accum)
 
 def localMinUpdate(seq1, seq2, cost, (costmatrix, indmatrix), (i, j)):
-  def iEntr: nth(i - 1, seq1)
-  def jEntr: nth(j - 1, seq2)
+  def iEntr: nth(i, seq1)
+  def jEntr: nth(j, seq2)
   def dist: cost(iEntr, jEntr)
   def ip: i + 1
   def jp: j + 1
@@ -52,4 +52,4 @@ def computeDTW(seq1, seq2, cost, window):
   def (finished, indices):
     foldl(localMinUpdate(seq1, seq2, cost), (initD, initI), indexing)
 
-  (finished, extractPath(indices, (n + 1, m + 1), Nil))
+  (finished, extractPath(indices, (n, m), Nil))

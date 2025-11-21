@@ -325,7 +325,9 @@ exprFwd (ListEmpty α) =
 exprFwd (ListNonEmpty α s l) =
    econs α <$> desug s <*> desug l
 exprFwd (ListEnum s1 s2) =
-   E.App <$> (E.App (E.Var "range") <$> desug s1) <*> desug s2
+   E.App
+      <$> (E.App (E.Var "range") <$> desug s1)
+      <*> (E.App <$> (E.App (E.Op "+") <$> desug s2) <@> (E.Int top 1))
 exprFwd (ListComp α s (ListCompGen p s' : qs)) = unsafePartial $
    listCompFwd (α × (ListCompGen p s' : qs) × s)
 exprFwd (ListComp α s qs) =
@@ -374,8 +376,11 @@ exprBwd (E.Constr α _ Nil) (ListEmpty _) =
    ListEmpty α
 exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
    ListNonEmpty α (desugBwd e1 s) (desugBwd e2 l)
-exprBwd (E.App (E.App (E.Var "range") e1) e2) (ListEnum s1 s2) =
-   ListEnum (desugBwd e1 s1) (desugBwd e2 s2)
+exprBwd (E.App (E.App (E.Var "range") e1) e) (ListEnum s1 s2) =
+   case e of
+      E.App (E.App _ e2) _ ->
+         ListEnum (desugBwd e1 s1) (desugBwd e2 s2)
+      _ -> error absurd
 exprBwd e@(E.App (E.App _ _) _) (ListComp _ s (q@(ListCompGen _ _) : qs)) =
    let α × qs' × s' = listCompBwd e ((q : qs) × s) in ListComp α s' qs'
 exprBwd e (ListComp _ s qs) =
@@ -386,7 +391,7 @@ exprBwd (E.LetRec xσs e) (LetRec xcs s) =
    LetRec (recDefsBwd xσs xcs) (desugBwd e s)
 exprBwd (E.DocExpr e e') (DocExpr s s') =
    DocExpr (exprBwd e s) (exprBwd e' s')
-exprBwd _ s = error $ "ExprBwd failed, s: " <> show s
+exprBwd _ _ = error absurd
 
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)

@@ -92,25 +92,25 @@ linkedOutputs_cases =
           , linking: true
           , rowFilter: Nothing
           }
-     , δ_out: fst (matrixElement 2 2 select)
+     , δ_out: fst (matrixElement 1 1 select)
      , out_expect:
           fst
-             ( matrixElement 2 1 select
-                  >.> matrixElement 2 2 select
-                  >.> matrixElement 2 3 select
-                  >.> matrixElement 2 4 select
-                  >.> matrixElement 2 5 select
+             ( matrixElement 1 0 select
+                  >.> matrixElement 1 1 select
+                  >.> matrixElement 1 2 select
+                  >.> matrixElement 1 3 select
+                  >.> matrixElement 1 4 select
              )
              >.> snd
-                ( matrixElement 1 1 select
+                ( matrixElement 0 0 select
+                     >.> matrixElement 0 1 select
+                     >.> matrixElement 0 2 select
+                     >.> matrixElement 1 0 select
+                     >.> matrixElement 1 1 select
                      >.> matrixElement 1 2 select
-                     >.> matrixElement 1 3 select
+                     >.> matrixElement 2 0 select
                      >.> matrixElement 2 1 select
                      >.> matrixElement 2 2 select
-                     >.> matrixElement 2 3 select
-                     >.> matrixElement 3 1 select
-                     >.> matrixElement 3 2 select
-                     >.> matrixElement 3 3 select
                 )
      , file: "linkedOutputs/convolution.fld"
      }
