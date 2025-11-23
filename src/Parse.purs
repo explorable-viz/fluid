@@ -175,20 +175,17 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          pure $ Let ds e
 
    ifElse :: Parser (Raw Expr)
-   ifElse = reserved "if" *> cte
+   ifElse = do
+      reserved "if"
+      c <- clause
+      cs <- many (align $ reserved "elif" *> clause)
+      e <- align $ reserved "else" *> block expr
+      pure $ IfElse (nonEmpty (c : cs)) e
       where
-      cte = do
+      clause = do
          c <- opTree
-         t <- block expr
-         e <- choice
-            [ do
-                 align $ reserved "elif"
-                 cte
-            , do
-                 align $ reserved "else"
-                 block expr
-            ]
-         pure $ IfElse c t e
+         e <- block expr
+         pure (c × e)
 
    opTree :: Parser (Raw Expr)
    opTree = context "opTree" (buildExprParser binaryOps simpleChain) <* consume -- otherwise always `consume: false`
