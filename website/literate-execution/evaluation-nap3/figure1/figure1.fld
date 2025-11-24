@@ -60,7 +60,9 @@ def actions_with_score(action_counts, eval_score):
 
 def proportion(x, y):
   if y == 0: 0
-  else: x / y
+  else:
+    @doc(f"""Dividing {x} by {y}""")
+    (x / y)
 
 def max_with_score(actions, eval_score):
   maximum([
