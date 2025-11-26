@@ -23,6 +23,7 @@ import Data.String as String
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (for, sequence, traverse)
+import Data.Tuple (fst)
 import DataType (cCons, cFalse, cNil, cNone, cPair, cSome, cTrue)
 import Debug (trace)
 import Dict (fromFoldable)
@@ -249,11 +250,13 @@ foldl_with_index =
    op :: Op
    op doc_opt (v : u : Val _ _ (Dictionary (DictRep d)) : Nil) =
       foldM
-         ( \u1 (k × (α × u2)) ->
-              G.apply Nothing v (Val α Nothing (Str k)) >>= flip (G.apply Nothing) u1 >>= flip (G.apply doc_opt) u2
+         ( \(u1 × doc_opt') (k × (α × u2)) ->
+              G.apply Nothing v (Val α Nothing (Str k)) >>= flip (G.apply Nothing) u1 >>= flip (G.apply doc_opt') u2
+                 <#> (_ × Nothing)
          )
-         u
+         (u × doc_opt)
          kvs
+         <#> fst
       where
       kvs :: List _
       kvs = Dict.toUnfoldable d
