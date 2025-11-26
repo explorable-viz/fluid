@@ -139,7 +139,7 @@ eval
    -> Set Vertex
    -> m (Val Vertex)
 eval doc_opt γ e0 αs = do
-   αu_opt <- evalVal doc_opt γ e0 αs
+   αu_opt <- evalVal γ e0 αs
    case αu_opt of
       Just (α × u) ->
          new (flip Val doc_opt) (insert α αs) u
@@ -170,7 +170,7 @@ eval doc_opt γ e0 αs = do
             γ' <- closeDefs γ ρ (insert α αs)
             eval doc_opt (γ <+> γ') e (insert α αs)
          DocExpr e e' -> do
-            αu_opt' <- evalVal doc_opt γ e' αs
+            αu_opt' <- evalVal γ e' αs
             case αu_opt' of
                Just (α × u) -> do
                   v <- eval Nothing γ e αs
@@ -193,28 +193,27 @@ evalVal
    => MonadReader FileCxt m
    => MonadAff m
    => LoadFile m
-   => Maybe (Val Vertex)
-   -> Env Vertex
+   => Env Vertex
    -> Expr Vertex
    -> Set Vertex
    -> m (Maybe (Vertex × BaseVal Vertex))
-evalVal _ _ (Int α n) _ =
+evalVal _ (Int α n) _ =
    pure $ Just (α × V.Int n)
-evalVal _ _ (Float α n) _ =
+evalVal _ (Float α n) _ =
    pure $ Just (α × V.Float n)
-evalVal _ _ (Str α s) _ =
+evalVal _ (Str α s) _ =
    pure $ Just (α × V.Str s)
-evalVal _ γ (Dictionary α ees) αs = do
+evalVal γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval Nothing γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    pure $ Just (α × V.Dictionary (DictRep d))
-evalVal _ γ (Constr α c es) αs = do
+evalVal γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval Nothing γ) αs) es
    pure $ Just (α × V.Constr c vs)
-evalVal _ γ (Matrix α e (x × y) e') αs = do
+evalVal γ (Matrix α e (x × y) e') αs = do
    Val _ _ v <- eval Nothing γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
    check
@@ -227,9 +226,9 @@ evalVal _ γ (Matrix α e (x × y) e') αs = do
          let γ' = maplet x (Val β Nothing (V.Int i)) `disjointUnion` (maplet y (Val β' Nothing (V.Int j)))
          singleton (eval Nothing (γ <+> γ') e αs)
    pure $ Just (α × V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
-evalVal _ γ (Lambda α σ) _ =
+evalVal γ (Lambda α σ) _ =
    pure $ Just (α × V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
-evalVal _ _ _ _ = pure Nothing
+evalVal _ _ _ = pure Nothing
 
 eval_module :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
