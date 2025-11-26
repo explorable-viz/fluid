@@ -5,7 +5,7 @@ import Prelude hiding (absurd, apply)
 import Bind (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
-import Data.Array (range) as A
+import Data.Array ((..))
 import Data.Either (Either(..))
 import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
@@ -89,12 +89,21 @@ closeDefs γ ρ αs =
       in
          val αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
-apply :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
-apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
+apply
+   :: forall m
+    . MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => Maybe (Val Vertex)
+   -> Val Vertex
+   -> Val Vertex
+   -> m (Val Vertex)
+apply doc_opt (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
-   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
-apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
+   eval doc_opt (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
+apply _ (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
    where
    vs' = snoc vs v
@@ -106,7 +115,7 @@ apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
       else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
-apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
+apply _ (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    val (singleton α) v'
    where
@@ -116,11 +125,21 @@ apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
       else
          V.Constr c (snoc vs v)
    n = defined (arity c)
-apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
+apply _ _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
-eval γ e0 αs = do
-   αu_opt <- evalVal γ e0 αs
+eval
+   :: forall m
+    . MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => Maybe (Val Vertex) -- optional doc-comment context
+   -> Env Vertex
+   -> Expr Vertex
+   -> Set Vertex
+   -> m (Val Vertex)
+eval doc_opt γ e0 αs = do
+   αu_opt <- evalVal doc_opt γ e0 αs
    case αu_opt of
       Just (α × u) ->
          val (insert α αs) u
@@ -130,8 +149,8 @@ eval γ e0 αs = do
          Op op ->
             withMsg "Variable lookup" $ lookup' op γ
          DProject e x -> do
-            v <- eval γ e αs
-            v' <- eval γ x αs
+            v <- eval Nothing γ e αs
+            v' <- eval Nothing γ x αs
             case v of
                Val _ _ (V.Dictionary (DictRep d)) ->
                   case v' of
@@ -140,26 +159,25 @@ eval γ e0 αs = do
                      _ -> throw $ "Found " <> prettyP v' <> ", expected string"
                _ -> throw $ "Found " <> prettyP v <> ", expected dict"
          App e e' -> do
-            v <- eval γ e αs
-            v' <- eval γ e' αs
-            withMsg ("In " <> funName e) $ apply v v'
+            v <- eval doc_opt γ e αs
+            v' <- eval doc_opt γ e' αs
+            withMsg ("In " <> funName e) $ apply doc_opt v v'
          Let (VarDef σ e) e' -> do
-            v <- eval γ e αs
+            v <- eval doc_opt γ e αs
             γ' × _ × αs' <- withMsg "In variable def" $ match v σ -- terminal meta-type of eliminator is meta-unit
-            eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
+            eval doc_opt (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
          LetRec (RecDefs α ρ) e -> do
             γ' <- closeDefs γ ρ (insert α αs)
-            eval (γ <+> γ') e (insert α αs)
+            eval doc_opt (γ <+> γ') e (insert α αs)
          DocExpr e e' -> do
-            αu_opt' <- evalVal γ e' αs
+            αu_opt' <- evalVal doc_opt γ e' αs
             case αu_opt' of
                Just (α × u) -> do
-                  v <- eval γ e αs
+                  v <- eval Nothing γ e αs
                   new (flip Val (Just v)) (insert α αs) u
                Nothing -> do
-                  -- No way to update value once added to graph. Moreover unclear what semantics should be.
-                  Val α _ u <- eval γ e' αs -- discard any existing doc
-                  v <- eval γ e αs
+                  Val α _ u <- eval Nothing γ e' αs -- discard any existing doc
+                  v <- eval Nothing γ e αs
                   pure $ Val α (Just v) u
          _ -> error absurd
    where
@@ -169,39 +187,49 @@ eval γ e0 αs = do
    funName (App e _) = funName e
    funName _ = "unknown"
 
-evalVal :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Maybe (Vertex × BaseVal Vertex))
-evalVal _ (Int α n) _ =
+evalVal
+   :: forall m
+    . MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => Maybe (Val Vertex)
+   -> Env Vertex
+   -> Expr Vertex
+   -> Set Vertex
+   -> m (Maybe (Vertex × BaseVal Vertex))
+evalVal _ _ (Int α n) _ =
    pure $ Just (α × V.Int n)
-evalVal _ (Float α n) _ =
+evalVal _ _ (Float α n) _ =
    pure $ Just (α × V.Float n)
-evalVal _ (Str α s) _ =
+evalVal _ _ (Str α s) _ =
    pure $ Just (α × V.Str s)
-evalVal γ (Dictionary α ees) αs = do
-   vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
+evalVal _ γ (Dictionary α ees) αs = do
+   vs × us <- traverse (traverse (flip (eval Nothing γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    pure $ Just (α × V.Dictionary (DictRep d))
-evalVal γ (Constr α c es) αs = do
+evalVal _ γ (Constr α c es) αs = do
    checkArity c (length es)
-   vs <- traverse (flip (eval γ) αs) es
+   vs <- traverse (flip (eval Nothing γ) αs) es
    pure $ Just (α × V.Constr c vs)
-evalVal γ (Matrix α e (x × y) e') αs = do
-   Val _ _ v <- eval γ e' αs
+evalVal _ γ (Matrix α e (x × y) e') αs = do
+   Val _ _ v <- eval Nothing γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
    check
       (i' × j' >= 1 × 1)
       ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    vss <- sequence do
-      i <- A.range 0 (i' - 1)
+      i <- 0 .. (i' - 1)
       singleton $ sequence do
-         j <- A.range 0 (j' - 1)
+         j <- 0 .. (j' - 1)
          let γ' = maplet x (Val β Nothing (V.Int i)) `disjointUnion` (maplet y (Val β' Nothing (V.Int j)))
-         singleton (eval (γ <+> γ') e αs)
+         singleton (eval Nothing (γ <+> γ') e αs)
    pure $ Just (α × V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
-evalVal γ (Lambda α σ) _ =
+evalVal _ γ (Lambda α σ) _ =
    pure $ Just (α × V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
-evalVal _ _ _ = pure Nothing
+evalVal _ _ _ _ = pure Nothing
 
 eval_module :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
@@ -209,7 +237,7 @@ eval_module γ = go empty
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
    go γ' (Module Nil) _ = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) αs = do
-      v <- eval (γ <+> y') e αs
+      v <- eval Nothing (γ <+> y') e αs
       γ'' × _ × αs' <- match v σ
       go (y' <+> γ'') (Module ds) αs'
    go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
@@ -301,7 +329,7 @@ graphEval { n, γ } e = do
    _ × _ × g × inα × outα <- flip runAllocT n do
       eα <- alloc e
       let inα = EnvExpr γ eα
-      g × outα <- runWithGraphT_spy (eval γ eα mempty) (vertices inα)
+      g × outα <- runWithGraphT_spy (eval Nothing γ eα mempty) (vertices inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × inα × outα)
    pure { g, graph_fwd, graph_bwd, inα, outα }

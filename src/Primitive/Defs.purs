@@ -249,7 +249,12 @@ foldl_with_index =
    where
    op :: Op
    op (v : u : Val _ _ (Dictionary (DictRep d)) : Nil) =
-      foldM (\u1 (k × (α × u2)) -> G.apply v (Val α Nothing (Str k)) >>= flip G.apply u1 >>= flip G.apply u2) u kvs
+      foldM
+         ( \u1 (k × (α × u2)) ->
+              G.apply Nothing v (Val α Nothing (Str k)) >>= flip (G.apply Nothing) u1 >>= flip (G.apply Nothing) u2
+         )
+         u
+         kvs
       where
       kvs :: List _
       kvs = Dict.toUnfoldable d
@@ -285,7 +290,7 @@ dict_intersectionWith =
       val (singleton α # Set.insert α') v'
       where
       apply' (β × u) (β' × u') = do
-         v''@(Val _ _ key) <- G.apply v u >>= flip G.apply u'
+         v''@(Val _ _ key) <- G.apply Nothing v u >>= flip (G.apply Nothing) u'
          Val β'' _ _ <- val (singleton β # Set.insert β') key
          pure (β'' × v'')
    op _ = throw "Function and two dictionaries expected"
@@ -296,7 +301,7 @@ dict_map =
    where
    op :: Op
    op (v : Val α _ (Dictionary (DictRep d)) : Nil) = do
-      d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u) d
+      d' <- traverse (\(β × u) -> (β × _) <$> G.apply Nothing v u) d
       val (singleton α) (Dictionary (DictRep d'))
    op _ = throw "Function and dictionary expected"
 
