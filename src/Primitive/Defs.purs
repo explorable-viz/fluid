@@ -94,31 +94,31 @@ error_ =
    ForeignOp ("error" × ForeignOp' { arity: 1, op })
    where
    op :: Op
-   op (Val _ _ (Str s) : Nil) = pure $ error s
-   op _ = throw "String expected"
+   op _ (Val _ _ (Str s) : Nil) = pure $ error s
+   op _ _ = throw "String expected"
 
 debugLog :: ForeignOp
 debugLog =
    ForeignOp ("debug_log" × ForeignOp' { arity: 1, op })
    where
    op :: Op
-   op (x : Nil) = pure $ trace x (const x)
-   op _ = throw "Single argument expected"
+   op _ (x : Nil) = pure $ trace x (const x)
+   op _ _ = throw "Single argument expected"
 
 loadJson :: ForeignOp
 loadJson =
    ForeignOp ("load_json" × ForeignOp' { arity: 1, op })
    where
    op :: Op
-   op (Val _ _ (Str path) : Nil) = do
+   op doc_opt (Val _ _ (Str path) : Nil) = do
       str <- definitely ("File \"" <> path <> "\" exists") <$> loadFileFromPath (File path)
       case parseJson str of
          Left err -> throw ("Failed to parse JSON: " <> show err)
-         Right json -> fromJsonVal json
-   op _ = throw "String expected"
+         Right json -> fromJson doc_opt json
+   op _ _ = throw "String expected"
 
-fromJsonVal :: forall m. MonadWithGraphAlloc m => MonadEffect m => Json -> m (Val Vertex)
-fromJsonVal =
+fromJson :: forall m. MonadWithGraphAlloc m => MonadEffect m => Maybe (Val Vertex) -> Json -> m (Val Vertex)
+fromJson doc_opt =
    caseJson
       caseNull
       caseBool
@@ -133,84 +133,83 @@ fromJsonVal =
 
    caseBool :: Boolean -> m (Val Vertex)
    caseBool b =
-      val empty (Constr (if b then cTrue else cFalse) Nil)
+      val doc_opt empty (Constr (if b then cTrue else cFalse) Nil)
 
    caseNumber :: Number -> m (Val Vertex)
    caseNumber n =
       case Int.fromNumber n of
-         Just n' -> val empty (Int n')
-         Nothing -> val empty (Float n)
+         Just n' -> val doc_opt empty (Int n')
+         Nothing -> val doc_opt empty (Float n)
 
    caseString :: String -> m (Val Vertex)
    caseString s =
-      val empty (Str s)
+      val doc_opt empty (Str s)
 
    caseArray :: Array Json -> m (Val Vertex)
    caseArray xs = do
-      vs <- traverse fromJsonVal xs
-      toList (Array.toUnfoldable vs)
+      vs <- traverse (fromJson Nothing) xs
+      toList doc_opt (Array.toUnfoldable vs)
       where
-      toList :: List (Val Vertex) -> m (Val Vertex)
-      toList Nil = val empty (Constr cNil Nil)
-      toList (v : vs) = do
-         v' <- toList vs
-         val empty (Constr cCons (v : v' : Nil))
+      toList :: Maybe (Val Vertex) -> List (Val Vertex) -> m (Val Vertex)
+      toList doc_opt' Nil = val doc_opt' empty (Constr cNil Nil)
+      toList doc_opt' (v : vs) = do
+         v' <- toList Nothing vs
+         val doc_opt' empty (Constr cCons (v : v' : Nil))
 
    caseObject :: FO.Object Json -> m (Val Vertex)
    caseObject obj = do
       let kvs = FO.toUnfoldable obj :: Array (String × Json)
       entries <- for kvs \(k × x) -> do
-         Val α _ _ <- val empty (Str k)
-         v <- fromJsonVal x
+         Val α _ _ <- val doc_opt empty (Str k)
+         v <- fromJson Nothing x
          pure (k × α × v)
-      val empty (Dictionary (DictRep (D.fromFoldable entries)))
+      val doc_opt empty (Dictionary (DictRep (D.fromFoldable entries)))
 
 dims :: ForeignOp
 dims =
    ForeignOp ("dims" × ForeignOp' { arity: 1, op })
    where
    op :: Op
-   op (Val α _ (Matrix (MatrixRep (_ × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil) = do
-      v1 <- val (singleton β1) $ Int i
-      v2 <- val (singleton β2) $ Int j
-      let v = Constr cPair (v1 : v2 : Nil)
-      val (singleton α) v
-   op _ = throw "Matrix expected"
+   op doc_opt (Val α _ (Matrix (MatrixRep (_ × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil) = do
+      v1 <- val Nothing (singleton β1) $ Int i
+      v2 <- val Nothing (singleton β2) $ Int j
+      val doc_opt (singleton α) $ Constr cPair (v1 : v2 : Nil)
+   op _ _ = throw "Matrix expected"
 
 matrixLookup :: ForeignOp
 matrixLookup =
    ForeignOp ("!" × ForeignOp' { arity: 2, op })
    where
    op :: Op
-   op (Val _ _ (Matrix r) : Val _ _ (Constr c (Val _ _ (Int i) : Val _ _ (Int j) : Nil)) : Nil) | c == cPair =
+   op _ (Val _ _ (Matrix r) : Val _ _ (Constr c (Val _ _ (Int i) : Val _ _ (Int j) : Nil)) : Nil) | c == cPair =
       pure $ matrixGet i j r
-   op _ = throw "Matrix and pair of integers expected"
+   op _ _ = throw "Matrix and pair of integers expected"
 
 matrixUpdate :: ForeignOp
 matrixUpdate =
    ForeignOp ("matrixUpdate" × ForeignOp' { arity: 3, op })
    where
    op :: Op
-   op (Val α _ (Matrix r) : Val _ _ (Constr c (Val _ _ (Int i) : Val _ _ (Int j) : Nil)) : v : Nil)
-      | c == cPair = val (singleton α) (Matrix (matrixPut i j (const v) r))
-   op _ = throw "Matrix, pair of integers and value expected"
+   op doc_opt (Val α _ (Matrix r) : Val _ _ (Constr c (Val _ _ (Int i) : Val _ _ (Int j) : Nil)) : v : Nil)
+      | c == cPair = val doc_opt (singleton α) (Matrix (matrixPut i j (const v) r))
+   op _ _ = throw "Matrix, pair of integers and value expected"
 
 search :: ForeignOp
 search =
    ForeignOp ("search" × ForeignOp' { arity: 2, op })
    where
    op :: Op
-   op (Val α _ (Str regex) : Val β _ (Str str) : Nil) = do
+   op doc_opt (Val α _ (Str regex) : Val β _ (Str str) : Nil) = do
       case Regex.regex regex noFlags of
          Left msg -> throw $ "search: " <> msg
          Right regex' -> do
             let αs = singleton α # Set.insert β
             case Regex.search regex' str of
-               Nothing -> val αs (Constr cNone Nil)
+               Nothing -> val doc_opt αs (Constr cNone Nil)
                Just n -> do
-                  v <- val αs (Int n)
-                  val αs (Constr cSome (v : Nil))
-   op _ = throw "Regex and string expected"
+                  v <- val Nothing αs (Int n)
+                  val doc_opt αs (Constr cSome (v : Nil))
+   op _ _ = throw "Regex and string expected"
 
 -- When strings implement an abstract sequence type can express in terms of take/drop
 split :: ForeignOp
@@ -218,101 +217,101 @@ split =
    ForeignOp ("search" × ForeignOp' { arity: 2, op })
    where
    op :: Op
-   op (Val α _ (Int n) : Val β _ (Str str) : Nil) = do
+   op doc_opt (Val α _ (Int n) : Val β _ (Str str) : Nil) = do
       let αs = singleton α # Set.insert β
-      before <- val αs $ Str $ String.take n str
-      after <- val αs $ Str $ String.drop n str
-      val αs (Constr cPair (before : after : Nil))
-   op _ = throw "Int and string expected"
+      before <- val Nothing αs $ Str $ String.take n str
+      after <- val Nothing αs $ Str $ String.drop n str
+      val doc_opt αs (Constr cPair (before : after : Nil))
+   op _ _ = throw "Int and string expected"
 
 dict_difference :: ForeignOp
 dict_difference =
    ForeignOp ("dict_difference" × ForeignOp' { arity: 2, op })
    where
    op :: Op
-   op (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) =
-      val (singleton α # Set.insert β) (Dictionary (DictRep (d \\ d')))
-   op _ = throw "Dictionaries expected."
+   op doc_opt (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) =
+      val doc_opt (singleton α # Set.insert β) (Dictionary (DictRep (d \\ d')))
+   op _ _ = throw "Dictionaries expected."
 
 dict_disjointUnion :: ForeignOp
 dict_disjointUnion =
    ForeignOp ("dict_disjointUnion" × ForeignOp' { arity: 2, op })
    where
    op :: Op
-   op (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) = do
-      val (singleton α # Set.insert β) (Dictionary (DictRep (disjointUnion d d')))
-   op _ = throw "Dictionaries expected"
+   op doc_opt (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) = do
+      val doc_opt (singleton α # Set.insert β) (Dictionary (DictRep (disjointUnion d d')))
+   op _ _ = throw "Dictionaries expected"
 
 foldl_with_index :: ForeignOp
 foldl_with_index =
    ForeignOp ("foldl_with_index" × ForeignOp' { arity: 3, op })
    where
    op :: Op
-   op (v : u : Val _ _ (Dictionary (DictRep d)) : Nil) =
+   op doc_opt (v : u : Val _ _ (Dictionary (DictRep d)) : Nil) =
       foldM
          ( \u1 (k × (α × u2)) ->
-              G.apply Nothing v (Val α Nothing (Str k)) >>= flip (G.apply Nothing) u1 >>= flip (G.apply Nothing) u2
+              G.apply Nothing v (Val α Nothing (Str k)) >>= flip (G.apply Nothing) u1 >>= flip (G.apply doc_opt) u2
          )
          u
          kvs
       where
       kvs :: List _
       kvs = Dict.toUnfoldable d
-   op _ = throw "Function, value and dictionary expected"
+   op _ _ = throw "Function, value and dictionary expected"
 
 get :: ForeignOp
 get =
    ForeignOp ("get" × ForeignOp' { arity: 2, op })
    where
    op :: Op
-   op (Val α _ (Str s) : Val _ _ (Dictionary (DictRep d)) : Nil) =
+   op doc_opt (Val α _ (Str s) : Val _ _ (Dictionary (DictRep d)) : Nil) =
       case lookup s d of
-         Nothing -> val (singleton α) (Constr cNone Nil)
-         Just (β × v) -> val (Set.insert β (singleton α)) (Constr cSome (v : Nil))
-   op _ = throw "String and dictionary expected"
+         Nothing -> val doc_opt (singleton α) (Constr cNone Nil)
+         Just (β × v) -> val doc_opt (Set.insert β (singleton α)) (Constr cSome (v : Nil))
+   op _ _ = throw "String and dictionary expected"
 
 insert :: ForeignOp
 insert =
    ForeignOp ("insert" × ForeignOp' { arity: 3, op })
    where
    op :: Op
-   op (Val α _ (Dictionary (DictRep d)) : Val α' _ (Str k) : v : Nil) =
-      val (singleton α) (Dictionary (DictRep (Map.insert k (α' × v) d)))
-   op _ = throw "Dictionary, key and value expected"
+   op doc_opt (Val α _ (Dictionary (DictRep d)) : Val α' _ (Str k) : v : Nil) =
+      val doc_opt (singleton α) (Dictionary (DictRep (Map.insert k (α' × v) d)))
+   op _ _ = throw "Dictionary, key and value expected"
 
 dict_intersectionWith :: ForeignOp
 dict_intersectionWith =
    ForeignOp ("dict_intersectionWith" × ForeignOp' { arity: 3, op })
    where
    op :: Op
-   op (v : Val α _ (Dictionary (DictRep d1)) : Val α' _ (Dictionary (DictRep d2)) : Nil) = do
+   op doc_opt (v : Val α _ (Dictionary (DictRep d1)) : Val α' _ (Dictionary (DictRep d2)) : Nil) = do
       v' <- Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2))
-      val (singleton α # Set.insert α') v'
+      val doc_opt (singleton α # Set.insert α') v'
       where
       apply' (β × u) (β' × u') = do
          v''@(Val _ _ key) <- G.apply Nothing v u >>= flip (G.apply Nothing) u'
-         Val β'' _ _ <- val (singleton β # Set.insert β') key
+         Val β'' _ _ <- val Nothing (singleton β # Set.insert β') key
          pure (β'' × v'')
-   op _ = throw "Function and two dictionaries expected"
+   op _ _ = throw "Function and two dictionaries expected"
 
 dict_map :: ForeignOp
 dict_map =
    ForeignOp ("dict_map" × ForeignOp' { arity: 2, op })
    where
    op :: Op
-   op (v : Val α _ (Dictionary (DictRep d)) : Nil) = do
+   op doc_opt (v : Val α _ (Dictionary (DictRep d)) : Nil) = do
       d' <- traverse (\(β × u) -> (β × _) <$> G.apply Nothing v u) d
-      val (singleton α) (Dictionary (DictRep d'))
-   op _ = throw "Function and dictionary expected"
+      val doc_opt (singleton α) (Dictionary (DictRep d'))
+   op _ _ = throw "Function and dictionary expected"
 
 dict :: ForeignOp
 dict =
    ForeignOp ("dict" × ForeignOp' { arity: 1, op })
    where
    op :: Op
-   op (v : Nil) = do
+   op doc_opt (v : Nil) = do
       αs × kvs <- kvs' v
-      val αs (Dictionary (DictRep $ fromFoldable kvs))
+      val doc_opt αs (Dictionary (DictRep $ fromFoldable kvs))
       where
       kvs' :: forall m. MonadError Error m => Val Vertex -> m (Set Vertex × List (String × (Vertex × Val Vertex)))
       kvs' (Val α _ (Constr c Nil)) | c == cNil = pure $ singleton α × Nil
@@ -321,7 +320,7 @@ dict =
               αs' × kvs <- kvs' v'
               pure $ Set.insert α (Set.insert β' αs') × ((k × (β × u)) : kvs)
       kvs' _ = throw $ "List of (key, value) pairs expected"
-   op _ = throw "Single argument expected"
+   op _ _ = throw "Single argument expected"
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

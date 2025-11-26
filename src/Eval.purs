@@ -87,7 +87,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `forDefs` σ
       in
-         val αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
+         val Nothing αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
 apply
    :: forall m
@@ -103,7 +103,7 @@ apply doc_opt (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
    eval doc_opt (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
-apply _ (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
+apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
    where
    vs' = snoc vs v
@@ -111,13 +111,13 @@ apply _ (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         val (singleton α) v'
-      else φ'.op vs'
+         val doc_opt (singleton α) v'
+      else φ'.op doc_opt vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
-apply _ (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
+apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   val (singleton α) v'
+   val doc_opt (singleton α) v'
    where
    v' =
       if length vs < n - 1 then
