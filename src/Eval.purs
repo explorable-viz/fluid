@@ -176,8 +176,8 @@ eval doc_opt γ e0 αs = do
                   v <- eval Nothing γ e αs
                   new (flip Val (Just v)) (insert α αs) u
                Nothing -> do
-                  Val α _ u <- eval Nothing γ e' αs -- discard any existing doc
                   v <- eval Nothing γ e αs
+                  Val α _ u <- eval (Just v) γ e' αs -- discard any existing doc
                   pure $ Val α (Just v) u
          _ -> error absurd
    where
