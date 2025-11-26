@@ -10,7 +10,7 @@ import Data.Either (Either(..))
 import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
@@ -34,7 +34,7 @@ import ModuleGraph (ModuleName, ModuleCxt)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, absurd, check, defined, definitely, error, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
+import Util (type (×), Endo, absurd, check, defined, definitely, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
@@ -110,9 +110,11 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
 
    apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
-      if φ'.arity > length vs' then
+      if φ'.arity > length vs' then do
+         traceWhen (isJust doc_opt) $ "Passing doc to partial application of " <> id
          val doc_opt (singleton α) v'
-      else
+      else do
+         traceWhen (isJust doc_opt) $ "Passing doc to " <> id
          φ'.op doc_opt vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
@@ -160,11 +162,11 @@ eval doc_opt γ e0 αs = do
                      _ -> throw $ "Found " <> prettyP v' <> ", expected string"
                _ -> throw $ "Found " <> prettyP v <> ", expected dict"
          App e e' -> do
-            v <- eval doc_opt γ e αs
-            v' <- eval doc_opt γ e' αs
+            v <- eval Nothing γ e αs
+            v' <- eval Nothing γ e' αs
             withMsg ("In " <> funName e) $ apply doc_opt v v'
          Let (VarDef σ e) e' -> do
-            v <- eval doc_opt γ e αs
+            v <- eval Nothing γ e αs
             γ' × _ × αs' <- withMsg "In variable def" $ match v σ
             eval doc_opt (γ <+> γ') e' αs'
          LetRec (RecDefs α ρ) e -> do
@@ -172,8 +174,8 @@ eval doc_opt γ e0 αs = do
             eval doc_opt (γ <+> γ') e (insert α αs)
          DocExpr e e' -> do
             v <- eval Nothing γ e αs
-            Val α _ u <- eval (Just $ fromMaybe v doc_opt) γ e' αs -- outer doc (if any) trumps inner doc
-            pure $ Val α (Just v) u
+            traceWhen (isJust doc_opt) "Outer doc trumps inner doc"
+            eval (Just $ fromMaybe v doc_opt) γ e' αs
          _ -> error absurd
    where
    funName :: forall a. Expr a -> String
