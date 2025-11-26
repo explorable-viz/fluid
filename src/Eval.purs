@@ -110,8 +110,7 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
 
    apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
-      if φ'.arity > length vs' then do
-         traceWhen (isJust doc_opt) $ "Passing doc to partial application of " <> id
+      if φ'.arity > length vs' then
          val doc_opt (singleton α) v'
       else do
          traceWhen (isJust doc_opt) $ "Passing doc to " <> id
@@ -147,13 +146,16 @@ eval doc_opt γ e0 αs = do
       Just (α × u) ->
          new (flip Val doc_opt) (insert α αs) u
       Nothing -> case e0 of
-         Var x ->
+         Var x -> do
+            traceWhen (isJust doc_opt) $ "Discarding doc (variable " <> x <> ")"
             withMsg "Variable lookup" $ lookup' x γ
-         Op op ->
+         Op op -> do
+            traceWhen (isJust doc_opt) $ "Discarding doc (operator " <> op <> ")"
             withMsg "Variable lookup" $ lookup' op γ
-         DProject e x -> do
+         DProject e e' -> do
+            traceWhen (isJust doc_opt) $ "Discarding doc (projection)"
             v <- eval Nothing γ e αs
-            v' <- eval Nothing γ x αs
+            v' <- eval Nothing γ e' αs
             case v of
                Val _ _ (V.Dictionary (DictRep d)) ->
                   case v' of
@@ -164,6 +166,7 @@ eval doc_opt γ e0 αs = do
          App e e' -> do
             v <- eval Nothing γ e αs
             v' <- eval Nothing γ e' αs
+            traceWhen (isJust doc_opt) $ "Passing doc to function " <> funName e
             withMsg ("In " <> funName e) $ apply doc_opt v v'
          Let (VarDef σ e) e' -> do
             v <- eval Nothing γ e αs

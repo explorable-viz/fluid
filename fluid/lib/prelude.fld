@@ -210,7 +210,7 @@ def iterate(n, f, z):
     z :| map(f, iterate(n - 1, f, z))
 
 # List Num -> Num
-def sum: foldl((+), 0)
+def sum: foldr((+), 0)
 
 # List Num -> Num
 def mean(xs):
