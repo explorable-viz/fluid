@@ -32,12 +32,12 @@ import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module (prepConfig)
 import Partial.Unsafe (unsafePartial)
-import Primitive.Defs (primitives)
 import Pretty (prettyP)
+import Primitive.Defs (primitives)
 import Test.Util.Debug (tracing)
-import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
+import Util (type (×), Endo, absurd, error, spy, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
-import Util.Set (empty, (\\), (∈), (∪))
+import Util.Set (empty, size, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
 
 str
@@ -157,8 +157,8 @@ intermediates { spec, in_roots, inerts } αs =
    findIntermediates :: (VertexData -> Maybe (DVertex' (Val Vertex))) -> Env (SelStates Boolean)
    findIntermediates query = rebuildι inerts αs
       $ filterKeys (\α -> not (Vertex α ∈ in_roots))
-      $ runQuery query
-      $ αs.persistent ∪ αs.transient
+      $ spy "Intermediates: " size
+      $ runQuery query (αs.persistent ∪ αs.transient)
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig@{ spec: options } = do
