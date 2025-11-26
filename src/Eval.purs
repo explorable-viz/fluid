@@ -10,7 +10,7 @@ import Data.Either (Either(..))
 import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
@@ -164,14 +164,14 @@ eval doc_opt γ e0 αs = do
             withMsg ("In " <> funName e) $ apply doc_opt v v'
          Let (VarDef σ e) e' -> do
             v <- eval doc_opt γ e αs
-            γ' × _ × αs' <- withMsg "In variable def" $ match v σ -- terminal meta-type of eliminator is meta-unit
-            eval doc_opt (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
+            γ' × _ × αs' <- withMsg "In variable def" $ match v σ
+            eval doc_opt (γ <+> γ') e' αs'
          LetRec (RecDefs α ρ) e -> do
             γ' <- closeDefs γ ρ (insert α αs)
             eval doc_opt (γ <+> γ') e (insert α αs)
          DocExpr e e' -> do
             v <- eval Nothing γ e αs
-            Val α _ u <- eval (Just v) γ e' αs -- discard any existing doc
+            Val α _ u <- eval (Just $ fromMaybe v doc_opt) γ e' αs -- outer doc (if any) trumps inner doc
             pure $ Val α (Just v) u
          _ -> error absurd
    where
