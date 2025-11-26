@@ -10,7 +10,7 @@ import Data.Either (Either(..))
 import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
@@ -34,7 +34,7 @@ import ModuleGraph (ModuleName, ModuleCxt)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, absurd, check, defined, definitely, error, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
+import Util (type (×), Endo, absurd, check, defined, definitely, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
@@ -112,7 +112,9 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
          val doc_opt (singleton α) v'
-      else φ'.op doc_opt vs'
+      else do
+         traceWhen (isJust doc_opt) $ "Passing doc to " <> id
+         φ'.op doc_opt vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
