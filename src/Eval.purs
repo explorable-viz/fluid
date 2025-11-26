@@ -170,15 +170,9 @@ eval doc_opt γ e0 αs = do
             γ' <- closeDefs γ ρ (insert α αs)
             eval doc_opt (γ <+> γ') e (insert α αs)
          DocExpr e e' -> do
-            αu_opt' <- evalVal γ e' αs
-            case αu_opt' of
-               Just (α × u) -> do
-                  v <- eval Nothing γ e αs
-                  new (flip Val (Just v)) (insert α αs) u
-               Nothing -> do
-                  v <- eval Nothing γ e αs
-                  Val α _ u <- eval (Just v) γ e' αs -- discard any existing doc
-                  pure $ Val α (Just v) u
+            v <- eval Nothing γ e αs
+            Val α _ u <- eval (Just v) γ e' αs -- discard any existing doc
+            pure $ Val α (Just v) u
          _ -> error absurd
    where
    funName :: forall a. Expr a -> String
