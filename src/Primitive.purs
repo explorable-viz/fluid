@@ -6,7 +6,7 @@ import Bind (Bind)
 import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust)
 import Data.Profunctor.Choice ((|||))
 import Data.Set (insert)
 import DataType (cFalse, cPair, cTrue)
@@ -14,7 +14,7 @@ import Dict (Dict)
 import Lattice (class BoundedJoinSemilattice, bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Util (type (+), type (×), error, singleton, (×))
+import Util (type (+), type (×), error, singleton, traceWhen, (×))
 import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, Op, Val(..), val)
 
 -- Mediate between wrapped values and underlying datatype d. Wasn't able to make a typeclass version
@@ -168,7 +168,8 @@ binary id f =
    op = ForeignOp' { arity: 2, op: unsafePartial op' }
 
    op' :: Partial => Op
-   op' doc_opt (Val α _ v1 : Val β _ v2 : Nil) =
+   op' doc_opt (Val α _ v1 : Val β _ v2 : Nil) = do
+      traceWhen (isJust doc_opt) ("Applying doc to result of " <> id)
       val doc_opt (singleton α # insert β) $ f.o.pack v'
       where
       v' = f.fwd (f.i1.unpack v1) (f.i2.unpack v2)
