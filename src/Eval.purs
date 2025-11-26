@@ -142,7 +142,7 @@ eval doc_opt γ e0 αs = do
    αu_opt <- evalVal doc_opt γ e0 αs
    case αu_opt of
       Just (α × u) ->
-         val (insert α αs) u
+         new (flip Val doc_opt) (insert α αs) u
       Nothing -> case e0 of
          Var x ->
             withMsg "Variable lookup" $ lookup' x γ
