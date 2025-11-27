@@ -13,12 +13,13 @@ import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.Int as Int
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (wrap)
 import Data.Number (fromString)
 import Data.Number (log, pow) as N
 import Data.Set (Set, empty)
 import Data.Set as Set
+import Data.String (Pattern(..))
 import Data.String as String
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
@@ -82,6 +83,7 @@ primitives = wrap $ D.fromFoldable
    , extern dict_map
    , extern dict
    , extern matrixUpdate
+   , extern find_str
    , extern search
    , extern split
    , binaryZero "//" { i: int, o: int, fwd: div }
@@ -195,6 +197,17 @@ matrixUpdate =
       | c == cPair = val doc_opt (singleton α) (Matrix (matrixPut i j (const v) r))
    op _ _ = throw "Matrix, pair of integers and value expected"
 
+find_str :: ForeignOp
+find_str =
+   ForeignOp ("find_str" × ForeignOp' { arity: 2, op })
+   where
+   op :: Op
+   op doc_opt (Val α _ (Str s1) : Val β _ (Str s2) : Nil) = do
+      val doc_opt (singleton α # Set.insert β) (Int i)
+      where
+      i = fromMaybe (-1) (String.indexOf (Pattern s1) s2)
+   op _ _ = throw "Two strings expected"
+
 search :: ForeignOp
 search =
    ForeignOp ("search" × ForeignOp' { arity: 2, op })
@@ -202,7 +215,7 @@ search =
    op :: Op
    op doc_opt (Val α _ (Str regex) : Val β _ (Str str) : Nil) = do
       case Regex.regex regex noFlags of
-         Left msg -> throw $ "search: " <> msg
+         Left msg -> throw $ "Regex expected: " <> msg
          Right regex' -> do
             let αs = singleton α # Set.insert β
             case Regex.search regex' str of
@@ -210,7 +223,7 @@ search =
                Just n -> do
                   v <- val Nothing αs (Int n)
                   val doc_opt αs (Constr cSome (v : Nil))
-   op _ _ = throw "Regex and string expected"
+   op _ _ = throw "Two strings expected"
 
 -- When strings implement an abstract sequence type can express in terms of take/drop
 split :: ForeignOp
