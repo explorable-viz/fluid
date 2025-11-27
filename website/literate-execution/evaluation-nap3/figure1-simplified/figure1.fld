@@ -29,7 +29,15 @@ def actions_by_chapter(owner):
               action[ "Evaluation score" ] == eval_score and
               find_str(owner, action[ "Action Owner" ]) /= -1,
             nap3_actions
-          ) } for eval_score in eval_scores
+          ) }
+        for eval_score in eval_scores
+        def blah:
+          count_if(
+            lambda action:
+              risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter and
+              find_str(owner, action[ "Action Owner" ]) /= -1,
+            nap3_actions
+          )
       ] } for chapter in [ "3", "4", "5", "6", "7" ]
   ]
 
