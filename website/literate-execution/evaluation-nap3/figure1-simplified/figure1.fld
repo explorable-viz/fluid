@@ -19,16 +19,23 @@ def actions_by(key, keys):
 def risks_:
   dict([ (r[ "ID#" ], r) for r in ccra3_risks ])
 
+def percent(x, y):
+  if y == 0: 0
+  else: x / y * 100
+
 def actions_by_chapter(owner):
   [ { x: chapter,
       segments: [
         { y: eval_score,
-          z: count_if(
-            lambda action:
-              risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter and
-              action[ "Evaluation score" ] == eval_score and
-              find_str(owner, action[ "Action Owner" ]) /= -1,
-            nap3_actions
+          z: percent(
+            count_if(
+              lambda action:
+                risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter and
+                action[ "Evaluation score" ] == eval_score and
+                find_str(owner, action[ "Action Owner" ]) /= -1,
+              nap3_actions
+            ),
+            total
           ) }
         for eval_score in eval_scores
         def total:
@@ -53,10 +60,6 @@ def total_actions(action_counts):
 
 def actions_with_score(action_counts, eval_score):
   sum([ r.z for r in action_counts if r.y == eval_score ])
-
-def percent(x, y):
-  if y == 0: 0
-  else: x / y * 100
 
 def by_nat_env_and_infra:
   actions_by("Action Owner", nat_env_and_infra_depts)
