@@ -112,8 +112,7 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
          val doc_opt (singleton α) v'
-      else do
-         traceWhen (isJust doc_opt) $ "Passing doc to " <> id
+      else
          φ'.op doc_opt vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
@@ -166,7 +165,6 @@ eval doc_opt γ e0 αs = do
          App e e' -> do
             v <- eval Nothing γ e αs
             v' <- eval Nothing γ e' αs
-            traceWhen (isJust doc_opt) $ "Passing doc to function " <> funName e
             withMsg ("In " <> funName e) $ apply doc_opt v v'
          Let (VarDef σ e) e' -> do
             v <- eval Nothing γ e αs

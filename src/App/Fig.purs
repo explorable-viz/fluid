@@ -157,7 +157,6 @@ intermediates { spec, in_roots, inerts } αs =
    findIntermediates :: (VertexData -> Maybe (DVertex' (Val Vertex))) -> Env (SelStates Boolean)
    findIntermediates query = rebuildι inerts αs
       $ filterKeys (\α -> not (Vertex α ∈ in_roots))
-      $ spy "Intermediates: " size
       $ runQuery query (αs.persistent ∪ αs.transient)
 
 drawFig :: HTMLId -> Fig -> Effect Unit
