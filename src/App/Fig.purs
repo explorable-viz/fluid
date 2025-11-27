@@ -35,9 +35,9 @@ import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive.Defs (primitives)
 import Test.Util.Debug (tracing)
-import Util (type (×), Endo, absurd, error, spy, spyWhen, (×), (∩))
+import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
-import Util.Set (empty, size, (\\), (∈), (∪))
+import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
 
 str
