@@ -29,11 +29,8 @@ def actions_by_chapter(owner):
         { y: eval_score,
           z: percent(
             count_if(
-              lambda action:
-                risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter and
-                action[ "Evaluation score" ] == eval_score and
-                find_str(owner, action[ "Action Owner" ]) /= -1,
-              nap3_actions
+              lambda action: action[ "Evaluation score" ] == eval_score,
+              chapter_actions
             ),
             length(chapter_actions)
           ) }
