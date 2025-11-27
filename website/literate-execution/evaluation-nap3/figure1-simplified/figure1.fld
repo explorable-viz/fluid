@@ -31,7 +31,7 @@ def actions_by_chapter(owner):
             nap3_actions
           ) }
         for eval_score in eval_scores
-        def blah:
+        def total:
           count_if(
             lambda action:
               risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter and
@@ -54,9 +54,9 @@ def total_actions(action_counts):
 def actions_with_score(action_counts, eval_score):
   sum([ r.z for r in action_counts if r.y == eval_score ])
 
-def proportion(x, y):
+def percent(x, y):
   if y == 0: 0
-  else: x / y
+  else: x / y * 100
 
 def by_nat_env_and_infra:
   actions_by("Action Owner", nat_env_and_infra_depts)
@@ -80,7 +80,7 @@ MultiView([
     Link(nat_env_and_infra_depts, "Natural environment and infrastructure sectors")
   } performed relatively well, with {
     ceiling(
-      proportion(
+      percent(
         @doc(f"""Divide this quantity""")
         sum([
           actions_with_score(action_counts, eval_score)
@@ -89,7 +89,7 @@ MultiView([
         ]),
         @doc(f"""By this one""")
         sum([ total_actions(action_counts) for { segments: action_counts } in by_nat_env_and_infra])
-      ) * 100
+      )
     )
   }% of actions at least “minimally addressed.”
   """,
