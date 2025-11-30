@@ -21,7 +21,16 @@ def risks_:
 
 def percent(x, y):
   if y == 0: 0
-  else: x / y * 100
+  else:
+    @doc(f"""
+    Ratio for selected bar segment, computed as x / y.
+
+    Some risk descriptors from CCRA3:
+    {
+      [ risk["Risk or Opportunity Descriptor"] for risk in ccra3_risks ]
+    }
+    """)
+    x / y * 100
 
 def actions_by_chapter(owner):
   [ { x: chapter,
