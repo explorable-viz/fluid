@@ -197,6 +197,9 @@ def concat: foldr(concat2, [])
 # (a -> List b) -> List a -> List b
 def concat_map(f, xs): concat(map(f, xs))
 
+# List String -> String
+def join: foldr((++), "")
+
 # List a -> a -> List a
 def intersperse([], _): []
 def intersperse([x], _): [x]

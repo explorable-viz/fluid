@@ -34,8 +34,8 @@ def actions_by_chapter(owner):
                ]
              percent(
                 @doc(f"""risk descriptors contribute to this segment: {
-                   MultiView(nub(segment_risks))
-                }""")
+                   join(intersperse(nub(segment_risks), ", "))
+                }.""")
                 length(segment_risks),
                 length(chapter_actions)
              )
