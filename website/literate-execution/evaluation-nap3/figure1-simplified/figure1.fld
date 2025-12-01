@@ -27,24 +27,19 @@ def actions_by_chapter(owner):
   [ { x: chapter,
       segments: [
         { y: eval_score,
-
-          z: @doc(
-f"""Risk descriptors contributing to this segment: {
-  MultiView(
-    [
-      risks_[ action["Risk ID#"] ]["Risk or Opportunity Descriptor"]
-      for action in chapter_actions if action["Evaluation score"] == eval_score
-    ]
-  )
-}"""
+          z: def segment_actions:
+               [ action for action in chapter_actions if action["Evaluation score"] == eval_score ]
+             @doc(
+               f"""Risk descriptors contributing to this segment: {
+                 MultiView(
+                   [
+                     risks_[ action["Risk ID#"] ]["Risk or Opportunity Descriptor"]
+                     for action in chapter_actions if action["Evaluation score"] == eval_score
+                   ]
+                 )
+               }"""
              )
-             percent(
-              count_if(
-                lambda action: action["Evaluation score"] == eval_score,
-                chapter_actions
-              ),
-              length(chapter_actions)
-            )
+             percent(length(segment_actions), length(chapter_actions))
         }
 
         for eval_score in eval_scores
