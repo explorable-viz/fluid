@@ -27,12 +27,13 @@ def actions_by_chapter(owner):
   [ { x: chapter,
       segments: [
         { y: eval_score,
-          z: def segment_risks:
-               [
-                 risks_[ action["Risk ID#"] ]["Risk or Opportunity Descriptor"]
-                 for action in chapter_actions if action["Evaluation score"] == eval_score
-               ]
-             @doc(f"""Risk descriptors contributing to this segment: {MultiView(segment_risks)}""")
+          z: def segment_risks: [
+               risks_[ action["Risk ID#"] ]["Risk or Opportunity Descriptor"]
+               for action in chapter_actions if action["Evaluation score"] == eval_score
+             ]
+             @doc(f"""Risk descriptors contributing to this segment: {
+               MultiView(nub(segment_risks))
+             }""")
              percent(length(segment_risks), length(chapter_actions))
         }
         for eval_score in eval_scores

@@ -188,7 +188,7 @@ bwd_cases =
   stackedBars: { segments: { y: "output", z: 295.3 } :| [], x: "China" } :| {
     segments: { y: "output", z: ⸨196.7⸩ } :| [],
     x: "USA"
-  } :| { segments: { y: "output", z: 97.7 } :| [], x: "Germany" } :| [],
+  } :| { segments: { y: "output", z: 97.69999999999999 } :| [], x: "Germany" } :| [],
   tickLabels: { x: Default, y: Default }
 }) :| LineChart({
   caption: "Output of USA relative to China",
@@ -282,9 +282,9 @@ bwd_cases =
 }) :| ScatterPlot({
   caption: "Clean energy efficiency vs proportion of renewable energy capacity",
   labels: { x: "Renewables/TotalEnergyCap", y: "Clean Capacity Factor" },
-  points: { x: 0.8723185510332055, y: 0.41807411557283863 } :| {
+  points: { x: 0.8723185510332055, y: 0.4180741155728385 } :| {
     x: 0.383891020964826,
-    y: 0.33063741353112724
+    y: 0.3306374135311273
   } :| { x: 0.5685559399722339, y: 0.2651713517303818 } :| {
     x: 0.39179907463864283,
     y: 0.5311676111397315
@@ -293,10 +293,10 @@ bwd_cases =
     y: 0.2767379556904734
   } :| { x: 0.3129857171819161, y: 0.20426921772653447 } :| {
     x: 0.29687029792356306,
-    y: 0.34622006573798714
+    y: 0.3462200657379872
   } :| { x: 0.16239390265026848, y: 0.4128 } :| {
     x: 0.2115752867627615,
-    y: 0.5086651868096601
+    y: 0.5086651868096602
   } :| []
 }) :| [])"""
      }

@@ -192,7 +192,7 @@ def concat2(x :| xs, ys):
   x :| concat2(xs, ys)
 
 # List (List a) -> List a
-def concat: foldl(concat2, [])
+def concat: foldr(concat2, [])
 
 # (a -> List b) -> List a -> List b
 def concat_map(f, xs): concat(map(f, xs))
