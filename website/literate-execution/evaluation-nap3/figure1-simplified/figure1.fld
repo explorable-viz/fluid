@@ -28,24 +28,22 @@ def actions_by_chapter(owner):
       segments: [
         { y: eval_score,
 
-          z: percent(
-                @doc(
-                  join_str(
-                    "\n",
-                    ["Risk descriptors contributing to this segment:"]
-                    +
-                    [
-                      show(risks_[ action["Risk ID#"] ]["Risk or Opportunity Descriptor"])
-                      for action in chapter_actions
-                      if action["Evaluation score"] == eval_score
-                    ]
-                  )
-                )
-                count_if(
-                  lambda action: action["Evaluation score"] == eval_score,
-                  chapter_actions
-                ),
-                length(chapter_actions)
+          z: @doc(
+f"""Risk descriptors contributing to this segment: {
+  MultiView(
+    [
+      risks_[ action["Risk ID#"] ]["Risk or Opportunity Descriptor"]
+      for action in chapter_actions if action["Evaluation score"] == eval_score
+    ]
+  )
+}"""
+             )
+             percent(
+              count_if(
+                lambda action: action["Evaluation score"] == eval_score,
+                chapter_actions
+              ),
+              length(chapter_actions)
             )
         }
 
@@ -99,13 +97,11 @@ MultiView([
   } performed relatively well, with {
     ceiling(
       percent(
-        @doc(f"""Divide this quantity""")
         sum([
           actions_with_score(action_counts, eval_score)
           for eval_score in [ "Fully addressed", "Minimally addressed" ]
           for { segments: action_counts } in by_nat_env_and_infra
         ]),
-        @doc(f"""By this one""")
         sum([ total_actions(action_counts) for { segments: action_counts } in by_nat_env_and_infra])
       )
     )
