@@ -32,9 +32,7 @@ def actions_by_chapter(owner):
                for action in chapter_actions if action["Evaluation score"] == eval_score
              ]
              percent(
-                @doc(f"""risk descriptors contribute to this segment: {
-                   join(intersperse(nub(segment_risks), ", "))
-                }.""")
+                @doc(f"""risk descriptors contribute to this segment: { join(intersperse(nub(segment_risks), ", ")) }.""")
                 length(segment_risks),
                 length(chapter_actions)
              )
@@ -42,8 +40,7 @@ def actions_by_chapter(owner):
     for chapter in ["3", "4", "5", "6", "7"]
     def chapter_actions:
       [ action for action in nap3_actions
-        if risks_[ action["Risk ID#" ] ][ "Chapter" ] == chapter
-           and find_str(owner, action["Action Owner"]) /= -1
+        if risks_[ action["Risk ID#" ] ][ "Chapter" ] == chapter and find_str(owner, action["Action Owner"]) /= -1
       ]
   ]
 
