@@ -33,7 +33,7 @@ def actions_by_chapter(owner):
                  for action in chapter_actions if action["Evaluation score"] == eval_score
                ]
              percent(
-                @doc(f"""Risk descriptors contributing to this segment {
+                @doc(f"""risk descriptors contribute to this segment: {
                    MultiView(nub(segment_risks))
                 }""")
                 length(segment_risks),
