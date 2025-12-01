@@ -28,10 +28,13 @@ def actions_by_chapter(owner):
       segments: [
         { y: eval_score,
           z: def segment_risks: [
-                 risks_[ action["Risk ID#"] ]["Risk or Opportunity Descriptor"]
-                 for action in chapter_actions if action["Evaluation score"] == eval_score
-               ]
+               risks_[ action["Risk ID#"] ]["Risk or Opportunity Descriptor"]
+               for action in chapter_actions if action["Evaluation score"] == eval_score
+             ]
              percent(
+                @doc(f"""risk descriptors contribute to this segment: {
+                   join(intersperse(nub(segment_risks), ", "))
+                }.""")
                 length(segment_risks),
                 length(chapter_actions)
              )
