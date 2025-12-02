@@ -46,8 +46,8 @@ data BaseVal a
    | Matrix (MatrixRep a)
    | Fun (Fun a)
 
-val :: forall m. MonadWithGraphAlloc m => Set Vertex -> BaseVal Vertex -> m (Val Vertex)
-val = new (flip Val Nothing)
+val :: forall m. MonadWithGraphAlloc m => Maybe (Val Vertex) -> Set Vertex -> BaseVal Vertex -> m (Val Vertex)
+val doc_opt = new (flip Val doc_opt)
 
 asVal :: VertexData -> Maybe (Val Vertex)
 asVal e = if unpack typeName e == "Val" then Just (unpack unsafeCoerce e) else Nothing
@@ -67,7 +67,16 @@ instance Highlightable a => Highlightable (a × b) where
 
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
-type Op = forall m. MonadWithGraphAlloc m => MonadError Error m => MonadAff m => MonadReader FileCxt m => LoadFile m => List (Val Vertex) -> m (Val Vertex)
+type Op =
+   forall m
+    . MonadWithGraphAlloc m
+   => MonadError Error m
+   => MonadAff m
+   => MonadReader FileCxt m
+   => LoadFile m
+   => Maybe (Val Vertex) -- optional doc context
+   -> List (Val Vertex)
+   -> m (Val Vertex)
 
 data ForeignOp' = ForeignOp'
    { arity :: Int

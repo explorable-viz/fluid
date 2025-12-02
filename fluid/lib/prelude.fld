@@ -192,10 +192,13 @@ def concat2(x :| xs, ys):
   x :| concat2(xs, ys)
 
 # List (List a) -> List a
-def concat: foldl(concat2, [])
+def concat: foldr(concat2, [])
 
 # (a -> List b) -> List a -> List b
 def concat_map(f, xs): concat(map(f, xs))
+
+# List String -> String
+def join: foldr((++), "")
 
 # List a -> a -> List a
 def intersperse([], _): []
@@ -210,7 +213,7 @@ def iterate(n, f, z):
     z :| map(f, iterate(n - 1, f, z))
 
 # List Num -> Num
-def sum: foldl((+), 0)
+def sum: foldr((+), 0)
 
 # List Num -> Num
 def mean(xs):
