@@ -12,7 +12,7 @@ import Data.Foldable (length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, unsnoc)
+import Data.List.NonEmpty (NonEmptyList(..), foldr, groupBy, head, toList, unsnoc)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty ((:|))
@@ -52,7 +52,7 @@ data Expr a
    | App (Expr a) (Expr a)
    | BinaryApp (Expr a) Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
-   | IfElse (Expr a) (Expr a) (Expr a)
+   | IfElse (NonEmptyList (Expr a × Expr a)) (Expr a)
    | Paragraph (Paragraph a)
    | ListEmpty a
    | ListNonEmpty a (Expr a) (ListRest a)
@@ -314,10 +314,8 @@ exprFwd (BinaryApp s1 op s2) =
    E.App <$> (E.App (E.Op op) <$> desug s1) <*> desug s2
 exprFwd (MatchAs s μ) =
    E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
-exprFwd (IfElse s1 s2 s3) =
-   E.App
-      <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3)))
-      <*> desug s1
+exprFwd (IfElse sss s) =
+   ifElseFwd (sss × s)
 exprFwd (Paragraph elems) =
    paragraphFwd elems
 exprFwd (ListEmpty α) =
@@ -366,10 +364,8 @@ exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
 exprBwd (E.App (E.Lambda _ σ) e) (MatchAs s μ) =
    MatchAs (desugBwd e s)
       (first head <$> unwrap <$> unwrap (desugBwd σ (Clauses (Clause <$> first singleton <$> μ))))
-exprBwd (E.App (E.Lambda _ (ElimConstr m)) e1) (IfElse s1 s2 s3) =
-   IfElse (desugBwd e1 s1)
-      (if cTrue ∈ m then desugBwd (asExpr (get cTrue m)) s2 else botOf s2)
-      (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
+exprBwd e@(E.App (E.Lambda _ (ElimConstr _)) _) (IfElse sss s) =
+   let sss' × s' = ifElseBwd e (sss × s) in IfElse sss' s'
 exprBwd (E.Constr _ c (es : Nil)) (Paragraph elems) | c == cParagraph =
    Paragraph (paragraphElemsBwd es elems)
 exprBwd (E.Constr α _ Nil) (ListEmpty _) =
@@ -392,6 +388,32 @@ exprBwd (E.LetRec xσs e) (LetRec xcs s) =
 exprBwd (E.DocExpr e e') (DocExpr s s') =
    DocExpr (exprBwd e s) (exprBwd e' s')
 exprBwd _ _ = error absurd
+
+type IfElseClauses a = NonEmptyList (Expr a × Expr a) × Expr a
+
+ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
+ifElseFwd (sss × s) =
+   foldr clause (desug s) sss
+   where
+   clause (s1 × s2) e3 =
+      E.App
+         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> e3)))
+         <*> desug s1
+
+ifElseBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw IfElseClauses -> IfElseClauses a
+ifElseBwd (E.App (E.Lambda _ (ElimConstr m)) e1) (NonEmptyList (s1 × s2 :| sss) × s) =
+   let
+      ss' = desugBwd e1 s1 × bwdWhen cTrue s2
+      sss' × s' = case sss of
+         Nil -> Nil × bwdWhen cFalse s
+         _ -> case bwdWhen cFalse (IfElse (nonEmpty sss) s) of
+            IfElse sss' s' -> toList sss' × s'
+            _ -> error absurd
+   in
+      nonEmpty (ss' : sss') × s'
+   where
+   bwdWhen c = if c ∈ m then desugBwd (asExpr (get c m)) else botOf
+ifElseBwd _ _ = error absurd
 
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)

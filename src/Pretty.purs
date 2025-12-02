@@ -4,10 +4,11 @@ import Prelude
 
 import Bind (Bind, Var, (↦))
 import Data.List (List(..), fromFoldable, singleton, (:))
-import Data.List.NonEmpty (NonEmptyList, head, toList)
+import Data.List.NonEmpty (NonEmptyList(..), head, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
+import Data.NonEmpty ((:|))
 import Data.Traversable (class Foldable)
 import DataType (Ctr, cCons)
 import Dict (Dict)
@@ -70,7 +71,7 @@ instance Ann a => IsSimple (Expr a) where
    isSimple (Lambda _) = false
    isSimple (Let _ _) = false
    isSimple (LetRec _ _) = false
-   isSimple (IfElse _ _ _) = false
+   isSimple (IfElse _ _) = false
    isSimple (MatchAs _ _) = false
    isSimple _ = true
 
@@ -138,8 +139,12 @@ instance Ann a => Pretty (Expr a) where
    pretty (App s s') = expr $ prettyAppChain (App s s') Nil
    pretty (BinaryApp s op s') = expr $ binaryApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = text "match" <+> pretty s <> block (pretty cs)
-   pretty (IfElse i t e) =
-      text "if" <+> expr (pretty i) <> block (pretty t) <++> text "else" <> block (pretty e)
+   pretty (IfElse (NonEmptyList (ss :| sss)) e) =
+      vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))
+         <++> text "else" <> block (pretty e)
+      where
+      prettyClause w (s × s') = text w <+> expr (pretty s) <> block (pretty s')
+
    pretty (ListEmpty α) = highlightIf α (text "[]")
    pretty (ListNonEmpty α e rest) =
       highlightIf α (text "[")
