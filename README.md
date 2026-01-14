@@ -1,31 +1,44 @@
 ## Fluid: Language-integrated data provenance
 
-Fluid is an experimental programming language which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.
+Fluid is a pure functional programming language, with a provenance-tracking runtime and Pythonic syntax. Fluid is implemented in PureScript and runs in the browser.
 
 [![develop](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml)
 [![GitHub pages](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment)
 
-## Installation
+## End-user setup
 
 ### Software required
-- git
 - Node.js >=18.0.0
 - yarn >= 1.22
 
-Additionally, for Windows users only:
+### Initial configuration
 
-- [Ubuntu WSL](https://ubuntu.com/desktop/wsl)
+Building a Fluid website usually involves building a Node application:
 
-### Building
+- `yarn add @explorable-viz/fluid`
+- `yarn install` to install Node dependencies
+- `yarn install-website article` to copy example article website from `@exploreable-viz/fluid`
+- Add `dist/` and `website/` folders to `.gitignore` 
 
-- Clone the repository (for Windows users, do this under the Ubuntu WSL)
+### Bundling and serving website
+- `yarn bundle-website $WEBSITE_NAME` to bundle website to `dist/$WEBSITE_NAME`
+- `npx http-serve dist/$WEBSITE_NAME -c-1` to serve website at localhost
+
+## Development setup
+
+### Additional software required
+- git
+- (Windows only) [Ubuntu WSL](https://ubuntu.com/desktop/wsl)
+
+### Initial configuration
+
+- Clone repository (for Windows users, under Ubuntu WSL)
 - Run `./script/setup/dev-setup.sh` from the top-level directory
 - `yarn install` to install Node dependencies
-- `yarn build`
 
 ## Use
 
-The following assumes you have already successfully run `yarn build` (see above).
+- `yarn build` to build interpreter
 
 ### Running programs from the command line
 
