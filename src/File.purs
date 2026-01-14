@@ -35,15 +35,14 @@ instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (StateT s m) w
 instance LoadFile Aff where
    loadFileFromPath (File path) = do
       result <- runExceptT $ do
-         _ × path' <- ExceptT $ liftAff $ checkPath
+         resp × path' <- ExceptT $ liftAff $ requestPath
          when debug.logging $ liftAff $ log ("loadFileFromPath: resolved path: " <> path')
-         contents <- ExceptT $ liftAff $ request (defaultRequest { url = path', method = Left GET, responseFormat = string })
-         pure contents.body
+         pure resp.body
       pure $ either (const Nothing) Just result
       where
-      checkPath :: Aff (Either A.Error (Response String × String))
-      checkPath = do
-         resp <- request (defaultRequest { url = path, method = Left HEAD, responseFormat = string })
+      requestPath :: Aff (Either A.Error (Response String × String))
+      requestPath = do
+         resp <- request (defaultRequest { url = path, method = Left GET, responseFormat = string })
          pure case resp of
             Right resp' | resp'.status == StatusCode 200 -> Right (resp' × path)
             Right _ -> Left A.RequestFailedError
