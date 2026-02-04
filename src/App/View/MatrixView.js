@@ -21,7 +21,7 @@ function setSelection_ (
    return () => {
       var listener = eventListener(withElement(select))()
       rootElement.selectAll('.matrix-cell').each(function (cellRect) {
-         const sel = selState(matrix.cells[cellRect.i - 1][cellRect.j - 1])
+         const sel = selState(matrix.cells[cellRect.i][cellRect.j])
          d3.select(this) // won't work inside arrow function :/
             .classed(selClasses, false)
             .classed(selClassesFor(sel), true)
@@ -31,7 +31,7 @@ function setSelection_ (
       })
 
       rootElement.selectAll('.matrix-cell-text').each(function (cellText) {
-         const sel = selState(matrix.cells[cellText.i - 1][cellText.j - 1])
+         const sel = selState(matrix.cells[cellText.i][cellText.j])
          d3.select(this) // won't work inside arrow function :/
             .classed(selClasses, false)
             .classed(selClassesFor(sel), true)
@@ -92,19 +92,19 @@ function createElement_ (
       // group for each row of cells
       const rowGrp = matrixGrp
          .selectAll('g')
-         .data([...matrix.cells.entries()].map(([i, ns]) => { return { i: i + 1, ns } }))
+         .data([...matrix.cells.entries()].map(([i, ns]) => { return { i, ns } }))
          .enter()
          .append('g')
 
       const cells = rowGrp
          .selectAll('g')
-         .data(({ i, ns }) => [...ns.entries()].map(([j, n]) => { return { i, j: j + 1, n } }))
+         .data(({ i, ns }) => [...ns.entries()].map(([j, n]) => { return { i, j, n } }))
          .enter()
 
       cells
          .append('rect')
-         .attr('x', ({j}) => (j - 1) * w)
-         .attr('y', ({i}) => (i - 1) * h)
+         .attr('x', ({j}) => j * w)
+         .attr('y', ({i}) => i * h)
          .attr('width', w)
          .attr('height', h)
          .attr('class', 'matrix-cell')
@@ -113,8 +113,8 @@ function createElement_ (
       cells
          .append('text')
          .text(({n}) => val(n))
-         .attr('x', ({j}) => (j - 0.5) * w)
-         .attr('y', ({i}) => (i - 0.5) * h)
+         .attr('x', ({j}) => (j + 0.5) * w)
+         .attr('y', ({i}) => (i + 0.5) * h)
          .attr('class', 'matrix-cell-text')
          .attr('text-anchor', 'middle')
          .attr('dominant-baseline', 'middle')
