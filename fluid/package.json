@@ -91,8 +91,8 @@
     "install-website": "./script/install-website.sh",
     "test-website": "./dist/fluid/shared/website-test.js"
   },
-  "svelte": "./web",
+  "svelte": "./web/lib/index.js",
   "exports": {
-    "./src/*": "./web/*"
+    ".": "./web/lib/index.js"
   }
 }
