@@ -1,5 +1,5 @@
-<script lang="ts">
-	import Grid from '$lib/components/Grid.svelte';
+<script>
+   import { Grid } from '@explorable-viz/fluid';
 </script>
 
 <Grid showDataPane="false">

@@ -1,9 +1,5 @@
 <script lang="ts">
-	import CodeMirror from '$lib/components/CodeMirror.svelte';
-	import DataPane from '$lib/components/DataPane.svelte';
-	import Figure from '$lib/components/Figure.svelte';
-	import Grid from '$lib/components/Grid.svelte';
-	import SubHeader from '$lib/components/SubHeader.svelte';
+   import { CodeMirror, DataPane, Figure, Grid, SubHeader } from '@explorable-viz/fluid';
 
 	let showDataPane = $state(false);
 
