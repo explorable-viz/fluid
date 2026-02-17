@@ -1,0 +1,9 @@
+{
+  "name": "@explorable-viz/monorepo",
+  "private": true,
+  "packageManager": "yarn@1.22.22",
+  "workspaces": [
+    "fluid",
+    "website/*"
+  ]
+}
