@@ -5,7 +5,6 @@ You can edit this file as you like.
 let baseSources =
       [ "src/**/*.purs"
       , "test/**/*.purs"
-      , "website/**/*.purs"
       , "config/*.purs"
       ]
 
