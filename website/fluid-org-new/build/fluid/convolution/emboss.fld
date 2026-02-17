@@ -1,0 +1,7 @@
+def filter:
+  def emboss: [
+    [-2, -1, 0],
+    [-1, 1, 1],
+    [0, 1, 2]
+  ]
+  [| nth2(i, j, emboss) for (i, j) in (3, 3) |]

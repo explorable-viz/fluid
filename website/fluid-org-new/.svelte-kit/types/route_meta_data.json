@@ -1,0 +1,24 @@
+{
+	"/": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/contributors": [
+		"src/routes/+layout.ts"
+	],
+	"/convolution-wrapped": [
+		"src/routes/+layout.ts"
+	],
+	"/convolution": [
+		"src/routes/+layout.ts"
+	],
+	"/faq": [
+		"src/routes/+layout.ts"
+	],
+	"/moving-average": [
+		"src/routes/+layout.ts"
+	],
+	"/student-projects": [
+		"src/routes/+layout.ts"
+	]
+}

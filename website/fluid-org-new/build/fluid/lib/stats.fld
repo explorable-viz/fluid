@@ -1,0 +1,83 @@
+def split([]): ([], [])
+def split(x :| xs):
+  def (ys, zs): split(xs)
+  (x :| zs, ys)
+
+def merge(xs, ys):
+  match (xs, ys):
+    case ([], _): ys
+    case (x :| xs_, []): xs
+    case (x :| xs_, y :| ys_):
+      if x < y: x :| merge(xs_, ys)
+      else: y :| merge(xs, ys_)
+
+def mergesort(xs):
+  if length(xs) < 2: xs
+  else:
+    def (ys, zs): split(xs)
+    merge(mergesort(ys), mergesort(zs))
+
+def find_quantile(q, p, xs):
+  def rank:
+    (p / q) * (length(xs) - 1)
+
+  if rank == floor(rank):
+    nth(rank, xs)
+  else:
+    def x1: floor(rank)
+    def x2: ceiling(rank)
+    def left: nth(x1, xs)
+    def right: nth(x2, xs)
+    left + (rank - x1) * (right - left)
+
+def find_percentile: find_quantile(100)
+
+def accum_bins(data, Nil): []
+def accum_bins(data, [l]): []
+def accum_bins(data, l :| r :| es):
+  def (ge, le):
+    split_on(lambda x: x <= r, data)
+  (le, r - l) :| accum_bins(ge, r :| es)
+
+def cut(xs, nbins):
+  def low: minimum(xs)
+  def binwidth:
+    (maximum(xs) - low) / nbins
+  def edges:
+    [low + x * binwidth for x in [0 .. nbins]]
+
+  accum_bins(xs, edges)
+
+def qcut(xs, qs):
+  def (low, high):
+    (minimum(xs), maximum(xs))
+  def edges:
+    append((low :| [find_percentile(x, xs) for x in qs], [high]))
+
+  accum_bins(xs, edges)
+
+def likelihood_le(xs, target):
+  length(filter(lambda x: x <= target, xs)) / length(xs)
+
+def likelihood_ge(xs, target):
+  length(filter(lambda x: x >= target, xs)) / length(xs)
+
+def likelihood_map(table, prob):
+  from_some(find(lambda x: x.prob <= prob, table)).msg
+
+def mk_percent(num):
+  num_to_str(num * 100) ++ "%"
+
+def leq_p(n, m):
+  if n <= m: "less"
+  else: "more"
+
+def graded_leq_p(n, m):
+  def ratio: n / m
+
+  if ratio <= 1.0:
+    if ratio <= 0.5: "much less"
+    else: "less"
+  else:
+    if ratio >= 2.0: "much more"
+    else: "more"

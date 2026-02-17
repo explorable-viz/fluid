@@ -1,0 +1,1 @@
+def methane: load_json("../dataset/methane-emissions.json")
