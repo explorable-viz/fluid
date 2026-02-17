@@ -82,6 +82,9 @@
     "spago": "^0.21.0",
     "typescript": "^5.5.3"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "bin": {
     "bundle-website": "./script/bundle-website.sh",
     "fluid": "./dist/fluid/shared/fluid.mjs",
