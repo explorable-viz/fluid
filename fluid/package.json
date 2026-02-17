@@ -61,7 +61,6 @@
     "express-static": "^1.2.6",
     "http-server": "^14.1.1",
     "http-shutdown": "^1.2.2",
-    "node": "^22.11.0",
     "node-process": "^1.0.1",
     "os": "^0.1.2",
     "util": "^0.12.5"
@@ -84,9 +83,9 @@
     "typescript": "^5.5.3"
   },
   "bin": {
+    "bundle-website": "./script/bundle-website.sh",
     "fluid": "./dist/fluid/shared/fluid.mjs",
-    "test-website": "./dist/fluid/shared/website-test.js",
     "install-website": "./script/install-website.sh",
-    "bundle-website": "./script/bundle-website.sh"
+    "test-website": "./dist/fluid/shared/website-test.js"
   }
 }
