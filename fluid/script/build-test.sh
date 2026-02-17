@@ -2,4 +2,4 @@
 set -xe
 
 yarn build-prod
-yarn test-all
+yarn test

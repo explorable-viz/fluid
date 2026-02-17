@@ -8,4 +8,3 @@ rm -rf dist/
 ./script/bundle-benchmark.sh
 ./script/bundle-fluid.sh
 ./script/bundle-libraries.sh
-./script/bundle-website-all.sh
