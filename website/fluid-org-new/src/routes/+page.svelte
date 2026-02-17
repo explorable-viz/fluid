@@ -1,7 +1,7 @@
 <script lang="ts">
 	import NonRenewables from '$lib/assets/fld/non-renewables.fld?raw';
 	import CodeMirror from '$lib/components/CodeMirror.svelte';
-	import DataPane from '$lib/components/DataPane.svelte';
+   import { DataPane } from '@explorable-viz/fluid';
 	import FigureSrc from '$lib/components/FigureSrc.svelte';
 	import Grid from '$lib/components/Grid.svelte';
 	import SubHeader from '$lib/components/SubHeader.svelte';

@@ -90,5 +90,9 @@
     "fluid": "./dist/fluid/shared/fluid.mjs",
     "install-website": "./script/install-website.sh",
     "test-website": "./dist/fluid/shared/website-test.js"
+  },
+  "svelte": "./web",
+  "exports": {
+    "./src/*": "./web/*"
   }
 }

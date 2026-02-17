@@ -1,1 +1,0 @@
-import{f as s,a as t}from"./D2M_aK7b.js";import{t as e,s as o,c as n,r as v}from"./C5WKpRwH.js";import{s as m,a as f}from"./CpBC8Q5X.js";var p=s('<div id="grid"><div></div> <div></div> <!></div>');function g(d,i){var a=p(),r=o(n(a),4);m(r,()=>i.children),v(a),e(()=>f(a,1,`grid-container ${i.showDataPane?"":"data-pane-hidden"}`)),t(d,a)}export{g as G};

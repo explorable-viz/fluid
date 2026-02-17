@@ -1,1 +1,0 @@
-import{f as r,a as f}from"./D2M_aK7b.js";import{o as d}from"./CwsymhHL.js";import{p as s,a as t}from"./C5WKpRwH.js";import{a as e}from"./BiMlg1xD.js";var m=r('<div id="fig"><div class="fig-loading svelte-1yj8fe4">loading figure(s)</div></div>');function n(o,i){s(i,!0),d(()=>{e(i.spec)("fig")(i.fld)()});var a=m();f(o,a),t()}export{n as F};
