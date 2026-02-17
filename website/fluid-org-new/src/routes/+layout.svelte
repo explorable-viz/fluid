@@ -7,7 +7,7 @@
 	import { page } from '$app/state';
 	import favicon from '$lib/assets/image/favicon.ico';
 	import FluidLogo from '$lib/assets/image/fluid.png';
-	import { headerLinks, headerLinksExternal } from '$lib/config/nav';
+	import { headerLinks } from '$lib/config/nav';
 
 	let { children } = $props();
 </script>
@@ -22,13 +22,6 @@
 		<h2 class="fluid-subtitle">explorable, self-explanatory research outputs</h2>
 	</div>
 	<div class="flex-left-align" style="justify-content: center; margin-left: 5px;">
-		<nav>
-			<ul>
-				{#each headerLinksExternal as { url, title }, index (index)}
-					<li><a target="_blank" href={url}>{title}</a></li>
-				{/each}
-			</ul>
-		</nav>
 		<nav>
 			<ul>
 				{#each headerLinks as { url, title }, index (index)}
