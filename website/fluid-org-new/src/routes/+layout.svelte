@@ -19,7 +19,7 @@
 <div class="header-grid-container">
 	<div class="flex-right-align right-border">
 		<img class="fluid-logo" src={FluidLogo} width="150px" alt="Fluid logo" />
-		<h2 class="fluid-subtitle">explorable, self-explanatory research outputs</h2>
+		<p class="fluid-subtitle">pure • pythonic • provenance-aware</p>
 	</div>
 	<div class="flex-left-align" style="justify-content: center; margin-left: 5px;">
 		<nav>

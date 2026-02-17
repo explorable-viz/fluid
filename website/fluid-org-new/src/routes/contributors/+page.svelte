@@ -39,19 +39,6 @@
 			<a href="https://iccs.cam.ac.uk/">Institute of Computing for Climate Science</a>, University
 			of Cambridge. ICCS is funded by a grant from Schmidt Sciences.
 		</p>
-
-		<h3 class="title">Contributors</h3>
-		<p>The following people have contributed to this project:</p>
-		<table>
-			<tbody>
-				{#each contributors as { name, url, organisation }, index (index)}
-					<tr class="table-row">
-						<td class="table-cell"><a href={url}>{name}</a></td>
-						<td class="table-cell">{organisation}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
 	</div>
 </div>
 
