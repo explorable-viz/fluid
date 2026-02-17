@@ -33,6 +33,5 @@ jobs:
       run: |
         yarn install
         set -x -e
-        cd fluid
-        yarn purs-tidy check src/**/*.purs test/**/*.purs
-        yarn build-test
+        yarn workspace fluid tidy
+        yarn workspace fluid build-test

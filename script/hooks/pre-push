@@ -9,7 +9,7 @@ then
    exit 1
 else
    echo "No locally modified files. Checking format."
-   yarn tidy
+   yarn workspace fluid tidy
    if git status --porcelain | grep -q '^[ M]'
    then
       echo "Format fixed. Commit again before pushing."
