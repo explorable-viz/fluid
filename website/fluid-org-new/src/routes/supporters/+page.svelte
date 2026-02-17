@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { contributors, funders } from '$lib/config/contributors';
+	import { supporters } from '$lib/config/supporters';
 </script>
 
 <div id="grid" class="grid-container data-pane-visible">
 	<div class="flex-right-align data-pane">
-		{#each funders as { url, logo, name }, index (index)}
+		{#each supporters as { url, logo, name }, index (index)}
 			<a href={url}><img src={logo} alt="{name} logo" width="250px" /></a>
 		{/each}
 	</div>

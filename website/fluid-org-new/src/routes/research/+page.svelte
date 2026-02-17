@@ -1,5 +1,5 @@
-<script lang="ts">
-	import { funders } from '$lib/config/contributors';
+<script>
+	import { funders } from '$lib/config/supporters';
 </script>
 
 <div id="grid" class="grid-container data-pane-visible">
