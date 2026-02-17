@@ -13,6 +13,9 @@
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint ."
 	},
+   "dependencies": {
+      "@explorable-viz/fluid": "workspace:*"
+   },
 	"devDependencies": {
 		"@codemirror/commands": "^6.8.1",
 		"@codemirror/lang-python": "^6.2.1",
