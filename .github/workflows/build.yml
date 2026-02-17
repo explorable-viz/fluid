@@ -33,5 +33,5 @@ jobs:
       run: |
         yarn install
         set -x -e
-        yarn @explorable-viz/fluid fluid tidy
-        yarn @explorable-viz/fluid fluid build-test
+        yarn workspace @explorable-viz/fluid tidy
+        yarn workspace @explorable-viz/fluid build-test
