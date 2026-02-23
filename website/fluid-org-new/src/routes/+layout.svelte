@@ -38,7 +38,7 @@
 <div class="footer-grid-container">
 	<div></div>
 	<div class="flex-left-align">
-		<p>© Fluid Contributors 2026</p>
+		<p>© Fluid Contributors 2019-2026</p>
 	</div>
 </div>
 
