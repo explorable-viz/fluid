@@ -1,8 +1,8 @@
 <script>
-	import { funders } from '$lib/config/supporters';
+   import { Grid } from '@explorable-viz/fluid';
 </script>
 
-<div id="grid" class="grid-container data-pane-visible">
+<Grid showDataPane="false">
 	<div class="flex-right-align data-pane">
 	</div>
 	<div></div>
@@ -23,20 +23,4 @@
 		<a href="https://dl.acm.org/doi/10.1145/3498668">Linked Visualisations via Galois Dependencies</a> (POPL 2022)
     </p>
 	</div>
-</div>
-
-<style>
-	.data-pane {
-		margin-top: 10pt;
-		padding-right: 5pt;
-	}
-
-	.data-pane > :not(:last-child) {
-		border-bottom: 0.5px solid lightgray;
-		padding-bottom: 2px;
-	}
-
-	.data-pane > :not(:first-child) {
-		padding-top: 2px;
-	}
-</style>
+</Grid>
