@@ -1,4 +1,8 @@
-<div id="grid" class="grid-container data-pane-hidden">
+<script>
+    import { Grid } from '@explorable-viz/fluid';
+</script>
+
+<Grid showDataPane="false">
 	<div></div>
 	<div></div>
 
@@ -90,7 +94,7 @@
 			could help with, and we will add to you our Slack workspace and GitHub organisation.
 		</p>
 	</div>
-</div>
+</Grid>
 
 <style>
 	.faq-question {
