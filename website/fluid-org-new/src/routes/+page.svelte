@@ -1,21 +1,8 @@
 <script>
-	import NonRenewables from '$lib/assets/fld/non-renewables.fld?raw';
-   import { CodeMirror, DataPane, FigureSrc, Grid } from '@explorable-viz/fluid';
-
-	let showDataPane = $state(false);
-
-	const spec = {
-		fluidSrcPath: ['fluid'],
-		inputs: ['nonRenewables'],
-		query: false,
-		linking: true
-	};
-
-	const fld = '/fluid/non-renewables.fld';
-	const src = NonRenewables;
+   import { Grid } from '@explorable-viz/fluid';
 </script>
 
-<Grid {showDataPane}>
+<Grid>
 	<div class="flex-left-align">
 		<h3 class="title">Transparent research outputs</h3>
 		<p>
@@ -30,25 +17,10 @@
 			> is a programming language that tracks how data flows through a computation and makes it possible
 			to author computational outputs where various transparency features are built-in.
 		</p>
-	</div>
 
-	<DataPane {showDataPane} toggle={() => (showDataPane = !showDataPane)}>
-		<div class="flex-right-align data-pane">
-			<div class="data-pane-column">
-				<div id="fig-input">
-				</div>
-			</div>
-		</div>
-	</DataPane>
-
-	<div class="flex-left-align">
-		<FigureSrc {spec} {src} />
-		<CodeMirror name="non-renewables" src={fld} />
+		<h3 class="title">Pure functional programming, Pythonic syntax</h3>
+      <p>
+      </p>
 	</div>
+	<div></div>
 </Grid>
-
-<style>
-	.data-pane {
-		max-width: 475px;
-	}
-</style>
