@@ -1,5 +1,6 @@
 <script lang="ts">
-   import { DataPane, Figure, Grid, SubHeader } from '@explorable-viz/fluid';
+   import { DataPane, Figure, Grid } from '@explorable-viz/fluid';
+   import SubHeader from '$lib/SubHeader.svelte'
 
 	let showDataPane = $state(false);
 

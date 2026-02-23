@@ -1,6 +1,7 @@
 <script>
 	import NonRenewables from '$lib/assets/fld/non-renewables.fld?raw';
-   import { CodeMirror, DataPane, FigureSrc, Grid, SubHeader } from '@explorable-viz/fluid';
+   import { CodeMirror, DataPane, FigureSrc, Grid } from '@explorable-viz/fluid';
+   import SubHeader from '$lib/SubHeader.svelte'
 
 	let showDataPane = $state(false);
 
