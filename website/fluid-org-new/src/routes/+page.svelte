@@ -1,7 +1,6 @@
 <script>
 	import NonRenewables from '$lib/assets/fld/non-renewables.fld?raw';
    import { CodeMirror, DataPane, FigureSrc, Grid } from '@explorable-viz/fluid';
-   import SubHeader from '$lib/SubHeader.svelte'
 
 	let showDataPane = $state(false);
 
@@ -17,8 +16,8 @@
 </script>
 
 <Grid {showDataPane}>
-	<SubHeader />
 	<div class="flex-left-align">
+		<h3 class="title">Transparent research outputs</h3>
 		<p>
 			With traditional print media, the figures, text and other content are disconnected from the
 			underlying data, making them hard to understand, evaluate and trust. Digital media, such as
