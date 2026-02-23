@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { supporters } from '$lib/config/supporters';
+   import { Grid } from '@explorable-viz/fluid';
 </script>
 
-<div id="grid" class="grid-container data-pane-visible">
+<Grid showDataPane="false">
 	<div class="flex-right-align data-pane">
 		{#each supporters as { url, logo, name }, index (index)}
 			<a href={url}><img src={logo} alt="{name} logo" width="250px" /></a>
@@ -40,13 +41,9 @@
 			of Cambridge. ICCS is funded by a grant from Schmidt Sciences.
 		</p>
 	</div>
-</div>
+</Grid>
 
 <style>
-	table td:first-child {
-		padding-right: 1em;
-	}
-
 	.data-pane {
 		margin-top: 10pt;
 		padding-right: 5pt;

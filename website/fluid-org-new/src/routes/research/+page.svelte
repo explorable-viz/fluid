@@ -3,9 +3,8 @@
 </script>
 
 <Grid showDataPane="false">
-	<div class="flex-right-align data-pane">
-	</div>
-	<div></div>
+   <div></div>
+   <div></div>
 	<div class="flex-left-align">
 		<h3 class="title">Talks</h3>
 		<p>
@@ -13,7 +12,7 @@
 		<a href="http://youtube.com/watch?v=FCK5w4EZ1xQ">ICCS Summer School 2025</a><br>
 		<a href="https://www.youtube.com/watch?v=F3JaftEnFfM">ICCS Summer School 2024</a><br>
 		<a href="https://www.youtube.com/watch?v=2-S6yVyzypU">Programming for the Planet 2024</a><br>
-		<a href="https://www.youtube.com/watch?v=M_ePrtD9axk">POPL 2022</a>
+		<a href="https://www.youtube.com/watch?v=M_ePrtD9axk">POPL 2022 presentation</a>
     </p>
 
 		<h3 class="title">Related Papers</h3>

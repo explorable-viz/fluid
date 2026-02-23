@@ -3,6 +3,8 @@
 </script>
 
 <Grid>
+	<div></div>
+	<div></div>
 	<div class="flex-left-align">
 		<h3 class="title">Transparent research outputs</h3>
 		<p>
