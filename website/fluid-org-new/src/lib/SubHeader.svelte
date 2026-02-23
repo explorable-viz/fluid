@@ -4,7 +4,6 @@
 	const pages = [
 		{ url: '/', title: 'Transparent research outputs' },
 		{ url: '/convolution', title: 'Matrix convolution' },
-		{ url: '/moving-average', title: 'Moving average' }
 	];
 </script>
 
