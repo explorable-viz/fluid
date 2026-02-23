@@ -26,7 +26,8 @@ a:active {
 }
 
 code {
-	font-family: 'Ubuntu Mono', monospace;
+	font-family: 'Fira Code', monospace;
+   font-size: 11pt;
 }
 
 body {
@@ -55,7 +56,7 @@ svg {
 }
 
 .highlight {
-	font-weight: 500;
+	font-style: oblique;
 }
 
 .align-right {
@@ -133,7 +134,7 @@ nav ul li.active-page a {
 }
 
 .cm-line {
-	font-family: 'Ubuntu Mono';
+	font-family: 'Fira Code';
 	font-size: 10pt;
 }
 
