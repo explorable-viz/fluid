@@ -19,7 +19,7 @@
 	<div></div>
 	<div></div>
 	<div class="flex-left-align">
-		<h4>Matrix convolution</h4>
+		<h3>Matrix convolution</h3>
 	</div>
 
 	<DataPane {showDataPane} toggle={toggleDataPane}>

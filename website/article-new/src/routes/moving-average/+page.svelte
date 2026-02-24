@@ -19,7 +19,7 @@
 	<div></div>
 	<div></div>
 	<div class="flex-left-align">
-		<h4>Moving Average</h4>
+		<h3>Moving Average</h3>
 		<p>
 			The following chart shows a moving average (or rolling average) plot for methane emissions
 			under projected emissions scenario

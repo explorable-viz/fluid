@@ -19,7 +19,7 @@
 	<div></div>
 	<div></div>
 	<div class="flex-left-align">
-		<h4>Non-Renewable Energy plots</h4>
+		<h3>Non-Renewable Energy plots</h3>
 	</div>
 
 	<DataPane {showDataPane} toggle={toggleDataPane}>
