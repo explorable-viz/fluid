@@ -15,7 +15,7 @@
         <li>Transparent brushing-and-linking</li>
       </ul>
       <br>
-      <!--<a href="convolution">Infrastructure for explorable explanations</a><br>-->
+      <a href="convolution">Infrastructure for explorable explanations</a><br>
       <ul>
         <li>Visualising intermediate values</li>
         <li>Literate execution</li>
