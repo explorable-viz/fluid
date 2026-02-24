@@ -39,36 +39,36 @@
 </Grid>
 
 <style>
-	:global(.grid-container),
-	:global(.grid-container.data-pane-hidden) {
+	.grid-container,
+	.grid-container.data-pane-hidden {
 		grid-template-columns: 0.8fr var(--toggle-button-width) var(--text-pane-width);
 	}
 
-	:global(.data-pane) {
+	.data-pane {
 		display: grid;
 		grid-template-columns: min-content min-content;
 		vertical-align: top;
 		justify-content: end;
 	}
 
-	:global(.data-pane *) {
+	.data-pane * {
 		font-size: 9pt;
 	}
 
-	:global(.para-text) {
+	.para-text {
 		margin-left: 5pt;
 		margin-right: 3pt;
 	}
 
-	:global(.intermediates:has(> *)) {
+	.intermediates:has(> *) {
 		border-right: 1px dotted #cccccc;
 	}
 
-	:global(.matrix-cell.selected-primary-persistent) {
+	.matrix-cell.selected-primary-persistent {
 		fill: rgb(214, 240, 214);
 	}
 
-	:global(.matrix-cell-text.selected-primary-persistent:not(.matrix-cell-text.selected-primary-transient)) {
+	.matrix-cell-text.selected-primary-persistent:not(.matrix-cell-text.selected-primary-transient) {
 		color: green;
 	}
 </style>
