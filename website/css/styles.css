@@ -41,7 +41,7 @@ a:active {
 }
 
 code {
-   font-family: 'Ubuntu Mono', monospace;
+   font-family: 'Fira Code', monospace;
 }
 
 body {
@@ -157,7 +157,7 @@ nav ul li.active-page a {
 }
 
 .cm-line {
-   font-family: 'Ubuntu Mono';
+   font-family: 'Fira Code';
    font-size: 10pt;
 }
 
@@ -166,7 +166,7 @@ nav ul li.active-page a {
 }
 
 .cm-gutterElement {
-   font-family: 'Ubuntu Mono';
+   font-family: 'Fira Code';
    font-size: 10pt;
    color: #88C0D0;
 }
