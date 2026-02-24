@@ -11,7 +11,7 @@
 	</div>
 	<div></div>
 	<div class="flex-left-align">
-		<h3 class="title">Funders</h3>
+		<h3 class="title">Supporters</h3>
 		<p>
 			An initial 5-month <a
 				href="https://www.turing.ac.uk/research/research-projects/data-science-toolkit-explorable-data-visualisations"
