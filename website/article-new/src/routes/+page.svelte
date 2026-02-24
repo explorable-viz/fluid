@@ -9,7 +9,7 @@
       <div></div>
       <h2>Fluid: Transparent Research Outputs</h2>
 
-      <!--<a href="renewables-linked">Transparent visualisations</a><br>-->
+      <a href="renewables-linked">Transparent visualisations</a><br>
       <ul>
         <li>Linking visualisations to data</li>
         <li>Transparent brushing-and-linking</li>
@@ -21,7 +21,7 @@
         <li>Literate execution</li>
       </ul>
       <br>
-      <!--<a href="scigen-1805.02474v1-10">Transparent text</a><br>-->
+      <a href="scigen-1805.02474v1-10">Transparent text</a><br>
       <ul>
         <li>Linking natural language to data</li>
         <li>AI-assisted authoring tool</li>
