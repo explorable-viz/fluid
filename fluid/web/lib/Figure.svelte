@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { loadFigure } from '$lib/fluid/App.LoadFigure';
+	import { loadFigure } from '../../output-es/App.LoadFigure';
 	import { onMount } from 'svelte';
 
 	let { spec, fld } = $props();
