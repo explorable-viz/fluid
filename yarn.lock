@@ -3768,9 +3768,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fluid-website-sveltekit@workspace:website/fluid-org-new":
+"fluid-org@workspace:website/fluid-org":
   version: 0.0.0-use.local
-  resolution: "fluid-website-sveltekit@workspace:website/fluid-org-new"
+  resolution: "fluid-org@workspace:website/fluid-org"
   dependencies:
     "@codemirror/commands": "npm:^6.8.1"
     "@codemirror/lang-python": "npm:^6.2.1"
