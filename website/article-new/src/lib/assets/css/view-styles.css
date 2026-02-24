@@ -1,0 +1,262 @@
+.legend-box {
+	stroke: lightgray;
+	stroke-width: 0.5px;
+	fill: none;
+}
+
+.legend-text {
+	font-size: 8pt;
+}
+
+.title-text {
+	fill: Black;
+	font-size: 9pt;
+}
+
+.table-caption {
+	box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+	background: #fafafa;
+	padding: 0.1em 0.2em;
+	border-radius: 1px;
+	display: inline-block;
+}
+
+.table-view th {
+	font-size: 11px;
+	text-align: left;
+	border-bottom: 'thin solid';
+}
+
+.table-view td {
+	font-size: 11px;
+}
+
+.table-view td:nth-child(1) {
+	color: lightgray;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+thead th {
+	vertical-align: top;
+}
+
+.table-cell {
+	border-radius: 0px;
+}
+
+td,
+th {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 120px;
+}
+
+td.table-cell {
+	background-color: white;
+}
+
+.table-cell.inert {
+	color: lightgrey;
+}
+
+.table-cell.selected-primary-persistent {
+	background-color: #93e9be;
+}
+
+.table-cell.selected-secondary-persistent {
+	background-color: rgb(226, 226, 226);
+}
+
+.table-cell.selected-primary-transient {
+	color: blue;
+}
+
+.table-row {
+	display: table-row;
+}
+
+.table-row.hidden {
+	visibility: collapse;
+}
+
+/* To hide a column, add 'hidden' to every cell in the column. visibility: collapse doesn't work here. */
+.table-cell.hidden {
+	display: none;
+}
+
+/* To hide a column, add 'hidden' to every cell in the column. visibility: collapse doesn't work here. */
+.table-cell.hidden {
+	display: none;
+}
+
+/* hack to match Safari-only */
+@supports (hanging-punctuation: first) and (font: -apple-system-body) and (-webkit-appearance: none) {
+	.table-row.hidden {
+		display: none; /* suboptimal for table rows but Safari doesn't support visibility: collapse */
+	}
+}
+
+.linked-text {
+	border-radius: 0px;
+	background-color: White;
+	border-bottom-style: solid;
+	border-bottom-color: white;
+	border-bottom-width: 1px;
+	display: inline;
+}
+
+.linked-text.inert {
+	fill: lightgrey;
+}
+
+.linked-text.selected-primary-persistent {
+	background-color: #93e9be;
+}
+
+.linked-text.selected-primary-transient {
+	border-bottom-color: blue;
+}
+
+.linked-text.selected-secondary-persistent {
+	background-color: rgb(226, 226, 226);
+}
+
+.linked-text.selected-secondary-transient {
+	border-bottom-color: lightblue;
+}
+
+.matrix-cell {
+	stroke: DarkGray;
+	fill: White;
+}
+
+.matrix-cell.inert {
+	stroke: DarkGray;
+	fill: rgb(185, 185, 185);
+}
+
+.matrix-cell.selected-primary-persistent {
+	fill: LightGreen;
+}
+
+.matrix-cell.selected-secondary-persistent {
+	fill: rgb(214, 240, 214);
+}
+
+.matrix-cell-text {
+	font-size: 10pt;
+	font-family: 'Roboto', sans-serif;
+	color: rgb(205, 205, 205);
+}
+
+.matrix-cell-text.selected-primary-persistent {
+	font-weight: 400;
+	color: darkgreen;
+}
+
+.matrix-cell-text.selected-secondary-persistent {
+	color: green;
+}
+
+.matrix-cell-text.selected-primary-transient {
+	font-weight: 400;
+	color: blue;
+}
+
+.matrix-cell-text.selected-secondary-transient {
+	color: royalblue;
+}
+
+.scatterplot-point {
+	fill: white;
+	stroke: black;
+}
+
+.scatterplot-point.inert {
+	fill: rgb(185, 185, 185);
+	stroke: black;
+}
+
+.scatterplot-point.selected-primary-persistent {
+	fill: LightGreen;
+	stroke: teal;
+}
+
+.scatterplot-point.selected-secondary-transient {
+	stroke: blue;
+	stroke-width: 1;
+}
+
+.scatterplot-point.selected-primary-transient {
+	stroke: blue;
+	stroke-width: 1;
+}
+
+.scatterplot-point.selected-secondary-persistent {
+	fill: rgb(226, 226, 226);
+}
+
+.scatterplot-point.selected-secondary-transient {
+	stroke-width: 1;
+}
+
+.para-text + .para-text {
+	margin-top: 0.75em;
+}
+
+.para-text {
+	font-size: 10pt;
+}
+
+.bar {
+	stroke-width: 1;
+}
+
+.tree-node {
+	display: grid;
+	grid-template-columns: auto 1fr; /* label on left, children on right */
+	gap: 8px;
+	align-items: start;
+}
+
+.tree-children {
+	display: grid;
+	grid-auto-rows: min-content;
+	gap: 4px;
+	border-left: 2px solid #ccc;
+	padding-left: 8px;
+}
+
+.tree-label {
+	background: #f8f8f8;
+	border: 1px solid #ccc;
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+.node {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 6px;
+	align-items: start;
+}
+
+.tree-children.columnar {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	column-gap: 12px;
+	row-gap: 4px;
+}
+
+.tree-children.columnar > .tree-node {
+	display: contents; /* flatten to share grid rows */
+}
+
+.tree-children.columnar .tree-children {
+	border-left: none;
+	padding-left: 0;
+}
