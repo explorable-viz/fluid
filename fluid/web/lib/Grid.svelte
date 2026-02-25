@@ -29,8 +29,4 @@ let {
    .grid-container.double-size {
       max-width: 66.7vw; /* undo effect of transform: scale(1.5) for layout purposes */
    }
-
-   .grid-container > :last-child {
-      padding-right: 10px;
-   }
 </style>
