@@ -9,13 +9,14 @@ let {
 
 <div
    id="grid"
-   class="grid-container
-   style=style={showDataPane
+   class={`grid-container
+      ${!showDataPane ? 'data-pane-hidden' : ''}
+      ${doubleSize ? 'double-size' : ''}`}
+   style={showDataPane
       ? `grid-template-columns: auto var(--toggle-button-width) ${textPaneWidth};`
       : `grid-template-columns: 0 var(--toggle-button-width) ${textPaneWidth};`
    }
-   {showDataPane ? '' : 'data-pane-hidden'}
-   {doubleSize ? 'double-size' : ''}">
+>
 	{@render children()}
 </div>
 
