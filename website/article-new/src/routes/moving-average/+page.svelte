@@ -57,21 +57,4 @@
 	:global(.data-pane) {
 		max-width: 300px;
 	}
-
-	:global(.grid-container),
-	:global(.grid-container.data-pane-hidden) {
-		grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
-	}
-
-	:global(.data-pane) {
-		padding-right: 0.25em;
-	}
-
-	:global(.data-pane *) {
-		font-size: 10pt;
-	}
-
-	:global(.highlight) {
-		font-style: oblique;
-	}
 </style>

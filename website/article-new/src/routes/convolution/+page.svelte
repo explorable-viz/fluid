@@ -39,11 +39,6 @@
 </Grid>
 
 <style>
-	.grid-container,
-	.grid-container.data-pane-hidden {
-		grid-template-columns: 0.8fr var(--toggle-button-width) var(--text-pane-width);
-	}
-
 	.data-pane {
 		display: grid;
 		grid-template-columns: min-content min-content;

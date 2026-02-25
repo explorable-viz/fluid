@@ -33,17 +33,3 @@
 		<Figure {spec} fld="../fluid/methane.fld" />
 	</div>
 </Grid>
-
-<style>
-	:global(.data-pane) {
-		padding-right: 0.25em;
-	}
-
-	:global(.data-pane *) {
-		font-size: 10pt;
-	}
-
-	:global(.data-pane-column) {
-		border-right: 1px dotted #cccccc;
-	}
-</style>
