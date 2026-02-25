@@ -2,11 +2,18 @@
 let {
 		children,
 		showDataPane,
-		doubleSize = false
+		doubleSize = false,
+      textPaneWidth = doubleSize ? `600px` : '800px'
 	} = $props();
 </script>
 
-<div id="grid" class="grid-container
+<div
+   id="grid"
+   class="grid-container
+   style=style={showDataPane
+      ? `grid-template-columns: auto var(--toggle-button-width) ${textPaneWidth};`
+      : `grid-template-columns: 0 var(--toggle-button-width) ${textPaneWidth};`
+   }
    {showDataPane ? '' : 'data-pane-hidden'}
    {doubleSize ? 'double-size' : ''}">
 	{@render children()}
@@ -15,12 +22,7 @@ let {
 <style>
    .grid-container {
       display: grid;
-      grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
       justify-content: center;
-   }
-
-   .grid-container.data-pane-hidden {
-      grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
    }
 
    .grid-container.double-size {

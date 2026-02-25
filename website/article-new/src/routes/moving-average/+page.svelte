@@ -1,5 +1,6 @@
 <script>
 	import { DataPane, Figure, Grid } from '@explorable-viz/fluid';
+   import { text } from 'stream/consumers';
 
 	let showDataPane = false;
 
@@ -15,7 +16,7 @@
 	};
 </script>
 
-<Grid {showDataPane}>
+<Grid {showDataPane} textPaneWidth = '400px'>
 	<div></div>
 	<div></div>
 	<div class="flex-left-align">
@@ -50,11 +51,7 @@
 </Grid>
 
 <style>
-	:global(:root) {
-		--text-pane-width: 400px;
-	}
-
-	:global(.data-pane) {
+	.data-pane {
 		max-width: 300px;
 	}
 </style>

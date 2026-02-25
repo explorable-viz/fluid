@@ -163,7 +163,6 @@ nav ul li.active-page a {
 
 :root {
 	--toggle-button-width: 24px;
-	--text-pane-width: 800px;
 }
 
 .flex-bottom-align {
@@ -231,7 +230,6 @@ nav ul li.active-page a {
 .double-size {
 	transform: scale(1.5);
 	transform-origin: top;
-	--text-pane-width: 600px;
 }
 
 body.standalone {

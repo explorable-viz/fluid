@@ -50,20 +50,13 @@
 		font-size: 9pt;
 	}
 
-	.para-text {
+	:global(.intermediates .para-text) {
 		margin-left: 5pt;
 		margin-right: 3pt;
 	}
 
-	.intermediates:has(> *) {
+   /* global can cause preload flicker so use sparingly  */
+	:global(.intermediates:has(> *)) {
 		border-right: 1px dotted #cccccc;
-	}
-
-	.matrix-cell.selected-primary-persistent {
-		fill: rgb(214, 240, 214);
-	}
-
-	.matrix-cell-text.selected-primary-persistent:not(.matrix-cell-text.selected-primary-transient) {
-		color: green;
 	}
 </style>
