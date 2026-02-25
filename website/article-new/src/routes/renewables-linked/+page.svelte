@@ -34,15 +34,6 @@
 </Grid>
 
 <style>
-	:global(.grid-container),
-	:global(.grid-container.data-pane-hidden) {
-		grid-template-columns: 0.8fr var(--toggle-button-width) var(--text-pane-width);
-	}
-
-	:global(.grid-container.double-size) {
-		max-width: 66.7vw;
-	}
-
 	:global(.data-pane) {
 		padding-right: 0.25em;
 	}
