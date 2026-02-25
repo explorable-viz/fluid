@@ -139,7 +139,7 @@ nav ul li.active-page a {
 
 .cm-line {
 	font-family: 'Fira Code';
-	font-size: 10pt;
+	font-size: 9pt;
 }
 
 .cm-gutter {
@@ -148,7 +148,7 @@ nav ul li.active-page a {
 
 .cm-gutterElement {
 	font-family: 'Fira Code';
-	font-size: 10pt;
+	font-size: 9pt;
 	color: #88c0d0;
 }
 
@@ -164,24 +164,6 @@ nav ul li.active-page a {
 :root {
 	--toggle-button-width: 24px;
 	--text-pane-width: 800px;
-}
-
-.grid-container {
-	display: grid;
-	grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
-	justify-content: center;
-}
-
-.grid-container.data-pane-hidden {
-	grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
-}
-
-.grid-container.double-size {
-	max-width: 66.7vw; /* undo effect of transform: scale(1.5) for layout purposes */
-}
-
-.grid-container > :last-child {
-	padding-right: 10px;
 }
 
 .flex-bottom-align {
