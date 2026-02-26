@@ -1,5 +1,3 @@
-const { log } = require("console")
-
 module.exports = function (config) {
    config.set({
       autoWatch: true,

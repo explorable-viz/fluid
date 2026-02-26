@@ -28,7 +28,6 @@
     "script/util/serve.sh"
   ],
   "scripts": {
-    "benchmark": "./script/benchmark.sh",
     "build": "./script/build.sh",
     "build-prod": "BUILD_ENV=prod ./script/build.sh",
     "build-publish": "yarn build-prod && yarn publish",
