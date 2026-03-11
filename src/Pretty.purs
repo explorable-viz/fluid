@@ -18,7 +18,7 @@ import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtO
 import Pretty.Util (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Primitive.Parse (getPrec)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (×), isEmpty, (×))
+import Util (type (×), error, isEmpty, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
 import Val (BaseVal(..), Fun(..)) as V
@@ -47,6 +47,7 @@ instance RootOp Pattern where
 instance Ann a => RootOp (Expr a) where
    rootOp (Constr _ c _) | c == cCons = Just ":"
    rootOp (BinaryApp _ op _) = Just op
+   rootOp (UnaryPrefixApp op _) = Just op
    rootOp _ = Nothing
 
 instance Highlightable a => RootOp (E.Expr a) where
@@ -66,6 +67,7 @@ class IsSimple (e :: Type) where
 
 instance Ann a => IsSimple (Expr a) where
    isSimple (BinaryApp _ _ _) = false
+   isSimple (UnaryPrefixApp _ _) = false
    isSimple (Constr _ c _) | c == cCons = false
    isSimple (Lambda _) = false
    isSimple (Let _ _) = false
@@ -99,18 +101,26 @@ prettySimple s =
 prettyP :: forall a. Pretty a => a -> String
 prettyP x = render (pretty x)
 
-binaryApp :: forall a. Ann a => Int -> Expr a -> Doc
-binaryApp n (BinaryApp s op s') =
+operatorApp :: forall a. Ann a => Int -> Expr a -> Doc
+operatorApp n (BinaryApp s op s') =
    case getPrec op of
-      -1 -> binaryApp customPrec s <+> text "|" <> text op <> text "|" <+> binaryApp customPrec s'
+      -1 -> operatorApp customPrec s <+> text "|" <> text op <> text "|" <+> operatorApp customPrec s'
          where
          customPrec = getPrec "|x|"
       n' ->
          if n' <= n then
-            parens (binaryApp n' s <+> text op <+> binaryApp n' s')
+            parens (operatorApp n' s <+> text op <+> operatorApp n' s')
          else
-            binaryApp n' s <+> text op <+> binaryApp n' s'
-binaryApp _ e = prettySimple e
+            operatorApp n' s <+> text op <+> operatorApp n' s'
+operatorApp n (UnaryPrefixApp op s) =
+   case getPrec op of
+      -1 -> error "not implemented!"
+      n' ->
+         if n' <= n then
+            parens (text op <+> operatorApp n' s)
+         else
+            text op <+> operatorApp n' s
+operatorApp _ e = prettySimple e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
 lambda ps e = text "lambda" <+> prettyList ps <> text ":" <+> pretty e
@@ -131,7 +141,8 @@ instance Ann a => Pretty (Expr a) where
    pretty (Project s x) = expr $ prettySimple s <> text "." <> text x
    pretty (DProject e k) = expr $ prettySimple e <> brackets (expr $ pretty k)
    pretty (App s s') = expr $ prettyAppChain (App s s') Nil
-   pretty (BinaryApp s op s') = expr $ binaryApp 0 (BinaryApp s op s')
+   pretty (BinaryApp s op s') = expr $ operatorApp 0 (BinaryApp s op s')
+   pretty (UnaryPrefixApp op s) = expr $ operatorApp 0 (UnaryPrefixApp op s)
    pretty (MatchAs s cs) = text "match" <+> pretty s <> block (pretty cs)
    pretty (IfElse (NonEmptyList (ss :| sss)) e) =
       vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))

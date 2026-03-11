@@ -51,6 +51,7 @@ data Expr a
    | DProject (Expr a) (Expr a)
    | App (Expr a) (Expr a)
    | BinaryApp (Expr a) Var (Expr a)
+   | UnaryPrefixApp Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
    | IfElse (NonEmptyList (Expr a × Expr a)) (Expr a)
    | Paragraph (Paragraph a)
@@ -312,6 +313,8 @@ exprFwd (App s1 s2) =
    E.App <$> desug s1 <*> desug s2
 exprFwd (BinaryApp s1 op s2) =
    E.App <$> (E.App (E.Op op) <$> desug s1) <*> desug s2
+exprFwd (UnaryPrefixApp op s) =
+   E.App (E.Op op) <$> desug s
 exprFwd (MatchAs s μ) =
    E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
 exprFwd (IfElse sss s) =
@@ -361,6 +364,8 @@ exprBwd (E.App e1 e2) (App s1 s2) =
    App (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)
+exprBwd (E.App (E.Op _) e) (UnaryPrefixApp op s) =
+   UnaryPrefixApp op (desugBwd e s)
 exprBwd (E.App (E.Lambda _ σ) e) (MatchAs s μ) =
    MatchAs (desugBwd e s)
       (first head <$> unwrap <$> unwrap (desugBwd σ (Clauses (Clause <$> first singleton <$> μ))))

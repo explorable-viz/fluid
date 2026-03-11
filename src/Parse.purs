@@ -101,7 +101,7 @@ opTable =
    binaryApp p = p <#> \op e e' -> BinaryApp e op e'
 
    unaryPrefixApp :: Parser String -> Parser (Raw Expr -> Raw Expr)
-   unaryPrefixApp p = p <#> \op e -> App (Var op) e
+   unaryPrefixApp p = p <#> \op e -> UnaryPrefixApp op e
 
    symbol :: String -> Parser String
    symbol s = reservedOperator s $> s
