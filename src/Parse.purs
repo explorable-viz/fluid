@@ -89,6 +89,11 @@ infixCustom = do
    delim '|'
    pure \e e' -> BinaryApp e fn e'
 
+prefixIdent :: String -> Parser (Raw Expr -> Raw Expr)
+prefixIdent op = do
+   reserved op
+   pure \e -> App (Var op) e
+
 consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 consOp = do
    reservedOperator ":|"
@@ -100,7 +105,7 @@ opTable =
    where
    toOperator :: OpDef -> P.Operator (StateT Position Identity) String (Raw Expr)
    toOperator (Infix parser op assoc) = P.Infix (infixParser parser op) assoc
-   toOperator (Prefix _ _) = error "not implemented!"
+   toOperator (Prefix parser op) = P.Prefix (prefixParser parser op)
    toOperator (Postfix _ _) = error "not implemented!"
 
    infixParser :: OpParser -> String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
@@ -108,6 +113,10 @@ opTable =
    infixParser Ident op = infixIdent op
    infixParser ConsOp _ = consOp
    infixParser Custom _ = infixCustom
+
+   prefixParser :: OpParser -> String -> Parser (Raw Expr -> Raw Expr)
+   prefixParser Ident op = prefixIdent op
+   prefixParser _ _ = error "not implemented!"
 
 varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef

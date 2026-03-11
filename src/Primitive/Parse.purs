@@ -45,6 +45,7 @@ opDefs =
      , Infix Symbol "<=" AssocLeft
      , Infix Symbol ">=" AssocLeft
      ]
+   , [ Prefix Ident "not" ]
    , [ Infix Ident "and" AssocLeft ]
    , [ Infix Ident "or" AssocLeft ]
    ]
