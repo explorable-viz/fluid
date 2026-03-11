@@ -5,8 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Lazy (defer)
 import Control.Monad.State (StateT)
-import Data.Array (fromFoldable, groupBy, some, sortBy)
-import Data.Array.NonEmpty (head, toArray)
+import Data.Array (fromFoldable, some)
 import Data.Bifunctor (lmap)
 import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either, choose)
@@ -27,7 +26,7 @@ import Parsing.Expr (OperatorTable, buildExprParser)
 import Parsing.Expr (Assoc(..), Operator(..)) as P
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
-import Primitive.Parse (InfixParser(..), OpDef(..), opDefs, prec)
+import Primitive.Parse (InfixParser(..), OpDef(..), opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), nonEmpty, (×))
 
@@ -97,13 +96,10 @@ consOp = do
 
 opTable :: OperatorTable (StateT Position Identity) String (Raw Expr)
 opTable =
-   opDefs
-      # groupBy (\a b -> prec a == prec b)
-      # sortBy (comparing (\grp -> negate (prec (head grp)))) -- sort high -> low
-      # map (toArray <$> map toOperator)
+   opDefs # map (map toOperator)
    where
    toOperator :: OpDef -> P.Operator (StateT Position Identity) String (Raw Expr)
-   toOperator (Infix parser op assoc _) = P.Infix (infixParser parser op) assoc
+   toOperator (Infix parser op assoc) = P.Infix (infixParser parser op) assoc
 
    infixParser :: InfixParser -> String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
    infixParser Symbol op = infixSymbol op

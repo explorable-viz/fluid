@@ -3,46 +3,56 @@ module Primitive.Parse where
 import Prelude
 
 import Bind (Var)
-import Data.Map (Map, fromFoldable)
+import Data.Array (length, mapWithIndex)
+import Data.Map (Map, fromFoldable, lookup)
+import Data.Maybe (Maybe(..))
 import Parsing.Expr (Assoc(..))
 import Util ((×))
 
 data OpDef =
-   Infix InfixParser Var Assoc Int
+   Infix InfixParser Var Assoc
 
 data InfixParser = Symbol | Ident | ConsOp | Custom
 
 name :: OpDef -> Var
-name (Infix _ n _ _) = n
-
-prec :: OpDef -> Int
-prec (Infix _ _ _ p) = p
+name (Infix _ n _) = n
 
 -- Aim to match Python operator precedence and associativty as defined in:
 -- https://docs.python.org/3/reference/expressions.html#operator-precedence
-opDefs :: Array OpDef
+opDefs :: Array (Array OpDef)
 opDefs =
-   [ Infix Symbol "!" AssocLeft 9
-   , Infix Symbol "**" AssocRight 8
-   , Infix Symbol "*" AssocLeft 7
-   , Infix Symbol "/" AssocLeft 7
-   , Infix Symbol "//" AssocLeft 7
-   , Infix Symbol "%" AssocLeft 7
-   , Infix Symbol "+" AssocLeft 6
-   , Infix Symbol "-" AssocLeft 6
-   , Infix ConsOp ":" AssocRight 5
-   , Infix Symbol "++" AssocRight 4
-   , Infix Custom "|x|" AssocLeft 3
-   , Infix Symbol "==" AssocNone 2
-   , Infix Symbol "/=" AssocNone 2
-   , Infix Symbol "<" AssocLeft 2
-   , Infix Symbol ">" AssocLeft 2
-   , Infix Symbol "<=" AssocLeft 2
-   , Infix Symbol ">=" AssocLeft 2
-   , Infix Ident "and" AssocLeft 1
-   , Infix Ident "or" AssocLeft 0
+   [ [ Infix Symbol "!" AssocLeft ]
+   , [ Infix Symbol "**" AssocRight ]
+   , [ Infix Symbol "*" AssocLeft
+     , Infix Symbol "/" AssocLeft
+     , Infix Symbol "//" AssocLeft
+     , Infix Symbol "%" AssocLeft
+     ]
+   , [ Infix Symbol "+" AssocLeft
+     , Infix Symbol "-" AssocLeft
+     ]
+   , [ Infix ConsOp ":" AssocRight ]
+   , [ Infix Symbol "++" AssocRight ]
+   , [ Infix Custom "|x|" AssocLeft ]
+   , [ Infix Symbol "==" AssocNone
+     , Infix Symbol "/=" AssocNone
+     , Infix Symbol "<" AssocLeft
+     , Infix Symbol ">" AssocLeft
+     , Infix Symbol "<=" AssocLeft
+     , Infix Symbol ">=" AssocLeft
+     ]
+   , [ Infix Ident "and" AssocLeft ]
+   , [ Infix Ident "or" AssocLeft ]
    ]
 
--- for lookup by name
-opMap :: Map String OpDef
-opMap = fromFoldable $ map (\def -> name def × def) opDefs
+-- name -> prec
+opPrecs :: Map String Int
+opPrecs = fromFoldable do
+   i × ops <- mapWithIndex (×) opDefs
+   op <- ops
+   pure $ name op × (length opDefs - i) -- table is high-low
+
+getPrec :: String -> Int
+getPrec op = case lookup op opPrecs of
+   Just p -> p
+   Nothing -> -1

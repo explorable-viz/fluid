@@ -5,7 +5,6 @@ import Prelude
 import Bind (Bind, Var, (↦))
 import Data.List (List(..), fromFoldable, singleton, (:))
 import Data.List.NonEmpty (NonEmptyList(..), head, toList)
-import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.NonEmpty ((:|))
@@ -17,7 +16,7 @@ import Expr as E
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
-import Primitive.Parse (opMap, prec)
+import Primitive.Parse (getPrec)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (×), isEmpty, (×))
 import Util.Map (toUnfoldable)
@@ -99,11 +98,6 @@ prettySimple s =
 
 prettyP :: forall a. Pretty a => a -> String
 prettyP x = render (pretty x)
-
-getPrec :: String -> Int
-getPrec x = case lookup x opMap of
-   Just y -> prec y
-   Nothing -> -1
 
 binaryApp :: forall a. Ann a => Int -> Expr a -> Doc
 binaryApp n (BinaryApp s op s') =
