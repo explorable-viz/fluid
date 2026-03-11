@@ -73,27 +73,6 @@ pConsOp = do
    reservedOperator ":|"
    pure \e e' -> PConstr ":" (e : e' : Nil)
 
-infixSymbol :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-infixSymbol op = do
-   reservedOperator op
-   pure \e e' -> BinaryApp e op e'
-
-infixIdent :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-infixIdent op = do
-   reserved op
-   pure \e e' -> BinaryApp e op e'
-
-infixCustom :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
-infixCustom = do
-   fn <- try (delim '|' *> variable)
-   delim '|'
-   pure \e e' -> BinaryApp e fn e'
-
-prefixIdent :: String -> Parser (Raw Expr -> Raw Expr)
-prefixIdent op = do
-   reserved op
-   pure \e -> App (Var op) e
-
 consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 consOp = do
    reservedOperator ":|"
@@ -109,14 +88,29 @@ opTable =
    toOperator (Postfix _ _) = error "not implemented!"
 
    infixParser :: OpParser -> String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-   infixParser Symbol op = infixSymbol op
-   infixParser Ident op = infixIdent op
+   infixParser Symbol op = binaryApp (symbol op)
+   infixParser Ident op = binaryApp (ident op)
    infixParser ConsOp _ = consOp
-   infixParser Custom _ = infixCustom
+   infixParser Custom _ = binaryApp custom
 
    prefixParser :: OpParser -> String -> Parser (Raw Expr -> Raw Expr)
-   prefixParser Ident op = prefixIdent op
+   prefixParser Ident op = unaryPrefixApp (ident op)
    prefixParser _ _ = error "not implemented!"
+
+   binaryApp :: Parser String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
+   binaryApp p = p <#> \op e e' -> BinaryApp e op e'
+
+   unaryPrefixApp :: Parser String -> Parser (Raw Expr -> Raw Expr)
+   unaryPrefixApp p = p <#> \op e -> App (Var op) e
+
+   symbol :: String -> Parser String
+   symbol s = reservedOperator s $> s
+
+   ident :: String -> Parser String
+   ident s = reserved s $> s
+
+   custom :: Parser String
+   custom = try (delim '|' *> variable) <* delim '|'
 
 varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
