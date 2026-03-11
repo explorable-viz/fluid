@@ -8,18 +8,18 @@ import Data.Maybe (Maybe(..))
 import Parsing.Expr (Assoc(..))
 import Util ((×))
 
-data OpDef = OpDef String Op
+data OpDef = OpDef String Fixity OpType
 
-data Op
-   = Symbol Fixity
-   | Ident Fixity
+data OpType
+   = Symbol
+   | Ident
    | CustomOp
    | ConsOp
    | ProjectOp
 
 data Fixity = Infix Assoc | Prefix | Postfix
 
-op :: String -> Op -> OpDef
+op :: String -> Fixity -> OpType -> OpDef
 op = OpDef
 
 -- Aim to match Python operator precedence and associativty as defined in:
@@ -27,55 +27,46 @@ op = OpDef
 opDefs :: Array (Array OpDef)
 opDefs =
    -- Matrix lookup
-   [ [ op "!" symbol ]
+   [ [ op "!" (Infix AssocLeft) Symbol ]
    -- Exponentiation
-   , [ op "**" symbolR ]
+   , [ op "**" (Infix AssocRight) Symbol ]
    -- Multiplication, division, floor division, remainder
-   , [ op "*" symbol
-     , op "/" symbol
-     , op "//" symbol
-     , op "%" symbol
+   , [ op "*" (Infix AssocLeft) Symbol
+     , op "/" (Infix AssocLeft) Symbol
+     , op "//" (Infix AssocLeft) Symbol
+     , op "%" (Infix AssocLeft) Symbol
      ]
    -- Addition and subtraction
-   , [ op "+" symbol
-     , op "-" symbol
+   , [ op "+" (Infix AssocLeft) Symbol
+     , op "-" (Infix AssocLeft) Symbol
      ]
    -- Cons
-   , [ op ":" ConsOp ]
+   , [ op ":" (Infix AssocLeft) ConsOp ]
    -- String concat
-   , [ op "++" symbolR ]
+   , [ op "++" (Infix AssocRight) Symbol ]
    -- Custom operators (as Python's bitwise OR)
-   , [ op "|x|" CustomOp ]
+   , [ op "|x|" (Infix AssocLeft) CustomOp ]
    -- Comparisons, including membership tests and identity tests
-   , [ op "==" symbolN
-     , op "/=" symbolN
-     , op "<" symbol
-     , op ">" symbol
-     , op "<=" symbol
-     , op ">=" symbol
+   , [ op "==" (Infix AssocNone) Symbol
+     , op "/=" (Infix AssocNone) Symbol
+     , op "<" (Infix AssocLeft) Symbol
+     , op ">" (Infix AssocLeft) Symbol
+     , op "<=" (Infix AssocLeft) Symbol
+     , op ">=" (Infix AssocLeft) Symbol
      ]
    -- Boolean NOT
-   , [ op "not" identPrefix ]
+   , [ op "not" Prefix Ident ]
    -- Boolean AND
-   , [ op "and" ident ]
+   , [ op "and" (Infix AssocLeft) Ident ]
    -- Boolean OR
-   , [ op "or" ident ]
+   , [ op "or" (Infix AssocLeft) Ident ]
    ]
-
-   where
-
-   symbol = Symbol (Infix AssocLeft)
-   symbolR = Symbol (Infix AssocRight)
-   symbolN = Symbol (Infix AssocNone)
-
-   ident = Ident (Infix AssocLeft)
-   identPrefix = Ident Prefix
 
 -- name -> prec
 opPrecs :: Map String Int
 opPrecs = fromFoldable do
    i × ops <- mapWithIndex (×) opDefs
-   (OpDef name _) <- ops
+   (OpDef name _ _) <- ops
    pure $ name × (length opDefs - i) -- table is high-low
 
 getPrec :: String -> Int

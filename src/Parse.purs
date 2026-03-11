@@ -26,7 +26,7 @@ import Parsing.Expr (Assoc(..), Operator(..)) as P
 import Parsing.Expr (Assoc(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
-import Primitive.Parse (OpDef(..), Op(..), Fixity(..), opDefs)
+import Primitive.Parse (OpDef(..), OpType(..), Fixity(..), opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), error, nonEmpty, (×))
 
@@ -150,9 +150,9 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          opDefs # map (map toOperator)
          where
          toOperator :: OpDef -> P.Operator (StateT Position Identity) String (Raw Expr)
-         toOperator (OpDef id t) = case t of
-            Symbol fix -> op fix (reservedOperator id $> id)
-            Ident fix -> op fix (reserved id $> id)
+         toOperator (OpDef id fix opType) = case opType of
+            Symbol -> op fix (reservedOperator id $> id)
+            Ident -> op fix (reserved id $> id)
             CustomOp -> op (Infix AssocLeft) (try (delim '|' *> variable) <* delim '|')
             ConsOp -> P.Infix consOp AssocRight
             ProjectOp -> error "not implemented!"
