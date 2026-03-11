@@ -23,10 +23,10 @@ import Parse.Parser (Parser, align, block, braces, brackets, close, commas, comm
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..)) as P
-import Parsing.Expr (OperatorTable, buildExprParser)
+import Parsing.Expr (Assoc(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
-import Primitive.Parse (OpDef(..), OpParser(..), opDefs)
+import Primitive.Parse (OpDef(..), Op(..), Fixity(..), opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), error, nonEmpty, (×))
 
@@ -72,45 +72,6 @@ pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = do
    reservedOperator ":|"
    pure \e e' -> PConstr ":" (e : e' : Nil)
-
-consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
-consOp = do
-   reservedOperator ":|"
-   pure \e e' -> Constr unit ":" (e : e' : Nil)
-
-opTable :: OperatorTable (StateT Position Identity) String (Raw Expr)
-opTable =
-   opDefs # map (map toOperator)
-   where
-   toOperator :: OpDef -> P.Operator (StateT Position Identity) String (Raw Expr)
-   toOperator (Infix parser op assoc) = P.Infix (infixParser parser op) assoc
-   toOperator (Prefix parser op) = P.Prefix (prefixParser parser op)
-   toOperator (Postfix _ _) = error "not implemented!"
-
-   infixParser :: OpParser -> String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-   infixParser Symbol op = binaryApp (symbol op)
-   infixParser Ident op = binaryApp (ident op)
-   infixParser ConsOp _ = consOp
-   infixParser Custom _ = binaryApp custom
-
-   prefixParser :: OpParser -> String -> Parser (Raw Expr -> Raw Expr)
-   prefixParser Ident op = unaryPrefixApp (ident op)
-   prefixParser _ _ = error "not implemented!"
-
-   binaryApp :: Parser String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-   binaryApp p = p <#> \op e e' -> BinaryApp e op e'
-
-   unaryPrefixApp :: Parser String -> Parser (Raw Expr -> Raw Expr)
-   unaryPrefixApp p = p <#> \op e -> UnaryPrefixApp op e
-
-   symbol :: String -> Parser String
-   symbol s = reservedOperator s $> s
-
-   ident :: String -> Parser String
-   ident s = reserved s $> s
-
-   custom :: Parser String
-   custom = try (delim '|' *> variable) <* delim '|'
 
 varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
@@ -183,6 +144,29 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
    opTree :: Parser (Raw Expr)
    opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
       where
+
+      opTable :: OperatorTable (StateT Position Identity) String (Raw Expr)
+      opTable =
+         opDefs # map (map toOperator)
+         where
+         toOperator :: OpDef -> P.Operator (StateT Position Identity) String (Raw Expr)
+         toOperator (OpDef id t) = case t of
+            Symbol fix -> op fix (reservedOperator id $> id)
+            Ident fix -> op fix (reserved id $> id)
+            CustomOp -> op (Infix AssocLeft) (try (delim '|' *> variable) <* delim '|')
+            ConsOp -> P.Infix consOp AssocRight
+            ProjectOp -> error "not implemented!"
+
+         op :: Fixity -> Parser String -> P.Operator (StateT Position Identity) String (Raw Expr)
+         op fix p = case fix of
+            Infix assoc -> P.Infix (p <#> \id e e' -> BinaryApp e id e') assoc
+            Prefix -> P.Prefix (p <#> \id e -> UnaryPrefixApp id e)
+            Postfix -> error "not implemented!"
+
+         consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
+         consOp = do
+            reservedOperator ":|"
+            pure \e e' -> Constr unit ":" (e : e' : Nil)
 
       simpleChain :: Parser (Raw Expr)
       simpleChain = withPos (simple >>= chain)

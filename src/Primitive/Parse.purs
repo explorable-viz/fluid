@@ -2,62 +2,83 @@ module Primitive.Parse where
 
 import Prelude
 
-import Bind (Var)
 import Data.Array (length, mapWithIndex)
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Maybe (Maybe(..))
 import Parsing.Expr (Assoc(..))
 import Util ((×))
 
-data OpDef
-   = Infix OpParser Var Assoc
-   | Prefix OpParser Var
-   | Postfix OpParser Var
+data OpDef = OpDef String Op
 
-data OpParser = Symbol | Ident | ConsOp | Custom
+data Op
+   = Symbol Fixity
+   | Ident Fixity
+   | CustomOp
+   | ConsOp
+   | ProjectOp
 
-name :: OpDef -> Var
-name (Infix _ n _) = n
-name (Prefix _ n) = n
-name (Postfix _ n) = n
+data Fixity = Infix Assoc | Prefix | Postfix
+
+op :: String -> Op -> OpDef
+op = OpDef
 
 -- Aim to match Python operator precedence and associativty as defined in:
 -- https://docs.python.org/3/reference/expressions.html#operator-precedence
 opDefs :: Array (Array OpDef)
 opDefs =
-   [ [ Infix Symbol "!" AssocLeft ]
-   , [ Infix Symbol "**" AssocRight ]
-   , [ Infix Symbol "*" AssocLeft
-     , Infix Symbol "/" AssocLeft
-     , Infix Symbol "//" AssocLeft
-     , Infix Symbol "%" AssocLeft
+   -- Matrix lookup
+   [ [ op "!" symbol ]
+   -- Exponentiation
+   , [ op "**" symbolR ]
+   -- Multiplication, division, floor division, remainder
+   , [ op "*" symbol
+     , op "/" symbol
+     , op "//" symbol
+     , op "%" symbol
      ]
-   , [ Infix Symbol "+" AssocLeft
-     , Infix Symbol "-" AssocLeft
+   -- Addition and subtraction
+   , [ op "+" symbol
+     , op "-" symbol
      ]
-   , [ Infix ConsOp ":" AssocRight ]
-   , [ Infix Symbol "++" AssocRight ]
-   , [ Infix Custom "|x|" AssocLeft ]
-   , [ Infix Symbol "==" AssocNone
-     , Infix Symbol "/=" AssocNone
-     , Infix Symbol "<" AssocLeft
-     , Infix Symbol ">" AssocLeft
-     , Infix Symbol "<=" AssocLeft
-     , Infix Symbol ">=" AssocLeft
+   -- Cons
+   , [ op ":" ConsOp ]
+   -- String concat
+   , [ op "++" symbolR ]
+   -- Custom operators (as Python's bitwise OR)
+   , [ op "|x|" CustomOp ]
+   -- Comparisons, including membership tests and identity tests
+   , [ op "==" symbolN
+     , op "/=" symbolN
+     , op "<" symbol
+     , op ">" symbol
+     , op "<=" symbol
+     , op ">=" symbol
      ]
-   , [ Prefix Ident "not" ]
-   , [ Infix Ident "and" AssocLeft ]
-   , [ Infix Ident "or" AssocLeft ]
+   -- Boolean NOT
+   , [ op "not" identPrefix ]
+   -- Boolean AND
+   , [ op "and" ident ]
+   -- Boolean OR
+   , [ op "or" ident ]
    ]
+
+   where
+
+   symbol = Symbol (Infix AssocLeft)
+   symbolR = Symbol (Infix AssocRight)
+   symbolN = Symbol (Infix AssocNone)
+
+   ident = Ident (Infix AssocLeft)
+   identPrefix = Ident Prefix
 
 -- name -> prec
 opPrecs :: Map String Int
 opPrecs = fromFoldable do
    i × ops <- mapWithIndex (×) opDefs
-   op <- ops
-   pure $ name op × (length opDefs - i) -- table is high-low
+   (OpDef name _) <- ops
+   pure $ name × (length opDefs - i) -- table is high-low
 
 getPrec :: String -> Int
-getPrec op = case lookup op opPrecs of
+getPrec name = case lookup name opPrecs of
    Just p -> p
    Nothing -> -1
