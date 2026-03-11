@@ -22,13 +22,13 @@ import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
-import Parsing.Expr (OperatorTable, buildExprParser)
 import Parsing.Expr (Assoc(..), Operator(..)) as P
+import Parsing.Expr (OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
-import Primitive.Parse (InfixParser(..), OpDef(..), opDefs)
+import Primitive.Parse (OpDef(..), OpParser(..), opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), nonEmpty, (×))
+import Util (type (+), type (×), error, nonEmpty, (×))
 
 pattern :: Parser Pattern
 pattern = defer \_ -> buildExprParser [ [ P.Infix pConsOp P.AssocRight ] ] simplePattern
@@ -100,8 +100,10 @@ opTable =
    where
    toOperator :: OpDef -> P.Operator (StateT Position Identity) String (Raw Expr)
    toOperator (Infix parser op assoc) = P.Infix (infixParser parser op) assoc
+   toOperator (Prefix _ _) = error "not implemented!"
+   toOperator (Postfix _ _) = error "not implemented!"
 
-   infixParser :: InfixParser -> String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
+   infixParser :: OpParser -> String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
    infixParser Symbol op = infixSymbol op
    infixParser Ident op = infixIdent op
    infixParser ConsOp _ = consOp

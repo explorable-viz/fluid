@@ -9,13 +9,17 @@ import Data.Maybe (Maybe(..))
 import Parsing.Expr (Assoc(..))
 import Util ((×))
 
-data OpDef =
-   Infix InfixParser Var Assoc
+data OpDef
+   = Infix OpParser Var Assoc
+   | Prefix OpParser Var
+   | Postfix OpParser Var
 
-data InfixParser = Symbol | Ident | ConsOp | Custom
+data OpParser = Symbol | Ident | ConsOp | Custom
 
 name :: OpDef -> Var
 name (Infix _ n _) = n
+name (Prefix _ n) = n
+name (Postfix _ n) = n
 
 -- Aim to match Python operator precedence and associativty as defined in:
 -- https://docs.python.org/3/reference/expressions.html#operator-precedence
