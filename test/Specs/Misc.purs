@@ -42,6 +42,7 @@ misc_cases =
      , fwd_expect: """Paragraph(Text("As shown in Table 3, BiLSTM gives significantly  ") :| Text("better") :| [])"""
      }
    , { file: "pattern-match.fld", fwd_expect: "4" }
+   , { file: "prefix-op.fld", fwd_expect: "True" }
    , { file: "range.fld", fwd_expect: "(0, 0) :| (0, 1) :| (1, 0) :| (1, 1) :| []" }
    , { file: "records.fld", fwd_expect: "{ a: 2, b: 6, c: 7, d: 5 :| [], e: 7 }" }
    , { file: "record-lookup.fld", fwd_expect: "True" }
