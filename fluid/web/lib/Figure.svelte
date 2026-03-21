@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { loadFigure } from '../../output-es/App.LoadFigure';
 	import { onMount } from 'svelte';
+	import './view-styles.css';
 
 	let { spec, fld } = $props();
 

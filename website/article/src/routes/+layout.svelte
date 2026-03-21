@@ -1,6 +1,5 @@
 <script lang="ts">
 	import '$lib/assets/css/styles.css';
-	import '$lib/assets/css/view-styles.css';
 	import '@fontsource/roboto/latin-300.css';
 	import '@fontsource/roboto/latin-500.css';
 
