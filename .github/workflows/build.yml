@@ -19,19 +19,22 @@ jobs:
       run: |
         shopt -s extglob nullglob globstar
       if: runner.os == 'Linux'
-    - name: Cache PureScript dependencies
+    - name: cache PureScript dependencies
       uses: actions/cache@v4
       with:
         key: ${{ runner.os }}-spago-${{ hashFiles('**/*.dhall') }}
         path: |
-          .spago
-          output
-    - name: Configure npm authentication
+          fluid/.spago
+          fluid/output
+    - name: configure NPM authentication
       run: |
         echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
     - name: test
       run: |
         yarn install
         set -x -e
-        yarn purs-tidy check src/**/*.purs test/**/*.purs website/**/*.purs
-        yarn build-test
+        yarn workspace @explorable-viz/fluid tidy
+        yarn workspace @explorable-viz/fluid build-test
+    - name: test-website
+      run: |
+        ./script/test-website-all.sh

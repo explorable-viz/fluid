@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
-# run from project root
-set -xe
+# Run from repo root. Tests all websites that have a test.mjs.
+set -e
 
-WEBSITES=($(for DIR in website/*/; do
-    if [[ -f "$DIR/index.html" ]]; then
-        basename "$DIR"
-    fi
-done | sort -u))
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-echo "Testing websites"
-printf "%s\n" "${WEBSITES[@]}"
+WEBSITES=()
+for DIR in website/*/; do
+   if [[ -f "$DIR/test.mjs" && -f "$DIR/svelte.config.js" ]]; then
+      WEBSITES+=("$DIR")
+   fi
+done
 
-for WEBSITE in "${WEBSITES[@]}"; do
-   . script/test-website.sh $WEBSITE
-   done
+echo "Testing ${#WEBSITES[@]} website(s):"
+printf "  %s\n" "${WEBSITES[@]}"
+
+for DIR in "${WEBSITES[@]}"; do
+   (cd "$DIR" && "$SCRIPT_DIR/test-website.sh")
+done

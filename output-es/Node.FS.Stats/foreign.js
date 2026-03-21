@@ -1,0 +1,27 @@
+export { inspect as showStatsObj } from "util";
+
+export const isBlockDeviceImpl = (s) => s.isBlockDevice();
+export const isCharacterDeviceImpl = (s) => s.isCharacterDevice();
+export const isDirectoryImpl = (s) => s.isDirectory();
+export const isFIFOImpl = (s) => s.isFIFO();
+export const isFileImpl = (s) => s.isFile();
+export const isSocketImpl = (s) => s.isSocket();
+export const isSymbolicLinkImpl = (s) => s.isSymbolicLink();
+export const devImpl = (s) => s.dev;
+export const inodeImpl = (s) => s.ino;
+export const modeImpl = (s) => s.mode;
+export const nlinkImpl = (s) => s.nlink;
+export const uidImpl = (s) => s.uid;
+export const gidImpl = (s) => s.gid;
+export const rdevImpl = (s) => s.rdev;
+export const sizeImpl = (s) => s.size;
+export const blkSizeImpl = (s) => s.blkSize;
+export const blocksImpl = (s) => s.blocks;
+export const accessedTimeMsImpl = (s) => s.atimeMs;
+export const modifiedTimeMsImpl = (s) => s.mtimeMs;
+export const statusChangedTimeMsImpl = (s) => s.ctimeMs;
+export const birthtimeMsImpl = (s) => s.birthtimeMs;
+export const accessedTimeImpl = (s) => s.atime;
+export const modifiedTimeImpl = (s) => s.mtime;
+export const statusChangedTimeImpl = (s) => s.ctime;
+export const birthTimeImpl = (s) => s.birthtime;

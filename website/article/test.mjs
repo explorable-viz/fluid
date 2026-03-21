@@ -1,8 +1,7 @@
-import { runTests, testURL, waitFor } from "./shared/webtest-lib.js"
+import { runTests, testURL, waitFor } from "../../fluid/output-es/Test.Util.Puppeteer/index.js"
 
 export const main = async () => {
    await runTests(testURL("convolution")([ page => waitFor("svg#fig-output")(page) ]))()
-   const point = "div#fig .scatterplot-point"
    await runTests(testURL("methane")([ page => waitFor("#fig svg:nth-of-type(1)")(page) ]))()
    await runTests(testURL("moving-average")([ page => waitFor("svg")(page) ]))()
    await runTests(testURL("non-renewables")([

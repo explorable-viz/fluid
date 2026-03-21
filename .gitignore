@@ -1,14 +1,4 @@
-.cache/
-.psc*/
-.spago
-dist/
-tmp/
 node_modules/
-output/
-output-es/
-*.log
 .DS_Store
-.psc-ide-port
 .vscode/
-artifact/*.tar.gz
-.ipynb_checkpoints/
+dist/
