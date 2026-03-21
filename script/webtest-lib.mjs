@@ -1,0 +1,99 @@
+import puppeteer from "puppeteer"
+
+const TIMEOUT = 60000
+const LOGGING = true
+const HEADLESS = true
+const VIEWPORT = { width: 1200, height: 800, deviceScaleFactor: 1.0 }
+
+function log(msg) {
+   if (LOGGING) console.log(msg)
+}
+
+function testOutcome(pass, msg) {
+   const sym = pass ? "\x1b[32m ✔\x1b[0m" : "\x1b[31m ✖\x1b[0m"
+   console.log(`${sym} ${msg}`)
+   if (!pass) throw new Error("Test failed")
+}
+
+async function launchBrowser(browserName) {
+   return puppeteer.launch({
+      browser: browserName,
+      headless: HEADLESS,
+      defaultViewport: VIEWPORT,
+   })
+}
+
+export async function waitFor(page, selector) {
+   log(`Waiting for ${selector}`)
+   try {
+      await page.waitForSelector(selector, { timeout: TIMEOUT, visible: true })
+      log("-> found")
+      testOutcome(true, `${selector}: exists`)
+   } catch (e) {
+      testOutcome(false, `${selector}: ${e.message}`)
+   }
+}
+
+export async function waitForHidden(page, selector) {
+   log(`Waiting for ${selector} (hidden)`)
+   await page.waitForSelector(selector, { timeout: TIMEOUT, visible: false })
+   log("-> found")
+}
+
+export async function click(page, selector) {
+   await page.click(selector)
+   testOutcome(true, `${selector}: click`)
+}
+
+export async function checkAttribute(page, selector, attr, expected) {
+   const found = await page.$eval(selector, (el, a) => el.getAttribute(a), attr)
+   const pass = found === expected
+   const errorMsg = pass ? "" : ` (got "${found}")`
+   testOutcome(pass, `${selector}: ${attr} == "${expected}"${errorMsg}`)
+}
+
+export async function checkAttributeContains(page, selector, attr, expected) {
+   const found = await page.$eval(selector, (el, a) => el.getAttribute(a), attr)
+   const pass = found.includes(expected)
+   const errorMsg = pass ? "" : ` (got "${found}")`
+   testOutcome(pass, `${selector}: ${attr} contains "${expected}"${errorMsg}`)
+}
+
+export async function checkTextContent(page, selector, expected) {
+   await waitFor(page, selector)
+   const text = await page.$eval(selector, el => el.textContent)
+   const pass = text === expected
+   testOutcome(pass, `${selector}: text == "${expected}"${pass ? "" : ` (got "${text}")`}`)
+}
+
+export async function checkComputedStyle(page, selector, property, expected) {
+   await waitFor(page, selector)
+   const value = await page.$eval(selector, (el, prop) => getComputedStyle(el)[prop], property)
+   const pass = value === expected
+   testOutcome(pass, `${selector}: ${property} == "${expected}"${pass ? "" : ` (got "${value}")`}`)
+}
+
+export async function clickToggle(page) {
+   await waitFor(page, "#grid.data-pane-hidden")
+   const toggle = "button[title='Show data pane']"
+   await waitFor(page, toggle)
+   await click(page, toggle)
+   await waitFor(page, "#grid:not(.data-pane-hidden)")
+}
+
+async function browserTests(url, browserName, tests) {
+   log(`browserTests: ${browserName}`)
+   const browser = await launchBrowser(browserName)
+   const page = await browser.newPage()
+   for (const test of tests) {
+      await page.goto(url)
+      await test(page)
+   }
+   await browser.close()
+}
+
+export async function testURL(suffix, tests) {
+   const url = `http://127.0.0.1:8080/${suffix}`
+   await browserTests(url, "chrome", tests)
+   await browserTests(url, "firefox", tests)
+}
