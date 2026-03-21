@@ -1,0 +1,261 @@
+/* Styles for dynamically-generated figure content (PureScript/D3).
+   Imported by Figure and FigureSrc components.
+   All rules scoped to #fig so they only affect figure output. */
+
+#fig .legend-box {
+	stroke: lightgray;
+	stroke-width: 0.5px;
+	fill: none;
+}
+
+#fig .legend-text {
+	font-size: 8pt;
+}
+
+#fig .title-text {
+	fill: Black;
+	font-size: 9pt;
+}
+
+#fig .table-caption {
+	box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+	background: #fafafa;
+	padding: 0.1em 0.2em;
+	border-radius: 1px;
+	display: inline-block;
+}
+
+#fig .table-view th {
+	font-size: 11px;
+	text-align: left;
+	border-bottom: 'thin solid';
+}
+
+#fig .table-view td {
+	font-size: 11px;
+}
+
+#fig .table-view td:nth-child(1) {
+	color: lightgray;
+}
+
+#fig table {
+	border-collapse: collapse;
+}
+
+#fig thead th {
+	vertical-align: top;
+}
+
+#fig .table-cell {
+	border-radius: 0px;
+}
+
+#fig td,
+#fig th {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 120px;
+}
+
+#fig td.table-cell {
+	background-color: white;
+}
+
+#fig .table-cell.inert {
+	color: lightgrey;
+}
+
+#fig .table-cell.selected-primary-persistent {
+	background-color: #93e9be;
+}
+
+#fig .table-cell.selected-secondary-persistent {
+	background-color: rgb(226, 226, 226);
+}
+
+#fig .table-cell.selected-primary-transient {
+	color: blue;
+}
+
+#fig .table-row {
+	display: table-row;
+}
+
+#fig .table-row.hidden {
+	visibility: collapse;
+}
+
+/* To hide a column, add 'hidden' to every cell in the column. visibility: collapse doesn't work here. */
+#fig .table-cell.hidden {
+	display: none;
+}
+
+/* hack to match Safari-only */
+@supports (hanging-punctuation: first) and (font: -apple-system-body) and (-webkit-appearance: none) {
+	#fig .table-row.hidden {
+		display: none; /* suboptimal for table rows but Safari doesn't support visibility: collapse */
+	}
+}
+
+#fig .linked-text {
+	border-radius: 0px;
+	background-color: White;
+	border-bottom-style: solid;
+	border-bottom-color: white;
+	border-bottom-width: 1px;
+	display: inline;
+}
+
+#fig .linked-text.inert {
+	fill: lightgrey;
+}
+
+#fig .linked-text.selected-primary-persistent {
+	background-color: #93e9be;
+}
+
+#fig .linked-text.selected-primary-transient {
+	border-bottom-color: blue;
+}
+
+#fig .linked-text.selected-secondary-persistent {
+	background-color: rgb(226, 226, 226);
+}
+
+#fig .linked-text.selected-secondary-transient {
+	border-bottom-color: lightblue;
+}
+
+#fig .matrix-cell {
+	stroke: DarkGray;
+	fill: White;
+}
+
+#fig .matrix-cell.inert {
+	stroke: DarkGray;
+	fill: rgb(185, 185, 185);
+}
+
+#fig .matrix-cell.selected-primary-persistent {
+	fill: rgb(214, 240, 214);
+}
+
+#fig .matrix-cell.selected-secondary-persistent {
+	fill: rgb(214, 240, 214);
+}
+
+#fig .matrix-cell-text {
+	font-size: 10pt;
+	font-family: 'Roboto', sans-serif;
+	color: rgb(205, 205, 205);
+}
+
+#fig .matrix-cell-text.selected-primary-persistent {
+	font-weight: 400;
+	color: darkgreen;
+}
+
+#fig .matrix-cell-text.selected-secondary-persistent {
+	color: green;
+}
+
+#fig .matrix-cell-text.selected-primary-transient {
+	font-weight: 400;
+	color: blue;
+}
+
+#fig .matrix-cell-text.selected-secondary-transient {
+	color: royalblue;
+}
+
+#fig .scatterplot-point {
+	fill: white;
+	stroke: black;
+}
+
+#fig .scatterplot-point.inert {
+	fill: rgb(185, 185, 185);
+	stroke: black;
+}
+
+#fig .scatterplot-point.selected-primary-persistent {
+	fill: LightGreen;
+	stroke: teal;
+}
+
+#fig .scatterplot-point.selected-secondary-transient {
+	stroke: blue;
+	stroke-width: 1;
+}
+
+#fig .scatterplot-point.selected-primary-transient {
+	stroke: blue;
+	stroke-width: 1;
+}
+
+#fig .scatterplot-point.selected-secondary-persistent {
+	fill: rgb(226, 226, 226);
+}
+
+#fig .scatterplot-point.selected-secondary-transient {
+	stroke-width: 1;
+}
+
+#fig .para-text + .para-text {
+	margin-top: 0.75em;
+}
+
+#fig .para-text {
+	font-size: 10pt;
+}
+
+#fig .bar {
+	stroke-width: 1;
+}
+
+#fig .tree-node {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 8px;
+	align-items: start;
+}
+
+#fig .tree-children {
+	display: grid;
+	grid-auto-rows: min-content;
+	gap: 4px;
+	border-left: 2px solid #ccc;
+	padding-left: 8px;
+}
+
+#fig .tree-label {
+	background: #f8f8f8;
+	border: 1px solid #ccc;
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+#fig .node {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 6px;
+	align-items: start;
+}
+
+#fig .tree-children.columnar {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	column-gap: 12px;
+	row-gap: 4px;
+}
+
+#fig .tree-children.columnar > .tree-node {
+	display: contents;
+}
+
+#fig .tree-children.columnar .tree-children {
+	border-left: none;
+	padding-left: 0;
+}
