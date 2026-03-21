@@ -19,13 +19,7 @@
   "files": [
     "dist/fluid/shared",
     "dist/fluid/fluid/lib",
-    "script/bundle-website.sh",
-    "script/bundle-page.sh",
-    "script/util/clean.sh",
-    "script/util/lisp-case.sh",
-    "website/article",
-    "script/install-website.sh",
-    "script/util/serve.sh"
+    "web/lib"
   ],
   "scripts": {
     "build": "./script/build.sh",
@@ -33,11 +27,7 @@
     "build-publish": "yarn build-prod && yarn publish",
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
-    "bundle-serve": "sh -c './script/bundle-website.sh \"$@\" && ./script/serve.sh \"$1\"' _",
-    "bundle-website": "./script/bundle-website.sh",
-    "bundle-website-all": "./script/bundle-website-all.sh",
     "fluid": "node ./dist/fluid/shared/fluid.mjs",
-    "serve": "./script/serve.sh",
     "test": "./script/test.sh",
     "test-all": "./script/test-all.sh",
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
@@ -54,10 +44,6 @@
     "commander": "^12.1.0",
     "d3": "^7.9.0",
     "datetime": "^0.0.3",
-    "express": "^4.19.2",
-    "express-static": "^1.2.6",
-    "http-server": "^14.1.1",
-    "http-shutdown": "^1.2.2",
     "node-process": "^1.0.1",
     "os": "^0.1.2",
     "util": "^0.12.5"
@@ -82,12 +68,7 @@
   "engines": {
     "node": ">=22"
   },
-  "bin": {
-    "bundle-website": "./script/bundle-website.sh",
-    "fluid": "./dist/fluid/shared/fluid.mjs",
-    "install-website": "./script/install-website.sh",
-    "test-website": "./dist/fluid/shared/website-test.js"
-  },
+  "bin": "./dist/fluid/shared/fluid.mjs",
   "svelte": "./web/lib/index.js",
   "exports": {
     ".": "./web/lib/index.js"
