@@ -1,4 +1,4 @@
-import { runTests, testURL, waitFor } from "../../dist/fluid/shared/webtest-lib.js"
+import { runTests, testURL, waitFor } from "../../fluid/dist/fluid/shared/webtest-lib.js"
 
 export const main = async () => {
    await runTests(testURL("convolution")([ page => waitFor("svg#fig-output")(page) ]))()
