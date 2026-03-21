@@ -26,6 +26,13 @@ cleanup() {
    echo "Shutting down preview server (PID $SERVER_PID)..."
    kill "$SERVER_PID" 2>/dev/null || true
    wait "$SERVER_PID" 2>/dev/null || true
+   # Ensure port is fully released before next test run
+   for i in $(seq 1 10); do
+      if ! curl -s http://127.0.0.1:8080/ > /dev/null 2>&1; then
+         break
+      fi
+      sleep 0.5
+   done
    echo "Everything is cleanly shut down."
 }
 trap cleanup EXIT
