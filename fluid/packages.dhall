@@ -94,22 +94,7 @@ let upstream =
 let overrides = { parsing = upstream.parsing // { version = "v11.0.0" } }
 
 let additions =
-      { toppokki =
-        { dependencies =
-          [ "aff-promise"
-          , "functions"
-          , "node-buffer"
-          , "node-fs"
-          , "prelude"
-          , "record"
-          , "console"
-          , "effect"
-          , "assert"
-          ]
-        , repo = "https://github.com/JosephBond/purescript-toppokki.git"
-        , version = "v4.0.1"
-        }
-      , js-promise-aff =
+      { js-promise-aff =
         { dependencies = [ "prelude" ]
         , repo =
             "https://github.com/purescript-contrib/purescript-js-promise-aff.git"

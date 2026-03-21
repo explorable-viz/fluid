@@ -1,13 +1,65 @@
-import { runTests, testURL, waitFor } from "../../fluid/output-es/Test.Util.Puppeteer/index.js"
+import {
+   checkAttribute, checkAttributeContains, checkTextContent,
+   click, clickToggle, testURL, waitFor
+} from "../../script/webtest-lib.mjs"
 
 export const main = async () => {
-   await runTests(testURL("convolution")([ page => waitFor("svg#fig-output")(page) ]))()
-   await runTests(testURL("methane")([ page => waitFor("#fig svg:nth-of-type(1)")(page) ]))()
-   await runTests(testURL("moving-average")([ page => waitFor("svg")(page) ]))()
-   await runTests(testURL("non-renewables")([
-      page => waitFor("#fig-output > svg:nth-of-type(1)")(page),
-      page => waitFor("#fig-output > svg:nth-of-type(2)")(page),
-   ]))()
-   await runTests(testURL("renewables-linked")([page => waitFor("#fig-output > svg:nth-of-type(1)")(page)]))()
-   await runTests(testURL("scigen-1805.02474v1-10")([ page => waitFor("div#fig-output")(page) ]))()
+   await testURL("convolution", [
+      async page => await waitFor(page, "svg#fig-output")
+   ])
+
+   await testURL("energy-scatter", [
+      async page => {
+         await waitFor(page, "svg")
+         await clickToggle(page)
+
+         const point = "div#fig .scatterplot-point"
+         await waitFor(page, point)
+         await click(page, point)
+         await checkAttributeContains(page, point, "class", "selected-primary-persistent")
+         await checkAttribute(page, point, "r", "3.2")
+
+         const caption = "div#fig-input-renewables > div.table-caption"
+         await checkTextContent(page, caption, "renewables (40 of 240 × 5 of 5)")
+      }
+   ])
+
+   await testURL("methane", [
+      async page => await waitFor(page, "#fig svg:nth-of-type(1)")
+   ])
+
+   await testURL("moving-average", [
+      async page => await waitFor(page, "svg")
+   ])
+
+   await testURL("non-renewables", [
+      async page => await waitFor(page, "#fig-output > svg:nth-of-type(1)"),
+      async page => await waitFor(page, "#fig-output > svg:nth-of-type(2)"),
+   ])
+
+   await testURL("renewables-linked", [
+      async page => {
+         const barChart = "#fig-output > :nth-child(1)"
+         const lineChart = "#fig-output > :nth-child(2)"
+
+         await waitFor(page, barChart)
+         await waitFor(page, lineChart)
+         await waitFor(page, `${lineChart} g.x-axis`)
+
+         const point = `${lineChart} circle.linechart-point`
+         await waitFor(page, point)
+         await checkAttribute(page, point, "r", "2.0")
+
+         await clickToggle(page)
+
+         const bar = `${barChart} rect.bar`
+         await waitFor(page, bar)
+         await click(page, bar)
+         await checkAttribute(page, bar, "fill", "#57a157")
+      }
+   ])
+
+   await testURL("scigen-1805.02474v1-10", [
+      async page => await waitFor(page, "div#fig-output")
+   ])
 }
