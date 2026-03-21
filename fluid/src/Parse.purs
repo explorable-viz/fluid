@@ -5,8 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Lazy (defer)
 import Control.Monad.State (StateT)
-import Data.Array (fromFoldable, groupBy, some, sortBy)
-import Data.Array.NonEmpty (head, toArray)
+import Data.Array (fromFoldable, some)
 import Data.Bifunctor (lmap)
 import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either, choose)
@@ -23,13 +22,13 @@ import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
-import Parsing.Expr (OperatorTable, buildExprParser)
 import Parsing.Expr (Assoc(..), Operator(..)) as P
+import Parsing.Expr (Assoc(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
-import Primitive.Parse (InfixParser(..), OpDef(..), opDefs, prec)
+import Primitive.Parse (OpDef(..), OpType(..), Fixity(..), opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), nonEmpty, (×))
+import Util (type (+), type (×), error, nonEmpty, (×))
 
 pattern :: Parser Pattern
 pattern = defer \_ -> buildExprParser [ [ P.Infix pConsOp P.AssocRight ] ] simplePattern
@@ -73,43 +72,6 @@ pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = do
    reservedOperator ":|"
    pure \e e' -> PConstr ":" (e : e' : Nil)
-
-infixSymbol :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-infixSymbol op = do
-   reservedOperator op
-   pure \e e' -> BinaryApp e op e'
-
-infixIdent :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-infixIdent op = do
-   reserved op
-   pure \e e' -> BinaryApp e op e'
-
-infixCustom :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
-infixCustom = do
-   fn <- try (delim '|' *> variable)
-   delim '|'
-   pure \e e' -> BinaryApp e fn e'
-
-consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
-consOp = do
-   reservedOperator ":|"
-   pure \e e' -> Constr unit ":" (e : e' : Nil)
-
-opTable :: OperatorTable (StateT Position Identity) String (Raw Expr)
-opTable =
-   opDefs
-      # groupBy (\a b -> prec a == prec b)
-      # sortBy (comparing (\grp -> negate (prec (head grp)))) -- sort high -> low
-      # map (toArray <$> map toOperator)
-   where
-   toOperator :: OpDef -> P.Operator (StateT Position Identity) String (Raw Expr)
-   toOperator (Infix parser op assoc _) = P.Infix (infixParser parser op) assoc
-
-   infixParser :: InfixParser -> String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-   infixParser Symbol op = infixSymbol op
-   infixParser Ident op = infixIdent op
-   infixParser ConsOp _ = consOp
-   infixParser Custom _ = infixCustom
 
 varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
@@ -182,6 +144,29 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
    opTree :: Parser (Raw Expr)
    opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
       where
+
+      opTable :: OperatorTable (StateT Position Identity) String (Raw Expr)
+      opTable =
+         opDefs # map (map toOperator)
+         where
+         toOperator :: OpDef -> P.Operator (StateT Position Identity) String (Raw Expr)
+         toOperator (OpDef id fix opType) = case opType of
+            Symbol -> op fix (reservedOperator id $> id)
+            Ident -> op fix (reserved id $> id)
+            CustomOp -> op (Infix AssocLeft) (try (delim '|' *> variable) <* delim '|')
+            ConsOp -> P.Infix consOp AssocRight
+            ProjectOp -> error "not implemented!"
+
+         op :: Fixity -> Parser String -> P.Operator (StateT Position Identity) String (Raw Expr)
+         op fix p = case fix of
+            Infix assoc -> P.Infix (p <#> \id e e' -> BinaryApp e id e') assoc
+            Prefix -> P.Prefix (p <#> \id e -> UnaryPrefixApp id e)
+            Postfix -> error "not implemented!"
+
+         consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
+         consOp = do
+            reservedOperator ":|"
+            pure \e e' -> Constr unit ":" (e : e' : Nil)
 
       simpleChain :: Parser (Raw Expr)
       simpleChain = withPos (simple >>= chain)
