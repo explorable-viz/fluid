@@ -1,0 +1,15 @@
+import * as Data$dEq from "../Data.Eq/index.js";
+import * as Data$dOrd from "../Data.Ord/index.js";
+const PropName = x => x;
+const ClassName = x => x;
+const AttrName = x => x;
+const ordPropName = Data$dOrd.ordString;
+const ordClassName = Data$dOrd.ordString;
+const ordAttrName = Data$dOrd.ordString;
+const newtypePropName = {Coercible0: () => {}};
+const newtypeClassName = {Coercible0: () => {}};
+const newtypeAttrName = {Coercible0: () => {}};
+const eqPropName = Data$dEq.eqString;
+const eqClassName = Data$dEq.eqString;
+const eqAttrName = Data$dEq.eqString;
+export {AttrName, ClassName, PropName, eqAttrName, eqClassName, eqPropName, newtypeAttrName, newtypeClassName, newtypePropName, ordAttrName, ordClassName, ordPropName};

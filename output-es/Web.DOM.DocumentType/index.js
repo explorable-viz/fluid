@@ -1,0 +1,11 @@
+import * as Unsafe$dCoerce from "../Unsafe.Coerce/index.js";
+import * as Web$dInternal$dFFI from "../Web.Internal.FFI/index.js";
+import {name, publicId, systemId} from "./foreign.js";
+const toNode = Unsafe$dCoerce.unsafeCoerce;
+const toEventTarget = Unsafe$dCoerce.unsafeCoerce;
+const toChildNode = Unsafe$dCoerce.unsafeCoerce;
+const fromNode = /* #__PURE__ */ Web$dInternal$dFFI.unsafeReadProtoTagged("DocumentType");
+const fromEventTarget = /* #__PURE__ */ Web$dInternal$dFFI.unsafeReadProtoTagged("DocumentType");
+const fromChildNode = /* #__PURE__ */ Web$dInternal$dFFI.unsafeReadProtoTagged("DocumentType");
+export {fromChildNode, fromEventTarget, fromNode, toChildNode, toEventTarget, toNode};
+export * from "./foreign.js";

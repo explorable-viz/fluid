@@ -1,0 +1,12 @@
+import * as Data$dFunctor from "../Data.Functor/index.js";
+import {arrayExtend} from "./foreign.js";
+const identity = x => x;
+const extendFn = dictSemigroup => ({extend: f => g => w => f(w$p => g(dictSemigroup.append(w)(w$p))), Functor0: () => Data$dFunctor.functorFn});
+const extendArray = {extend: arrayExtend, Functor0: () => Data$dFunctor.functorArray};
+const extend = dict => dict.extend;
+const extendFlipped = dictExtend => w => f => dictExtend.extend(f)(w);
+const duplicate = dictExtend => dictExtend.extend(identity);
+const composeCoKleisliFlipped = dictExtend => f => g => w => f(dictExtend.extend(g)(w));
+const composeCoKleisli = dictExtend => f => g => w => g(dictExtend.extend(f)(w));
+export {composeCoKleisli, composeCoKleisliFlipped, duplicate, extend, extendArray, extendFlipped, extendFn, identity};
+export * from "./foreign.js";

@@ -1574,9 +1574,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"article@workspace:website/article-new":
+"article@workspace:website/article":
   version: 0.0.0-use.local
-  resolution: "article@workspace:website/article-new"
+  resolution: "article@workspace:website/article"
   dependencies:
     "@codemirror/commands": "npm:^6.8.1"
     "@codemirror/lang-python": "npm:^6.2.1"
@@ -4836,9 +4836,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"literate-execution@workspace:website/literate-execution-new":
+"literate-execution@workspace:website/literate-execution":
   version: 0.0.0-use.local
-  resolution: "literate-execution@workspace:website/literate-execution-new"
+  resolution: "literate-execution@workspace:website/literate-execution"
   dependencies:
     "@codemirror/commands": "npm:^6.8.1"
     "@codemirror/lang-python": "npm:^6.2.1"

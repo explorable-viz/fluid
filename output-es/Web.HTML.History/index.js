@@ -1,0 +1,16 @@
+import * as Data$dOrd from "../Data.Ord/index.js";
+import {back, forward, go, pushState, replaceState, state} from "./foreign.js";
+const URL = x => x;
+const DocumentTitle = x => x;
+const Delta = x => x;
+const newtypeURL = {Coercible0: () => {}};
+const newtypeDocumentTitle = {Coercible0: () => {}};
+const newtypeDelta = {Coercible0: () => {}};
+const eqURL = {eq: x => y => x === y};
+const ordURL = {compare: x => y => Data$dOrd.ordString.compare(x)(y), Eq0: () => eqURL};
+const eqDocumentTitle = {eq: x => y => x === y};
+const ordDocumentTitle = {compare: x => y => Data$dOrd.ordString.compare(x)(y), Eq0: () => eqDocumentTitle};
+const eqDelta = {eq: x => y => x === y};
+const ordDelta = {compare: x => y => Data$dOrd.ordInt.compare(x)(y), Eq0: () => eqDelta};
+export {Delta, DocumentTitle, URL, eqDelta, eqDocumentTitle, eqURL, newtypeDelta, newtypeDocumentTitle, newtypeURL, ordDelta, ordDocumentTitle, ordURL};
+export * from "./foreign.js";

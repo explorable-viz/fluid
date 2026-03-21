@@ -1,0 +1,13 @@
+import * as Data$dMaybe from "../Data.Maybe/index.js";
+import * as Data$dNullable from "../Data.Nullable/index.js";
+import * as Unsafe$dCoerce from "../Unsafe.Coerce/index.js";
+import * as Web$dInternal$dFFI from "../Web.Internal.FFI/index.js";
+import {_key, _newValue, _oldValue, _storageArea, url} from "./foreign.js";
+const toEvent = Unsafe$dCoerce.unsafeCoerce;
+const storageArea = x => Data$dNullable.nullable(_storageArea(x), Data$dMaybe.Nothing, Data$dMaybe.Just);
+const oldValue = x => Data$dNullable.nullable(_oldValue(x), Data$dMaybe.Nothing, Data$dMaybe.Just);
+const newValue = x => Data$dNullable.nullable(_newValue(x), Data$dMaybe.Nothing, Data$dMaybe.Just);
+const key = x => Data$dNullable.nullable(_key(x), Data$dMaybe.Nothing, Data$dMaybe.Just);
+const fromEvent = /* #__PURE__ */ Web$dInternal$dFFI.unsafeReadProtoTagged("StorageEvent");
+export {fromEvent, key, newValue, oldValue, storageArea, toEvent};
+export * from "./foreign.js";

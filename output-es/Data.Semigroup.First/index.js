@@ -1,0 +1,14 @@
+const First = x => x;
+const showFirst = dictShow => ({show: v => "(First " + dictShow.show(v) + ")"});
+const semigroupFirst = {append: x => v => x};
+const ordFirst = dictOrd => dictOrd;
+const functorFirst = {map: f => m => f(m)};
+const eqFirst = dictEq => dictEq;
+const eq1First = {eq1: dictEq => dictEq.eq};
+const ord1First = {compare1: dictOrd => dictOrd.compare, Eq10: () => eq1First};
+const boundedFirst = dictBounded => dictBounded;
+const applyFirst = {apply: v => v1 => v(v1), Functor0: () => functorFirst};
+const bindFirst = {bind: v => f => f(v), Apply0: () => applyFirst};
+const applicativeFirst = {pure: First, Apply0: () => applyFirst};
+const monadFirst = {Applicative0: () => applicativeFirst, Bind1: () => bindFirst};
+export {First, applicativeFirst, applyFirst, bindFirst, boundedFirst, eq1First, eqFirst, functorFirst, monadFirst, ord1First, ordFirst, semigroupFirst, showFirst};

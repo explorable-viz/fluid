@@ -1,4 +1,4 @@
-import { runTests, testURL, waitFor } from "./shared/webtest-lib.js"
+import { runTests, testURL, waitFor } from "../../dist/fluid/shared/webtest-lib.js"
 
 export const main = async () => {
   await runTests(testURL("ar6-wg1/spm/figure4b")([

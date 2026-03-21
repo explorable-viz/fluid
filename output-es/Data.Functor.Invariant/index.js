@@ -1,0 +1,14 @@
+import * as Control$dSemigroupoid from "../Control.Semigroupoid/index.js";
+import * as Data$dFunctor from "../Data.Functor/index.js";
+const invariantMultiplicative = {imap: f => v => v1 => f(v1)};
+const invariantEndo = {imap: ab => ba => v => x => ab(v(ba(x)))};
+const invariantDual = {imap: f => v => v1 => f(v1)};
+const invariantDisj = {imap: f => v => v1 => f(v1)};
+const invariantConj = {imap: f => v => v1 => f(v1)};
+const invariantAdditive = {imap: f => v => v1 => f(v1)};
+const imapF = dictFunctor => f => v => dictFunctor.map(f);
+const invariantArray = {imap: f => v => Data$dFunctor.arrayMap(f)};
+const invariantFn = {imap: f => v => Control$dSemigroupoid.semigroupoidFn.compose(f)};
+const imap = dict => dict.imap;
+const invariantAlternate = dictInvariant => ({imap: f => g => v => dictInvariant.imap(f)(g)(v)});
+export {imap, imapF, invariantAdditive, invariantAlternate, invariantArray, invariantConj, invariantDisj, invariantDual, invariantEndo, invariantFn, invariantMultiplicative};
