@@ -18,6 +18,14 @@ cd "$WEBSITE_DIR"
 echo "Building ${WEBSITE}..."
 yarn build
 
+# Ensure port is free (previous test run may not have fully released it)
+if command -v lsof > /dev/null 2>&1; then
+   lsof -ti:8080 | xargs kill -9 2>/dev/null || true
+elif command -v fuser > /dev/null 2>&1; then
+   fuser -k 8080/tcp 2>/dev/null || true
+fi
+sleep 1
+
 echo "Starting preview server on port 8080..."
 npx vite preview --port 8080 --host 127.0.0.1 --strictPort &
 SERVER_PID=$!
