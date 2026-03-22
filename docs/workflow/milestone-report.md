@@ -1,0 +1,70 @@
+# Milestone Reports and Release Notes
+
+When a milestone branch is merged to develop, two documents are generated from the same git history and GitHub issue data.
+
+## Release notes
+
+Outward-facing summary of what changed. Audience: users and contributors.
+
+Stored at `docs/releases/<milestone-name>.md`.
+
+```
+# <milestone-name>
+
+## Features
+- <one-line description> (#<issue>)
+
+## Bug fixes
+- <one-line description> (#<issue>)
+
+## Breaking changes
+- <one-line description> (#<issue>)
+
+## Other
+- <one-line description> (#<issue>)
+```
+
+## Milestone report
+
+Inward-facing audit trail and metrics. Audience: development team.
+
+Stored at `docs/reports/<milestone-name>.md`.
+
+```
+# Milestone: <name>
+
+## Summary
+- Issues completed: N
+- Issues remaining: N (with statuses)
+- Date range: YYYY-MM-DD to YYYY-MM-DD
+
+## Issues
+
+### #<number>: <title>
+- **Status**: Done | Awaiting Decision | Paused
+- **Commits**: N total, N by Claude, N by human
+- **Files modified**: N
+- **Decision points**: autonomous | human intervention required
+  - <brief description of any decisions escalated or made>
+
+(repeated for each issue)
+
+## Metrics
+- Total commits: N
+- Claude-authored commits: N (N%)
+- Human-authored commits: N (N%)
+- Total files modified: N
+- Issues completed autonomously: N
+- Issues requiring human intervention: N
+```
+
+## Generation
+
+**Milestone reports** are built incrementally: each issue's entry is added when the issue is closed. The summary and metrics sections are updated at the same time. This keeps the report current throughout the milestone.
+
+**Release notes** are generated when the milestone branch is merged to develop, categorised by issue labels (`implementation` → Features, `testing`/`setup` → Other, etc.) and can be edited before publishing.
+
+Both draw from:
+- **Git history**: commits on the milestone branch since it diverged from develop. Claude-authored commits identified by `Co-Authored-By: Claude` trailer.
+- **GitHub issues**: status, labels, and comments. Decision points identified from "Awaiting Decision" status transitions and escalation comments.
+- **File counts**: `git diff --stat` between the milestone branch base and head.

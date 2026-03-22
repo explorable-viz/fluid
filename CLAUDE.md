@@ -20,3 +20,7 @@ Continual improvement of the workflow itself, including documenting the workflow
 ## Process
 
 See [docs/workflow/process.md](docs/workflow/process.md) for the development process, GitHub conventions, and tracking approach.
+
+See [docs/workflow/issue-lifecycle.md](docs/workflow/issue-lifecycle.md) for the issue state machine, transitions, and invariants.
+
+See [docs/workflow/milestone-report.md](docs/workflow/milestone-report.md) for the milestone report format and generation process.
