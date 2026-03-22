@@ -7,22 +7,29 @@ After every non-trivial step, Claude must pause, briefly review what was done, a
 - The human can intervene or redirect at any point
 - Progress is never lost to a context window limit or interrupted session
 
+## Branching
+
+All issues belong to a milestone. Milestones are named `<repo> <major>.<minor>` (e.g. `fluid 0.12`).
+
+**Branch structure:**
+
+```
+issue branch → milestone branch → develop
+```
+
+- **Milestone branches** are named to match the milestone (e.g. `fluid-0.12`). They serve as integration branches for related work.
+- **Issue branches** are named `<issue-number>-<short-description>` and branch from the relevant milestone branch.
+- **PRs from issue branches to milestone branches**: Claude can merge directly once CI passes (no human approval required).
+- **PRs from milestone branches to develop**: human decides when to merge.
+
 ## Issue lifecycle
 
 1. **Selection**: Pick an issue based on risk/reward. Prefer issues with existing test coverage or where tests can be added.
-2. **Branch**: Create a branch named `<issue-number>-<short-description>`.
+2. **Branch**: Create an issue branch from the relevant milestone branch.
 3. **Implementation**: Work incrementally, committing after each non-trivial step.
 4. **Testing**: Run `./script/test-website-all.sh` and any other relevant tests before declaring done.
-5. **PR**: Push branch and create PR linking the issue.
-6. **Review and merge**: See below.
-
-## PR flow
-
-All changes go through PRs, even when the committer has bypass permissions. This maintains the audit trail.
-
-**Current state**: Claude creates PRs; human reviews, approves, and merges.
-
-**Goal**: Evolve towards Claude-based PR approval, with human intervention only when necessary (e.g. architectural decisions, risky changes, external-facing changes). This requires either a dedicated bot account or organisation-level policy changes.
+5. **PR**: Push branch and create PR targeting the milestone branch.
+6. **Merge**: Claude merges to milestone branch once CI passes. Human merges milestone branch to develop.
 
 ## Escalation
 
@@ -56,7 +63,7 @@ Claude must describe the intended change and its blast radius, and wait for appr
 ## GitHub conventions
 
 - **Labels**: Use existing labels (`implementation`, `testing`, `setup`, `documentation`). Add `claude-automated` for issues where Claude drove the implementation.
-- **Milestones**: Respect existing milestone assignments; don't reassign without human approval.
+- **Milestones**: All issues must belong to a milestone. Don't reassign without human approval.
 - **Issue bodies**: Keep checklist items updated as work progresses.
 
 ## Manual setup requirements
@@ -77,3 +84,6 @@ The `gh` CLI token needs the following scopes for full workflow automation:
 
 - [x] Add `project` scope to the GitHub PAT so Claude can update project board statuses (needed for the escalation workflow: moving issues to "Awaiting Decision")
 - [x] Add "Awaiting Decision" status option to the GitHub Project board (created via GraphQL API once token scope was granted)
+- [ ] Rename milestone "fluid-org 1.0" to "fluid 0.13"
+- [ ] Create milestone branch `fluid-0.12` from develop
+- [ ] Create milestone branch `fluid-0.13` from develop
