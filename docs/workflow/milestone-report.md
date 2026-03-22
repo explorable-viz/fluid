@@ -1,8 +1,34 @@
-# Milestone Report Format
+# Milestone Reports and Release Notes
 
-A milestone report is generated when a milestone branch is merged to develop. It provides an audit trail and metrics for the work done.
+When a milestone branch is merged to develop, two documents are generated from the same git history and GitHub issue data.
 
-## Format
+## Release notes
+
+Outward-facing summary of what changed. Audience: users and contributors.
+
+Stored at `docs/releases/<milestone-name>.md`.
+
+```
+# <milestone-name>
+
+## Features
+- <one-line description> (#<issue>)
+
+## Bug fixes
+- <one-line description> (#<issue>)
+
+## Breaking changes
+- <one-line description> (#<issue>)
+
+## Other
+- <one-line description> (#<issue>)
+```
+
+## Milestone report
+
+Inward-facing audit trail and metrics. Audience: development team.
+
+Stored at `docs/reports/<milestone-name>.md`.
 
 ```
 # Milestone: <name>
@@ -34,11 +60,9 @@ A milestone report is generated when a milestone branch is merged to develop. It
 
 ## Generation
 
-The report is generated from git history and GitHub issue data:
-- Commits attributed to Claude are identified by the `Co-Authored-By: Claude` trailer.
-- Decision points are identified from GitHub issue comments and "Awaiting Decision" status transitions.
-- File counts come from `git diff --stat` between the milestone branch base and head.
+Both documents are generated from:
+- **Git history**: commits on the milestone branch since it diverged from develop. Claude-authored commits identified by `Co-Authored-By: Claude` trailer.
+- **GitHub issues**: status, labels, and comments. Decision points identified from "Awaiting Decision" status transitions and escalation comments.
+- **File counts**: `git diff --stat` between the milestone branch base and head.
 
-## Storage
-
-Reports are committed to `docs/reports/<milestone-name>.md` (e.g. `docs/reports/fluid-0.12.md`).
+Release notes are categorised by issue labels (`implementation` → Features, `testing`/`setup` → Other, etc.) and can be edited before publishing.
