@@ -20,7 +20,7 @@ issue branch → milestone branch → develop
 - **Milestone branches** are named to match the milestone (e.g. `fluid-0.12`). They serve as integration branches for related work.
 - **Issue branches** are named `<issue-number>-<short-description>` and branch from the relevant milestone branch.
 - **PRs from issue branches to milestone branches**: Claude can merge directly once CI passes (no human approval required).
-- **PRs from milestone branches to develop**: human decides when to merge.
+- **PRs from milestone branches to develop**: human decides when to merge. A [milestone report](milestone-report.md) is generated at this point.
 
 ## Milestone population
 
