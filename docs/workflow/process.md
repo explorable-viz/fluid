@@ -42,6 +42,10 @@ The comment should be self-contained so the human can make the decision asynchro
 
 Claude must describe the intended change and its blast radius, and wait for approval. Having token permission is not sufficient justification to proceed. See [incidents.md](incidents.md) for examples of what can go wrong.
 
+**There is no undo facility for GitHub Projects v2 field mutations.** Changes to field definitions (options, names, types) are irreversible via the API.
+
+**After any change to project board state** (item statuses, field values, milestones), Claude must verify the project view at https://github.com/orgs/explorable-viz/projects/1 to confirm it hasn't been broken. Project views cannot be created or edited via the API — only read — so damage to views requires manual repair.
+
 ## Tracking Claude contributions
 
 - Commits by Claude include `Co-Authored-By: Claude <noreply@anthropic.com>` trailer.
