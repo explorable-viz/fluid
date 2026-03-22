@@ -1,0 +1,17 @@
+name: check-project-integrity
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Weekly on Monday at 08:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Check project integrity
+      env:
+        GH_TOKEN: ${{ secrets.PROJECT_PAT }}
+      run: |
+        ./script/check-project-integrity.sh fluid
