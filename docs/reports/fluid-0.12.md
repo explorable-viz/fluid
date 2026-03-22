@@ -51,10 +51,10 @@
 
 ## Metrics
 - Total commits: ~97
-- Claude-authored commits: not tracked for early issues (co-author convention adopted mid-milestone)
-- Human-authored commits: majority
-- Issues completed autonomously: 3 (#1485, #1459, #1385)
-- Issues requiring human intervention: 3 (#1489, #1491, #1434)
+- Claude-authored commits: ~0% (co-author convention adopted mid-milestone; actual Claude contribution higher but unattributed)
+- Human-authored commits: ~100% (by attribution; see notes)
+- Issues completed autonomously: 3 (50%) — #1485, #1459, #1385
+- Issues requiring human intervention: 3 (50%) — #1489, #1491, #1434
 
 ## Notes
 - The `Co-Authored-By: Claude` convention was adopted partway through this milestone. Earlier commits lack this attribution. Future milestones will have accurate tracking from the start.
