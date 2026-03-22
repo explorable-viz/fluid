@@ -33,6 +33,8 @@ ALL_ITEMS=$(gh api graphql --paginate -f query='
   }
 ' --jq '[.data.organization.projectV2.items.nodes[] | select(.content != null and .content.repository.name == "'"$REPO"'")]')
 
+CLOSED_MILESTONES=$(gh api "repos/$ORG/$REPO/milestones?state=closed" --jq '[.[].title]')
+
 check() {
   local rule="$1"
   local filter="$2"
@@ -56,8 +58,21 @@ check "Milestoned issues are not Proposed" \
   '"#\(.content.number) (\(.content.title)): Proposed but in milestone \(.content.milestone.title)"'
 
 check "Active issues have a milestone" \
-  'select(.content.state == "OPEN" and .content.milestone == null and (.fieldValueByName.name == "In Progress" or .fieldValueByName.name == "Paused"))' \
+  'select(.content.state == "OPEN" and .content.milestone == null and (.fieldValueByName.name == "In Progress" or .fieldValueByName.name == "Paused" or .fieldValueByName.name == "Awaiting Decision"))' \
   '"#\(.content.number) (\(.content.title)): \(.fieldValueByName.name) but no milestone"'
+
+echo ""
+echo "=== Closed milestones contain only Done or Rejected issues ==="
+while IFS= read -r line; do
+  [ -z "$line" ] && continue
+  echo "  FAIL: $line"
+  ERRORS=$((ERRORS + 1))
+done < <(echo "$ALL_ITEMS" | jq -r --argjson closed "$CLOSED_MILESTONES" '
+  .[] | select(
+    .content.milestone != null and
+    (.content.milestone.title as $m | $closed | index($m)) and
+    (.fieldValueByName.name != "Done" and .fieldValueByName.name != "Rejected")
+  ) | "#\(.content.number) (\(.content.title)): \(.fieldValueByName.name // "no Status") in closed milestone \(.content.milestone.title)"')
 
 echo ""
 if [ "$ERRORS" -eq 0 ]; then
