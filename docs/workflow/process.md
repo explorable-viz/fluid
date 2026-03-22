@@ -47,8 +47,21 @@ The comment should be self-contained so the human can make the decision asynchro
 - **Milestones**: Respect existing milestone assignments; don't reassign without human approval.
 - **Issue bodies**: Keep checklist items updated as work progresses.
 
+## Manual setup requirements
+
+Some workflow capabilities depend on GitHub settings (token scopes, project board configuration, branch protection rules) that cannot be changed by Claude. When Claude encounters a missing permission or setting, it should:
+
+1. Document the requirement in the pending tasks section below.
+2. Note the specific setting change needed and why.
+3. Continue with available work.
+
 ## Token permissions
 
 The `gh` CLI token needs the following scopes for full workflow automation:
 - `repo` scope (includes issues, PRs, comments), or for fine-grained tokens: **Issues: Read and write**
 - `project` scope — needed to update project board statuses (e.g. moving issues to "Awaiting Decision")
+
+## Pending manual tasks
+
+- [ ] Add `project` scope to the GitHub PAT so Claude can update project board statuses (needed for the escalation workflow: moving issues to "Awaiting Decision")
+- [ ] Add "Awaiting Decision" status option to the GitHub Project board (project settings → Status field → add option)
