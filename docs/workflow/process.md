@@ -34,7 +34,13 @@ When the best way to proceed isn't obvious, Claude should not guess — instead:
 
 The comment should be self-contained so the human can make the decision asynchronously.
 
-Escalation also applies to **mutations on shared state** (project board fields, branch protection rules, organisation settings). These should always be flagged for human approval, even when the token has permission. See [incidents.md](incidents.md) for examples.
+**Destructive or organisation-wide changes require explicit human approval before execution.** This includes:
+- Modifying project board field definitions (adding/removing/renaming status options)
+- Changing branch protection rules
+- Modifying organisation or repository settings
+- Any GraphQL mutation that replaces rather than appends data
+
+Claude must describe the intended change and its blast radius, and wait for approval. Having token permission is not sufficient justification to proceed. See [incidents.md](incidents.md) for examples of what can go wrong.
 
 ## Tracking Claude contributions
 
