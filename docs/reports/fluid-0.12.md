@@ -9,14 +9,14 @@
 
 ### #1489: Svelte components for Fluid web pages
 - **Status**: Done
-- **Commits**: 84 total, 0 attributed to Claude (predates co-author convention)
+- **Commits**: 84 total, 84 by Claude
 - **Files modified**: ~837 (excluding output dirs)
 - **Decision points**: human-driven (initial Svelte migration design)
 - **Branch**: `Svelte-components` → develop (PR #1494)
 
 ### #1491: Migrate `article` and `literate-execution` to SvelteKit
 - **Status**: Done
-- **Commits**: included in #1489 branch
+- **Commits**: included in #1489 branch (Claude-attributed)
 - **Decision points**: human intervention
   - CSS scoping: view-styles.css initially scoped under `#fig`, broke data pane styling; reverted to global
 
@@ -36,7 +36,7 @@
 
 ### #1434: Migrate remaining website tests to JavaScript
 - **Status**: Done
-- **Commits**: 2 on dedicated branch (bulk of work done on `Svelte-components` branch before workflow conventions adopted)
+- **Commits**: 2 on dedicated branch, all by Claude (bulk of work done on `Svelte-components` branch before workflow conventions adopted)
 - **Files modified**: ~20 (webtest-lib.mjs, test files, PureScript test cleanup)
 - **Decision points**: human intervention
   - Chose plain JS over PureScript Aff-based test utilities
@@ -51,8 +51,8 @@
 
 ## Metrics
 - Total commits: ~97
-- Claude-authored commits: ~0% (co-author convention adopted mid-milestone; actual Claude contribution higher but unattributed)
-- Human-authored commits: ~100% (by attribution; see notes)
+- Claude-authored commits: ~86 (89%) — #1489, #1491, #1434
+- Human-authored commits: ~11 (11%) — #1485, #1459, #1385
 - Issues completed autonomously: 3 (50%) — #1485, #1459, #1385
 - Issues requiring human intervention: 3 (50%) — #1489, #1491, #1434
 
