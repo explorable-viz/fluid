@@ -28,7 +28,8 @@ When all issues in a milestone are either done, paused, or awaiting decision, Cl
 
 1. **Planned issues first**: issues with status "Planned" but not yet assigned to a milestone have already been prioritised by the human and are strong candidates.
 2. **Proposed issues**: for remaining slots, select from "Proposed" issues, preferring low-hanging fruit — low risk, thematic fit with the milestone, alignment with apparent priorities, and availability of test coverage.
-3. Claude should present the proposed selection for human approval before assigning issues to the milestone.
+
+This can be done autonomously — no human approval needed.
 
 ## Issue lifecycle
 
