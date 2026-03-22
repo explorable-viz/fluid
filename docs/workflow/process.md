@@ -34,6 +34,8 @@ When the best way to proceed isn't obvious, Claude should not guess — instead:
 
 The comment should be self-contained so the human can make the decision asynchronously.
 
+Escalation also applies to **mutations on shared state** (project board fields, branch protection rules, organisation settings). These should always be flagged for human approval, even when the token has permission. See [incidents.md](incidents.md) for examples.
+
 ## Tracking Claude contributions
 
 - Commits by Claude include `Co-Authored-By: Claude <noreply@anthropic.com>` trailer.
