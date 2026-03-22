@@ -22,9 +22,17 @@ issue branch → milestone branch → develop
 - **PRs from issue branches to milestone branches**: Claude can merge directly once CI passes (no human approval required).
 - **PRs from milestone branches to develop**: human decides when to merge.
 
+## Milestone population
+
+When all issues in a milestone are either done, paused, or awaiting decision, Claude should populate it with 3-8 new issues (depending on anticipated difficulty). Candidates are chosen by:
+
+1. **Planned issues first**: issues with status "Planned" but not yet assigned to a milestone have already been prioritised by the human and are strong candidates.
+2. **Proposed issues**: for remaining slots, select from "Proposed" issues, preferring low-hanging fruit — low risk, thematic fit with the milestone, alignment with apparent priorities, and availability of test coverage.
+3. Claude should present the proposed selection for human approval before assigning issues to the milestone.
+
 ## Issue lifecycle
 
-1. **Selection**: Pick an issue based on risk/reward. Prefer issues with existing test coverage or where tests can be added.
+1. **Selection**: Pick an issue from the current milestone. Prefer issues with existing test coverage or where tests can be added.
 2. **Branch**: Create an issue branch from the relevant milestone branch.
 3. **Implementation**: Work incrementally, committing after each non-trivial step.
 4. **Testing**: Run `./script/test-website-all.sh` and any other relevant tests before declaring done.
