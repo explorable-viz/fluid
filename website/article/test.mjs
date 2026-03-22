@@ -1,5 +1,5 @@
 import {
-   checkAttribute, checkAttributeContains, checkTextContent,
+   checkAttribute, checkAttributeContains, checkComputedStyle, checkTextContent,
    click, clickToggle, testURL, waitFor
 } from "../../script/webtest-lib.mjs"
 
@@ -56,6 +56,10 @@ export const main = async () => {
          await waitFor(page, bar)
          await click(page, bar)
          await checkAttribute(page, bar, "fill", "#57a157")
+
+         const selectedCell = "#fig-input .table-cell.selected-primary-persistent"
+         await waitFor(page, selectedCell)
+         await checkComputedStyle(page, selectedCell, "backgroundColor", "rgb(147, 233, 190)")
       }
    ])
 
