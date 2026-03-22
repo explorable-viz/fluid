@@ -29,7 +29,11 @@ When all issues in a milestone are either done, paused, or awaiting decision, Cl
 1. **Planned issues first**: issues with status "Planned" but not yet assigned to a milestone have already been prioritised by the human and are strong candidates.
 2. **Proposed issues**: for remaining slots, select from "Proposed" issues, preferring low-hanging fruit — low risk, thematic fit with the milestone, alignment with apparent priorities, and availability of test coverage.
 
+Adding an issue to a milestone bumps it from Proposed to Planned.
+
 This can be done autonomously — no human approval needed.
+
+After populating, run `./script/check-project-integrity.sh` to verify invariants.
 
 ## Issue lifecycle
 
@@ -96,3 +100,4 @@ The `gh` CLI token needs the following scopes for full workflow automation:
 - [x] Rename milestone "fluid-org 1.0" to "fluid 0.13"
 - [x] Create milestone branch `fluid-0.12` from develop
 - [x] Create milestone branch `fluid-0.13` from develop
+- [x] Add `PROJECT_PAT` secret to the repo (a PAT with `project` scope) for the `check-project-integrity` GitHub Actions workflow
