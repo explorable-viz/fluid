@@ -100,3 +100,4 @@ The `gh` CLI token needs the following scopes for full workflow automation:
 - [x] Rename milestone "fluid-org 1.0" to "fluid 0.13"
 - [x] Create milestone branch `fluid-0.12` from develop
 - [x] Create milestone branch `fluid-0.13` from develop
+- [ ] Add `PROJECT_PAT` secret to the repo (a PAT with `project` scope) for the `check-project-integrity` GitHub Actions workflow
