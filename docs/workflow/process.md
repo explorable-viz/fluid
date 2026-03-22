@@ -95,9 +95,6 @@ The `gh` CLI token needs the following scopes for full workflow automation:
 
 ## Pending manual tasks
 
-- [x] Add `project` scope to the GitHub PAT so Claude can update project board statuses (needed for the escalation workflow: moving issues to "Awaiting Decision")
-- [x] Add "Awaiting Decision" status option to the GitHub Project board (created via GraphQL API once token scope was granted)
-- [x] Rename milestone "fluid-org 1.0" to "fluid 0.13"
-- [x] Create milestone branch `fluid-0.12` from develop
-- [x] Create milestone branch `fluid-0.13` from develop
-- [x] Add `PROJECT_PAT` secret to the repo (a PAT with `project` scope) for the `check-project-integrity` GitHub Actions workflow
+None.
+
+Completed tasks are recorded in [docs/reports/completed-manual-tasks.md](../reports/completed-manual-tasks.md).
