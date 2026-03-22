@@ -1,23 +1,6 @@
 # Issue Lifecycle
 
-```
-                    OPEN — passive                          CLOSED
-               ┌─────────────────────┐                ┌──────────────┐
-               │                     │                │              │
-               │  Proposed ─→ Planned ──→ In Progress ──→ Done      │
-               │                     │    │  ↑    │   │              │
-               │                     │    │  │    │   │              │
-               │                     │    ↓  │    │   │              │
-               │              ┌──────────────────┐│   │              │
-               │              │ Paused           ││   │              │
-               │              │                  ││   │              │
-               │              │ Awaiting Decision│←   │              │
-               │              └──────────────────┘    │              │
-               │                OPEN — active         │  Rejected    │
-               │                                      │              │
-               └──────────────────────────────────────→│              │
-                     (any open state)                  └──────────────┘
-```
+![Issue lifecycle diagram](images/issue-lifecycle.svg)
 
 ## Key transitions
 
