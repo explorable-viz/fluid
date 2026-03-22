@@ -24,6 +24,16 @@ All changes go through PRs, even when the committer has bypass permissions. This
 
 **Goal**: Evolve towards Claude-based PR approval, with human intervention only when necessary (e.g. architectural decisions, risky changes, external-facing changes). This requires either a dedicated bot account or organisation-level policy changes.
 
+## Escalation
+
+When the best way to proceed isn't obvious, Claude should not guess — instead:
+
+1. Add a comment to the GitHub issue explaining the decision required, the options considered, and a recommendation if possible.
+2. Move the issue to "Awaiting Decision" status in the GitHub Project board.
+3. Stop work on that issue and move to other work if available.
+
+The comment should be self-contained so the human can make the decision asynchronously.
+
 ## Tracking Claude contributions
 
 - Commits by Claude include `Co-Authored-By: Claude <noreply@anthropic.com>` trailer.
@@ -41,3 +51,4 @@ All changes go through PRs, even when the committer has bypass permissions. This
 
 The `gh` CLI token needs the following scopes for full workflow automation:
 - `repo` scope (includes issues, PRs, comments), or for fine-grained tokens: **Issues: Read and write**
+- `project` scope — needed to update project board statuses (e.g. moving issues to "Awaiting Decision")
