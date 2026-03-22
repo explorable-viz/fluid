@@ -63,5 +63,5 @@ The `gh` CLI token needs the following scopes for full workflow automation:
 
 ## Pending manual tasks
 
-- [ ] Add `project` scope to the GitHub PAT so Claude can update project board statuses (needed for the escalation workflow: moving issues to "Awaiting Decision")
-- [ ] Add "Awaiting Decision" status option to the GitHub Project board (project settings → Status field → add option)
+- [x] Add `project` scope to the GitHub PAT so Claude can update project board statuses (needed for the escalation workflow: moving issues to "Awaiting Decision")
+- [x] Add "Awaiting Decision" status option to the GitHub Project board (created via GraphQL API once token scope was granted)
