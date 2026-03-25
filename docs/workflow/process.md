@@ -112,6 +112,6 @@ The `gh` CLI token needs the following scopes for full workflow automation:
 
 ## Pending manual tasks
 
-- [ ] Re-add `project` scope (`read:project`, `project`) to the GitHub PAT — lost since initial setup
+- [x] Re-add `project` scope (`read:project`, `project`) to the GitHub PAT — token regenerated and `gh` re-authenticated
 
 Completed tasks are recorded in [docs/reports/completed-manual-tasks.md](../reports/completed-manual-tasks.md).
