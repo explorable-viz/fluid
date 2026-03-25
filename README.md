@@ -6,10 +6,9 @@ A pure functional dialect of Python, based on [PurePy](https://github.com/pure-p
 
 ## Getting started
 
-Requires [Node.js](https://nodejs.org/) >= 22. Then:
+Requires [Node.js](https://nodejs.org/) >= 22. In a new project directory:
 
 ```bash
-mkdir my-project && cd my-project
 curl -fsSL https://raw.githubusercontent.com/explorable-viz/fluid/develop/script/setup/install.sh | bash
 ```
 
