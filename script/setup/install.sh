@@ -15,9 +15,18 @@ if [ "$NODE_VERSION" -lt 22 ]; then
    exit 1
 fi
 
-# Enable Corepack (provides Yarn)
-echo "Enabling Corepack..."
-corepack enable
+# Ensure Yarn is available
+if ! command -v yarn > /dev/null 2>&1; then
+   echo "Enabling Corepack (for Yarn)..."
+   if command -v corepack > /dev/null 2>&1; then
+      corepack enable
+   else
+      echo "Error: Neither yarn nor corepack found. Install Yarn from https://yarnpkg.com/getting-started/install" >&2
+      exit 1
+   fi
+fi
+
+echo "Using yarn $(yarn -v)"
 
 # Initialise project and install Fluid
 if [ ! -f package.json ]; then
@@ -26,5 +35,4 @@ fi
 yarn add @explorable-viz/fluid
 
 echo ""
-echo "Fluid is ready. Try:"
-echo "  npx fluid evaluate -f node_modules/@explorable-viz/fluid/dist/fluid/fluid/example/range"
+echo "Fluid installed successfully."
