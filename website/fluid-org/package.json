@@ -14,7 +14,8 @@
 		"lint": "prettier --check . && eslint ."
 	},
 	"dependencies": {
-		"@explorable-viz/fluid": "workspace:*"
+		"@explorable-viz/fluid": "workspace:*",
+		"highlight.js": "^11.11.1"
 	},
 	"devDependencies": {
 		"@codemirror/commands": "^6.8.1",

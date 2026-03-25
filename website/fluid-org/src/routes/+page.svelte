@@ -1,5 +1,15 @@
 <script>
    import { Grid } from '@explorable-viz/fluid';
+   import { onMount } from 'svelte';
+   import hljs from 'highlight.js/lib/core';
+   import python from 'highlight.js/lib/languages/python';
+   import 'highlight.js/styles/github-dark.css';
+
+   hljs.registerLanguage('python', python);
+
+   onMount(() => {
+      document.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+   });
 </script>
 
 <Grid>
@@ -20,17 +30,17 @@
 		a pure (side-effect free) subset of Python. Fluid programs use familiar Python syntax
 		&mdash; list comprehensions, dictionaries, lambdas &mdash; in a purely functional setting.</p>
 
-<div class="code-block"><pre>def mergesort(xs):
+<div class="code-block"><pre><code class="language-python">def mergesort(xs):
   if length(xs) &lt; 2: xs
   else:
     def (ys, zs): split(xs)
-    merge(mergesort(ys), mergesort(zs))</pre></div>
+    merge(mergesort(ys), mergesort(zs))</code></pre></div>
 
-<div class="code-block"><pre>def movingAvg(ys, window):
+<div class="code-block"><pre><code class="language-python">def movingAvg(ys, window):
   [sum([nthPad(n, ys)
         for n in [i - window .. i + window]])
      / (1 + 2 * window)
-   for i in [0 .. length(ys) - 1]]</pre></div>
+   for i in [0 .. length(ys) - 1]]</code></pre></div>
 
 	</div>
 	<div></div>
@@ -38,19 +48,16 @@
 
 <style>
 	.code-block {
-		background-color: #1e1e1e;
 		border-radius: 8px;
-		padding: 1em 1.2em;
 		margin: 1em 0;
 		overflow-x: auto;
 	}
 
 	.code-block pre {
 		margin: 0;
-		color: #d4d4d4;
-		font-family: 'SF Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+		padding: 1em 1.2em;
+		border-radius: 8px;
 		font-size: 13px;
 		line-height: 1.5;
-		white-space: pre;
 	}
 </style>
