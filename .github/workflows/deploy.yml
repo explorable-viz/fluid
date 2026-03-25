@@ -40,26 +40,39 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         DEPLOY_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-        echo "Waiting for pages-build-deployment (created after $DEPLOY_TIME)..."
-        sleep 15
-        for i in $(seq 1 60); do
-          RUN=$(gh run list --workflow=pages-build-deployment --branch=gh-pages --limit=1 --json status,conclusion,createdAt --jq '.[0]')
-          CREATED=$(echo "$RUN" | jq -r '.createdAt')
-          STATUS=$(echo "$RUN" | jq -r '.status')
+        echo "Waiting for pages-build-deployment to start (created after $DEPLOY_TIME)..."
+        for i in $(seq 1 30); do
+          CREATED=$(gh run list --workflow=pages-build-deployment --branch=gh-pages --limit=1 --json createdAt --jq '.[0].createdAt')
           if [[ "$CREATED" > "$DEPLOY_TIME" || "$CREATED" == "$DEPLOY_TIME" ]]; then
-            if [ "$STATUS" = "completed" ]; then
-              CONCLUSION=$(echo "$RUN" | jq -r '.conclusion')
-              echo "Pages deployment completed: $CONCLUSION"
-              if [ "$CONCLUSION" != "success" ]; then
-                echo "Pages deployment failed!" >&2
-                exit 1
-              fi
-              break
-            fi
-            echo "Attempt $i: status=$STATUS (run created $CREATED)"
-          else
-            echo "Attempt $i: waiting for new run (latest is from $CREATED)"
+            echo "Pages deployment started (created $CREATED)."
+            break
           fi
+          if [ "$i" -eq 30 ]; then
+            echo "Error: Pages deployment did not start within 5 minutes." >&2
+            exit 1
+          fi
+          echo "Attempt $i: latest run is from $CREATED, waiting..."
+          sleep 10
+        done
+
+        echo "Waiting for pages-build-deployment to complete..."
+        for i in $(seq 1 60); do
+          RUN=$(gh run list --workflow=pages-build-deployment --branch=gh-pages --limit=1 --json status,conclusion --jq '.[0]')
+          STATUS=$(echo "$RUN" | jq -r '.status')
+          if [ "$STATUS" = "completed" ]; then
+            CONCLUSION=$(echo "$RUN" | jq -r '.conclusion')
+            echo "Pages deployment completed: $CONCLUSION"
+            if [ "$CONCLUSION" != "success" ]; then
+              echo "Pages deployment failed!" >&2
+              exit 1
+            fi
+            break
+          fi
+          if [ "$i" -eq 60 ]; then
+            echo "Error: Pages deployment did not complete within 10 minutes." >&2
+            exit 1
+          fi
+          echo "Attempt $i: status=$STATUS"
           sleep 10
         done
     - name: test deployed website
