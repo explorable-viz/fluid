@@ -1,5 +1,0 @@
-def movingAvg(ys, window):
-  [sum([nthPad(n, ys)
-        for n in range(i - window, i + window)])
-     / (1 + 2 * window)
-   for i in range(0, length(ys) - 1)]

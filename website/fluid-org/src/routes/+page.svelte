@@ -21,8 +21,17 @@
 		&mdash; list comprehensions, dictionaries, lambdas &mdash; in a purely functional setting.</p>
 
 		<div class="code-examples">
-			<CodeMirror name="mergesort" src="fluid/mergesort.fld" open={true} />
-			<CodeMirror name="moving-average" src="fluid/moving-average.fld" open={true} />
+			<h4>Pattern matching and destructuring</h4>
+			<CodeMirror name="pattern-matching" src="fluid/pattern-matching.fld" details={false} />
+
+			<h4>List comprehensions</h4>
+			<CodeMirror name="list-comprehensions" src="fluid/list-comprehensions.fld" details={false} />
+
+			<h4>Match expressions</h4>
+			<CodeMirror name="match-expressions" src="fluid/match-expressions.fld" details={false} />
+
+			<h4>Variable definitions</h4>
+			<CodeMirror name="variable-definitions" src="fluid/variable-definitions.fld" details={false} />
 		</div>
 	</div>
 	<div></div>
@@ -32,6 +41,11 @@
 	.code-examples {
 		display: flex;
 		flex-direction: column;
-		gap: 1em;
+		gap: 0.5em;
+	}
+
+	h4 {
+		margin: 0.5em 0 0 0;
+		font-size: 10pt;
 	}
 </style>

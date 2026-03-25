@@ -1,0 +1,2 @@
+def person: { name: "Alice", age: 30 }
+def greeting: "Hello, " ++ person.name
