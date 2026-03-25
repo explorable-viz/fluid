@@ -21,20 +21,20 @@
 		(list comprehensions, dictionaries, lambdas) in a purely functional setting.</p>
 
 		<div class="code-examples">
+			<h4>Variable definitions</h4>
+			<CodeMirror name="variable-definitions" src="fluid/variable-definitions.fld" details={false} />
+
 			<h4>Pattern matching and destructuring</h4>
 			<CodeMirror name="pattern-matching" src="fluid/pattern-matching.fld" details={false} />
 
 			<h4>List comprehensions and lambdas</h4>
 			<CodeMirror name="list-comprehensions" src="fluid/list-comprehensions.fld" details={false} />
 
-			<h4>Match expressions</h4>
-			<CodeMirror name="match-expressions" src="fluid/match-expressions.fld" details={false} />
-
 			<h4>Partial application</h4>
 			<CodeMirror name="partial-application" src="fluid/partial-application.fld" details={false} />
 
-			<h4>Variable definitions</h4>
-			<CodeMirror name="variable-definitions" src="fluid/variable-definitions.fld" details={false} />
+			<h4>Match expressions</h4>
+			<CodeMirror name="match-expressions" src="fluid/match-expressions.fld" details={false} />
 		</div>
 	</div>
 	<div></div>
