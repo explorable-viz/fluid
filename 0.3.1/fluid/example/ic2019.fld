@@ -1,9 +1,0 @@
-let sq = 
-   fun n → n * n;
-letrec
-   fun f {
-      [] → [];
-      [x, ...xs] → [x, ...f xs]
-   }
-in
-f [1, 3, 5]

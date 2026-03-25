@@ -1,5 +1,0 @@
-let nextIndices n m window = 
-    [(i, j) | i <- [1 .. n],
-              j <- [(max 1 (i - window)) .. (min m (i + window))]]
-in 
-  nextIndices 5 7 2

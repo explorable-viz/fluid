@@ -1,0 +1,8 @@
+import{a as o,f as i}from"../chunks/CYWI0F8x.js";import"../chunks/5CCcdPB9.js";import{n as s}from"../chunks/D1YxwJ9G.js";import{G as r}from"../chunks/B04fkqHW.js";/* empty css                */var n=i(`<div></div> <div></div> <div class="flex-left-align"><h3 class="title">Frequently Asked Questions</h3> <p><span class="faq-question svelte-1bex8oj">How does Fluid work?</span> When you load a Fluid visualisation, the
+			interpreter builds a <span class="highlight">dependence graph</span> capturing how data flows through
+			the program. This graph is used to add various interactions to the chart (so that, for example,
+			selecting an element in the output highlights the corresponding parts of the input). See our <a href="https://arxiv.org/abs/2403.04403">ESOP 2025 preprint</a> for details.</p> <p><span class="faq-question svelte-1bex8oj">Why not do this for Python/R/Julia?</span> Fine-grained dependency
+			tracking for Python or R would be difficult: both languages have key libraries that depend heavily on
+			C. Julia has less of a C dependency and could be a feasible target, although it would still probably
+			require modifying the interpreter. Our approach is to develop a pure functional dialect of Python,
+			for which we can then provide our own version of libraries like <code>numpy</code>.</p> <p><span class="faq-question svelte-1bex8oj">What's next for the language?</span> Most likely a gradual type system, better tooling and performance improvements.</p></div>`,1);function c(e){r(e,{showDataPane:"false",children:(a,l)=>{var t=n();s(4),o(a,t)},$$slots:{default:!0}})}export{c as component};
