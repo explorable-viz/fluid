@@ -38,9 +38,9 @@
 
 <div class="code-block"><pre><code class="language-python">def movingAvg(ys, window):
   [sum([nthPad(n, ys)
-        for n in [i - window .. i + window]])
+        for n in range(i - window, i + window)])
      / (1 + 2 * window)
-   for i in [0 .. length(ys) - 1]]</code></pre></div>
+   for i in range(0, length(ys) - 1)]</code></pre></div>
 
 	</div>
 	<div></div>
