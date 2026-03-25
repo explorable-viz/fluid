@@ -21,10 +21,14 @@ jobs:
     if: github.ref == 'refs/heads/release'
     steps:
     - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
     - name: build
       run: |
         yarn install
         yarn workspace @explorable-viz/fluid build
+        yarn workspace fluid-org build
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
