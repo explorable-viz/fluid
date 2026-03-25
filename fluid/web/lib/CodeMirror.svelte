@@ -2,14 +2,14 @@
 	import { loadCode } from '../../output-es/App.LoadFigure';
 	import { onMount } from 'svelte';
 
-	let { name, src } = $props();
+	let { name, src, open = false } = $props();
 
 	onMount(() => {
 		loadCode(src)();
 	});
 </script>
 
-<details>
+<details {open}>
 	<summary>{name}.fld</summary>
 	<div id="codemirror-{name}"></div>
 </details>

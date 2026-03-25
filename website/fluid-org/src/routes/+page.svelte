@@ -20,8 +20,18 @@
 		a pure (side-effect free) subset of Python. Fluid programs use familiar Python syntax
 		&mdash; list comprehensions, dictionaries, lambdas &mdash; in a purely functional setting.</p>
 
-		<CodeMirror name="mergesort" src="fluid/mergesort.fld" />
-		<CodeMirror name="moving-average" src="fluid/moving-average.fld" />
+		<div class="code-examples">
+			<CodeMirror name="mergesort" src="fluid/mergesort.fld" open={true} />
+			<CodeMirror name="moving-average" src="fluid/moving-average.fld" open={true} />
+		</div>
 	</div>
 	<div></div>
 </Grid>
+
+<style>
+	.code-examples {
+		display: flex;
+		flex-direction: column;
+		gap: 1em;
+	}
+</style>
