@@ -17,8 +17,8 @@ All issues belong to a milestone. Milestones are named `<repo> <major>.<minor>` 
 issue branch → milestone branch → develop → staging → release
 ```
 
-- **Milestone branches** are named to match the milestone (e.g. `fluid-0.12`). They serve as integration branches for related work. When creating a milestone branch, ensure it tracks the correct remote: `git push -u origin <branch>`.
-- **Issue branches** are named `<issue-number>-<short-description>` and branch from the relevant milestone branch. Use `git push -u origin <branch>` on first push.
+- **Milestone branches** are named to match the milestone (e.g. `fluid-0.12`). They serve as integration branches for related work.
+- **Issue branches** are named `<issue-number>-<short-description>` and branch from the relevant milestone branch.
 - **PRs from issue branches to milestone branches**: Claude can merge directly once CI passes (no human approval required).
 - **PRs from milestone branches to develop**: a developer decides when to merge. A [milestone report](milestone-report.md) is generated at this point.
 
