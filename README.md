@@ -1,45 +1,28 @@
-## Fluid: Language-integrated data provenance
+## Fluid
 
-Fluid is a pure functional programming language with a provenance-tracking runtime and [Pythonic syntax](https://github.com/pure-py/pure-py-spec). Fluid is implemented in PureScript and runs in the browser.
+A pure functional dialect of Python, based on [PurePy](https://github.com/pure-py/pure-py-spec), with a dependency-tracking runtime for creating interactive outputs linked to data.
 
 [![build](https://github.com/explorable-viz/fluid/actions/workflows/deploy.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/deploy.yml)
 
-Website: [f.luid.org](https://f.luid.org)
-
 ## Getting started
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) >= 22
-- Enable Yarn via [Corepack](https://nodejs.org/api/corepack.html): `corepack enable`
-
-### Creating a Fluid project
+Requires [Node.js](https://nodejs.org/) >= 22. Then:
 
 ```bash
-mkdir my-project && cd my-project
-yarn init -y
-yarn add @explorable-viz/fluid
+git clone git@github.com:explorable-viz/fluid.git
+cd fluid
+curl -fsSL https://raw.githubusercontent.com/explorable-viz/fluid/develop/script/setup/install.sh | bash
 ```
 
-For an example of a Fluid website built with SvelteKit, see the [`article`](website/article) directory in this repo, or the [fluid-article](https://github.com/explorable-viz/fluid-article) template repository.
+Try it out:
 
-### Running programs from the command line
-
-Fluid programs (`.fld` files) can be evaluated from the command line:
-
-```
-npx fluid evaluate -f <path>
-```
-
-The path is relative and should not include the `.fld` extension:
-
-```
+```bash
 npx fluid evaluate -f example/range
 ```
 
-### VS Code setup
+### VS Code
 
-To get Python syntax highlighting for `.fld` files, add this to your VS Code `settings.json`:
+To get Python syntax highlighting for `.fld` files, add to `settings.json`:
 
 ```json
 "files.associations": {
