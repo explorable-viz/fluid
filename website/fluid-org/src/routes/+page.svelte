@@ -30,6 +30,9 @@
 			<h4>Match expressions</h4>
 			<CodeMirror name="match-expressions" src="fluid/match-expressions.fld" details={false} />
 
+			<h4>Partial application</h4>
+			<CodeMirror name="partial-application" src="fluid/partial-application.fld" details={false} />
+
 			<h4>Variable definitions</h4>
 			<CodeMirror name="variable-definitions" src="fluid/variable-definitions.fld" details={false} />
 		</div>
