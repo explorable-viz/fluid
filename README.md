@@ -9,7 +9,7 @@ A pure functional dialect of Python, based on [PurePy](https://github.com/pure-p
 Requires [Node.js](https://nodejs.org/) >= 22. In a new project directory:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/explorable-viz/fluid/develop/script/setup/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/explorable-viz/fluid/release/script/setup/install.sh | bash
 ```
 
 ### VS Code
