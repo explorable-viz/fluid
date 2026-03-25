@@ -9,15 +9,8 @@ A pure functional dialect of Python, based on [PurePy](https://github.com/pure-p
 Requires [Node.js](https://nodejs.org/) >= 22. Then:
 
 ```bash
-git clone git@github.com:explorable-viz/fluid.git
-cd fluid
+mkdir my-project && cd my-project
 curl -fsSL https://raw.githubusercontent.com/explorable-viz/fluid/develop/script/setup/install.sh | bash
-```
-
-Try it out:
-
-```bash
-npx fluid evaluate -f example/range
 ```
 
 ### VS Code
