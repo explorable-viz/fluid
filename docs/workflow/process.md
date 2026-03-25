@@ -14,19 +14,32 @@ All issues belong to a milestone. Milestones are named `<repo> <major>.<minor>` 
 **Branch structure:**
 
 ```
-issue branch → milestone branch → develop
+issue branch → milestone branch → develop → staging → release
 ```
 
 - **Milestone branches** are named to match the milestone (e.g. `fluid-0.12`). They serve as integration branches for related work.
 - **Issue branches** are named `<issue-number>-<short-description>` and branch from the relevant milestone branch.
 - **PRs from issue branches to milestone branches**: Claude can merge directly once CI passes (no human approval required).
-- **PRs from milestone branches to develop**: human decides when to merge. A [milestone report](milestone-report.md) is generated at this point.
+- **PRs from milestone branches to develop**: a developer decides when to merge. A [milestone report](milestone-report.md) is generated at this point.
+
+## Deployment
+
+```
+develop → staging → release
+```
+
+Deployments are managed manually by a developer.
+
+1. **Merge `develop` to `staging`**: triggers the deploy workflow, which builds and publishes the `fluid-org` SvelteKit site to GitHub Pages (f.luid.org).
+2. **Test the live site.**
+3. **If good**: merge `staging` to `release`. `release` always reflects the last-known-good deployment.
+4. **If broken**: reset `staging` to `release` to roll back.
 
 ## Milestone population
 
 When all issues in a milestone are either done, paused, or awaiting decision, Claude should populate it with 3-8 new issues (depending on anticipated difficulty). Candidates are chosen by:
 
-1. **Planned issues first**: issues with status "Planned" but not yet assigned to a milestone have already been prioritised by the human and are strong candidates.
+1. **Planned issues first**: issues with status "Planned" but not yet assigned to a milestone have already been prioritised by a developer and are strong candidates.
 2. **Proposed issues**: for remaining slots, select from "Proposed" issues, preferring low-hanging fruit — low risk, thematic fit with the milestone, alignment with apparent priorities, and availability of test coverage.
 
 Adding an issue to a milestone bumps it from Proposed to Planned.
@@ -42,7 +55,9 @@ After populating, run `./script/check-project-integrity.sh` to verify invariants
 3. **Implementation**: Work incrementally, committing after each non-trivial step.
 4. **Testing**: Run `./script/test-website-all.sh` and any other relevant tests before declaring done.
 5. **PR**: Push branch and create PR targeting the milestone branch.
-6. **Merge**: Claude merges to milestone branch once CI passes. Human merges milestone branch to develop.
+6. **Merge**: Claude merges to milestone branch once CI passes. Delete the issue branch (local and remote) after merging. A developer merges milestone branch to develop.
+
+Minor documentation, process changes, and trivial fixes can be committed directly to the current milestone branch without a separate issue branch or PR.
 
 ## Escalation
 
@@ -52,7 +67,7 @@ When the best way to proceed isn't obvious, Claude should not guess — instead:
 2. Move the issue to "Awaiting Decision" status in the GitHub Project board.
 3. Stop work on that issue and move to other work if available.
 
-The comment should be self-contained so the human can make the decision asynchronously.
+The comment should be self-contained so a developer can make the decision asynchronously.
 
 **Destructive or organisation-wide changes require explicit human approval before execution.** This includes:
 - Modifying project board field definitions (adding/removing/renaming status options)
@@ -95,9 +110,6 @@ The `gh` CLI token needs the following scopes for full workflow automation:
 
 ## Pending manual tasks
 
-- [x] Add `project` scope to the GitHub PAT so Claude can update project board statuses (needed for the escalation workflow: moving issues to "Awaiting Decision")
-- [x] Add "Awaiting Decision" status option to the GitHub Project board (created via GraphQL API once token scope was granted)
-- [x] Rename milestone "fluid-org 1.0" to "fluid 0.13"
-- [x] Create milestone branch `fluid-0.12` from develop
-- [x] Create milestone branch `fluid-0.13` from develop
-- [x] Add `PROJECT_PAT` secret to the repo (a PAT with `project` scope) for the `check-project-integrity` GitHub Actions workflow
+None.
+
+Completed tasks are recorded in [docs/reports/completed-manual-tasks.md](../reports/completed-manual-tasks.md).

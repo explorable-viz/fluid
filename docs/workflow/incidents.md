@@ -11,3 +11,13 @@
 **Lesson**: Destructive mutations on shared project state must be flagged for human approval, even when the token has permission. This falls under the same category as force-pushing or dropping database tables.
 
 **Action**: Added to escalation criteria in process doc.
+
+## 2026-03-22: Direct push to develop
+
+**What happened**: Claude pushed a commit directly to develop instead of creating a PR, despite the workflow doc requiring all changes go through PRs.
+
+**Root cause**: The token has branch protection bypass permissions, so the push succeeded with a warning.
+
+**Lesson**: Claude must always use the PR flow regardless of bypass permissions. The "Bypassed rule violations" warning from git should be treated as an error.
+
+**Action**: Noted for strict enforcement going forward.
