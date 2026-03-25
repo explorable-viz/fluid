@@ -39,7 +39,13 @@ npx fluid evaluate -f example/range
 
 ### VS Code setup
 
-Install the [MagicPython](https://marketplace.visualstudio.com/items?itemName=MagicStack.MagicPython) extension for Python syntax highlighting of `.fld` files.
+To get Python syntax highlighting for `.fld` files, add this to your VS Code `settings.json`:
+
+```json
+"files.associations": {
+    "*.fld": "python"
+}
+```
 
 ## Contributing
 
