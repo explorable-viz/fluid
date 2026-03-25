@@ -40,41 +40,17 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         DEPLOY_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-        echo "Waiting for pages-build-deployment to start (created after $DEPLOY_TIME)..."
-        for i in $(seq 1 30); do
-          CREATED=$(gh run list --workflow=pages-build-deployment --branch=gh-pages --limit=1 --json createdAt --jq '.[0].createdAt')
-          if [[ "$CREATED" > "$DEPLOY_TIME" || "$CREATED" == "$DEPLOY_TIME" ]]; then
-            echo "Pages deployment started (created $CREATED)."
-            break
-          fi
-          if [ "$i" -eq 30 ]; then
-            echo "Error: Pages deployment did not start within 5 minutes." >&2
-            exit 1
-          fi
-          echo "Attempt $i: latest run is from $CREATED, waiting..."
-          sleep 10
-        done
+        LATEST='gh run list --workflow=pages-build-deployment --branch=gh-pages --limit=1'
 
-        echo "Waiting for pages-build-deployment to complete..."
-        for i in $(seq 1 60); do
-          RUN=$(gh run list --workflow=pages-build-deployment --branch=gh-pages --limit=1 --json status,conclusion --jq '.[0]')
-          STATUS=$(echo "$RUN" | jq -r '.status')
-          if [ "$STATUS" = "completed" ]; then
-            CONCLUSION=$(echo "$RUN" | jq -r '.conclusion')
-            echo "Pages deployment completed: $CONCLUSION"
-            if [ "$CONCLUSION" != "success" ]; then
-              echo "Pages deployment failed!" >&2
-              exit 1
-            fi
-            break
-          fi
-          if [ "$i" -eq 60 ]; then
-            echo "Error: Pages deployment did not complete within 10 minutes." >&2
-            exit 1
-          fi
-          echo "Attempt $i: status=$STATUS"
-          sleep 10
-        done
+        ./script/util/poll.sh "Waiting for Pages deployment to start..." 30 \
+          "[[ \"\$($LATEST --json createdAt --jq '.[0].createdAt')\" > \"$DEPLOY_TIME\" ]]"
+
+        ./script/util/poll.sh "Waiting for Pages deployment to complete..." 60 \
+          "[ \"\$($LATEST --json status --jq '.[0].status')\" = \"completed\" ]"
+
+        CONCLUSION=$($LATEST --json conclusion --jq '.[0].conclusion')
+        echo "Pages deployment: $CONCLUSION"
+        [ "$CONCLUSION" = "success" ] || { echo "Pages deployment failed!" >&2; exit 1; }
     - name: test deployed website
       run: |
         ./script/util/install-puppeteer.sh
