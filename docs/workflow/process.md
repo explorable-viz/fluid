@@ -20,7 +20,7 @@ issue branch → milestone branch → develop → staging → release
 - **Milestone branches** are named to match the milestone (e.g. `fluid-0.12`). They serve as integration branches for related work.
 - **Issue branches** are named `<issue-number>-<short-description>` and branch from the relevant milestone branch.
 - **PRs from issue branches to milestone branches**: Claude can merge directly once CI passes (no human approval required).
-- **PRs from milestone branches to develop**: human decides when to merge. A [milestone report](milestone-report.md) is generated at this point.
+- **PRs from milestone branches to develop**: a developer decides when to merge. A [milestone report](milestone-report.md) is generated at this point.
 
 ## Deployment
 
@@ -28,7 +28,7 @@ issue branch → milestone branch → develop → staging → release
 develop → staging → release
 ```
 
-Deployments are managed manually by the human.
+Deployments are managed manually by a developer.
 
 1. **Merge `develop` to `staging`**: triggers the deploy workflow, which builds and publishes the `fluid-org` SvelteKit site to GitHub Pages (f.luid.org).
 2. **Test the live site.**
@@ -39,7 +39,7 @@ Deployments are managed manually by the human.
 
 When all issues in a milestone are either done, paused, or awaiting decision, Claude should populate it with 3-8 new issues (depending on anticipated difficulty). Candidates are chosen by:
 
-1. **Planned issues first**: issues with status "Planned" but not yet assigned to a milestone have already been prioritised by the human and are strong candidates.
+1. **Planned issues first**: issues with status "Planned" but not yet assigned to a milestone have already been prioritised by a developer and are strong candidates.
 2. **Proposed issues**: for remaining slots, select from "Proposed" issues, preferring low-hanging fruit — low risk, thematic fit with the milestone, alignment with apparent priorities, and availability of test coverage.
 
 Adding an issue to a milestone bumps it from Proposed to Planned.
@@ -65,7 +65,7 @@ When the best way to proceed isn't obvious, Claude should not guess — instead:
 2. Move the issue to "Awaiting Decision" status in the GitHub Project board.
 3. Stop work on that issue and move to other work if available.
 
-The comment should be self-contained so the human can make the decision asynchronously.
+The comment should be self-contained so a developer can make the decision asynchronously.
 
 **Destructive or organisation-wide changes require explicit human approval before execution.** This includes:
 - Modifying project board field definitions (adding/removing/renaming status options)
