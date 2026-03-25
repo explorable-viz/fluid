@@ -1,4 +1,0 @@
-let range1 (m, n) = [m..n];
-    range2 ((m1, n1), (m2, n2)) =
-      [ (i1, i2) | i1 <- range1 (m1, m2), i2 <- range1 (n1, n2)]
-in range2 ((0, 0), (1, 1))

@@ -15,57 +15,23 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
 
-  deploy-npm:
+  deploy-fluid-org:
     runs-on: ubuntu-22.04
     needs: build
-    if: false # disable for now
-    # if: github.ref == 'refs/heads/develop'
-    permissions:
-      contents: read
-      id-token: write
+    if: github.ref == 'refs/heads/staging'
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
         node-version: 22
-        registry-url: 'https://registry.npmjs.org'
-    - run: |
-        yarn install
-        yarn build
-        yarn npm-publish
-      env:
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  deploy-fluid-org:
-    runs-on: ubuntu-22.04
-    needs: build
-    if: github.ref == 'refs/heads/release'
-    steps:
-    - uses: actions/checkout@v4
     - name: build
       run: |
         yarn install
-        yarn build
+        yarn workspace @explorable-viz/fluid build
+        yarn workspace fluid-org build
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/fluid-org
-        keep_files: false
-
-  deploy-esop2025-artifact:
-    runs-on: ubuntu-22.04
-    needs: build
-    if: github.ref == 'refs/heads/develop' && github.repository == 'rolyp/esop25-web-artifact'
-    steps:
-    - uses: actions/checkout@v4
-    - name: build
-      run: |
-        yarn install
-        yarn build-esop2025-artifact
-    - name: gh-pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/esop2025-artifact
+        publish_dir: website/fluid-org/build
         keep_files: false

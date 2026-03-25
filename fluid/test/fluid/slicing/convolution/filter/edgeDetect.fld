@@ -1,0 +1,8 @@
+def filter:
+  def edgeDetect: [
+      [0, 1, 0],
+      [1, -4, 1],
+      [0, 1, 0]
+    ]
+
+  [| nth2(i, j, edgeDetect) for (i, j) in (3, 3) |]

@@ -1,0 +1,31 @@
+def path: "../../dataset/TS/inputdata_TS_12/v20230301/WaterCyclePanels/"
+def hydroData: load_json(path ++ "Hydro_vars_change_20210201_derived_extra_raw.json")
+
+# extract from data set instead?
+def models:
+  [
+    "HadGEM3-GC31-MM_ssp585",
+    "EC-Earth3-Veg_ssp585",
+    "ACCESS-CM2_ssp585",
+    "HadGEM3-GC31-LL_ssp585",
+    "CNRM-CM6-1-HR_ssp585",
+    "CESM2-WACCM_ssp585",
+    "IPSL-CM6A-LR_ssp585",
+    "CIESM_ssp585",
+    "CanESM5_ssp585",
+    "CanESM5-CanOE_ssp585",
+    "EC-Earth3_ssp585",
+    "UKESM1-0-LL_ssp585",
+    "KACE-1-0-G_ssp585",
+    "CNRM-CM6-1_ssp585",
+    "CESM2_ssp585"
+  ]
+
+def precip(ensemble_data):
+  mean([ ensemble_data[ model ] for model in models ])
+
+def hydroData_agg: {
+  pr: {
+    std: { extra_annual: dict_map(precip, hydroData.pr.std.extra_annual.ens) }
+  }
+}

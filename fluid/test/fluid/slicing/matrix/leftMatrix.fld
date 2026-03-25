@@ -1,0 +1,4 @@
+def leftMatrix:
+  def matrix: [[1, 2, 3], [4, 5, 6]]
+
+  [| nth2(i, j, matrix) for (i, j) in (2, 3) |]

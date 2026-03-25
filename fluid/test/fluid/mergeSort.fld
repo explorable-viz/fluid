@@ -1,0 +1,20 @@
+def split([]): ([], [])
+def split(x :| xs):
+  def (ys, zs): split(xs)
+  (x :| zs, ys)
+
+def merge(xs, ys):
+  match (xs, ys):
+    case ([], _): ys
+    case (x :| xs_, []): xs
+    case (x :| xs_, y :| ys_):
+      if x < y: x :| merge(xs_, ys)
+      else: y :| merge(xs, ys_)
+
+def mergesort(xs):
+  if length(xs) < 2: xs
+  else:
+    def (ys, zs): split(xs)
+    merge(mergesort(ys), mergesort(zs))
+
+mergesort([3, 1, 2])

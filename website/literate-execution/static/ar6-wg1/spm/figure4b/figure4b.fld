@@ -1,0 +1,59 @@
+import lib.stats
+import figure4b_data
+
+def stackedBarHeight(stackedBar):
+  sum([segment.z for segment in stackedBar.segments])
+
+def get(x, BarChart(record)):
+  from_some(find_with_key("x", x, record.stackedBars))
+
+def mkBarChart(scenName, table):
+  BarChart({
+    caption: "Scenario " ++ scenName,
+    size: { width: 275, height: 185 },
+    tickLabels: { x: Default, y: Default },
+    stackedBars:
+      map(lambda record: {
+        x: record.type,
+        segments: [{ y: "emissions", z: record.emissions }]
+      }, table),
+    legend: True
+  })
+
+def mkHistogram(xs, name, nbins):
+  def binWidth: (maximum(xs) - minimum(xs)) / nbins
+
+  BarChart({
+    caption: "Histogram of distribution of " ++ name,
+    size: { width: 275, height: 185 },
+    tickLabels: { x: Default, y: Default },
+    stackedBars:
+      map(lambda (data, edge): {
+        x: data,
+        segments: [{ y: "density", z: length(data) / binWidth }]
+      }, cut(xs, nbins)),
+    legend: True
+  })
+
+def getHeight(offset, bar): head(bar.segments).z + offset
+
+def changed126: map(lambda r: r.changed, ssp126preds)
+def changed245: map(lambda r: r.changed, ssp245preds)
+def ssp126Total:
+  { type: "Total", emissions: sum(map(lambda r: r.emissions, ssp126Source)) }
+def ssp126table: ssp126Total :| ssp126Source
+def ssp245table:
+  { type: "Total", emissions: find_percentile(50, changed245) } :| ssp245Source
+def ssp126: mkBarChart("SSP1-2.6", ssp126table)
+def ssp245: mkBarChart("SSP2-4.5", ssp245table)
+def totals: map(stackedBarHeight, map(get("Total"), [ssp126, ssp245]))
+def co2s: map(stackedBarHeight, map(get("CO2"), [ssp126, ssp245]))
+def nonco2: map(get("Non-CO2"), [ssp126, ssp245])
+
+MultiView([
+  ssp126,
+  ssp245,
+  f"""Within each scenario bar plot, the bars represent: {Link(totals, "total warming (°C)")} ,
+      {Link(co2s, "warming from CO2 (°C) ")} and from
+      {Link(map(stackedBarHeight, nonco2), "Non-CO2 GHG's (°C)")}."""
+])

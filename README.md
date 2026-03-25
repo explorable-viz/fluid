@@ -1,30 +1,44 @@
 ## Fluid: Language-integrated data provenance
 
-Fluid is an experimental programming language which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.
+Fluid is a pure functional programming language, with a provenance-tracking runtime and Pythonic syntax. Fluid is implemented in PureScript and runs in the browser.
 
 [![develop](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml)
 [![GitHub pages](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment)
 
-## Installation
+## End-user setup
 
 ### Software required
-- git
-- Node.js >=14.0.0
+- Node.js >=18.0.0
 - yarn >= 1.22
 
-Additionally, for Windows users only:
+### Initial configuration
 
-- [Ubuntu WSL](https://ubuntu.com/desktop/wsl)
+Building a Fluid website usually involves building a Node application:
 
-### Building
+- `yarn add @explorable-viz/fluid`
+- `yarn install` to install Node dependencies
+- `yarn install-website article` to copy example article website from `@exploreable-viz/fluid`
+- Add `dist/` and `website/` folders to `.gitignore` 
 
-- Clone the repository (for Windows users, do this under the Ubuntu WSL)
+### Bundling and serving website
+- `yarn bundle-website $WEBSITE_NAME` to bundle website to `dist/$WEBSITE_NAME`
+- `npx http-serve dist/$WEBSITE_NAME -c-1` to serve website at localhost
+
+## Development setup
+
+### Additional software required
+- git
+- (Windows only) [Ubuntu WSL](https://ubuntu.com/desktop/wsl)
+
+### Initial configuration
+
+- Clone repository (for Windows users, under Ubuntu WSL)
 - Run `./script/setup/dev-setup.sh` from the top-level directory
-- Run `yarn build`
+- `yarn install` to install Node dependencies
 
 ## Use
 
-The following assumes you have already succesfully run `yarn build` (see above).
+- `yarn build` to build interpreter
 
 ### Running programs from the command line
 
@@ -41,10 +55,14 @@ Note that the path is relative and should not include the `.fld` extension, e.g.
 Success
 ```
 
-### Running the fluid.org website locally
+### Running websites locally (as part of Fluid development)
+As an example, to build and run the website `literate-execution`:
+- `yarn build` to ensure Fluid source code has been compiled (can be skipped on subsequent runs)
+- `yarn bundle-website literate-execution` (can be skipped if the website being run is `fluid-org`)
+- `yarn serve literate-execution` (you may be prompted to proceed; press `y`)
+- Open a browser to the served URL (defaults to `127.0.0.1:8080`)
 
-- `yarn serve fluid-org` (you may be prompted to proceed: type `y`).
-- Open a browser at the served URL (usually `127.0.0.1:8080`)
+Note: `yarn bundle-serve` is a convenient shorthand for `yarn bundle-website` followed by `yarn serve`
 
 ## Testing
 
@@ -57,11 +75,12 @@ After building, tests can be run from the command line via `yarn test-all`
 a browser window.
 - To observe the status of tests, click `Debug` in the browser window, and then open the JavaScript Console for your browser (e.g., via the Developer Tools).
 
-### Run Puppeteer tests for page Y of website X
+### Run Puppeteer tests for website X
 
-Rebuild with `puppeteerTests.headless` set to `false` to run in browser. Then:
 - `yarn bundle-website X`
-- `./script/test-page.sh X X.Y`
+- `yarn test-website X`
+
+Rebuild with `puppeteerTests.headless` set to `false` to run in browser.
 
 ## Development via VS Code
 

@@ -1,0 +1,1 @@
+[z for x in [5, 4, 3] def z: x]

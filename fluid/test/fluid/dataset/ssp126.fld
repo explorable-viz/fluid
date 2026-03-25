@@ -1,0 +1,2 @@
+def ssp126:
+  load_json("dataset/ssp126-2081-2100.json")

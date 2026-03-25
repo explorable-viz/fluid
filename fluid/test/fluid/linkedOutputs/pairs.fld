@@ -1,0 +1,5 @@
+import linkedOutputs.pairsData
+
+def q: 1
+
+(lambda (w, x): (w, (w, x)))(data)

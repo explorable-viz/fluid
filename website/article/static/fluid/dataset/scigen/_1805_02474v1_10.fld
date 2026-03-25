@@ -1,0 +1,2 @@
+def tableData:
+   load_json("../dataset/SciGen/1805.02474v1-10.json")

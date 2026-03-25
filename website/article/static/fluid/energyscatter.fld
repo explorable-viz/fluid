@@ -1,0 +1,27 @@
+import nonRenewables
+
+def isCountry(name, x): name == x.country
+def isYear(year, x): year == x.year
+
+def plot(year, countries):
+  def rens: filter(isYear(year), renewables)
+  def nonRens: filter(isYear(year), nonRenewables)
+
+  def plotCountry(country):
+    def rens_: filter(isCountry(country), rens)
+    def rensOut: sum(map(lambda x: x.output, rens_))
+    def rensCap: sum(map(lambda x: x.capacity, rens_))
+    def x: head(filter(isCountry(country), nonRens))
+    def nonRensCap: (x.nuclearCap + x.petrolCap + x.gasCap) + x.coalCap
+    {
+      x: rensCap / (rensCap + nonRensCap),
+      y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
+    }
+
+  map(plotCountry, countries)
+
+ScatterPlot({
+  caption: "Clean energy efficiency vs. proportion of renewable energy capacity",
+  points: plot(2018, [ "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA" ]),
+  labels: { x: "Renewables/TotalEnergyCap", y: "Clean Capacity Factor" }
+})
