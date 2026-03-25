@@ -55,7 +55,7 @@ After populating, run `./script/check-project-integrity.sh` to verify invariants
 3. **Implementation**: Work incrementally, committing after each non-trivial step.
 4. **Testing**: Run `./script/test-website-all.sh` and any other relevant tests before declaring done.
 5. **PR**: Push branch and create PR targeting the milestone branch.
-6. **Merge**: Claude merges to milestone branch once CI passes. Human merges milestone branch to develop.
+6. **Merge**: Claude merges to milestone branch once CI passes. Delete the issue branch (local and remote) after merging. A developer merges milestone branch to develop.
 
 ## Escalation
 
