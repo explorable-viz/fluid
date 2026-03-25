@@ -1,0 +1,5 @@
+def mergesort(xs):
+  if length(xs) < 2: xs
+  else:
+    def (ys, zs): split(xs)
+    merge(mergesort(ys), mergesort(zs))
