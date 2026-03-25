@@ -113,5 +113,6 @@ The `gh` CLI token needs the following scopes for full workflow automation:
 ## Pending manual tasks
 
 - [x] Re-add `project` scope (`read:project`, `project`) to the GitHub PAT — token regenerated and `gh` re-authenticated
+- [x] Enable "Automatically delete head branches" in repo settings (Settings → General)
 
 Completed tasks are recorded in [docs/reports/completed-manual-tasks.md](../reports/completed-manual-tasks.md).

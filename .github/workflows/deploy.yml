@@ -49,6 +49,4 @@ jobs:
         done
     - name: test deployed website
       run: |
-        yarn puppeteer browsers install chrome
-        yarn puppeteer browsers install firefox
-        BASE_URL="https://f.luid.org" node -e "import('./website/fluid-org/test.mjs').then(({ main }) => main()).then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })"
+        ./script/test-deployed-website.sh https://f.luid.org website/fluid-org
