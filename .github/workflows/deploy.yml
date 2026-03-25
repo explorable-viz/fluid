@@ -39,7 +39,18 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        ./script/util/wait-for-pages-deploy.sh "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        DEPLOY_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        LATEST='gh run list --workflow=pages-build-deployment --branch=gh-pages --limit=1'
+
+        ./script/util/poll.sh "Waiting for Pages deployment to start..." 30 \
+          "[[ \"\$($LATEST --json createdAt --jq '.[0].createdAt')\" > \"$DEPLOY_TIME\" ]]"
+
+        ./script/util/poll.sh "Waiting for Pages deployment to complete..." 60 \
+          "[ \"\$($LATEST --json status --jq '.[0].status')\" = \"completed\" ]"
+
+        CONCLUSION=$($LATEST --json conclusion --jq '.[0].conclusion')
+        echo "Pages deployment: $CONCLUSION"
+        [ "$CONCLUSION" = "success" ] || { echo "Pages deployment failed!" >&2; exit 1; }
     - name: test deployed website
       run: |
         ./script/util/install-puppeteer.sh
