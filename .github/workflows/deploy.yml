@@ -18,7 +18,7 @@ jobs:
   deploy-fluid-org:
     runs-on: ubuntu-22.04
     needs: build
-    if: github.ref == 'refs/heads/release'
+    if: github.ref == 'refs/heads/staging'
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
