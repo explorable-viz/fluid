@@ -57,6 +57,8 @@ After populating, run `./script/check-project-integrity.sh` to verify invariants
 5. **PR**: Push branch and create PR targeting the milestone branch.
 6. **Merge**: Claude merges to milestone branch once CI passes. Delete the issue branch (local and remote) after merging. A developer merges milestone branch to develop.
 
+Minor documentation, process changes, and trivial fixes can be committed directly to the current milestone branch without a separate issue branch or PR.
+
 ## Escalation
 
 When the best way to proceed isn't obvious, Claude should not guess — instead:
