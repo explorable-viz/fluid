@@ -14,13 +14,26 @@ All issues belong to a milestone. Milestones are named `<repo> <major>.<minor>` 
 **Branch structure:**
 
 ```
-issue branch → milestone branch → develop
+issue branch → milestone branch → develop → staging → release
 ```
 
 - **Milestone branches** are named to match the milestone (e.g. `fluid-0.12`). They serve as integration branches for related work.
 - **Issue branches** are named `<issue-number>-<short-description>` and branch from the relevant milestone branch.
 - **PRs from issue branches to milestone branches**: Claude can merge directly once CI passes (no human approval required).
 - **PRs from milestone branches to develop**: human decides when to merge. A [milestone report](milestone-report.md) is generated at this point.
+
+## Deployment
+
+```
+develop → staging → release
+```
+
+Deployments are managed manually by the human.
+
+1. **Merge `develop` to `staging`**: triggers the deploy workflow, which builds and publishes the `fluid-org` SvelteKit site to GitHub Pages (f.luid.org).
+2. **Test the live site.**
+3. **If good**: merge `staging` to `release`. `release` always reflects the last-known-good deployment.
+4. **If broken**: reset `staging` to `release` to roll back.
 
 ## Milestone population
 
