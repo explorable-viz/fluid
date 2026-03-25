@@ -92,8 +92,10 @@ async function browserTests(url, browserName, tests) {
    await browser.close()
 }
 
+const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:8080"
+
 export async function testURL(suffix, tests) {
-   const url = `http://127.0.0.1:8080/${suffix}`
+   const url = `${BASE_URL}/${suffix}`
    await browserTests(url, "chrome", tests)
    await browserTests(url, "firefox", tests)
 }
