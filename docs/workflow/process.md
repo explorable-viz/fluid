@@ -7,6 +7,8 @@ After every non-trivial step, Claude must pause, briefly review what was done, a
 - The human can intervene or redirect at any point
 - Progress is never lost to a context window limit or interrupted session
 
+When implementing a new feature, always look for a consolidation or refactoring opportunity that allows it to be built from existing behaviours, rather than reinventing the wheel.
+
 ## Branching
 
 All issues belong to a milestone. Milestones are named `<repo> <major>.<minor>` (e.g. `fluid 0.12`).

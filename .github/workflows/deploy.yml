@@ -35,18 +35,35 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: website/fluid-org/build
         keep_files: false
-    - name: wait for GitHub Pages
+    - name: wait for GitHub Pages deployment
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "Waiting for GitHub Pages to rebuild..."
-        sleep 30
-        for i in $(seq 1 30); do
-          if curl -sf https://f.luid.org/ > /dev/null 2>&1; then
-            echo "Site is live."
-            break
+        DEPLOY_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        echo "Waiting for pages-build-deployment (created after $DEPLOY_TIME)..."
+        sleep 15
+        for i in $(seq 1 60); do
+          RUN=$(gh run list --workflow=pages-build-deployment --branch=gh-pages --limit=1 --json status,conclusion,createdAt --jq '.[0]')
+          CREATED=$(echo "$RUN" | jq -r '.createdAt')
+          STATUS=$(echo "$RUN" | jq -r '.status')
+          if [[ "$CREATED" > "$DEPLOY_TIME" || "$CREATED" == "$DEPLOY_TIME" ]]; then
+            if [ "$STATUS" = "completed" ]; then
+              CONCLUSION=$(echo "$RUN" | jq -r '.conclusion')
+              echo "Pages deployment completed: $CONCLUSION"
+              if [ "$CONCLUSION" != "success" ]; then
+                echo "Pages deployment failed!" >&2
+                exit 1
+              fi
+              break
+            fi
+            echo "Attempt $i: status=$STATUS (run created $CREATED)"
+          else
+            echo "Attempt $i: waiting for new run (latest is from $CREATED)"
           fi
-          echo "Attempt $i: not ready yet..."
           sleep 10
         done
     - name: test deployed website
       run: |
-        ./script/test-deployed-website.sh https://f.luid.org website/fluid-org
+        ./script/util/install-puppeteer.sh
+        cd website/fluid-org
+        ../../script/util/run-website-tests.sh https://f.luid.org
