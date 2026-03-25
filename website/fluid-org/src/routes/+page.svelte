@@ -24,7 +24,7 @@
 			<h4>Pattern matching and destructuring</h4>
 			<CodeMirror name="pattern-matching" src="fluid/pattern-matching.fld" details={false} />
 
-			<h4>List comprehensions</h4>
+			<h4>List comprehensions and lambdas</h4>
 			<CodeMirror name="list-comprehensions" src="fluid/list-comprehensions.fld" details={false} />
 
 			<h4>Match expressions</h4>

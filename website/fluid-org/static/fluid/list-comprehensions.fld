@@ -1,1 +1,2 @@
-[x * x for x in range(1, 6) if x % 2 == 0]
+def squares: [x * x for x in range(1, 6)]
+def evens: filter(lambda x: x % 2 == 0, squares)
