@@ -90,7 +90,9 @@ Claude must describe the intended change and its blast radius, and wait for appr
 
 ## GitHub conventions
 
-- **Labels**: Use existing labels (`implementation`, `testing`, `setup`, `documentation`). Add `claude-automated` for issues where Claude drove the implementation.
+- **Issue titles**: Use a noun phrase describing the goal (e.g. "Python-compatible names for standard library functions"), not an imperative (e.g. "Rename standard library functions").
+- **New issues**: Must be added to the [Fluid project board](https://github.com/orgs/explorable-viz/projects/1) and assigned a status of Proposed or Planned.
+- **Labels**: Use existing labels (`implementation`, `testing`, `setup`, `documentation`).
 - **Milestones**: All issues must belong to a milestone. Don't reassign without human approval.
 - **Issue bodies**: Keep checklist items updated as work progresses.
 
@@ -110,6 +112,6 @@ The `gh` CLI token needs the following scopes for full workflow automation:
 
 ## Pending manual tasks
 
-None.
+- [x] Re-add `project` scope (`read:project`, `project`) to the GitHub PAT — token regenerated and `gh` re-authenticated
 
 Completed tasks are recorded in [docs/reports/completed-manual-tasks.md](../reports/completed-manual-tasks.md).
