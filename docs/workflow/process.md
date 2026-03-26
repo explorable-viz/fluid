@@ -25,6 +25,7 @@
 
 ## Principles
 
+- Write concisely: omit articles (a, an, the) except when needed for clarity. Applies to documentation, issue titles, commit messages, and comments.
 - Pause, review, and commit after every non-trivial step.
 - Look for consolidation/refactoring opportunities — build from existing behaviours rather than reinventing.
 - Minor documentation, process changes, and trivial fixes can be committed directly to current milestone branch.
