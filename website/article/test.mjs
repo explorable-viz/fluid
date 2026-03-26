@@ -1,7 +1,7 @@
 import {
    checkAttribute, checkAttributeContains, checkComputedStyle, checkTextContent,
    click, clickToggle, testURL, waitFor
-} from "../../script/webtest-lib.mjs"
+} from "@explorable-viz/fluid/script/webtest-lib.mjs"
 
 export const main = async () => {
    await testURL("convolution", [

@@ -4,14 +4,11 @@ set -e
 
 WEBSITE_DIR="$PWD"
 WEBSITE="$(basename "$WEBSITE_DIR")"
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "Testing website: ${WEBSITE}"
 
-echo "Installing Puppeteer browsers..."
-cd "$REPO_ROOT/fluid"
-yarn puppeteer browsers install chrome
-yarn puppeteer browsers install firefox
+"$SCRIPT_DIR/util/install-puppeteer.sh"
 
 cd "$WEBSITE_DIR"
 
@@ -59,7 +56,4 @@ for i in $(seq 1 30); do
    sleep 1
 done
 
-echo "Running tests..."
-node -e "import('./test.mjs').then(({ main }) => main()).then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })"
-
-echo "Tests passed."
+"$SCRIPT_DIR/util/run-website-tests.sh"

@@ -35,3 +35,8 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: website/fluid-org/build
         keep_files: false
+    - name: test deployed website
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        ./fluid/script/util/test-deployed-website.sh https://f.luid.org website/fluid-org

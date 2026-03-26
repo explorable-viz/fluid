@@ -12,10 +12,11 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-		"test": "../../script/test-website.sh"
+		"test": "../../fluid/script/test-website.sh"
 	},
 	"dependencies": {
-		"@explorable-viz/fluid": "workspace:*"
+		"@explorable-viz/fluid": "workspace:*",
+		"@fontsource/fira-code": "^5.2.7"
 	},
 	"devDependencies": {
 		"@codemirror/commands": "^6.8.1",
