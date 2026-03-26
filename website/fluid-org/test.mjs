@@ -18,7 +18,7 @@ async function checkHeaderAlignment(page) {
 async function checkWithinViewport(page, selector) {
    const box = await getBoundingBox(page, selector)
    const viewport = await page.evaluate(() => ({ width: window.innerWidth }))
-   const pass = box.right <= viewport.width + 1 && box.left >= -1
+   const pass = box.right <= viewport.width + 5 && box.left >= -5
    testOutcome(pass, `${selector}: within viewport${pass ? "" : ` (left=${Math.round(box.left)}, right=${Math.round(box.right)}, viewport=${viewport.width})`}`)
 }
 

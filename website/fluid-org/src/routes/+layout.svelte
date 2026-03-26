@@ -92,6 +92,8 @@
 			display: flex;
 			flex-direction: column;
 			padding: 7px 1em;
+			box-sizing: border-box;
+			overflow: hidden;
 		}
 
 		.header-logo {
