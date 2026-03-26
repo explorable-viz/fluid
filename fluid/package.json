@@ -19,12 +19,13 @@
   "files": [
     "dist/fluid/shared",
     "dist/fluid/fluid/lib",
-    "web/lib"
+    "web/lib",
+    "website/article"
   ],
   "scripts": {
     "build": "./script/build.sh",
     "build-prod": "BUILD_ENV=prod ./script/build.sh",
-    "build-publish": "yarn build-prod && yarn publish",
+    "build-publish": "yarn build-prod && ./script/stage-website.sh article && yarn publish",
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
     "fluid": "node ./dist/fluid/shared/fluid.mjs",
@@ -68,7 +69,10 @@
   "engines": {
     "node": ">=22"
   },
-  "bin": "./dist/fluid/shared/fluid.mjs",
+  "bin": {
+    "fluid": "./dist/fluid/shared/fluid.mjs",
+    "install-website": "./script/install-website.sh"
+  },
   "svelte": "./web/lib/index.js",
   "exports": {
     ".": "./web/lib/index.js"
