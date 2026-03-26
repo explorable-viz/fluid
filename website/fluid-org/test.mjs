@@ -1,24 +1,27 @@
 import {
    checkAlignment, checkWidthApprox,
-   testURL, waitFor
+   testMobile, testURL, waitFor
 } from "@explorable-viz/fluid/script/webtest-lib.mjs"
 
-const isMobile = !!process.env.MOBILE
+async function checkHeaderAlignment(page) {
+   await waitFor(page, ".site-header")
+   await waitFor(page, ".grid-container")
+   await checkAlignment(page, ".header-nav", ".grid-container .flex-left-align", "left")
+}
 
 export const main = async () => {
+   // Desktop tests
    await testURL("", [
       async page => {
-         await waitFor(page, ".site-header")
-         await waitFor(page, ".grid-container")
+         await checkHeaderAlignment(page)
          await waitFor(page, "h3.title")
-
-         // Header nav left edge aligns with text content left edge
-         await checkAlignment(page, ".header-nav", ".grid-container .flex-left-align", "left")
-
-         if (!isMobile) {
-            await checkWidthApprox(page, ".grid-container .flex-left-align", 800)
-         }
+         await checkWidthApprox(page, ".grid-container .flex-left-align", 800)
       }
+   ])
+
+   // Mobile tests
+   await testMobile("", [
+      async page => await checkHeaderAlignment(page)
    ])
 
    await testURL("faq", [

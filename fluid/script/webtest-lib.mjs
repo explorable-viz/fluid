@@ -105,10 +105,12 @@ export async function clickToggle(page) {
    await waitFor(page, "#grid:not(.data-pane-hidden)")
 }
 
-async function browserTests(url, browserName, tests) {
-   log(`browserTests: ${browserName}`)
+async function browserTests(url, browserName, viewport, tests) {
+   const label = viewport === MOBILE ? "mobile" : "desktop"
+   log(`browserTests: ${browserName} (${label})`)
    const browser = await launchBrowser(browserName)
    const page = await browser.newPage()
+   await page.setViewport(viewport)
    for (const test of tests) {
       await page.goto(url)
       await test(page)
@@ -120,6 +122,12 @@ const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:8080"
 
 export async function testURL(suffix, tests) {
    const url = `${BASE_URL}/${suffix}`
-   await browserTests(url, "chrome", tests)
-   await browserTests(url, "firefox", tests)
+   await browserTests(url, "chrome", VIEWPORT, tests)
+   await browserTests(url, "firefox", VIEWPORT, tests)
+}
+
+export async function testMobile(suffix, tests) {
+   const url = `${BASE_URL}/${suffix}`
+   await browserTests(url, "chrome", MOBILE, tests)
+   await browserTests(url, "firefox", MOBILE, tests)
 }
