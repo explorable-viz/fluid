@@ -20,9 +20,11 @@
     "dist/fluid/shared",
     "dist/fluid/fluid/lib",
     "output-es",
+    "script/test-website.sh",
+    "script/util",
+    "script/webtest-lib.mjs",
     "web/lib",
-    "website/article",
-    "script/webtest-lib.mjs"
+    "website/article"
   ],
   "scripts": {
     "build": "./script/build.sh",
@@ -77,6 +79,7 @@
   },
   "svelte": "./web/lib/index.js",
   "exports": {
-    ".": "./web/lib/index.js"
+    ".": "./web/lib/index.js",
+    "./script/*": "./script/*"
   }
 }

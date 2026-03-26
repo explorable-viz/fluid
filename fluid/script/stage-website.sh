@@ -26,8 +26,4 @@ cp -r fluid/lib "$DEST/static/fluid/lib"
 rm -f "$DEST/src/lib/assets/css/styles.css"
 cp ../website/src/lib/assets/css/styles.css "$DEST/src/lib/assets/css/styles.css"
 
-# Copy webtest-lib.mjs for consumer testing
-mkdir -p script
-cp ../script/webtest-lib.mjs script/webtest-lib.mjs
-
 echo "Staged $WEBSITE for npm packaging."
