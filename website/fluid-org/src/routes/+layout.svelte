@@ -97,6 +97,13 @@
 		.header-logo {
 			align-items: flex-end;
 			padding-right: 0;
+			max-width: 100%;
+			overflow: hidden;
+		}
+
+		.header-logo :global(img) {
+			max-width: 100%;
+			height: auto;
 		}
 
 		.header-divider {
