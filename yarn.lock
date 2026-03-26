@@ -614,6 +614,7 @@ __metadata:
     util: "npm:^0.12.5"
   bin:
     fluid: ./dist/fluid/shared/fluid.mjs
+    install-website: ./script/install-website.sh
   languageName: unknown
   linkType: soft
 
