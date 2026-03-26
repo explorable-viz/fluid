@@ -16,12 +16,13 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div class="header-grid-container">
-	<div class="flex-right-align right-border">
+<div class="site-header">
+	<div class="header-logo">
 		<img class="fluid-logo" src={FluidLogo} width="150px" alt="Fluid logo" />
 		<p class="fluid-subtitle">pure • pythonic • provenance-aware</p>
 	</div>
-	<div class="flex-left-align" style="justify-content: center; margin-left: 5px;">
+	<div class="header-divider"></div>
+	<div class="header-nav">
 		<nav>
 			<ul>
 				{#each headerLinks as { url, title }, index (index)}
@@ -29,13 +30,13 @@
 				{/each}
 			</ul>
 		</nav>
-		<div></div>
 	</div>
 </div>
 
 {@render children()}
 
-<div class="footer-grid-container">
+<div class="site-footer">
+	<div></div>
 	<div></div>
 	<div class="flex-left-align">
 		<p>© Fluid Contributors 2019-2026</p>
@@ -52,27 +53,57 @@
 		margin-top: 0;
 		font-size: 12pt;
 	}
-	.header-grid-container {
+
+	.site-header, .site-footer {
 		display: grid;
 		background-color: #f0f0f0;
 		width: 100%;
-		grid-template-columns: auto 1fr;
+		grid-template-columns: auto var(--toggle-button-width) 800px;
+		justify-content: center;
 		padding-top: 7px;
 		padding-bottom: 7px;
 	}
-	.footer-grid-container {
-		display: grid;
-		background-color: #f0f0f0;
-		width: 100%;
-		grid-template-columns: auto 1fr;
+
+	.site-footer {
 		margin-top: 10px;
 	}
 
-	@media (max-width: 600px) {
-		.header-grid-container,
-		.footer-grid-container {
+	.header-logo {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		justify-content: center;
+		padding-right: 10px;
+	}
+
+	.header-divider {
+		border-right: 1px solid #ccc;
+	}
+
+	.header-nav {
+		display: flex;
+		align-items: center;
+		padding-left: 10px;
+	}
+
+	@media (max-width: 900px) {
+		.site-header, .site-footer {
 			grid-template-columns: 1fr;
 			text-align: center;
+		}
+
+		.header-logo {
+			align-items: center;
+			padding-right: 0;
+		}
+
+		.header-divider {
+			display: none;
+		}
+
+		.header-nav {
+			justify-content: center;
+			padding-left: 0;
 		}
 	}
 </style>
