@@ -110,11 +110,13 @@ Some workflow capabilities depend on GitHub settings (token scopes, project boar
 2. Note the specific setting change needed and why.
 3. Continue with available work.
 
-## Token permissions
+## Token setup
 
-The `gh` CLI token needs the following scopes for full workflow automation:
-- `repo` scope (includes issues, PRs, comments), or for fine-grained tokens: **Issues: Read and write**
-- `project` scope — needed to update project board statuses (e.g. moving issues to "Awaiting Decision")
+Each repo has a `.gh-token` file (gitignored) containing a fine-grained PAT for that org. Claude Code loads it via `env.GH_TOKEN` in `.claude/settings.local.json` (also gitignored). This avoids keyring conflicts when working across multiple GitHub organisations.
+
+The token needs:
+- `repo` scope (issues, PRs, comments), or for fine-grained tokens: **Pull requests, Issues: Read and write**
+- `project` scope — for project board status updates
 
 ## Pending manual tasks
 
