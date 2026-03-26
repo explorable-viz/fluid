@@ -18,9 +18,16 @@ if [ -e "$DEST" ]; then
    exit 1
 fi
 
-echo "Installing $WEBSITE from $SRC..."
+# Get the installed version of @explorable-viz/fluid
+VERSION=$(node -e "console.log(require('./$NPM_ROOT/package.json').version)")
+
+echo "Installing $WEBSITE from @explorable-viz/fluid@$VERSION..."
 mkdir -p "$(dirname "$DEST")"
 cp -r "$SRC" "$DEST"
+
+# Rewrite workspace:* dependency to the actual installed version
+sed -i.bak "s/\"workspace:\*\"/\"$VERSION\"/" "$DEST/package.json"
+rm -f "$DEST/package.json.bak"
 
 # Recreate symlinks pointing into node_modules
 rm -rf "$DEST/static/fluid/lib"
