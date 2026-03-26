@@ -107,6 +107,14 @@
 			padding-left: 0;
 		}
 
+		.header-nav :global(nav ul li) {
+			float: none;
+		}
+
+		.header-nav :global(nav ul li:not(:last-child)::after) {
+			display: none;
+		}
+
 		.site-header > div:last-child,
 		.site-footer > div:last-child {
 			display: none;
