@@ -25,8 +25,11 @@ echo "Installing $WEBSITE from @explorable-viz/fluid@$VERSION..."
 mkdir -p "$(dirname "$DEST")"
 cp -r "$SRC" "$DEST"
 
-# Rewrite workspace:* dependency to the actual installed version
-sed -i.bak "s/\"workspace:\*\"/\"$VERSION\"/" "$DEST/package.json"
+# Rewrite monorepo-relative paths for standalone use
+sed -i.bak \
+  -e "s/\"workspace:\*\"/\"$VERSION\"/" \
+  -e "s|../../fluid/script/|../../$NPM_ROOT/script/|" \
+  "$DEST/package.json"
 rm -f "$DEST/package.json.bak"
 
 # Recreate symlinks pointing into node_modules
