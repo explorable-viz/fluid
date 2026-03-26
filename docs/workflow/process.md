@@ -37,6 +37,10 @@ Deployments are managed manually by a developer.
 3. **If good**: merge `staging` to `release`. `release` always reflects the last-known-good deployment.
 4. **If broken**: reset `staging` to `release` to roll back.
 
+## NPM publishing
+
+The npm package version tracks the milestone version (e.g. milestone `fluid 0.12` → version `0.12.x`). `yarn publish` from the `fluid/` directory prompts for the new version.
+
 ## Milestone population
 
 When all issues in a milestone are either done, paused, or awaiting decision, Claude should populate it with 3-8 new issues (depending on anticipated difficulty). Candidates are chosen by:
