@@ -1,4 +1,4 @@
-import { testURL, waitFor, checkTextContent } from "../../script/webtest-lib.mjs"
+import { testURL, waitFor, checkTextContent } from "@explorable-viz/fluid/script/webtest-lib.mjs"
 
 export const main = async () => {
    await testURL("", [

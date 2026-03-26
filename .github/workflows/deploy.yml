@@ -11,6 +11,9 @@ on:
     - '**.md'
   workflow_dispatch:
 
+env:
+  FLUID_SCRIPT: fluid/script
+
 jobs:
   build:
     uses: ./.github/workflows/build.yml
@@ -42,10 +45,10 @@ jobs:
         DEPLOY_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
         LATEST='gh run list --workflow=pages-build-deployment --branch=gh-pages --limit=1'
 
-        ./script/util/poll.sh "Waiting for Pages deployment to start..." 30 \
+        ./$FLUID_SCRIPT/util/poll.sh "Waiting for Pages deployment to start..." 30 \
           "[[ \"\$($LATEST --json createdAt --jq '.[0].createdAt')\" > \"$DEPLOY_TIME\" ]]"
 
-        ./script/util/poll.sh "Waiting for Pages deployment to complete..." 60 \
+        ./$FLUID_SCRIPT/util/poll.sh "Waiting for Pages deployment to complete..." 60 \
           "[ \"\$($LATEST --json status --jq '.[0].status')\" = \"completed\" ]"
 
         CONCLUSION=$($LATEST --json conclusion --jq '.[0].conclusion')
@@ -53,6 +56,6 @@ jobs:
         [ "$CONCLUSION" = "success" ] || { echo "Pages deployment failed!" >&2; exit 1; }
     - name: test deployed website
       run: |
-        ./script/util/install-puppeteer.sh
+        ./$FLUID_SCRIPT/util/install-puppeteer.sh
         cd website/fluid-org
-        ../../script/util/run-website-tests.sh https://f.luid.org
+        $FLUID_SCRIPT/util/run-website-tests.sh https://f.luid.org
