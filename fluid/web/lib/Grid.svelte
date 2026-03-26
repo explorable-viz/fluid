@@ -3,7 +3,7 @@ let {
 		children,
 		showDataPane,
 		doubleSize = false,
-      textPaneWidth = doubleSize ? `600px` : '800px'
+      textPaneWidth = doubleSize ? `600px` : 'var(--text-pane-width)'
 	} = $props();
 </script>
 
