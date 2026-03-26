@@ -1,6 +1,6 @@
 {
   "name": "@explorable-viz/fluid",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "A functional programming language which integrates a bidirectional dynamic analysis, connecting outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.",
   "repository": {
     "type": "git",
@@ -25,7 +25,7 @@
   "scripts": {
     "build": "./script/build.sh",
     "build-prod": "BUILD_ENV=prod ./script/build.sh",
-    "build-publish": "yarn build-prod && ./script/stage-website.sh article && yarn publish",
+    "build-publish": "yarn build-prod && ./script/stage-website.sh article && yarn npm publish --access public",
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
     "fluid": "node ./dist/fluid/shared/fluid.mjs",
