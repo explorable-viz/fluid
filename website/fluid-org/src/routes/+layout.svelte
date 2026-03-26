@@ -89,12 +89,13 @@
 
 	@media (max-width: 900px) {
 		.site-header, .site-footer {
-			grid-template-columns: 1fr;
-			text-align: center;
+			display: flex;
+			flex-direction: column;
+			padding: 7px 1em;
 		}
 
 		.header-logo {
-			align-items: center;
+			align-items: flex-start;
 			padding-right: 0;
 		}
 
@@ -103,7 +104,6 @@
 		}
 
 		.header-nav {
-			justify-content: center;
 			padding-left: 0;
 		}
 
