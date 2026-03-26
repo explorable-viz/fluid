@@ -73,6 +73,28 @@ export async function checkComputedStyle(page, selector, property, expected) {
    testOutcome(pass, `${selector}: ${property} == "${expected}"${pass ? "" : ` (got "${value}")`}`)
 }
 
+export async function getBoundingBox(page, selector) {
+   return page.$eval(selector, el => {
+      const r = el.getBoundingClientRect()
+      return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height }
+   })
+}
+
+export async function checkAlignment(page, sel1, sel2, edge) {
+   const box1 = await getBoundingBox(page, sel1)
+   const box2 = await getBoundingBox(page, sel2)
+   const val1 = Math.round(box1[edge])
+   const val2 = Math.round(box2[edge])
+   const pass = Math.abs(val1 - val2) <= 1
+   testOutcome(pass, `${sel1} and ${sel2}: ${edge} aligned${pass ? "" : ` (${val1} vs ${val2})`}`)
+}
+
+export async function checkWidthApprox(page, selector, expected, tolerance = 5) {
+   const box = await getBoundingBox(page, selector)
+   const pass = Math.abs(box.width - expected) <= tolerance
+   testOutcome(pass, `${selector}: width ≈ ${expected}${pass ? "" : ` (got ${Math.round(box.width)})`}`)
+}
+
 export async function clickToggle(page) {
    await waitFor(page, "#grid.data-pane-hidden")
    const toggle = "button[title='Show data pane']"
