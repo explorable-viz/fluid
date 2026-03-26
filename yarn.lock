@@ -624,6 +624,13 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@fontsource/fira-code@npm:^5.2.7":
+  version: 5.2.7
+  resolution: "@fontsource/fira-code@npm:5.2.7"
+  checksum: 10c0/389d1356def9018da529bf6055af9d41d6f6ae9ee2ff804a9b0e3bd2f8cf2754967e2b4a25e267d21215278849fb13711b9fe9573c051a1e191ad737e55f125f
+  languageName: node
+  linkType: hard
+
 "@fontsource/roboto@npm:^5.2.9":
   version: 5.2.9
   resolution: "@fontsource/roboto@npm:5.2.9"
@@ -1573,6 +1580,7 @@ __metadata:
     "@eslint/compat": "npm:^1.4.0"
     "@eslint/js": "npm:^9.39.1"
     "@explorable-viz/fluid": "workspace:*"
+    "@fontsource/fira-code": "npm:^5.2.7"
     "@fontsource/roboto": "npm:^5.2.9"
     "@sveltejs/adapter-static": "npm:^3.0.10"
     "@sveltejs/kit": "npm:^2.49.1"
@@ -3688,6 +3696,7 @@ __metadata:
     "@eslint/compat": "npm:^1.4.0"
     "@eslint/js": "npm:^9.39.1"
     "@explorable-viz/fluid": "workspace:*"
+    "@fontsource/fira-code": "npm:^5.2.7"
     "@fontsource/roboto": "npm:^5.2.9"
     "@sveltejs/adapter-static": "npm:^3.0.10"
     "@sveltejs/kit": "npm:^2.49.1"

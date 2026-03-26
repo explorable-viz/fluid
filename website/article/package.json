@@ -15,7 +15,8 @@
 		"test": "../../fluid/script/test-website.sh"
 	},
 	"dependencies": {
-		"@explorable-viz/fluid": "workspace:*"
+		"@explorable-viz/fluid": "workspace:*",
+		"@fontsource/fira-code": "^5.2.7"
 	},
 	"devDependencies": {
 		"@codemirror/commands": "^6.8.1",
