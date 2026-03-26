@@ -56,7 +56,7 @@
 		display: grid;
 		background-color: #f0f0f0;
 		width: 100%;
-		grid-template-columns: 30% 1fr;
+		grid-template-columns: auto 1fr;
 		padding-top: 7px;
 		padding-bottom: 7px;
 	}
@@ -64,19 +64,15 @@
 		display: grid;
 		background-color: #f0f0f0;
 		width: 100%;
-		grid-template-columns: 30% 1fr;
+		grid-template-columns: auto 1fr;
 		margin-top: 10px;
 	}
 
-	@media (max-width: 900px) {
+	@media (max-width: 600px) {
 		.header-grid-container,
 		.footer-grid-container {
 			grid-template-columns: 1fr;
 			text-align: center;
-		}
-
-		.header-grid-container :global(.right-border) {
-			border-right: none;
 		}
 	}
 </style>
