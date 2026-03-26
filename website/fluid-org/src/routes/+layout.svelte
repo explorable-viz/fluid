@@ -31,6 +31,7 @@
 			</ul>
 		</nav>
 	</div>
+	<div></div>
 </div>
 
 {@render children()}
@@ -41,6 +42,7 @@
 	<div class="flex-left-align">
 		<p>© Fluid Contributors 2019-2026</p>
 	</div>
+	<div></div>
 </div>
 
 <style>
@@ -58,8 +60,7 @@
 		display: grid;
 		background-color: #f0f0f0;
 		width: 100%;
-		grid-template-columns: auto var(--toggle-button-width) 800px;
-		justify-content: center;
+		grid-template-columns: 1fr var(--toggle-button-width) 800px 1fr;
 		padding-top: 7px;
 		padding-bottom: 7px;
 	}
@@ -104,6 +105,11 @@
 		.header-nav {
 			justify-content: center;
 			padding-left: 0;
+		}
+
+		.site-header > div:last-child,
+		.site-footer > div:last-child {
+			display: none;
 		}
 	}
 </style>
