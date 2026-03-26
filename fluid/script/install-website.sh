@@ -27,7 +27,13 @@ cp -r "$SRC" "$DEST"
 
 # Rewrite workspace:* dependency to the actual installed version
 sed -i.bak "s/\"workspace:\*\"/\"$VERSION\"/" "$DEST/package.json"
+# Remove monorepo-relative test script
+sed -i.bak "s|\"test\":.*test-website.sh\"|\"test\": \"echo 'No standalone test — run from project root'\"|" "$DEST/package.json"
 rm -f "$DEST/package.json.bak"
+
+# Rewrite webtest-lib import path for installed context
+sed -i.bak "s|../../script/webtest-lib.mjs|../../$NPM_ROOT/script/webtest-lib.mjs|" "$DEST/test.mjs"
+rm -f "$DEST/test.mjs.bak"
 
 # Recreate symlinks pointing into node_modules
 rm -rf "$DEST/static/fluid/lib"

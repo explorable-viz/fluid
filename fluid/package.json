@@ -21,7 +21,8 @@
     "dist/fluid/fluid/lib",
     "output-es",
     "web/lib",
-    "website/article"
+    "website/article",
+    "script/webtest-lib.mjs"
   ],
   "scripts": {
     "build": "./script/build.sh",
