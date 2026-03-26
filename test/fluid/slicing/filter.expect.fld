@@ -1,4 +1,0 @@
-let filter p [] = [];
-    filter p (x : xs) = let ys = filter p xs in
-                          if p x then ⸨(x : ys)⸩ else ys in
-filter ((<) ⸨5⸩) [⸨8⸩, 4, 7, 3]

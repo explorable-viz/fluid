@@ -1,0 +1,10 @@
+.ipynb_checkpoints/
+.psc*/
+.psc-ide-port
+.spago
+build/
+dist/
+output/
+output-es/
+artifact/*.tar.gz
+website/

@@ -1,0 +1,2 @@
+def tableData: load_json("../../dataset/SPM/explainable-table.json")
+def likelihoods: load_json("../../dataset/SPM/likelihoods.json")

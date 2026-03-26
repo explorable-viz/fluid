@@ -1,0 +1,14 @@
+import * as Affjax from "../Affjax/index.js";
+import {driver} from "./foreign.js";
+const request = /* #__PURE__ */ Affjax.request(driver);
+const put_ = /* #__PURE__ */ Affjax.put_(driver);
+const put = /* #__PURE__ */ Affjax.put(driver);
+const post_ = /* #__PURE__ */ Affjax.post_(driver);
+const post = /* #__PURE__ */ Affjax.post(driver);
+const patch_ = /* #__PURE__ */ Affjax.patch_(driver);
+const patch = /* #__PURE__ */ Affjax.patch(driver);
+const $$get = /* #__PURE__ */ Affjax.get(driver);
+const delete_ = /* #__PURE__ */ Affjax.delete_(driver);
+const $$delete = /* #__PURE__ */ Affjax.delete(driver);
+;
+export * from "./foreign.js";

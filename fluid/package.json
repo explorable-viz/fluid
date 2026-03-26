@@ -1,0 +1,85 @@
+{
+  "name": "@explorable-viz/fluid",
+  "version": "0.12.11",
+  "description": "A pure functional dialect of Python, based on PurePy, with a dependency-tracking runtime for creating interactive outputs linked to data.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/explorable-viz/fluid.git#release"
+  },
+  "keywords": [
+    "PureScript",
+    "JavaScript"
+  ],
+  "author": "Fluid Contributors",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/explorable-viz/fluid/issues"
+  },
+  "homepage": "https://f.luid.org",
+  "files": [
+    "dist/fluid/shared",
+    "dist/fluid/fluid/lib",
+    "output-es",
+    "script/test-website.sh",
+    "script/util",
+    "script/webtest-lib.mjs",
+    "web/lib",
+    "website/article"
+  ],
+  "scripts": {
+    "build": "./script/build.sh",
+    "build-prod": "BUILD_ENV=prod ./script/build.sh",
+    "build-publish": "yarn build-prod && ./script/stage-website.sh article && npm publish --access public",
+    "build-test": "./script/build-test.sh",
+    "bundle-fluid": "./script/bundle-fluid.sh",
+    "fluid": "node ./dist/fluid/shared/fluid.mjs",
+    "test": "./script/test.sh",
+    "test-all": "./script/test-all.sh",
+    "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
+    "tidy": "./script/tidy.sh"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/theme-one-dark": "^6.1.3",
+    "@codemirror/view": "^6.38.3",
+    "@lezer/python": "^1.1.18",
+    "benchmark": "^2.1.4",
+    "commander": "^12.1.0",
+    "d3": "^7.9.0",
+    "datetime": "^0.0.3",
+    "node-process": "^1.0.1",
+    "os": "^0.1.2",
+    "util": "^0.12.5"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.8",
+    "gh-pages": "^6.1.1",
+    "karma": "6.4.0",
+    "karma-chrome-launcher": "3.1.1",
+    "karma-mocha": "2.0.1",
+    "karma-mocha-reporter": "2.2.5",
+    "mocha": "^10.0.0",
+    "puppeteer": "23.11.1",
+    "purescript": "0.15.10",
+    "purescript-language-server": "0.16.6",
+    "purescript-psa": "0.8.2",
+    "purs-backend-es": "^1.4.2",
+    "purs-tidy": "^0.9.3",
+    "spago": "^0.21.0",
+    "typescript": "^5.5.3"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "fluid": "./dist/fluid/shared/fluid.mjs",
+    "install-website": "./script/install-website.sh"
+  },
+  "svelte": "./web/lib/index.js",
+  "exports": {
+    ".": "./web/lib/index.js",
+    "./script/*": "./script/*"
+  }
+}

@@ -1,0 +1,1 @@
+[z for x in [5, 4, 3] for y in [9, 7, 5] def z: x + y for c in [9, 7, 5]]

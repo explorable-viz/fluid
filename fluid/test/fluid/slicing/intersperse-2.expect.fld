@@ -1,0 +1,5 @@
+def intersperse([], _): []
+def intersperse([x], _): [x]
+def intersperse(x :| y :| ys, sep): ⸨x :| sep :| intersperse(⸨y :| ys⸩, sep)⸩
+
+intersperse(⸨[⸩1⸨,⸩ 2⸨,⸩ 3], 0)

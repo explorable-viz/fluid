@@ -1,0 +1,4 @@
+def ssp126Source: load_json("../../dataset/SPM/ssp126.json")
+def ssp126preds: load_json("../../dataset/SPM/ssp126preds.json")
+def ssp245Source: load_json("../../dataset/SPM/ssp245.json")
+def ssp245preds: load_json("../../dataset/SPM/ssp245preds.json")

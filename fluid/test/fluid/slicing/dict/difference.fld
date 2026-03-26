@@ -1,0 +1,4 @@
+def e: { ["a"]: 5, ["a" ++ "b"]: 6 }
+def f: { ["ab"]: 12 }
+
+dict_difference(e, f)

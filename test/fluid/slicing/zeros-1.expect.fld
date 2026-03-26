@@ -1,3 +1,0 @@
-let zeros [] = ⸨[]⸩;
-    zeros (x : xs) = ⸨(0 : zeros xs)⸩ in
-zeros ⸨[⸩ 1, 2 ⸨]⸩
