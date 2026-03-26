@@ -3,6 +3,8 @@ import {
    testURL, waitFor
 } from "@explorable-viz/fluid/script/webtest-lib.mjs"
 
+const isMobile = !!process.env.MOBILE
+
 export const main = async () => {
    await testURL("", [
       async page => {
@@ -13,8 +15,9 @@ export const main = async () => {
          // Header nav left edge aligns with text content left edge
          await checkAlignment(page, ".header-nav", ".grid-container .flex-left-align", "left")
 
-         // Text pane is approximately 800px wide
-         await checkWidthApprox(page, ".grid-container .flex-left-align", 800)
+         if (!isMobile) {
+            await checkWidthApprox(page, ".grid-container .flex-left-align", 800)
+         }
       }
    ])
 
