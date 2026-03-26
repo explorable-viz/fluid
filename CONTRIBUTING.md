@@ -80,7 +80,7 @@ From the monorepo root:
 yarn workspace @explorable-viz/fluid build-publish
 ```
 
-This builds in production mode, stages the `article` website for packaging, and publishes to npm. The package version in `fluid/package.json` should be bumped before publishing — it tracks the milestone version (e.g. `0.12.x` for milestone `fluid 0.12`).
+This bumps the patch version (via `npm version patch`), builds in production mode, stages the `article` website, publishes to npm, and pushes the version tag. Version tracks milestone (e.g. `0.12.x` for milestone `fluid 0.12`).
 
 ## VS Code
 
