@@ -95,7 +95,7 @@
 		}
 
 		.header-logo {
-			align-items: flex-start;
+			align-items: flex-end;
 			padding-right: 0;
 		}
 
