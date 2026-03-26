@@ -15,5 +15,5 @@ echo "Testing ${#WEBSITES[@]} website(s):"
 printf "  %s\n" "${WEBSITES[@]}"
 
 for DIR in "${WEBSITES[@]}"; do
-   (cd "$DIR" && "$SCRIPT_DIR/test-website.sh")
+   (cd "$DIR" && "$SCRIPT_DIR/../fluid/script/test-website.sh")
 done

@@ -72,6 +72,16 @@ yarn workspace @explorable-viz/fluid test-browser
 
 Opens a browser window; check the JavaScript console for test results.
 
+## Publishing to npm
+
+From the monorepo root:
+
+```bash
+yarn workspace @explorable-viz/fluid build-publish
+```
+
+This builds in production mode, stages the `article` website for packaging, and publishes to npm. The package version in `fluid/package.json` should be bumped before publishing — it tracks the milestone version (e.g. `0.12.x` for milestone `fluid 0.12`).
+
 ## VS Code
 
 - Install the [PureScript IDE](https://marketplace.visualstudio.com/items?itemName=nwolverson.ide-purescript) extension

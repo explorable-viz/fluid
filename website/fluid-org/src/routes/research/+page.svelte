@@ -8,7 +8,8 @@
 	<div class="flex-left-align">
 		<h3 class="title">Talks</h3>
 		<p>
-    <a href="https://youtu.be/IIRJeleXeuU?t=13994">Programming for the Planet 2025</a><br>
+      <a href="https://youtu.be/IIRJeleXeuU?t=13994">Programming for the Planet 2025</a><br>
+      <a href="https://www.youtube.com/watch?v=gds8fCfA1VM&list=PLC6-WHWLPzvHUFYddZ9YIfQdUN7QfScYr&index=1&t=436s&pp=iAQB0gcJCdkKAYcqIYzv">LIVE Workshop 2025</a><br>
 		<a href="http://youtube.com/watch?v=FCK5w4EZ1xQ">ICCS Summer School 2025</a><br>
 		<a href="https://www.youtube.com/watch?v=F3JaftEnFfM">ICCS Summer School 2024</a><br>
 		<a href="https://www.youtube.com/watch?v=2-S6yVyzypU">Programming for the Planet 2024</a><br>

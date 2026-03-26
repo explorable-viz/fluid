@@ -1,7 +1,7 @@
 {
   "name": "@explorable-viz/fluid",
-  "version": "0.12.2",
-  "description": "A functional programming language which integrates a bidirectional dynamic analysis, connecting outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.",
+  "version": "0.12.11",
+  "description": "A pure functional dialect of Python, based on PurePy, with a dependency-tracking runtime for creating interactive outputs linked to data.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/explorable-viz/fluid.git#release"
@@ -19,12 +19,17 @@
   "files": [
     "dist/fluid/shared",
     "dist/fluid/fluid/lib",
-    "web/lib"
+    "output-es",
+    "script/test-website.sh",
+    "script/util",
+    "script/webtest-lib.mjs",
+    "web/lib",
+    "website/article"
   ],
   "scripts": {
     "build": "./script/build.sh",
     "build-prod": "BUILD_ENV=prod ./script/build.sh",
-    "build-publish": "yarn build-prod && yarn publish",
+    "build-publish": "yarn build-prod && ./script/stage-website.sh article && npm publish --access public",
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
     "fluid": "node ./dist/fluid/shared/fluid.mjs",
@@ -68,9 +73,13 @@
   "engines": {
     "node": ">=22"
   },
-  "bin": "./dist/fluid/shared/fluid.mjs",
+  "bin": {
+    "fluid": "./dist/fluid/shared/fluid.mjs",
+    "install-website": "./script/install-website.sh"
+  },
   "svelte": "./web/lib/index.js",
   "exports": {
-    ".": "./web/lib/index.js"
+    ".": "./web/lib/index.js",
+    "./script/*": "./script/*"
   }
 }
