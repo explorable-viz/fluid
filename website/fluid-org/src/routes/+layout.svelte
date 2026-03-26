@@ -60,7 +60,7 @@
 		display: grid;
 		background-color: #f0f0f0;
 		width: 100%;
-		grid-template-columns: 1fr var(--toggle-button-width) var(--text-pane-width) 1fr;
+		grid-template-columns: 1fr var(--toggle-button-width) 800px 1fr;
 		padding-top: 7px;
 		padding-bottom: 7px;
 	}
