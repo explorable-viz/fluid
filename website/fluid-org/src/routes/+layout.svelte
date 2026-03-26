@@ -2,6 +2,7 @@
 	import '$lib/assets/css/styles.css';
 	import '@fontsource/roboto/latin-300.css';
 	import '@fontsource/roboto/latin-500.css';
+	import '@fontsource/fira-code/400.css';
 
 	import { page } from '$app/state';
 	import favicon from '$lib/assets/image/favicon.ico';
@@ -65,5 +66,17 @@
 		width: 100%;
 		grid-template-columns: 30% 1fr;
 		margin-top: 10px;
+	}
+
+	@media (max-width: 900px) {
+		.header-grid-container,
+		.footer-grid-container {
+			grid-template-columns: 1fr;
+			text-align: center;
+		}
+
+		.header-grid-container :global(.right-border) {
+			border-right: none;
+		}
 	}
 </style>
