@@ -3,7 +3,9 @@ import puppeteer from "puppeteer"
 const TIMEOUT = 60000
 const LOGGING = true
 const HEADLESS = true
-const VIEWPORT = { width: 1200, height: 800, deviceScaleFactor: 1.0 }
+const DESKTOP = { width: 1200, height: 800, deviceScaleFactor: 1.0 }
+const MOBILE = { width: 390, height: 844, deviceScaleFactor: 2.0, isMobile: true }
+const VIEWPORT = process.env.MOBILE ? MOBILE : DESKTOP
 
 function log(msg) {
    if (LOGGING) console.log(msg)
