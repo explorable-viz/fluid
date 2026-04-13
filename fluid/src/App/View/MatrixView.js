@@ -2,53 +2,6 @@
 
 import * as d3 from "d3"
 
-function setSelection_ (
-   {
-      hBorderStyles,
-      vBorderStyles,
-      eventListener,
-      withElement
-   },
-   {
-      selState,
-      selClasses,
-      selClassesFor
-   },
-   { matrix },
-   select,
-   rootElement
-) {
-   return () => {
-      var listener = eventListener(withElement(select))()
-      rootElement.selectAll('.matrix-cell').each(function (cellRect) {
-         const sel = selState(matrix.cells[cellRect.i][cellRect.j])
-         d3.select(this) // won't work inside arrow function :/
-            .classed(selClasses, false)
-            .classed(selClassesFor(sel), true)
-            .on('mousedown', e => { listener(e) })
-            .on('mouseenter', e => { listener(e) })
-            .on('mouseleave', e => { listener(e) })
-      })
-
-      rootElement.selectAll('.matrix-cell-text').each(function (cellText) {
-         const sel = selState(matrix.cells[cellText.i][cellText.j])
-         d3.select(this) // won't work inside arrow function :/
-            .classed(selClasses, false)
-            .classed(selClassesFor(sel), true)
-      })
-
-      rootElement.selectAll('.matrix-cell-hBorder').each(function (hBorder) {
-         d3.select(this)
-            .attr('style', hBorderStyles(matrix)(hBorder))
-      })
-
-      rootElement.selectAll('.matrix-cell-vBorder').each(function (vBorder) {
-         d3.select(this)
-            .attr('style', vBorderStyles(matrix)(vBorder))
-      })
-   }
-}
-
 function createElement_ (
    { val },
    { title, matrix },
@@ -80,16 +33,13 @@ function createElement_ (
          .attr('dominant-baseline', 'middle')
          .attr('text-anchor', 'left')
 
-      // group for the whole matrix (rects and texts)
       const matrixGrp = rootElement
          .append('g')
          .attr('transform', `translate(${highlightStrokeWidth / 2 + hMargin / 2}, ${highlightStrokeWidth / 2 + vMargin})`)
-         // these will be inherited by text elements
          .attr('fill', 'currentColor')
          .attr('stroke', 'currentColor')
-         .attr('stroke-width', '.25') // otherwise setting stroke makes it bold
+         .attr('stroke-width', '.25')
 
-      // group for each row of cells
       const rowGrp = matrixGrp
          .selectAll('g')
          .data([...matrix.cells.entries()].map(([i, ns]) => { return { i, ns } }))
@@ -120,7 +70,6 @@ function createElement_ (
          .attr('dominant-baseline', 'middle')
          .attr('pointer-events', 'none')
 
-      // group for all highlight borders
       const bordersGrp = rootElement
          .append('g')
          .attr('transform', `translate(${highlightStrokeWidth / 2 + hMargin / 2}, ${highlightStrokeWidth / 2 + vMargin})`)
@@ -131,7 +80,6 @@ function createElement_ (
       const hBordersGrp = bordersGrp
          .append('g')
 
-      // group for each row of horizontal borders
       const hBordersRowGrps = hBordersGrp
          .selectAll('g')
          .data(d3.range(matrix.i + 1))
@@ -154,7 +102,6 @@ function createElement_ (
       const vBordersGrp = bordersGrp
          .append('g')
 
-      // group for each row of vertical borders
       const vBordersRowGrps = vBordersGrp
       .selectAll('g')
       .data(d3.range(1, matrix.i + 1), i => i)
@@ -178,5 +125,4 @@ function createElement_ (
    }
 }
 
-export var setSelection = x1 => x2 => x3 => x4 => x5 => setSelection_(x1, x2, x3, x4, x5)
 export var createElement = x1 => x2 => x3 => createElement_(x1, x2, x3)

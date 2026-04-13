@@ -47,6 +47,13 @@ export async function click(page, selector) {
    testOutcome(true, `${selector}: click`)
 }
 
+export async function dispatchMouseDown(page, selector) {
+   await page.evaluate(sel => {
+      document.querySelector(sel).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+   }, selector)
+   testOutcome(true, `${selector}: mousedown`)
+}
+
 export async function checkAttribute(page, selector, attr, expected) {
    const found = await page.$eval(selector, (el, a) => el.getAttribute(a), attr)
    const pass = found === expected
@@ -79,6 +86,12 @@ export async function checkCount(page, selector, expected) {
    const count = await page.$$eval(selector, els => els.length)
    const pass = count === expected
    testOutcome(pass, `${selector}: count == ${expected}${pass ? "" : ` (got ${count})`}`)
+}
+
+export async function checkCountAtLeast(page, selector, minimum) {
+   const count = await page.$$eval(selector, els => els.length)
+   const pass = count >= minimum
+   testOutcome(pass, `${selector}: count >= ${minimum}${pass ? ` (got ${count})` : ` (got ${count})`}`)
 }
 
 export async function getBoundingBox(page, selector) {
