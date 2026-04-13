@@ -6,8 +6,9 @@ import App.Util (SelStates, Selectable, 𝕊, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, matrixElement)
 import App.View.Util (class Viewable, Select, UIHelpers, uiHelpers)
 import App.View.Util.D3 as D3
+import Bind ((↦))
 import Data.Tuple (snd, uncurry)
-import Effect (Effect)
+import Effect (Effect, foreachE)
 import Primitive (int, unpack)
 import Util ((!), (×))
 import Val (Array2, MatrixDim(..), MatrixRep(..))
@@ -20,20 +21,28 @@ type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import setCellSelection :: MatrixViewHelpers -> UIHelpers -> MatrixView -> Select -> D3.Selection -> Effect Unit
-foreign import setBorderStyles :: (IntMatrix -> MatrixBorderCoordinate -> String) -> (IntMatrix -> MatrixBorderCoordinate -> String) -> IntMatrix -> D3.Selection -> Effect Unit
 foreign import createElement :: UIHelpers -> MatrixView -> D3.Selection -> Effect D3.Selection
+
+setBorderStyles :: IntMatrix -> D3.Selection -> Effect Unit
+setBorderStyles matrix rootElement = do
+   hBorders <- D3.selectAll ".matrix-cell-hBorder" rootElement
+   foreachE hBorders \border -> do
+      coord :: MatrixBorderCoordinate <- D3.datum border
+      void $ D3.setAttrs [ "style" ↦ hBorderStyles matrix coord ] border
+   vBorders <- D3.selectAll ".matrix-cell-vBorder" rootElement
+   foreachE vBorders \border -> do
+      coord :: MatrixBorderCoordinate <- D3.datum border
+      void $ D3.setAttrs [ "style" ↦ vBorderStyles matrix coord ] border
 
 instance Viewable MatrixView Unit where
    isLeaf = const false
    createElement _ = createElement uiHelpers
    setSelection _ mv@(MatrixView { matrix }) select rootElement = do
       setCellSelection matrixViewHelpers uiHelpers mv select rootElement
-      setBorderStyles hBorderStyles vBorderStyles matrix rootElement
+      setBorderStyles matrix rootElement
 
 type MatrixViewHelpers =
-   { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
-   , vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
-   , eventListener :: (Event -> Effect Unit) -> Effect EventListener
+   { eventListener :: (Event -> Effect Unit) -> Effect EventListener
    , withElement :: Select -> Event -> Effect Unit
    }
 
@@ -41,9 +50,7 @@ data ShadowDirection = North | South | East | West | None
 
 matrixViewHelpers :: MatrixViewHelpers
 matrixViewHelpers =
-   { hBorderStyles
-   , vBorderStyles
-   , eventListener
+   { eventListener
    , withElement
    }
    where
