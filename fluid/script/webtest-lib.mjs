@@ -25,10 +25,10 @@ async function launchBrowser(browserName) {
    })
 }
 
-export async function waitFor(page, selector) {
-   log(`Waiting for ${selector}`)
+export async function waitFor(page, selector, { visible = true } = {}) {
+   log(`Waiting for ${selector}${visible ? "" : " (any)"}`)
    try {
-      await page.waitForSelector(selector, { timeout: TIMEOUT, visible: true })
+      await page.waitForSelector(selector, { timeout: TIMEOUT, visible })
       log("-> found")
       testOutcome(true, `${selector}: exists`)
    } catch (e) {
