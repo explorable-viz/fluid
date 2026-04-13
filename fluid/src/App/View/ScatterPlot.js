@@ -2,35 +2,6 @@
 
 import * as d3 from "d3"
 
-
-function setSelection_ (
-   { point_attrs, eventListener, withScatterPlotPoint },
-   {
-      selState,
-      selClasses,
-      selClassesFor,
-      join
-   },
-   view,
-   select,
-   rootElement
-) {
-   return () => {
-      var newListener = eventListener(withScatterPlotPoint(select))()
-      const { points } = view
-      rootElement.selectAll('.scatterplot-point').each(function (point) {
-         const sel = join(selState(points[point.i].x))(selState(points[point.i].y))
-         d3.select(this) // won't work inside arrow function :/
-            .classed(selClasses, false)
-            .classed(selClassesFor(sel), true)
-            .attrs(point_attrs(view)(point))
-            .on('mousedown', e => { newListener(e) })
-            .on('mouseenter', e => { newListener(e) })
-            .on('mouseleave', e => { newListener(e) })
-      })
-   }
-}
-
 function createElement_ (
    { val },
    { caption, points, labels },
@@ -107,4 +78,3 @@ function createElement_ (
 }
 
 export var createElement = x1 => x2 => x3 => createElement_(x1, x2, x3)
-export var setSelection = x1 => x2 => x3 => x4 => x5 => setSelection_(x1, x2, x3, x4, x5)
