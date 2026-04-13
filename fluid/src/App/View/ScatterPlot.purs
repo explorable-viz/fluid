@@ -2,14 +2,20 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (Selectable, isPrimary, isSecondary, selClasses, selClassesFor, selectionEventData')
+import App.Util (Selectable, classes, contents, isPrimary, isSecondary, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
-import App.View.Util (class Viewable, Select, UIHelpers, registerMouseListeners, uiHelpers)
+import App.View.Util (class Viewable, Select, registerMouseListeners)
+import App.View.Util.D3 (ElementType(..), create, setText)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
-import Bind ((⟼))
+import Bind ((↦), (⟼))
+import Data.Array (length, range)
+import Data.Foldable (maximum, minimum)
+import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
-import Data.Tuple (snd, uncurry)
+import Data.Maybe (fromMaybe)
+import Data.Number (ceil)
+import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect, foreachE)
 import Foreign.Object (fromFoldable)
 import Lattice ((∨))
@@ -22,11 +28,84 @@ newtype ScatterPlot = ScatterPlot
    , labels :: Point String
    }
 
-foreign import createElement :: UIHelpers -> ScatterPlot -> D3.Selection -> Effect D3.Selection
+type Scales = { x :: Number -> Number, y :: Number -> Number }
+
+foreign import createAxes :: Array Number -> Array Number -> Int -> Int -> D3.Selection -> Effect Scales
 
 instance Viewable ScatterPlot Unit where
    isLeaf = const false
-   createElement _ = createElement uiHelpers
+
+   createElement _ (ScatterPlot { caption, points, labels }) parent = do
+      let
+         Point { x: lx, y: ly } = labels
+         vals = points <#> \(Point { x, y }) -> { x: contents x, y: contents y }
+         xMax = ceil (fromMaybe 0.0 (maximum (vals <#> _.x)))
+         xMin = ceil (fromMaybe 0.0 (minimum (vals <#> _.x)))
+         yMax = ceil (fromMaybe 0.0 (maximum (vals <#> _.y)))
+         yMin = ceil (fromMaybe 0.0 (minimum (vals <#> _.y)))
+         margin = { top: 20, right: 20, bottom: 40, left: 50 }
+         maxWidth = 280
+         maxHeight = 200
+         width = maxWidth - margin.left - margin.right
+         height = maxHeight - margin.top - margin.bottom
+
+      svg <- parent # create SVG
+         [ "width" ⟼ maxWidth + margin.left + margin.right
+         , "height" ⟼ maxHeight + margin.top
+         , classes [ "center" ]
+         ]
+      rootElement <- svg # create G
+         [ "transform" ↦ ("translate(" <> show margin.left <> ", " <> show margin.top <> ")") ]
+
+      scales <- createAxes
+         [ min 0.0 xMin, xMax ]
+         [ min 0.0 yMin, yMax ]
+         width
+         height
+         rootElement
+
+      void $ rootElement
+         # create Text
+              [ "x" ⟼ width
+              , "y" ⟼ height + 25
+              , "style" ↦ "text-anchor: end; font-size: 10px"
+              ]
+         >>= setText (contents lx)
+      void $ rootElement
+         # create Text
+              [ "transform" ↦ "rotate(-90)"
+              , "x" ⟼ negate margin.top
+              , "y" ⟼ negate margin.left + 20
+              , "style" ↦ "text-anchor: end; font-size: 10px"
+              ]
+         >>= setText (contents ly)
+
+      pointsGrp <- rootElement # create G []
+      forWithIndex_ (range 0 (length points - 1)) \i _ -> do
+         let
+            Point { x, y } = points ! i
+            cx = scales.x (contents x)
+            cy = scales.y (contents y)
+         circle <- pointsGrp # create Circle
+            [ classes [ "scatterplot-point" ]
+            , "cx" ⟼ cx
+            , "cy" ⟼ cy
+            , "stroke-width" ↦ "0.5"
+            ]
+         void $ circle # D3.setDatum { i }
+
+      void $ rootElement
+         # create Text
+              [ "x" ⟼ toNumber width / 2.0
+              , "y" ⟼ height + 40
+              , classes [ "title-text" ]
+              , "dominant-baseline" ↦ "bottom"
+              , "text-anchor" ↦ "middle"
+              ]
+         >>= setText (contents caption)
+
+      pure rootElement
+
    setSelection _ (ScatterPlot { points }) select rootElement = do
       listener <- eventListener (select <<< uncurry scatterPlotPoint <<< selectionEventData')
       pointEls <- D3.selectAll ".scatterplot-point" rootElement
