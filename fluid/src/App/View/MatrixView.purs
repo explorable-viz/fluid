@@ -24,7 +24,36 @@ type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import createBorders :: IntMatrix -> D3.Selection -> Effect Unit
+createBorders :: IntMatrix -> D3.Selection -> Effect Unit
+createBorders matrix rootElement = do
+   bordersGrp <- rootElement # create G
+      [ "transform" ↦ matrixTranslate
+      , "fill" ↦ "currentColor"
+      , "stroke" ↦ "blue"
+      , "stroke-width" ↦ "0.5"
+      ]
+   hGrp <- bordersGrp # create G []
+   foreachE (range 0 matrix.i) \i ->
+      foreachE (range 1 matrix.j) \j -> do
+         line <- hGrp # create Line
+            [ "x1" ⟼ (j - 1) * cellW
+            , "y1" ⟼ i * cellH
+            , "x2" ⟼ j * cellW
+            , "y2" ⟼ i * cellH
+            , classes [ "matrix-cell-hBorder" ]
+            ]
+         void $ line # D3.setDatum { i, j }
+   vGrp <- bordersGrp # create G []
+   foreachE (range 1 matrix.i) \i ->
+      foreachE (range 0 matrix.j) \j -> do
+         line <- vGrp # create Line
+            [ "x1" ⟼ j * cellW
+            , "y1" ⟼ (i - 1) * cellH
+            , "x2" ⟼ j * cellW
+            , "y2" ⟼ i * cellH
+            , classes [ "matrix-cell-vBorder" ]
+            ]
+         void $ line # D3.setDatum { i, j }
 
 cellW :: Int
 cellW = 30
