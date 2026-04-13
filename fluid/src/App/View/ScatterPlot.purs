@@ -5,7 +5,7 @@ import Prelude
 import App.Util (Selectable, classes, contents, isPrimary, isSecondary, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
 import App.View.Util (class Viewable, registerMouseListeners)
-import App.View.Util.D3 (ElementType(..), create, scaleLinear, setText)
+import App.View.Util.D3 (ElementType(..), create, numericXAxis, numericYAxis, scaleLinear, setText, translate)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
@@ -30,7 +30,10 @@ newtype ScatterPlot = ScatterPlot
 
 type Scales = { x :: Endo Number, y :: Endo Number }
 
-foreign import renderAxes :: Scales -> Int -> Int -> D3.Selection -> Effect Unit
+renderAxes :: Scales -> Int -> D3.Selection -> Effect Unit
+renderAxes scales height rootElement = do
+   void $ numericXAxis scales.x =<< (rootElement # create G [ translate { x: 0, y: height } ])
+   void $ numericYAxis scales.y =<< (rootElement # create G [])
 
 instance Viewable ScatterPlot Unit where
    isLeaf = const false
@@ -62,7 +65,7 @@ instance Viewable ScatterPlot Unit where
             { x: scaleLinear { min: min 0.0 xMin, max: xMax } { min: 0.0, max: toNumber width }
             , y: scaleLinear { min: min 0.0 yMin, max: yMax } { min: toNumber height, max: 0.0 }
             }
-      renderAxes scales width height rootElement
+      renderAxes scales height rootElement
 
       void $ rootElement
          # create Text

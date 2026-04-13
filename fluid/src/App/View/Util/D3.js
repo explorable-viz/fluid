@@ -109,6 +109,14 @@ export function yAxis (to) {
    }
 }
 
+export function numericXAxis (scale) {
+   return parent => () => parent.call(d3.axisBottom(scale).tickSizeOuter(0))
+}
+
+export function numericYAxis (scale) {
+   return parent => () => parent.call(d3.axisLeft(scale).tickSizeOuter(0))
+}
+
 export function setText (string) {
    return sel => {
       return () => {
