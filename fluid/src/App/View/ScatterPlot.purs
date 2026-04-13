@@ -4,8 +4,8 @@ import Prelude
 
 import App.Util (Selectable, classes, contents, isPrimary, isSecondary, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
-import App.View.Util (class Viewable, Select, registerMouseListeners)
-import App.View.Util.D3 (ElementType(..), create, setText)
+import App.View.Util (class Viewable, registerMouseListeners)
+import App.View.Util.D3 (ElementType(..), create, scaleLinear, setText)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
@@ -15,11 +15,11 @@ import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
 import Data.Maybe (fromMaybe)
 import Data.Number (ceil)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (snd, uncurry)
 import Effect (Effect, foreachE)
 import Foreign.Object (fromFoldable)
 import Lattice ((∨))
-import Util (type (×), (!))
+import Util (Endo, type (×), (!))
 import Web.Event.EventTarget (eventListener)
 
 newtype ScatterPlot = ScatterPlot
@@ -28,9 +28,9 @@ newtype ScatterPlot = ScatterPlot
    , labels :: Point String
    }
 
-type Scales = { x :: Number -> Number, y :: Number -> Number }
+type Scales = { x :: Endo Number, y :: Endo Number }
 
-foreign import createAxes :: Array Number -> Array Number -> Int -> Int -> D3.Selection -> Effect Scales
+foreign import renderAxes :: Scales -> Int -> Int -> D3.Selection -> Effect Unit
 
 instance Viewable ScatterPlot Unit where
    isLeaf = const false
@@ -57,12 +57,12 @@ instance Viewable ScatterPlot Unit where
       rootElement <- svg # create G
          [ "transform" ↦ ("translate(" <> show margin.left <> ", " <> show margin.top <> ")") ]
 
-      scales <- createAxes
-         [ min 0.0 xMin, xMax ]
-         [ min 0.0 yMin, yMax ]
-         width
-         height
-         rootElement
+      let
+         scales =
+            { x: scaleLinear { min: min 0.0 xMin, max: xMax } { min: 0.0, max: toNumber width }
+            , y: scaleLinear { min: min 0.0 yMin, max: yMax } { min: toNumber height, max: 0.0 }
+            }
+      renderAxes scales width height rootElement
 
       void $ rootElement
          # create Text
