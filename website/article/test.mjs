@@ -4,13 +4,15 @@ import {
 } from "@explorable-viz/fluid/script/webtest-lib.mjs"
 
 export const main = async () => {
+   // Convolution: 5×5 output matrix
+   const rows = 5, cols = 5
    await testURL("convolution", [
       async page => {
          await waitFor(page, "svg#fig-output")
-         await checkCount(page, "#fig-output .matrix-cell", 25)
-         await checkCount(page, "#fig-output .matrix-cell-text", 25)
-         await checkCount(page, "#fig-output .matrix-cell-hBorder", 30)
-         await checkCount(page, "#fig-output .matrix-cell-vBorder", 30)
+         await checkCount(page, "#fig-output .matrix-cell", rows * cols)
+         await checkCount(page, "#fig-output .matrix-cell-text", rows * cols)
+         await checkCount(page, "#fig-output .matrix-cell-hBorder", (rows + 1) * cols)
+         await checkCount(page, "#fig-output .matrix-cell-vBorder", rows * (cols + 1))
          await waitFor(page, "#fig-output .title-text")
       }
    ])
