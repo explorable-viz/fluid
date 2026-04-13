@@ -9,6 +9,9 @@ import App.Util (classes)
 import App.View.Util.D3 (ElementType(..), create, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
+import Data.Array (range)
+import Data.FoldableWithIndex (forWithIndex_)
+import Data.Int (toNumber)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect, foreachE)
 import Primitive (int, unpack)
@@ -21,7 +24,6 @@ type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import createCells :: UIHelpers -> IntMatrix -> D3.Selection -> Effect Unit
 foreign import createBorders :: IntMatrix -> D3.Selection -> Effect Unit
 
 cellW :: Int
@@ -49,11 +51,45 @@ createRootElement title matrix parent = do
       >>= setText (if title == "intermediate" then " " else title)
    pure svg
 
+matrixTranslate :: String
+matrixTranslate = "translate(" <> show (0.25 + toNumber cellW / 4.0) <> ", " <> show (0.25 + toNumber cellH / 2.0) <> ")"
+
+createCells :: IntMatrix -> D3.Selection -> Effect Unit
+createCells matrix rootElement = do
+   matrixGrp <- rootElement # create G
+      [ "transform" ↦ matrixTranslate
+      , "fill" ↦ "currentColor"
+      , "stroke" ↦ "currentColor"
+      , "stroke-width" ↦ ".25"
+      ]
+   forWithIndex_ (range 0 (matrix.i - 1)) \i _ ->
+      forWithIndex_ (range 0 (matrix.j - 1)) \j _ -> do
+         let n = fst (matrix.cells ! i ! j)
+         rect <- matrixGrp # create Rect
+            [ "x" ⟼ j * cellW
+            , "y" ⟼ i * cellH
+            , "width" ⟼ cellW
+            , "height" ⟼ cellH
+            , classes [ "matrix-cell" ]
+            , "stroke-width" ↦ "0.5"
+            ]
+         void $ rect # D3.setDatum { i, j }
+         text <- matrixGrp # create Text
+            [ "x" ⟼ toNumber (j * cellW) + toNumber cellW / 2.0
+            , "y" ⟼ toNumber (i * cellH) + toNumber cellH / 2.0
+            , classes [ "matrix-cell-text" ]
+            , "text-anchor" ↦ "middle"
+            , "dominant-baseline" ↦ "middle"
+            , "pointer-events" ↦ "none"
+            ]
+         void $ text # D3.setDatum { i, j }
+         void $ text # setText (show n)
+
 instance Viewable MatrixView Unit where
    isLeaf = const false
    createElement _ (MatrixView { title, matrix }) parent = do
       rootElement <- createRootElement title matrix parent
-      createCells uiHelpers matrix rootElement
+      createCells matrix rootElement
       createBorders matrix rootElement
       pure rootElement
    setSelection _ (MatrixView { matrix }) select rootElement = do
