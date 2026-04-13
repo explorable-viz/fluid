@@ -37,6 +37,12 @@ function setSelection_ (
             .classed(selClassesFor(sel), true)
       })
 
+      setBorderStyles_(hBorderStyles, vBorderStyles, matrix, rootElement)()
+   }
+}
+
+function setBorderStyles_ (hBorderStyles, vBorderStyles, matrix, rootElement) {
+   return () => {
       rootElement.selectAll('.matrix-cell-hBorder').each(function (hBorder) {
          d3.select(this)
             .attr('style', hBorderStyles(matrix)(hBorder))
@@ -179,4 +185,5 @@ function createElement_ (
 }
 
 export var setSelection = x1 => x2 => x3 => x4 => x5 => setSelection_(x1, x2, x3, x4, x5)
+export var setBorderStyles = x1 => x2 => x3 => x4 => setBorderStyles_(x1, x2, x3, x4)
 export var createElement = x1 => x2 => x3 => createElement_(x1, x2, x3)
