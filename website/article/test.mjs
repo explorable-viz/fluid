@@ -14,6 +14,12 @@ export const main = async () => {
          await checkCount(page, "#fig-output .matrix-cell-hBorder", (rows + 1) * cols)
          await checkCount(page, "#fig-output .matrix-cell-vBorder", rows * (cols + 1))
          await waitFor(page, "#fig-output .title-text")
+
+         const cell = "#fig-output .matrix-cell"
+         await page.hover(cell)
+         await checkAttributeContains(page, cell, "class", "selected-primary-transient")
+         await click(page, cell)
+         await checkAttributeContains(page, cell, "class", "selected-primary-persistent")
       }
    ])
 
