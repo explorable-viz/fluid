@@ -1,11 +1,18 @@
 import {
-   checkAttribute, checkAttributeContains, checkComputedStyle, checkTextContent,
+   checkAttribute, checkAttributeContains, checkComputedStyle, checkCount, checkTextContent,
    click, clickToggle, testURL, waitFor
 } from "@explorable-viz/fluid/script/webtest-lib.mjs"
 
 export const main = async () => {
    await testURL("convolution", [
-      async page => await waitFor(page, "svg#fig-output")
+      async page => {
+         await waitFor(page, "svg#fig-output")
+         await checkCount(page, "#fig-output .matrix-cell", 25)
+         await checkCount(page, "#fig-output .matrix-cell-text", 25)
+         await checkCount(page, "#fig-output .matrix-cell-hBorder", 30)
+         await checkCount(page, "#fig-output .matrix-cell-vBorder", 30)
+         await waitFor(page, "#fig-output .title-text")
+      }
    ])
 
    await testURL("energy-scatter", [

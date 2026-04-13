@@ -75,6 +75,12 @@ export async function checkComputedStyle(page, selector, property, expected) {
    testOutcome(pass, `${selector}: ${property} == "${expected}"${pass ? "" : ` (got "${value}")`}`)
 }
 
+export async function checkCount(page, selector, expected) {
+   const count = await page.$$eval(selector, els => els.length)
+   const pass = count === expected
+   testOutcome(pass, `${selector}: count == ${expected}${pass ? "" : ` (got ${count})`}`)
+}
+
 export async function getBoundingBox(page, selector) {
    return page.$eval(selector, el => {
       const r = el.getBoundingClientRect()
