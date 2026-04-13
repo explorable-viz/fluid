@@ -7,31 +7,7 @@ const strokeWidth = 0.5
 const highlightStrokeWidth = 0.5
 const highlightStrokeColor = 'blue'
 
-function createRootElement_ (title, matrix, parent) {
-   return () => {
-      const [width, height] = [w * matrix.j + highlightStrokeWidth, h * matrix.i + highlightStrokeWidth]
-      const hMargin = w / 2
-      const vMargin = h / 2
-
-      const rootElement = parent
-         .append('svg')
-         .attr('width', width + hMargin)
-         .attr('height', height + vMargin)
-
-      rootElement
-         .append('text')
-         .text(title === "intermediate" ? " " : title)
-         .attr('x', hMargin / 2)
-         .attr('y', vMargin / 2)
-         .attr('class', 'title-text')
-         .attr('dominant-baseline', 'middle')
-         .attr('text-anchor', 'left')
-
-      return rootElement
-   }
-}
-
-function createCells_ (val, matrix, rootElement) {
+function createCells_ ({ val }, matrix, rootElement) {
    return () => {
       const hMargin = w / 2
       const vMargin = h / 2
@@ -129,16 +105,5 @@ function createBorders_ (matrix, rootElement) {
    }
 }
 
-function createElement_ ({ val }, { title, matrix }, parent) {
-   return () => {
-      const rootElement = createRootElement_(title, matrix, parent)()
-      createCells_(val, matrix, rootElement)()
-      createBorders_(matrix, rootElement)()
-      return rootElement
-   }
-}
-
-export var createElement = x1 => x2 => x3 => createElement_(x1, x2, x3)
-export var createRootElement = x1 => x2 => x3 => createRootElement_(x1, x2, x3)
 export var createCells = x1 => x2 => x3 => createCells_(x1, x2, x3)
 export var createBorders = x1 => x2 => createBorders_(x1, x2)

@@ -5,9 +5,11 @@ import Prelude hiding (absurd)
 import App.Util (SelStates, Selectable, 𝕊, isTransient, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, matrixElement)
 import App.View.Util (class Viewable, Select, UIHelpers, registerMouseListeners, uiHelpers)
+import App.Util (classes)
+import App.View.Util.D3 (ElementType(..), create, setText)
 import App.View.Util.D3 as D3
-import Bind ((↦))
-import Data.Tuple (snd, uncurry)
+import Bind ((↦), (⟼))
+import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect, foreachE)
 import Primitive (int, unpack)
 import Util ((!), (×))
@@ -19,11 +21,41 @@ type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import createElement :: UIHelpers -> MatrixView -> D3.Selection -> Effect D3.Selection
+foreign import createCells :: UIHelpers -> IntMatrix -> D3.Selection -> Effect Unit
+foreign import createBorders :: IntMatrix -> D3.Selection -> Effect Unit
+
+cellW :: Int
+cellW = 30
+
+cellH :: Int
+cellH = 30
+
+createRootElement :: String -> IntMatrix -> D3.Selection -> Effect D3.Selection
+createRootElement title matrix parent = do
+   let
+      width = cellW * matrix.j + 1
+      height = cellH * matrix.i + 1
+      hMargin = cellW / 2
+      vMargin = cellH / 2
+   svg <- parent # create SVG [ "width" ⟼ width + hMargin, "height" ⟼ height + vMargin ]
+   void $ svg
+      # create Text
+           [ "x" ⟼ hMargin / 2
+           , "y" ⟼ vMargin / 2
+           , classes [ "title-text" ]
+           , "dominant-baseline" ↦ "middle"
+           , "text-anchor" ↦ "left"
+           ]
+      >>= setText (if title == "intermediate" then " " else title)
+   pure svg
 
 instance Viewable MatrixView Unit where
    isLeaf = const false
-   createElement _ = createElement uiHelpers
+   createElement _ (MatrixView { title, matrix }) parent = do
+      rootElement <- createRootElement title matrix parent
+      createCells uiHelpers matrix rootElement
+      createBorders matrix rootElement
+      pure rootElement
    setSelection _ (MatrixView { matrix }) select rootElement = do
       setCellSelection matrix select rootElement
       setBorderStyles matrix rootElement
