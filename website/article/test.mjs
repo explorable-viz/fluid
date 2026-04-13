@@ -16,10 +16,19 @@ export const main = async () => {
          await waitFor(page, "#fig-output .title-text")
 
          const cell = "#fig-output .matrix-cell"
+         await checkCount(page, "#fig-output .matrix-cell[class*='selected']", 0)
          await page.hover(cell)
          await checkAttributeContains(page, cell, "class", "selected-primary-transient")
          await click(page, cell)
          await checkAttributeContains(page, cell, "class", "selected-primary-persistent")
+      },
+      async page => {
+         await waitFor(page, "svg#fig-output")
+         await clickToggle(page)
+         await waitFor(page, "#fig-input .matrix-cell")
+         await checkCount(page, "#fig-input .matrix-cell[class*='selected']", 0)
+         await dispatchMouseDown(page, "#fig-output .matrix-cell")
+         await checkCountAtLeast(page, "#fig-input .matrix-cell.selected-primary-persistent", 1)
       }
    ])
 
