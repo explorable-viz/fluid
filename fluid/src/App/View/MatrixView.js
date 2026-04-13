@@ -2,41 +2,6 @@
 
 import * as d3 from "d3"
 
-function setCellSelection_ (
-   {
-      eventListener,
-      withElement
-   },
-   {
-      selState,
-      selClasses,
-      selClassesFor
-   },
-   { matrix },
-   select,
-   rootElement
-) {
-   return () => {
-      var listener = eventListener(withElement(select))()
-      rootElement.selectAll('.matrix-cell').each(function (cellRect) {
-         const sel = selState(matrix.cells[cellRect.i][cellRect.j])
-         d3.select(this)
-            .classed(selClasses, false)
-            .classed(selClassesFor(sel), true)
-            .on('mousedown', e => { listener(e) })
-            .on('mouseenter', e => { listener(e) })
-            .on('mouseleave', e => { listener(e) })
-      })
-
-      rootElement.selectAll('.matrix-cell-text').each(function (cellText) {
-         const sel = selState(matrix.cells[cellText.i][cellText.j])
-         d3.select(this)
-            .classed(selClasses, false)
-            .classed(selClassesFor(sel), true)
-      })
-   }
-}
-
 function createElement_ (
    { val },
    { title, matrix },
@@ -160,5 +125,4 @@ function createElement_ (
    }
 }
 
-export var setCellSelection = x1 => x2 => x3 => x4 => x5 => setCellSelection_(x1, x2, x3, x4, x5)
 export var createElement = x1 => x2 => x3 => createElement_(x1, x2, x3)
