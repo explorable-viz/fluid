@@ -35,10 +35,21 @@ export const main = async () => {
    await testURL("energy-scatter", [
       async page => {
          await waitFor(page, "svg")
+         const point = "#fig .scatterplot-point"
+         await waitFor(page, point)
+         await checkCount(page, point, 10)
+         await checkAttribute(page, point, "r", "2.0")
+         await waitFor(page, "#fig .title-text")
+      },
+      async page => {
+         await waitFor(page, "svg")
          await clickToggle(page)
 
-         const point = "div#fig .scatterplot-point"
+         const point = "#fig .scatterplot-point"
          await waitFor(page, point)
+         await checkCount(page, "#fig .scatterplot-point[class*='selected']", 0)
+         await page.hover(point)
+         await checkAttributeContains(page, point, "class", "selected-primary-transient")
          await click(page, point)
          await checkAttributeContains(page, point, "class", "selected-primary-persistent")
          await checkAttribute(page, point, "r", "3.2")
