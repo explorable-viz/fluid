@@ -18,7 +18,6 @@ import Lattice (bot, join)
 import Partial.Unsafe (unsafePartial)
 import Util ((×))
 import Val (BaseVal(..), Val(..))
-import Web.Event.EventTarget (eventListener)
 
 data Link = Link (Val (SelStates 𝕊)) (Selectable String)
 
@@ -35,8 +34,7 @@ instance Viewable Link Unit where
 
    setSelection :: Unit -> Link -> Select -> D3.Selection -> Effect Unit
    setSelection _ link redraw rootElement = do
-      listener <- eventListener (redraw <<< uncurry selLink <<< selectionEventData')
-      rootElement # setStyles (textAttrs link) >>= registerMouseListeners listener
+      rootElement # setStyles (textAttrs link) >>= registerMouseListeners (redraw <<< uncurry selLink <<< selectionEventData')
       where
       selLink :: ViewSelSetter Link
       selLink _ δv = unsafePartial $ case _ of

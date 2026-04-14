@@ -20,7 +20,6 @@ import Effect (Effect, foreachE)
 import Foreign.Object (fromFoldable)
 import Lattice ((∨))
 import Util (Endo, type (×), (!))
-import Web.Event.EventTarget (eventListener)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -108,7 +107,6 @@ instance Viewable ScatterPlot Unit where
       pure rootElement
 
    setSelection _ (ScatterPlot { points }) select rootElement = do
-      listener <- eventListener (select <<< uncurry scatterPlotPoint <<< selectionEventData')
       pointEls <- D3.selectAll ".scatterplot-point" rootElement
       foreachE pointEls \pointEl -> do
          idx :: PointIndex <- D3.datum pointEl
@@ -118,7 +116,7 @@ instance Viewable ScatterPlot Unit where
          void $ D3.classed selClasses false pointEl
          void $ D3.classed (selClassesFor sel) true pointEl
          void $ D3.attrs pointEl (fromFoldable (pointAttrs points idx))
-         registerMouseListeners listener pointEl
+         registerMouseListeners (select <<< uncurry scatterPlotPoint <<< selectionEventData') pointEl
 
 scatterPlotPoint :: ViewSelSetter PointIndex
 scatterPlotPoint { i } = scatterPoint i >>> scatterPlot

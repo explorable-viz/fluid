@@ -47,11 +47,11 @@ export async function click(page, selector) {
    testOutcome(true, `${selector}: click`)
 }
 
-export async function dispatchMouseDown(page, selector) {
-   await page.evaluate(sel => {
-      document.querySelector(sel).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
-   }, selector)
-   testOutcome(true, `${selector}: mousedown`)
+export async function dispatchMouseDown(page, selector, button = 0) {
+   await page.evaluate((sel, btn) => {
+      document.querySelector(sel).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: btn }))
+   }, selector, button)
+   testOutcome(true, `${selector}: mousedown (button=${button})`)
 }
 
 export async function checkAttribute(page, selector, attr, expected) {
