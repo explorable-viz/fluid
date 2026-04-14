@@ -14,6 +14,7 @@ import Data.Foldable (maximum, minimum)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
 import Data.Maybe (fromMaybe)
+import Data.Newtype (unwrap)
 import Data.Number (ceil)
 import Data.Tuple (snd, uncurry)
 import Effect (Effect, foreachE)
@@ -40,7 +41,6 @@ instance Viewable ScatterPlot Unit where
 
    createElement _ (ScatterPlot { caption, points, labels }) parent = do
       let
-         Point { x: lx, y: ly } = labels
          vals = points <#> \(Point { x, y }) -> { x: contents x, y: contents y }
          xMax = ceil (fromMaybe 0.0 (maximum (vals <#> _.x)))
          xMin = ceil (fromMaybe 0.0 (minimum (vals <#> _.x)))
@@ -57,8 +57,7 @@ instance Viewable ScatterPlot Unit where
          , "height" ⟼ maxHeight + margin.top
          , classes [ "center" ]
          ]
-      rootElement <- svg # create G
-         [ "transform" ↦ ("translate(" <> show margin.left <> ", " <> show margin.top <> ")") ]
+      rootElement <- svg # create G [ translate { x: margin.left, y: margin.top } ]
 
       let
          scales =
@@ -73,7 +72,7 @@ instance Viewable ScatterPlot Unit where
               , "y" ⟼ height + 25
               , "style" ↦ "text-anchor: end; font-size: 10px"
               ]
-         >>= setText (contents lx)
+         >>= setText (contents (unwrap labels).x)
       void $ rootElement
          # create Text
               [ "transform" ↦ "rotate(-90)"
@@ -81,7 +80,7 @@ instance Viewable ScatterPlot Unit where
               , "y" ⟼ negate margin.left + 20
               , "style" ↦ "text-anchor: end; font-size: 10px"
               ]
-         >>= setText (contents ly)
+         >>= setText (contents (unwrap labels).y)
 
       pointsGrp <- rootElement # create G []
       forWithIndex_ (range 0 (length points - 1)) \i _ -> do
