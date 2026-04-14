@@ -2,20 +2,25 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (Selectable, isPrimary, isSecondary, selectionEventData')
+import App.Util (Selectable, classes, contents, isPrimary, isSecondary, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
-import App.View.Util (class Viewable, Select, UIHelpers, uiHelpers)
+import App.View.Util (class Viewable, registerMouseListeners)
+import App.View.Util.D3 (ElementType(..), create, numericXAxis, numericYAxis, scaleLinear, setText, translate)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
-import Bind ((⟼))
+import Bind ((↦), (⟼))
+import Data.Array (length, range)
+import Data.Foldable (maximum, minimum)
+import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
+import Data.Maybe (fromMaybe)
+import Data.Number (ceil)
 import Data.Tuple (snd, uncurry)
-import Effect (Effect)
-import Foreign.Object (Object, fromFoldable)
+import Effect (Effect, foreachE)
+import Foreign.Object (fromFoldable)
 import Lattice ((∨))
-import Util ((!))
-import Web.Event.EventTarget (EventListener, eventListener)
-import Web.Event.Internal.Types (Event)
+import Util (Endo, type (×), (!))
+import Web.Event.EventTarget (eventListener)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -23,38 +28,107 @@ newtype ScatterPlot = ScatterPlot
    , labels :: Point String
    }
 
-type ScatterPlotHelpers =
-   { point_attrs :: ScatterPlot -> PointIndex -> Object String
-   , eventListener :: (Event -> Effect Unit) -> Effect EventListener
-   , withScatterPlotPoint :: Select -> (Event -> Effect Unit)
-   }
+type Scales = { x :: Endo Number, y :: Endo Number }
 
-foreign import createElement :: UIHelpers -> ScatterPlot -> D3.Selection -> Effect D3.Selection
-foreign import setSelection :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> Select -> D3.Selection -> Effect Unit
+renderAxes :: Scales -> Int -> D3.Selection -> Effect Unit
+renderAxes scales height rootElement = do
+   void $ numericXAxis scales.x =<< (rootElement # create G [ translate { x: 0, y: height } ])
+   void $ numericYAxis scales.y =<< (rootElement # create G [])
 
 instance Viewable ScatterPlot Unit where
    isLeaf = const false
-   createElement _ = createElement uiHelpers
-   setSelection _ = setSelection scatterPlotHelpers uiHelpers
 
-scatterPlotHelpers :: ScatterPlotHelpers
-scatterPlotHelpers =
-   { point_attrs
-   , eventListener
-   , withScatterPlotPoint
-   }
+   createElement _ (ScatterPlot { caption, points, labels: Point labels }) parent = do
+      let
+         vals = points <#> \(Point { x, y }) -> { x: contents x, y: contents y }
+         xMax = ceil (fromMaybe 0.0 (maximum (vals <#> _.x)))
+         xMin = ceil (fromMaybe 0.0 (minimum (vals <#> _.x)))
+         yMax = ceil (fromMaybe 0.0 (maximum (vals <#> _.y)))
+         yMin = ceil (fromMaybe 0.0 (minimum (vals <#> _.y)))
+         margin = { top: 20, right: 20, bottom: 40, left: 50 }
+         maxWidth = 280
+         maxHeight = 200
+         width = maxWidth - margin.left - margin.right
+         height = maxHeight - margin.top - margin.bottom
+
+      svg <- parent # create SVG
+         [ "width" ⟼ maxWidth + margin.left + margin.right
+         , "height" ⟼ maxHeight + margin.top
+         , classes [ "center" ]
+         ]
+      rootElement <- svg # create G [ translate { x: margin.left, y: margin.top } ]
+
+      let
+         scales =
+            { x: scaleLinear { min: min 0.0 xMin, max: xMax } { min: 0.0, max: toNumber width }
+            , y: scaleLinear { min: min 0.0 yMin, max: yMax } { min: toNumber height, max: 0.0 }
+            }
+      renderAxes scales height rootElement
+
+      void $ rootElement
+         # create Text
+              [ "x" ⟼ width
+              , "y" ⟼ height + 25
+              , "style" ↦ "text-anchor: end; font-size: 10px"
+              ]
+         >>= setText (contents labels.x)
+      void $ rootElement
+         # create Text
+              [ "transform" ↦ "rotate(-90)"
+              , "x" ⟼ negate margin.top
+              , "y" ⟼ negate margin.left + 20
+              , "style" ↦ "text-anchor: end; font-size: 10px"
+              ]
+         >>= setText (contents labels.y)
+
+      pointsGrp <- rootElement # create G []
+      forWithIndex_ (range 0 (length points - 1)) \i _ -> do
+         let
+            Point { x, y } = points ! i
+            cx = scales.x (contents x)
+            cy = scales.y (contents y)
+         circle <- pointsGrp # create Circle
+            [ classes [ "scatterplot-point" ]
+            , "cx" ⟼ cx
+            , "cy" ⟼ cy
+            , "stroke-width" ↦ "0.5"
+            ]
+         void $ circle # D3.setDatum { i }
+
+      void $ rootElement
+         # create Text
+              [ "x" ⟼ toNumber width / 2.0
+              , "y" ⟼ height + 40
+              , classes [ "title-text" ]
+              , "dominant-baseline" ↦ "bottom"
+              , "text-anchor" ↦ "middle"
+              ]
+         >>= setText (contents caption)
+
+      pure rootElement
+
+   setSelection _ (ScatterPlot { points }) select rootElement = do
+      listener <- eventListener (select <<< uncurry scatterPlotPoint <<< selectionEventData')
+      pointEls <- D3.selectAll ".scatterplot-point" rootElement
+      foreachE pointEls \pointEl -> do
+         idx :: PointIndex <- D3.datum pointEl
+         let
+            Point { x, y } = points ! idx.i
+            sel = snd x ∨ snd y
+         void $ D3.classed selClasses false pointEl
+         void $ D3.classed (selClassesFor sel) true pointEl
+         void $ D3.attrs pointEl (fromFoldable (pointAttrs points idx))
+         registerMouseListeners listener pointEl
+
+scatterPlotPoint :: ViewSelSetter PointIndex
+scatterPlotPoint { i } = scatterPoint i >>> scatterPlot
+
+pointAttrs :: Array (Point Number) -> PointIndex -> Array (String × String)
+pointAttrs points { i } =
+   [ "r" ⟼ toNumber pointSmallRadius * if isPrimary sel then 1.6 else if isSecondary sel then 1.25 else 1.0 ]
    where
-   point_attrs :: ScatterPlot -> PointIndex -> Object String
-   point_attrs (ScatterPlot { points }) { i } =
-      fromFoldable
-         [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 1.6 else if isSecondary sel then 1.25 else 1.0 ]
-      where
-      Point { x, y } = points ! i
-      sel = snd x ∨ snd y
-      point_smallRadius = 2
-
-   scatterPlotPoint :: ViewSelSetter PointIndex
-   scatterPlotPoint { i } = scatterPoint i >>> scatterPlot
-   withScatterPlotPoint sel = sel <<< uncurry scatterPlotPoint <<< selectionEventData'
+   Point { x, y } = points ! i
+   sel = snd x ∨ snd y
+   pointSmallRadius = 2
 
 type PointIndex = { i :: Int }

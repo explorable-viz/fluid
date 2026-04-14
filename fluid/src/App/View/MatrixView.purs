@@ -2,10 +2,9 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelStates, Selectable, 𝕊, isTransient, selClasses, selClassesFor, selectionEventData')
+import App.Util (SelStates, Selectable, classes, 𝕊, isTransient, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, matrixElement)
-import App.View.Util (class Viewable, Select, UIHelpers, registerMouseListeners, uiHelpers)
-import App.Util (classes)
+import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), create, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
