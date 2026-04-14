@@ -16,7 +16,6 @@ import Effect (Effect, foreachE)
 import Primitive (int, unpack)
 import Util ((!), (×))
 import Val (Array2, MatrixDim(..), MatrixRep(..))
-import Web.Event.EventTarget (eventListener)
 
 --  (Rendered) matrices are required to have element type Int for now.
 type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
@@ -126,14 +125,13 @@ instance Viewable MatrixView Unit where
 
 setCellSelection :: IntMatrix -> Select -> D3.Selection -> Effect Unit
 setCellSelection matrix select rootElement = do
-   listener <- eventListener (select <<< uncurry element <<< selectionEventData')
    cells <- D3.selectAll ".matrix-cell" rootElement
    foreachE cells \cell -> do
       coord :: MatrixCellCoordinate <- D3.datum cell
       let selState = snd (matrix.cells ! coord.i ! coord.j)
       void $ D3.classed selClasses false cell
       void $ D3.classed (selClassesFor selState) true cell
-      registerMouseListeners listener cell
+      registerMouseListeners (select <<< uncurry element <<< selectionEventData') cell
    texts <- D3.selectAll ".matrix-cell-text" rootElement
    foreachE texts \text -> do
       coord :: MatrixCellCoordinate <- D3.datum text

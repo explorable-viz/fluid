@@ -21,7 +21,6 @@ import Effect (Effect, foreachE)
 import Util (type (×), absurd, error, length, nonEmpty, (!), (×))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
-import Web.Event.EventTarget (eventListener)
 
 type Record' = Array (Val (SelStates 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
 
@@ -80,14 +79,13 @@ instance Viewable TableView Unit where
    setSelection :: Unit -> TableView -> Select -> D3.Selection -> Effect Unit
    setSelection _ (TableView { title, colNames, rows, rowFilter }) redraw rootElement = do
       cells <- rootElement # selectAll ".table-cell"
-      listener <- eventListener (redraw <<< uncurry tableViewSelSetter <<< selectionEventData')
       foreachE cells \cell -> do
          { i, j, colName } :: CellIndex <- datum cell
          if i == -1 || j == -1 then pure unit
          else do
             cell # classed selClasses false
                >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
-               >>= registerMouseListeners listener
+               >>= registerMouseListeners (redraw <<< uncurry tableViewSelSetter <<< selectionEventData')
          void $ cell # setStyles
             [ "border-right" ↦ border Faint (hasRightBorder i j) (isNothing $ column_visibleSucc j)
             , "border-bottom" ↦ border Transparent (hasBottomBorder i j) (i == length rows - 1)

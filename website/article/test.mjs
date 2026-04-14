@@ -56,6 +56,13 @@ export const main = async () => {
 
          const caption = "div#fig-input-renewables > div.table-caption"
          await checkTextContent(page, caption, "renewables (40 of 240 × 5 of 5)")
+      },
+      async page => {
+         await waitFor(page, "svg")
+         const point = "#fig .scatterplot-point"
+         await waitFor(page, point)
+         await dispatchMouseDown(page, point, 2)
+         await checkCount(page, "#fig .scatterplot-point.selected-primary-persistent", 0)
       }
    ])
 
