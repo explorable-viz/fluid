@@ -61,6 +61,16 @@ export const main = async () => {
          await waitFor(page, "svg")
          const point = "#fig .scatterplot-point"
          await waitFor(page, point)
+         const toggle = ".data-pane-button.toggle-button"
+         await checkComputedStyle(page, toggle, "color", "rgb(204, 204, 204)")
+         await click(page, point)
+         await waitFor(page, "#fig-data-pane .selected-primary-persistent", { visible: false })
+         await checkComputedStyle(page, toggle, "color", "rgb(153, 153, 153)")
+      },
+      async page => {
+         await waitFor(page, "svg")
+         const point = "#fig .scatterplot-point"
+         await waitFor(page, point)
          await dispatchMouseDown(page, point, 2)
          await checkCount(page, "#fig .scatterplot-point.selected-primary-persistent", 0)
       }

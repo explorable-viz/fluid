@@ -43,4 +43,8 @@
 	.toggle-button:hover {
 		color: #999999;
 	}
+
+	:global(.data-pane-hidden:has(.data-pane .selected-primary-persistent)) .toggle-button {
+		color: #999999;
+	}
 </style>
