@@ -101,21 +101,6 @@ bwd_cases =
 3, 11, 15, 2, 9"""
      , δv: matrixElement 1 1 select
      }
-   , { file: "section-5-example.fld"
-     , bwd_expect_file: "section-5-example-1.expect.fld"
-     , δv: listCell 0 select'
-     , fwd_expect: "⸨88 :| 6 :| 4 :| []⸩"
-     }
-   , { file: "section-5-example.fld"
-     , bwd_expect_file: "section-5-example-2.expect.fld"
-     , δv: listElement 1 select
-     , fwd_expect: "⸨88⸩ :| ⸨6⸩ :| ⸨4⸩ :| []"
-     }
-   , { file: "section-5-example.fld"
-     , bwd_expect_file: "section-5-example-3.expect.fld"
-     , δv: listCell 2 select'
-     , fwd_expect: "88 :| 6 :| ⸨4 :| []⸩"
-     }
    , { file: "linkedOutputs/bar-chart-line-chart.fld"
      , bwd_expect_file: "linkedOutputs/bar-chart-line-chart.expect.fld"
      , δv: multiViewEntry 0 (barChart (barSegment 1 0 select))
@@ -332,5 +317,20 @@ bwd_cases_new =
      , bwd_expect: envVal "xs" (listElement 1 select) >.> envVal "ys" (listElement 1 select)
      , δv: listElement 1 select'
      , fwd_expect: "13.0 :| ⸨25.0⸩ :| 41.0 :| []"
+     }
+   , { file: "section-5-example.fld"
+     , bwd_expect: envVal "types" (listElement 0 select) >.> envVal "data" (listElement 1 (dictVal "energyType" select))
+     , δv: listCell 0 select'
+     , fwd_expect: "⸨88 :| 6 :| 4 :| []⸩"
+     }
+   , { file: "section-5-example.fld"
+     , bwd_expect: envVal "data" (listElement 1 (dictVal "output" select) >.> listElement 2 (dictVal "output" select) >.> listElement 4 (dictVal "output" select))
+     , δv: listElement 1 select
+     , fwd_expect: "⸨88⸩ :| ⸨6⸩ :| ⸨4⸩ :| []"
+     }
+   , { file: "section-5-example.fld"
+     , bwd_expect: envVal "types" (listElement 2 select) >.> envVal "data" (listElement 4 (dictVal "energyType" select))
+     , δv: listCell 2 select'
+     , fwd_expect: "88 :| 6 :| ⸨4 :| []⸩"
      }
    ]
