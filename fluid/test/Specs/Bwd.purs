@@ -103,7 +103,6 @@ bwd_cases =
      , δv: listCell 2 select'
      , fwd_expect: "⸨1 :| 0 :| ⸨2 :| 0 :| 3 :| []⸩⸩"
      }
-   , { file: "length.fld", bwd_expect_file: "length.expect.fld", δv: select, fwd_expect: "⸨5⸩" }
    , { file: "list-comp.fld"
      , bwd_expect_file: "list-comp-1.expect.fld"
      , δv: listCell 1 select'
@@ -320,5 +319,10 @@ bwd_cases_new =
      , bwd_expect: envVal "xs" (listElement 1 select)
      , δv: select
      , fwd_expect: "⸨4⸩"
+     }
+   , { file: "length.fld"
+     , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select' >.> listCell 2 select' >.> listCell 3 select' >.> listCell 4 select' >.> listCell 5 select')
+     , δv: select
+     , fwd_expect: "⸨5⸩"
      }
    ]
