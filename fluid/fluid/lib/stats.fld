@@ -1,43 +1,51 @@
-def split([]): ([], [])
+def split([]):
+  return ([], [])
 def split(x :| xs):
   def (ys, zs): split(xs)
-  (x :| zs, ys)
+  return (x :| zs, ys)
 
 def merge(xs, ys):
   match (xs, ys):
-    case ([], _): ys
-    case (x :| xs_, []): xs
+    case ([], _):
+      return ys
+    case (x :| xs_, []):
+      return xs
     case (x :| xs_, y :| ys_):
-      if x < y: x :| merge(xs_, ys)
-      else: y :| merge(xs, ys_)
+      if x < y:
+        return x :| merge(xs_, ys)
+      else:
+        return y :| merge(xs, ys_)
 
 def mergesort(xs):
-  if length(xs) < 2: xs
+  if length(xs) < 2:
+    return xs
   else:
     def (ys, zs): split(xs)
-    merge(mergesort(ys), mergesort(zs))
+    return merge(mergesort(ys), mergesort(zs))
 
 def find_quantile(q, p, xs):
   def rank:
     (p / q) * (length(xs) - 1)
 
   if rank == floor(rank):
-    nth(rank, xs)
+    return nth(rank, xs)
   else:
     def x1: floor(rank)
     def x2: ceiling(rank)
     def left: nth(x1, xs)
     def right: nth(x2, xs)
-    left + (rank - x1) * (right - left)
+    return left + (rank - x1) * (right - left)
 
 def find_percentile: find_quantile(100)
 
-def accum_bins(data, Nil): []
-def accum_bins(data, [l]): []
+def accum_bins(data, Nil):
+  return []
+def accum_bins(data, [l]):
+  return []
 def accum_bins(data, l :| r :| es):
   def (ge, le):
     split_on(lambda x: x <= r, data)
-  (le, r - l) :| accum_bins(ge, r :| es)
+  return (le, r - l) :| accum_bins(ge, r :| es)
 
 def cut(xs, nbins):
   def low: minimum(xs)
@@ -46,7 +54,7 @@ def cut(xs, nbins):
   def edges:
     [low + x * binwidth for x in [0 .. nbins]]
 
-  accum_bins(xs, edges)
+  return accum_bins(xs, edges)
 
 def qcut(xs, qs):
   def (low, high):
@@ -54,30 +62,36 @@ def qcut(xs, qs):
   def edges:
     append((low :| [find_percentile(x, xs) for x in qs], [high]))
 
-  accum_bins(xs, edges)
+  return accum_bins(xs, edges)
 
 def likelihood_le(xs, target):
-  length(filter(lambda x: x <= target, xs)) / length(xs)
+  return length(filter(lambda x: x <= target, xs)) / length(xs)
 
 def likelihood_ge(xs, target):
-  length(filter(lambda x: x >= target, xs)) / length(xs)
+  return length(filter(lambda x: x >= target, xs)) / length(xs)
 
 def likelihood_map(table, prob):
-  from_some(find(lambda x: x.prob <= prob, table)).msg
+  return from_some(find(lambda x: x.prob <= prob, table)).msg
 
 def mk_percent(num):
-  num_to_str(num * 100) ++ "%"
+  return num_to_str(num * 100) ++ "%"
 
 def leq_p(n, m):
-  if n <= m: "less"
-  else: "more"
+  if n <= m:
+    return "less"
+  else:
+    return "more"
 
 def graded_leq_p(n, m):
   def ratio: n / m
 
   if ratio <= 1.0:
-    if ratio <= 0.5: "much less"
-    else: "less"
+    if ratio <= 0.5:
+      return "much less"
+    else:
+      return "less"
   else:
-    if ratio >= 2.0: "much more"
-    else: "more"
+    if ratio >= 2.0:
+      return "much more"
+    else:
+      return "more"
