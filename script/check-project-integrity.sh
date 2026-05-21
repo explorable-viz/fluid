@@ -2,14 +2,14 @@
 set -e
 
 REPO="${1:-fluid}"
-ORG="explorable-viz"
+ORG="fluid-org"
 ERRORS=0
 
 echo "Checking project integrity for $ORG/$REPO..."
 
 ALL_ITEMS=$(gh api graphql --paginate -f query='
   query($endCursor: String) {
-    organization(login: "explorable-viz") {
+    organization(login: "fluid-org") {
       projectV2(number: 1) {
         items(first: 100, after: $endCursor) {
           pageInfo { hasNextPage endCursor }
