@@ -11,7 +11,7 @@ import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either, choose)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (toList)
+import Data.List.NonEmpty (singleton, toList)
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import Data.String.Common (joinWith)
@@ -27,7 +27,7 @@ import Parsing.Expr (Assoc(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import Primitive.Parse (OpDef(..), OpType(..), Fixity(..), opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, returns)
+import SExpr (Block(..), Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs, returns)
 import Util (type (+), type (×), error, nonEmpty, (×))
 
 pattern :: Parser Pattern
@@ -82,6 +82,12 @@ varDefs = many1 varDef
       e <- sameOrIndented *> withPos expr
       pure $ VarDef p e
 
+stmt :: Parser (Raw Stmt)
+stmt = defer \_ -> Return <$> expr
+
+blockBody :: Parser (Raw Block)
+blockBody = defer \_ -> (Block <<< singleton) <$> block stmt
+
 recDefs :: Parser (Raw RecDefs)
 recDefs = many1 recDef
    where
@@ -90,8 +96,8 @@ recDefs = many1 recDef
       p <- try (reserved "def" *> variable <* delim '(')
       ps <- commas1 pattern
       delim ')'
-      e <- block expr
-      pure $ p × Clause (ps × returns e)
+      b <- blockBody
+      pure $ p × Clause (ps × b)
 
 expr :: Parser (Raw Expr)
 expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
@@ -133,13 +139,13 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       reserved "if"
       c <- clause
       cs <- many (align $ reserved "elif" *> clause)
-      e <- align $ reserved "else" *> block expr
-      pure $ IfElse (nonEmpty (c : cs)) (returns e)
+      b <- align $ reserved "else" *> blockBody
+      pure $ IfElse (nonEmpty (c : cs)) b
       where
       clause = do
          c <- opTree
-         e <- block expr
-         pure (c × returns e)
+         b <- blockBody
+         pure (c × b)
 
    opTree :: Parser (Raw Expr)
    opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
