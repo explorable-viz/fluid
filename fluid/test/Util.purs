@@ -98,7 +98,7 @@ testProperties s gconfig { δv, bwd_expect, bwd_expect', fwd_expect } = do
    let in_s = desug.bwd in_e
    out1 <- do
       let in_e' = desug.fwd in_s
-      unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in_e')
+      unwrap >>> (_ ≽ in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in_e')
       graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvExpr in_γ in_e'))
    unwrap >>> (_ ≽ out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out1)
 
