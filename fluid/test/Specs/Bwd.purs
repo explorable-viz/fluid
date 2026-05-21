@@ -63,16 +63,6 @@ bwd_cases =
      , δv: some select'
      , fwd_expect: "⸨Some(\"Germany\")⸩"
      }
-   , { file: "matrix-update.fld"
-     , bwd_expect_file: "matrix-update.expect.fld"
-     , fwd_expect:
-          """15, 13, 6, 9, 16,
-12, ⸨4000⸩, 15, 4, 13,
-14, 9, 20, 8, 1,
-4, 10, 3, 7, 19,
-3, 11, 15, 2, 9"""
-     , δv: matrixElement 1 1 select
-     }
    , { file: "linkedOutputs/bar-chart-line-chart.fld"
      , bwd_expect_file: "linkedOutputs/bar-chart-line-chart.expect.fld"
      , δv: multiViewEntry 0 (barChart (barSegment 1 0 select))
@@ -344,5 +334,15 @@ bwd_cases_new =
      , bwd_expect: envVal "n" select
      , δv: select
      , fwd_expect: ""
+     }
+   , { file: "matrix-update.fld"
+     , bwd_expect: envVal "pair" select
+     , δv: matrixElement 1 1 select
+     , fwd_expect:
+          """15, 13, 6, 9, 16,
+12, ⸨4000⸩, 15, 4, 13,
+14, 9, 20, 8, 1,
+4, 10, 3, 7, 19,
+3, 11, 15, 2, 9"""
      }
    ]
