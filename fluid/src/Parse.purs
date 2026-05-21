@@ -83,7 +83,7 @@ varDefs = many1 varDef
       pure $ VarDef p e
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> Return <$> expr
+stmt = defer \_ -> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
 
 blockBody :: Parser (Raw Block)
 blockBody = defer \_ -> (Block <<< singleton) <$> block stmt

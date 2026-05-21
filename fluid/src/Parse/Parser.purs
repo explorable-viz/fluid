@@ -56,7 +56,7 @@ instance Parseable Char where
    parse = char
 
 keywords :: Array String
-keywords = [ "case", "def", "else", "for", "if", "import", "in", "lambda", "match" ]
+keywords = [ "case", "def", "else", "for", "if", "import", "in", "lambda", "match", "return" ]
 
 context :: forall a. String -> Parser a -> Parser a
 context s p = do
