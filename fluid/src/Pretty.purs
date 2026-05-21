@@ -17,7 +17,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricD
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Primitive.Parse (getPrec)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, runBlock)
+import SExpr (Block(..), Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
 import Util (type (×), error, isEmpty, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
@@ -122,8 +122,8 @@ operatorApp n (UnaryPrefixApp op s) =
             text op <+> operatorApp n' s
 operatorApp _ e = prettySimple e
 
-lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
-lambda ps e = text "lambda" <+> prettyList ps <> text ":" <+> pretty e
+lambda :: forall a. Ann a => List Pattern -> Block a -> Doc
+lambda ps b = text "lambda" <+> prettyList ps <> text ":" <+> pretty b
 
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
@@ -146,9 +146,9 @@ instance Ann a => Pretty (Expr a) where
    pretty (MatchAs s cs) = text "match" <+> pretty s <> block (pretty cs)
    pretty (IfElse (NonEmptyList (ss :| sss)) e) =
       vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))
-         <++> text "else" <> block (pretty (runBlock e))
+         <++> text "else" <> block (pretty e)
       where
-      prettyClause w (s × s') = text w <+> expr (pretty s) <> block (pretty (runBlock s'))
+      prettyClause w (s × s') = text w <+> expr (pretty s) <> block (pretty s')
 
    pretty (ListEmpty α) = highlightIf α (text "[]")
    pretty (ListNonEmpty α e rest) =
@@ -204,8 +204,14 @@ instance Ann a => Pretty (VarDef a) where
 instance Ann a => Pretty (VarDefs a) where
    pretty ds = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> ds))
 
+instance Ann a => Pretty (Block a) where
+   pretty (Block ss) = vsep (toList (pretty <$> ss))
+
+instance Ann a => Pretty (Stmt a) where
+   pretty (Return e) = pretty e
+
 instance Ann a => Pretty (Clause a) where
-   pretty (Clause (ps × b)) = lambda (toList ps) (runBlock b)
+   pretty (Clause (ps × b)) = lambda (toList ps) b
 
 instance Ann a => Pretty (Clauses a) where
    pretty (Clauses cs) = pretty (head cs) -- TODO: head ?
@@ -218,7 +224,7 @@ instance Ann a => Pretty (Branch a) where
       text "def"
          <+> text v
          <> parens (prettyList (toList ps))
-         <> block (pretty (runBlock b))
+         <> block (pretty b)
 
 instance Ann a => Pretty (DictEntry a × Expr a) where
    pretty (k × v) =

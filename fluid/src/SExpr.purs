@@ -117,10 +117,6 @@ newtype Block a = Block (NonEmptyList (Stmt a))
 returns :: forall a. Expr a -> Block a
 returns e = Block (NonEmptyList (Return e :| Nil))
 
-runBlock :: forall a. Block a -> Expr a
-runBlock (Block (NonEmptyList (Return e :| Nil))) = e
-runBlock _ = error "runBlock: non-singleton block"
-
 newtype Clause a = Clause (NonEmptyList Pattern × Block a)
 
 type Branch a = Var × Clause a
