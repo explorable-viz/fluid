@@ -9,8 +9,7 @@ import Util ((×))
 
 bwd_cases :: Array TestBwdSpec
 bwd_cases =
-   [ { file: "add.fld", bwd_expect_file: "add.expect.fld", δv: select, fwd_expect: "⸨8⸩" }
-   , { file: "array/lookup.fld", bwd_expect_file: "array/lookup.expect.fld", δv: select, fwd_expect: "⸨14⸩" }
+   [ { file: "array/lookup.fld", bwd_expect_file: "array/lookup.expect.fld", δv: select, fwd_expect: "⸨14⸩" }
    , { file: "array/dims.fld", bwd_expect_file: "array/dims.expect.fld", δv: select, fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩" }
    , { file: "convolution/edgeDetect.fld"
      , bwd_expect_file: "convolution/edgeDetect.expect.fld"
@@ -304,7 +303,12 @@ bwd_cases =
 
 bwd_cases_new :: Array TestBwdSpec_new
 bwd_cases_new =
-   [ { file: "divide.fld"
+   [ { file: "add.fld"
+     , bwd_expect: envVal "a" select >.> envVal "b" select >.> envVal "c" select
+     , δv: select
+     , fwd_expect: "⸨8⸩"
+     }
+   , { file: "divide.fld"
      , bwd_expect: envVal "a" select >.> envVal "b" select
      , δv: select
      , fwd_expect: "⸨40.22222222222222⸩"
