@@ -9,16 +9,7 @@ import Util ((×))
 
 bwd_cases :: Array TestBwdSpec
 bwd_cases =
-   [ { file: "matrix/matmul.fld"
-     , bwd_expect_file: "matrix/matmul.expect.fld"
-     , δv: fst $ matrixElement 0 0 select
-     , fwd_expect:
-          """(@doc(Paragraph("Intermediate" :| "matrix" :| [])) ⸨22⸩, 28,
-49, 64, @doc(Paragraph("Intermediate" :| "matrix" :| [])) 9, 12, 15,
-19, 26, 33,
-29, 40, 51)"""
-     }
-   , { file: "dtw/compute-dtw.fld"
+   [ { file: "dtw/compute-dtw.fld"
      , bwd_expect_file: "dtw/compute-dtw.expect.fld"
      , fwd_expect: "(0, 0) :| ⸨(⸨1⸩, ⸨1⸩)⸩ :| (1, 2) :| (2, 3) :| (3, 4) :| (4, 5) :| (4, 6) :| []"
      , δv: listElement 1 select
@@ -377,5 +368,18 @@ bwd_cases_new =
 37, 41, 54, 34, 20,
 21, 35, 31, 31, 42,
 13, 32, 35, 19, 26"""
+     }
+   , { file: "matrix/matmul.fld"
+     , bwd_expect:
+          envVal "leftMatrix"
+             (matrixElement 0 0 select >.> matrixElement 0 1 select >.> matrixElement 0 2 select)
+             >.> envVal "rightMatrix"
+                (matrixElement 0 0 select >.> matrixElement 1 0 select >.> matrixElement 2 0 select)
+     , δv: fst $ matrixElement 0 0 select
+     , fwd_expect:
+          """(@doc(Paragraph("Intermediate" :| "matrix" :| [])) ⸨22⸩, 28,
+49, 64, @doc(Paragraph("Intermediate" :| "matrix" :| [])) 9, 12, 15,
+19, 26, 33,
+29, 40, 51)"""
      }
    ]
