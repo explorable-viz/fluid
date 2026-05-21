@@ -1,4 +1,5 @@
-def mult(x,y): x * y
+def mult(x,y):
+  return x * y
 
 # `|x|` binds tighter than `and` and `==`, but less than `+`, so the
 # following is equivalent to `True and (((1 + 2) |mult| 3) == 9)` (`True`).
