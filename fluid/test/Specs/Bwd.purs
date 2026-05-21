@@ -96,16 +96,6 @@ bwd_cases =
      , δv: listCell 2 select'
      , fwd_expect: "⸨1 :| 0 :| ⸨2 :| 0 :| 3 :| []⸩⸩"
      }
-   , { file: "list-comp.fld"
-     , bwd_expect_file: "list-comp-1.expect.fld"
-     , δv: listCell 1 select'
-     , fwd_expect: "6.2 :| ⸨260 :| 19.9 :| 91 :| []⸩"
-     }
-   , { file: "list-comp.fld"
-     , bwd_expect_file: "list-comp-2.expect.fld"
-     , δv: listCell 2 select'
-     , fwd_expect: "6.2 :| 260 :| ⸨19.9 :| 91 :| []⸩"
-     }
    , { file: "lookup.fld"
      , bwd_expect_file: "lookup.expect.fld"
      , δv: some select'
@@ -332,5 +322,15 @@ bwd_cases_new =
      , bwd_expect: envVal "n" select >.> envVal "xs" (listElement 0 select)
      , δv: listCell 0 select'
      , fwd_expect: "⸨⸨8⸩ :| 7 :| []⸩"
+     }
+   , { file: "list-comp.fld"
+     , bwd_expect: envVal "data" (listElement 1 (dictVal "energyType" select)) >.> envVal "types" (listElement 1 select)
+     , δv: listCell 1 select'
+     , fwd_expect: "6.2 :| ⸨260 :| 19.9 :| 91 :| []⸩"
+     }
+   , { file: "list-comp.fld"
+     , bwd_expect: envVal "data" (listElement 2 (dictVal "energyType" select)) >.> envVal "types" (listElement 2 select)
+     , δv: listCell 2 select'
+     , fwd_expect: "6.2 :| 260 :| ⸨19.9 :| 91 :| []⸩"
      }
    ]
