@@ -9,17 +9,7 @@ import Util ((×))
 
 bwd_cases :: Array TestBwdSpec
 bwd_cases =
-   [ { file: "dtw/compute-dtw.fld"
-     , bwd_expect_file: "dtw/compute-dtw.expect.fld"
-     , fwd_expect: "(0, 0) :| ⸨(⸨1⸩, ⸨1⸩)⸩ :| (1, 2) :| (2, 3) :| (3, 4) :| (4, 5) :| (4, 6) :| []"
-     , δv: listElement 1 select
-     }
-   , { file: "dtw/average-series.fld"
-     , bwd_expect_file: "dtw/average-series.expect.fld"
-     , fwd_expect: "2.5 :| 0.5 :| ⸨0.5⸩ :| 2.5 :| 2.5 :| 1.0 :| 0.5 :| []"
-     , δv: listElement 2 select
-     }
-   , { file: "lookup.fld"
+   [ { file: "lookup.fld"
      , bwd_expect_file: "lookup.expect.fld"
      , δv: some select'
      , fwd_expect: "⸨Some(\"Germany\")⸩"
@@ -381,5 +371,38 @@ bwd_cases_new =
 49, 64, @doc(Paragraph("Intermediate" :| "matrix" :| [])) 9, 12, 15,
 19, 26, 33,
 29, 40, 51)"""
+     }
+   , { file: "dtw/compute-dtw.fld"
+     , bwd_expect:
+          envVal "seq1"
+             ( listElement 0 select >.> listElement 1 select
+                  >.> listCell 0 select'
+                  >.> listCell 1 select'
+                  >.> listCell 2 select'
+                  >.> listCell 3 select'
+                  >.> listCell 4 select'
+                  >.> listCell 5 select'
+             )
+             >.> envVal "seq2"
+                ( listElement 0 select >.> listElement 1 select >.> listElement 2 select
+                     >.> listCell 0 select'
+                     >.> listCell 1 select'
+                     >.> listCell 2 select'
+                     >.> listCell 3 select'
+                     >.> listCell 4 select'
+                     >.> listCell 5 select'
+                     >.> listCell 6 select'
+                     >.> listCell 7 select'
+                )
+             >.> envVal "window" select
+     , δv: listElement 1 select
+     , fwd_expect: "(0, 0) :| ⸨(⸨1⸩, ⸨1⸩)⸩ :| (1, 2) :| (2, 3) :| (3, 4) :| (4, 5) :| (4, 6) :| []"
+     }
+   , { file: "dtw/average-series.fld"
+     , bwd_expect:
+          envVal "seq1" (listElement 1 select)
+             >.> envVal "seq2" (listElement 2 select)
+     , δv: listElement 2 select
+     , fwd_expect: "2.5 :| 0.5 :| ⸨0.5⸩ :| 2.5 :| 2.5 :| 1.0 :| 0.5 :| []"
      }
    ]
