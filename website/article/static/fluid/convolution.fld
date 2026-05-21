@@ -1,4 +1,4 @@
-import convolution.testImage  # defines inputImage
+import convolution.test_image  # defines inputImage
 import convolution.emboss     # defines filter
 
 def lookup(m, n, image):

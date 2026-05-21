@@ -29,7 +29,7 @@
 	</DataPane>
 
 	<div class="flex-left-align">
-		<Figure {spec} fld="../fluid/non-renewables.fld" />
+		<Figure {spec} fld="../fluid/non_renewables.fld" />
 	</div>
 </Grid>
 

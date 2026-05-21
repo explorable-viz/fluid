@@ -1,4 +1,4 @@
-import nonRenewables
+import energy_data
 
 def countries: ["BRA", "EGY", "IND", "JPN"]
 
