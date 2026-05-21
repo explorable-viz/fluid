@@ -23,7 +23,7 @@ import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd, uncurry)
 import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
-import Desugarable (class Desugarable, desug, desugBwd)
+import Desugarable (class Desugarable, desug)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -136,36 +136,18 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 instance Desugarable DictEntry E.Expr where
    desug (ExprKey e) = desug e
    desug (VarKey α v) = pure (E.Str α v)
-   desugBwd e (ExprKey e') = ExprKey $ desugBwd e e'
-   desugBwd e v = varKeyBwd e v
-
-varKeyBwd :: forall a. E.Expr a -> Raw DictEntry -> DictEntry a
-varKeyBwd (E.Str α _) (VarKey _ v') = VarKey α v'
-varKeyBwd _ _ = error absurd
-
---desugarate
 
 instance Desugarable Expr E.Expr where
    desug = exprFwd
-   desugBwd = exprBwd
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
    desug (End α) = pure (enil α)
    desug (Next α s l) = econs α <$> desug s <*> desug l
 
-   desugBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
-   desugBwd (E.Constr α _ _) (End _) = End α
-   desugBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
-      Next α (desugBwd e1 s) (desugBwd e2 l)
-   desugBwd _ _ = error absurd
-
 instance Desugarable Clauses Elim where
    desug :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
    desug μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
-
-   desugBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
-   desugBwd σ μ = toClausesStateBwd (clausesStateBwd (ContElim σ) (toClausesStateFwd μ))
 
 desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
 desugarModuleFwd = moduleFwd
@@ -206,15 +188,6 @@ varDefsFwd (NonEmptyList (d :| Nil) × s) =
 varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
 
-varDefsBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw VarDefs × Raw Expr -> VarDefs a × Expr a
-varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) =
-   NonEmptyList (VarDef π (desugBwd e1 s1) :| Nil) × desugBwd e2 s2
-varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × s2) =
-   NonEmptyList (VarDef π (desugBwd e1 s1) :| d' : ds') × s2'
-   where
-   NonEmptyList (d' :| ds') × s2' = varDefsBwd e2 (NonEmptyList (d :| ds) × s2)
-varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
-
 -- RecDefs
 -- In the formalism, "group by name" is part of the syntax.
 recDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
@@ -222,34 +195,14 @@ recDefsFwd xcs = E.RecDefs top <$> D.fromFoldable <$> traverse recDefFwd xcss
    where
    xcss = map RecDef (groupBy (eq `on` fst) xcs) :: NonEmptyList (RecDef a)
 
-recDefsBwd :: forall a. BoundedJoinSemilattice a => E.RecDefs a -> Raw RecDefs -> RecDefs a
-recDefsBwd (E.RecDefs _ ρ) xcs = join (go (groupBy (eq `on` fst) xcs))
-   where
-   go :: NonEmptyList (Raw RecDefs) -> NonEmptyList (RecDefs a)
-   go (NonEmptyList (xcs1 :| xcss)) =
-      NonEmptyList (unwrap (recDefBwd (x ↦ get x ρ) (RecDef xcs1)) :| xcss')
-      where
-      x = fst (head xcs1)
-      xcss' = case xcss of
-         Nil -> Nil
-         xcs2 : xcss'' -> toList (go (NonEmptyList (xcs2 :| xcss'')))
-
 -- RecDef
 recDefFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDef a -> m (Bind (Elim a))
 recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (snd <$> unwrap xcs))
-
-recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
-recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (desugBwd σ (Clauses (snd <$> bs))))
 
 paragraphFwd :: forall m a. BoundedLattice a => MonadError Error m => List (ParagraphElem a) -> m (E.Expr a)
 paragraphFwd elems = do
    es <- paragraphElemsFwd elems
    pure (E.Constr bot cParagraph (es : Nil))
-
-paragraphBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> List (Raw ParagraphElem) -> List (ParagraphElem a)
-paragraphBwd (E.Constr _ c (es : Nil)) elems | c == cParagraph =
-   paragraphElemsBwd es elems
-paragraphBwd _ _ = error absurd
 
 paragraphElemsFwd
    :: forall a m
@@ -265,22 +218,6 @@ paragraphElemsFwd (Unquote s : elems) = do
    e <- desug s
    e' <- paragraphElemsFwd elems
    pure (econs bot e e')
-
-paragraphElemsBwd
-   :: forall a
-    . BoundedJoinSemilattice a
-   => E.Expr a
-   -> List (Raw ParagraphElem)
-   -> List (ParagraphElem a)
-paragraphElemsBwd (E.Constr _ c Nil) Nil | c == cNil = Nil
-paragraphElemsBwd (E.Constr _ c (e : e' : Nil)) (elem : elems) | c == cCons =
-   case elem, e of
-      Token _, E.Str _ s ->
-         Token s : paragraphElemsBwd e' elems
-      Unquote s, _ ->
-         Unquote (desugBwd e s) : paragraphElemsBwd e' elems
-      _, _ -> error absurd
-paragraphElemsBwd _ _ = error absurd
 
 -- Expr
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
@@ -342,58 +279,6 @@ exprFwd (DocExpr s s') = do
    e' <- exprFwd s'
    pure $ E.DocExpr e e'
 
-exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
-exprBwd (E.Var _) (Var x) = Var x
-exprBwd (E.Op _) (Op op) = Op op
-exprBwd (E.Int α _) (Int _ n) = Int α n
-exprBwd (E.Float α _) (Float _ n) = Float α n
-exprBwd (E.Str α _) (Str _ str) = Str α str
-exprBwd (E.Constr α _ es) (Constr _ c ss) =
-   Constr α c (uncurry desugBwd <$> zip es ss)
-exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
-   Dictionary α (zipWith (\(Pair e e') (s × s') -> desugBwd e s × desugBwd e' s') ees sss)
-exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
-   Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
-exprBwd (E.Lambda _ σ) (Lambda μ) =
-   Lambda (desugBwd σ μ)
-exprBwd (E.DProject ed _) (Project s x) =
-   Project (desugBwd ed s) x
-exprBwd (E.DProject ed ek) (DProject sd sk) =
-   DProject (exprBwd ed sd) (exprBwd ek sk)
-exprBwd (E.App e1 e2) (App s1 s2) =
-   App (desugBwd e1 s1) (desugBwd e2 s2)
-exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
-   BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)
-exprBwd (E.App (E.Op _) e) (UnaryPrefixApp op s) =
-   UnaryPrefixApp op (desugBwd e s)
-exprBwd (E.App (E.Lambda _ σ) e) (MatchAs s μ) =
-   MatchAs (desugBwd e s)
-      (first head <$> unwrap <$> unwrap (desugBwd σ (Clauses (Clause <$> first singleton <$> μ))))
-exprBwd e@(E.App (E.Lambda _ (ElimConstr _)) _) (IfElse sss s) =
-   let sss' × s' = ifElseBwd e (sss × s) in IfElse sss' s'
-exprBwd (E.Constr _ c (es : Nil)) (Paragraph elems) | c == cParagraph =
-   Paragraph (paragraphElemsBwd es elems)
-exprBwd (E.Constr α _ Nil) (ListEmpty _) =
-   ListEmpty α
-exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
-   ListNonEmpty α (desugBwd e1 s) (desugBwd e2 l)
-exprBwd (E.App (E.App (E.Var "range") e1) e) (ListEnum s1 s2) =
-   case e of
-      E.App (E.App _ e2) _ ->
-         ListEnum (desugBwd e1 s1) (desugBwd e2 s2)
-      _ -> error absurd
-exprBwd e@(E.App (E.App _ _) _) (ListComp _ s (q@(ListCompGen _ _) : qs)) =
-   let α × qs' × s' = listCompBwd e ((q : qs) × s) in ListComp α s' qs'
-exprBwd e (ListComp _ s qs) =
-   let α × qs' × s' = listCompBwd e (qs × s) in ListComp α s' qs'
-exprBwd (E.Let d e) (Let ds s) =
-   let ds' × e' = varDefsBwd (E.Let d e) (ds × s) in Let ds' e'
-exprBwd (E.LetRec xσs e) (LetRec xcs s) =
-   LetRec (recDefsBwd xσs xcs) (desugBwd e s)
-exprBwd (E.DocExpr e e') (DocExpr s s') =
-   DocExpr (exprBwd e s) (exprBwd e' s')
-exprBwd _ _ = error absurd
-
 type IfElseClauses a = NonEmptyList (Expr a × Expr a) × Expr a
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
@@ -404,21 +289,6 @@ ifElseFwd (sss × s) =
       E.App
          <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> e3)))
          <*> desug s1
-
-ifElseBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw IfElseClauses -> IfElseClauses a
-ifElseBwd (E.App (E.Lambda _ (ElimConstr m)) e1) (NonEmptyList (s1 × s2 :| sss) × s) =
-   let
-      ss' = desugBwd e1 s1 × bwdWhen cTrue s2
-      sss' × s' = case sss of
-         Nil -> Nil × bwdWhen cFalse s
-         _ -> case bwdWhen cFalse (IfElse (nonEmpty sss) s) of
-            IfElse sss' s' -> toList sss' × s'
-            _ -> error absurd
-   in
-      nonEmpty (ss' : sss') × s'
-   where
-   bwdWhen c = if c ∈ m then desugBwd (asExpr (get c m)) else botOf
-ifElseBwd _ _ = error absurd
 
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
@@ -435,46 +305,12 @@ listCompFwd (α × (ListCompGen p s : qs) × s') = do
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
    E.App (E.App (E.Var "concat_map") (E.Lambda α (asElim σ))) <$> desug s
 
-listCompBwd
-   :: forall a
-    . BoundedJoinSemilattice a
-   => E.Expr a
-   -> List (Raw Qualifier) × Raw Expr
-   -> a × List (Qualifier a) × Expr a
-listCompBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (Nil × s) | c == cCons && c' == cNil =
-   (α1 ∨ α2) × Nil × desugBwd e s
-listCompBwd (E.App (E.Lambda α' (ElimConstr m)) e) ((ListCompGuard s0 : qs) × s0') =
-   listCompBwd (asExpr (get cTrue m)) (qs × s0') × asExpr (get cFalse m)
-      # unsafePartial case _ of
-           (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
-listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0') =
-   clausesStateBwd (ContElim σ) (((Left p : Nil) × Nil × ListComp unit s0' qs) : Nil)
-      # unsafePartial case _ of
-           ((Left _ : Nil) × Nil × ListComp α s' qs') : Nil ->
-              (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
-listCompBwd (E.App (E.App (E.Var "concat_map") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
-   orElseBwd k (nonEmpty ks <#> unsafePartial \(π × Nil × s') -> π × s')
-      # unsafePartial case _ of
-           β × ListComp α s' qs' -> (α ∨ α' ∨ β) × (ListCompGen p (desugBwd e s0) : qs') × s'
-   where
-   k = (Left p : Nil) × ListComp unit s0' qs
-   ks = clausesStateBwd (ContElim σ) (toList (orElseFwd unit k <#> second (Nil × _)))
-listCompBwd _ _ = error absurd
-
 -- Clauses
 toClausesStateFwd :: forall a. Clauses a -> ClausesState' a
 toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
    where
    toClauseStateFwd :: Clause a -> ClauseState' a
    toClauseStateFwd (Clause (NonEmptyList (p :| π) × s)) = (Left p : Nil) × π × s
-
-toClausesStateBwd :: forall a. ClausesState' a -> Clauses a
-toClausesStateBwd Nil = error (shapeMismatch unit)
-toClausesStateBwd (k : ks) = Clauses (NonEmptyList (k :| ks) <#> toClauseStateBwd)
-   where
-   toClauseStateBwd :: ClauseState' a -> Clause a
-   toClauseStateBwd ((Left p : Nil) × π × s) = Clause (NonEmptyList (p :| π) × s)
-   toClauseStateBwd _ = error (shapeMismatch unit)
 
 -- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
 type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Expr a
@@ -485,28 +321,15 @@ popArgFwd ((Nil × (p : π) × s) : ks) = (((Left p : Nil) × π × s) : _) <$> 
 popArgFwd Nil = pure Nil
 popArgFwd _ = throw (shapeMismatch unit)
 
-popArgBwd :: forall a. Endo (ClausesState' a)
-popArgBwd (((Left p : Nil) × π × s) : ks) = (Nil × (p : π) × s) : popArgBwd ks
-popArgBwd Nil = Nil
-popArgBwd _ = error absurd
-
 popVarFwd :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
 popVarFwd x (((Left (PVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVarFwd (x ≜ x') ks
 popVarFwd _ Nil = pure Nil
 popVarFwd _ _ = throw (shapeMismatch unit)
 
-popVarBwd :: forall a. Var -> Endo (ClausesState' a)
-popVarBwd x ((π × π' × s) : ks) = ((Left (PVar x) : π) × π' × s) : popVarBwd x ks
-popVarBwd _ Nil = Nil
-
 popListVarFwd :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
 popListVarFwd x (((Right (PListVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popListVarFwd (x ≜ x') ks
 popListVarFwd _ Nil = pure Nil
 popListVarFwd _ _ = throw (shapeMismatch unit)
-
-popListVarBwd :: forall a. Var -> Endo (ClausesState' a)
-popListVarBwd x ((π × π' × s) : ks) = ((Left (PVar x) : π) × π' × s) : popListVarBwd x ks
-popListVarBwd _ Nil = Nil
 
 popConstrFwd :: forall a m. MonadError Error m => DataType -> ClausesState' a -> m (List (Ctr × ClausesState' a))
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
@@ -524,37 +347,11 @@ forConstrFwd c k ((c' × ks') : cks)
    | c == c' = (c' × (k : ks')) : cks
    | otherwise = (c' × ks') : forConstrFwd c k cks
 
-popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> Raw ClausesState' -> ClausesState' a
-popConstrBwd _ ((Nil × _ × _) : _) = error absurd
-popConstrBwd kss (((p : π') × π'' × _) : ks) =
-   case forConstrBwd (definitely' (ctrFor p)) kss of
-      Nothing -> popConstrBwd kss ks
-      Just ((π1 × π2 × s) × kss')
-         | π1 == subpatts p <> π' && π2 == π'' ->
-              ((p : π') × π'' × s) : popConstrBwd kss' ks
-         | otherwise -> popConstrBwd kss ks
-popConstrBwd _ Nil = Nil
-
-forConstrBwd :: forall a. Ctr -> List (Ctr × ClausesState' a) -> Maybe (ClauseState' a × List (Ctr × ClausesState' a))
-forConstrBwd _ Nil = Nothing
-forConstrBwd c ((c' × ks) : kss)
-   | c == c' = case ks of
-        Nil -> Nothing
-        k : ks' -> Just (k × (c' × ks') : kss)
-   | otherwise = second ((c' × ks) : _) <$> forConstrBwd c kss
-
 popRecordFwd :: forall a m. MonadError Error m => List Var -> ClausesState' a -> m (ClausesState' a)
 popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
    assert ((xps <#> fst) == xs) $ ((((xps <#> snd >>> Left) <> π) × π' × s) : _) <$> popRecordFwd xs ks
 popRecordFwd _ Nil = pure Nil
 popRecordFwd _ _ = throw (shapeMismatch unit)
-
-popRecordBwd :: forall a. List Var -> Endo (ClausesState' a)
-popRecordBwd xs ((π × π' × s) : ks) =
-   ((Left (PRecord xps) : drop (length xs) π) × π' × s) : popRecordBwd xs ks
-   where
-   xps = zip xs (unsafePartial (\(Left p) -> p) <$> take (length xs) π)
-popRecordBwd _ Nil = Nil
 
 -- Implementing Desugarable would require another newtype
 clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
@@ -573,27 +370,6 @@ clausesStateFwd ks = case ks of
    ((p : _) × _) : _ -> do
       kss <- popConstrFwd (defined (dataTypeFor (definitely ("clausesStateFwd ctrFor failed for: " <> showPattern p) (ctrFor p)))) ks
       ContElim <$> ElimConstr <$> D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
-
--- Recovers (subset of) clauses in order consistent with their original order.
-clausesStateBwd :: forall a. BoundedJoinSemilattice a => Cont a -> Raw ClausesState' -> ClausesState' a
-clausesStateBwd κ0 ks = case κ0 × ks of
-   _ × Nil -> error absurd
-   ContExpr e × (Nil × Nil × s) : Nil ->
-      (Nil × Nil × desugBwd e s) : Nil
-   ContExpr (E.Lambda _ σ) × (Nil × _) : _ ->
-      popArgBwd (clausesStateBwd (ContElim σ) (defined (popArgFwd ks)))
-   ContExpr _ × _ -> error absurd
-   ContElim (ElimVar x κ) × ((Left (PVar _) : _) × _) : _ ->
-      popVarBwd x (clausesStateBwd κ (defined (popVarFwd x ks)))
-   ContElim (ElimDict _ κ) × ((Left (PRecord xps) : _) × _) : _ ->
-      popRecordBwd (xps <#> fst) (clausesStateBwd κ (defined (popRecordFwd (xps <#> fst) ks)))
-   ContElim (ElimVar x κ) × ((Right (PListVar _) : _) × _) : _ ->
-      popListVarBwd x (clausesStateBwd κ (defined (popListVarFwd x ks)))
-   ContElim (ElimConstr m) × ((p : _) × _) : _ ->
-      popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
-      where
-      kss = defined (popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks)
-   ContElim _ × _ -> error (shapeMismatch unit)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and empty when the recursion terminates.
@@ -648,26 +424,6 @@ orElseFwd α = case _ of
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left pVarAnon
 anon (Right _) = Right pListVarAnon
-
-orElseBwd :: forall a. BoundedJoinSemilattice a => Raw ClauseState -> NonEmptyList (ClauseState a) -> a × Expr a
-orElseBwd (π0 × s) ks = case π0 of
-   Nil -> unsafePartial case ks of
-      NonEmptyList (Nil × s' :| Nil) -> bot × s'
-   p : π -> ks # popIfPresent (unless p) # under
-      where
-      under :: a × NonEmptyList (ClauseState a) -> a × Expr a
-      under (α × ks') = ks' <#> (unsafePartial \((p' : π') × s') -> (subpatts p' <> π') × s')
-         # orElseBwd ((subpatts p <> π) × s)
-         # first (_ ∨ α)
-
-      popIfPresent :: List (Pattern + ListRestPattern) -> NonEmptyList (ClauseState a) -> a × NonEmptyList (ClauseState a)
-      popIfPresent Nil ks' = bot × ks'
-      popIfPresent ps ks' =
-         if (p' : (π <#> anon)) /= π' then popIfPresent ps' ks'
-         else popIfPresent ps' (nonEmpty ks'') # first (_ ∨ (s # unsafePartial \(ListEmpty α) -> α))
-         where
-         { init: ks'', last: π' × s } = unsnoc ks'
-         { init: ps', last: p' } = unsnoc (nonEmpty ps)
 
 -- ======================
 -- boilerplate

@@ -13,7 +13,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.String (null, trim)
 import Data.Tuple (fst)
-import Desug (Desugaring, desugGC)
+import Desugarable (desug)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -24,10 +24,11 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf
 import Module (prepConfig)
 import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
+import Expr (Expr) as Expr
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, throwLeft, withMsg, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, defined, log', spyWhen, throw, throwLeft, withMsg, (×))
 import Val (class Ann, Env, EnvExpr(..), Val)
 
 type TestSuite m = Array (String × m Unit)
@@ -81,7 +82,7 @@ testProperties
    -> SelectionSpec
    -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
-   { e } <- desugGC s :: AffError _ (Desugaring 𝔹)
+   let e = defined (desug s) :: Raw Expr.Expr
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
