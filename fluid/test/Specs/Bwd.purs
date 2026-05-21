@@ -306,7 +306,7 @@ bwd_cases_new =
      , fwd_expect: "{ a: 5, ⸨ab⸩: 6 }"
      }
    , { file: "dict/difference.fld"
-     , bwd_expect: envVal "e" select >.> envVal "f" select
+     , bwd_expect: envVal "e" (dict select') >.> envVal "f" (dict select')
      , δv: dict select'
      , fwd_expect: "⸨{ a: 5 }⸩"
      }
