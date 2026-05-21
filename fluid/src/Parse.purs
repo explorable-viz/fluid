@@ -27,7 +27,7 @@ import Parsing.Expr (Assoc(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import Primitive.Parse (OpDef(..), OpType(..), Fixity(..), opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, singletonBlock)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, returns)
 import Util (type (+), type (×), error, nonEmpty, (×))
 
 pattern :: Parser Pattern
@@ -91,7 +91,7 @@ recDefs = many1 recDef
       ps <- commas1 pattern
       delim ')'
       e <- block expr
-      pure $ p × Clause (ps × singletonBlock e)
+      pure $ p × Clause (ps × returns e)
 
 expr :: Parser (Raw Expr)
 expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
@@ -134,12 +134,12 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       c <- clause
       cs <- many (align $ reserved "elif" *> clause)
       e <- align $ reserved "else" *> block expr
-      pure $ IfElse (nonEmpty (c : cs)) (singletonBlock e)
+      pure $ IfElse (nonEmpty (c : cs)) (returns e)
       where
       clause = do
          c <- opTree
          e <- block expr
-         pure (c × singletonBlock e)
+         pure (c × returns e)
 
    opTree :: Parser (Raw Expr)
    opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
@@ -243,7 +243,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                delim ':'
                e <- opTree
                delim ';'
-               pure $ p × Clause (ps × singletonBlock e)
+               pure $ p × Clause (ps × returns e)
 
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
@@ -251,7 +251,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             ps <- commas1 pattern
             delim ':'
             e <- opTree
-            pure $ Lambda (Clauses (nonEmpty (Clause (ps × singletonBlock e) : Nil)))
+            pure $ Lambda (Clauses (nonEmpty (Clause (ps × returns e) : Nil)))
 
          var :: Parser (Raw Expr)
          var = variable <#> Var

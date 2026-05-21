@@ -114,8 +114,8 @@ subpatts (Right (PListNext p o)) = Left p : Right o : Nil
 data Stmt a = Return (Expr a)
 newtype Block a = Block (NonEmptyList (Stmt a))
 
-singletonBlock :: forall a. Expr a -> Block a
-singletonBlock e = Block (NonEmptyList (Return e :| Nil))
+returns :: forall a. Expr a -> Block a
+returns e = Block (NonEmptyList (Return e :| Nil))
 
 runBlock :: forall a. Block a -> Expr a
 runBlock (Block (NonEmptyList (Return e :| Nil))) = e
@@ -186,7 +186,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × singletonBlock (Dictionary top Nil))))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × returns (Dictionary top Nil))))) <*> desug s
 
 -- VarDefs
 varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
@@ -260,9 +260,9 @@ exprFwd (BinaryApp s1 op s2) =
 exprFwd (UnaryPrefixApp op s) =
    E.App (E.Op op) <$> desug s
 exprFwd (MatchAs s μ) =
-   E.App <$> (E.Lambda top <$> desug (Clauses ((Clause <<< second singletonBlock) <$> first singleton <$> μ))) <*> desug s
+   E.App <$> (E.Lambda top <$> desug (Clauses ((Clause <<< second returns) <$> first singleton <$> μ))) <*> desug s
 exprFwd (IfElse sss s) =
-   ifElseFwd ((second runBlock <$> sss) × runBlock s)
+   ifElseFwd (sss × s)
 exprFwd (Paragraph elems) =
    paragraphFwd elems
 exprFwd (ListEmpty α) =
@@ -286,15 +286,19 @@ exprFwd (DocExpr s s') = do
    e' <- exprFwd s'
    pure $ E.DocExpr e e'
 
-type IfElseClauses a = NonEmptyList (Expr a × Expr a) × Expr a
+type IfElseClauses a = NonEmptyList (Expr a × Block a) × Block a
+
+blockFwd :: forall a m. BoundedLattice a => MonadError Error m => Block a -> m (E.Expr a)
+blockFwd (Block (NonEmptyList (Return e :| Nil))) = desug e
+blockFwd _ = error "blockFwd: non-singleton block"
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
 ifElseFwd (sss × s) =
-   foldr clause (desug s) sss
+   foldr clause (blockFwd s) sss
    where
-   clause (s1 × s2) e3 =
+   clause (s1 × b) e3 =
       E.App
-         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> e3)))
+         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> blockFwd b) <*> (ContExpr <$> e3)))
          <*> desug s1
 
 -- List Qualifier × Expr
