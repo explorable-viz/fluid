@@ -111,18 +111,18 @@ subpatts (Right (PListVar _)) = Nil
 subpatts (Right PListEnd) = Nil
 subpatts (Right (PListNext p o)) = Left p : Right o : Nil
 
--- A statement is, for now, just an expression. Future variants (Return, Assign,
--- Pass, mutual regions) will be added incrementally per the PurePy 0.9 sync (#1530).
-newtype Stmt a = ExprStmt (Expr a)
--- A block is a non-empty sequence of statements; currently always a singleton.
+-- Future variants (ExprStmt, Assign, Pass, mutual regions) will be added
+-- incrementally per the PurePy 0.9 sync (#1530).
+data Stmt a = Return (Expr a)
+-- A block is a non-empty sequence of statements; currently always a singleton Return.
 newtype Block a = Block (NonEmptyList (Stmt a))
 
 singletonBlock :: forall a. Expr a -> Block a
-singletonBlock e = Block (NonEmptyList (ExprStmt e :| Nil))
+singletonBlock e = Block (NonEmptyList (Return e :| Nil))
 
--- Partial: assumes a singleton ExprStmt block. Holds while statements are only ExprStmt.
+-- Partial: assumes a singleton Return block. Holds while every block is a wrapped expression.
 runBlock :: forall a. Block a -> Expr a
-runBlock (Block (NonEmptyList (ExprStmt e :| Nil))) = e
+runBlock (Block (NonEmptyList (Return e :| Nil))) = e
 runBlock _ = error "runBlock: non-singleton block"
 
 newtype Clause a = Clause (NonEmptyList Pattern × Block a)
