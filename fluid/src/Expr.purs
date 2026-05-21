@@ -334,12 +334,6 @@ derive instance Eq a => Eq (Cont a)
 derive instance Eq a => Eq (VarDef a)
 derive instance Eq a => Eq (RecDefs a)
 
-derive instance Ord a => Ord (Expr a)
-derive instance Ord a => Ord (Elim a)
-derive instance Ord a => Ord (Cont a)
-derive instance Ord a => Ord (VarDef a)
-derive instance Ord a => Ord (RecDefs a)
-
 instance TypeName (RecDefs a) where
    typeName _ = "RecDefs"
 
