@@ -348,15 +348,6 @@ derive instance Eq a => Eq (Fun a)
 derive instance Eq a => Eq (Env a)
 derive instance Eq a => Eq (EnvExpr a)
 
-derive instance Ord a => Ord (Val a)
-derive instance Ord a => Ord (BaseVal a)
-derive instance Ord a => Ord (DictRep a)
-derive instance Ord a => Ord (MatrixRep a)
-derive instance Ord a => Ord (MatrixDim a)
-derive instance Ord a => Ord (Fun a)
-derive instance Ord a => Ord (Env a)
-derive instance Ord a => Ord (EnvExpr a)
-
 derive instance Newtype (Env a) _
 
 instance TypeName (Val a) where
