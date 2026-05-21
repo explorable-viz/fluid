@@ -13,7 +13,6 @@ import Data.Newtype (class Newtype)
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Util (Endo)
-import Web.Event.EventTarget (eventListener)
 
 newtype Segment = Segment
    { y :: Selectable String -- overloading of y here and in SegmentContext needs fixing
@@ -48,8 +47,7 @@ instance Viewable Segment SegmentContext where
 
    setSelection :: SegmentContext -> Segment -> Select -> D3.Selection -> Effect Unit
    setSelection { y_index } (Segment { z }) select segment = do
-      listener <- eventListener (select <<< uncurry (\_ -> nthSegment y_index) <<< selectionEventData')
-      segment # setAttrs attrs >>= registerMouseListeners listener
+      segment # setAttrs attrs >>= registerMouseListeners (select <<< uncurry (\_ -> nthSegment y_index) <<< selectionEventData')
       where
       attrs :: Attrs
       attrs =

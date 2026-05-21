@@ -16,7 +16,7 @@ import Data.Maybe (Maybe)
 import Data.Set (Set)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
-import Effect (Effect, foreachE)
+import Effect (Effect)
 import File (Folder)
 import Graph (DVertex, Vertex, Query)
 import Lattice (𝔹, Raw, (∨))
@@ -25,8 +25,8 @@ import Util (type (×), Endo, check, (×))
 import Util.Map (toUnfoldable, values)
 import Util.Set (size)
 import Val (Env, Val)
-import Web.Event.Event (EventType(..))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.Event (Event, EventType(..))
+import Web.Event.EventTarget (eventListener)
 
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
@@ -93,10 +93,15 @@ drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) 
 drawView rSpec@{ view: vw } redraw =
    unpack vw (\view -> draw uiHelpers (rSpec { view = view }) redraw)
 
-registerMouseListeners :: EventListener -> D3.Selection -> Effect Unit
-registerMouseListeners redraw element = do
-   foreachE [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
-      void $ element # on (EventType ev) redraw
+foreign import mouseButton :: Event -> Int
+
+registerMouseListeners :: (Event -> Effect Unit) -> D3.Selection -> Effect Unit
+registerMouseListeners handler element = do
+   click <- eventListener \event -> when (mouseButton event == 0) (handler event)
+   hover <- eventListener handler
+   void $ element # on (EventType "mousedown") click
+   void $ element # on (EventType "mouseenter") hover
+   void $ element # on (EventType "mouseleave") hover
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =

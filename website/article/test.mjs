@@ -1,26 +1,68 @@
 import {
-   checkAttribute, checkAttributeContains, checkComputedStyle, checkTextContent,
-   click, clickToggle, testURL, waitFor
+   checkAttribute, checkAttributeContains, checkComputedStyle, checkCount, checkCountAtLeast,
+   checkTextContent, click, clickToggle, dispatchMouseDown, testURL, waitFor
 } from "@explorable-viz/fluid/script/webtest-lib.mjs"
 
 export const main = async () => {
+   // Convolution: 5×5 output matrix
+   const rows = 5, cols = 5
    await testURL("convolution", [
-      async page => await waitFor(page, "svg#fig-output")
+      async page => {
+         await waitFor(page, "svg#fig-output")
+         await checkCount(page, "#fig-output .matrix-cell", rows * cols)
+         await checkCount(page, "#fig-output .matrix-cell-text", rows * cols)
+         await checkCount(page, "#fig-output .matrix-cell-hBorder", (rows + 1) * cols)
+         await checkCount(page, "#fig-output .matrix-cell-vBorder", rows * (cols + 1))
+         await waitFor(page, "#fig-output .title-text")
+
+         const cell = "#fig-output .matrix-cell"
+         await checkCount(page, "#fig-output .matrix-cell[class*='selected']", 0)
+         await page.hover(cell)
+         await checkAttributeContains(page, cell, "class", "selected-primary-transient")
+         await click(page, cell)
+         await checkAttributeContains(page, cell, "class", "selected-primary-persistent")
+      },
+      async page => {
+         await waitFor(page, "svg#fig-output")
+         await clickToggle(page)
+         await waitFor(page, "#fig-input .matrix-cell")
+         await checkCount(page, "#fig-input .matrix-cell[class*='selected']", 0)
+         await dispatchMouseDown(page, "#fig-output .matrix-cell")
+         await checkCountAtLeast(page, "#fig-input .matrix-cell.selected-primary-persistent", 1)
+      }
    ])
 
    await testURL("energy-scatter", [
       async page => {
          await waitFor(page, "svg")
+         const point = "#fig .scatterplot-point"
+         await waitFor(page, point)
+         await checkCount(page, point, 10)
+         await checkAttribute(page, point, "r", "2.0")
+         await waitFor(page, "#fig .title-text")
+      },
+      async page => {
+         await waitFor(page, "svg")
          await clickToggle(page)
 
-         const point = "div#fig .scatterplot-point"
+         const point = "#fig .scatterplot-point"
          await waitFor(page, point)
+         await checkCount(page, "#fig .scatterplot-point[class*='selected']", 0)
+         await page.hover(point)
+         await checkAttributeContains(page, point, "class", "selected-primary-transient")
          await click(page, point)
          await checkAttributeContains(page, point, "class", "selected-primary-persistent")
          await checkAttribute(page, point, "r", "3.2")
 
          const caption = "div#fig-input-renewables > div.table-caption"
          await checkTextContent(page, caption, "renewables (40 of 240 × 5 of 5)")
+      },
+      async page => {
+         await waitFor(page, "svg")
+         const point = "#fig .scatterplot-point"
+         await waitFor(page, point)
+         await dispatchMouseDown(page, point, 2)
+         await checkCount(page, "#fig .scatterplot-point.selected-primary-persistent", 0)
       }
    ])
 

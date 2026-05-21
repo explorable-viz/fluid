@@ -91,7 +91,7 @@ export function xAxis (to) {
    return ticks => {
       return parent => {
          return () => {
-            return parent.call(d3.axisBottom(to.x).ticks(ticks.length).tickFormat(d => d))
+            return parent.call(d3.axisBottom(to.x).tickSizeOuter(0).ticks(ticks.length).tickFormat(d => d))
          }
       }
    }
@@ -107,6 +107,14 @@ export function yAxis (to) {
         }
       }
    }
+}
+
+export function numericXAxis (scale) {
+   return parent => () => parent.call(d3.axisBottom(scale).tickSizeOuter(0))
+}
+
+export function numericYAxis (scale) {
+   return parent => () => parent.call(d3.axisLeft(scale).tickSizeOuter(0))
 }
 
 export function setText (string) {
