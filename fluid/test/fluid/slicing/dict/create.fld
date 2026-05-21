@@ -1,1 +1,3 @@
-{ ["a"]: 5, ["a" ++ "b"]: 6 }
+import slicing.dict.create_inputs
+
+{ [a_1]: 5, [a_2 ++ b]: 6 }
