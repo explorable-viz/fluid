@@ -3,18 +3,13 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, envVal, fst, listCell, listElement, matrix, matrixElement, multiViewEntry, select, select', snd, some, topα, (>.>))
+import App.Util.Selector (barChart, barSegment, constr, constrArg, dict, dictKey, dictVal, envVal, fst, listCell, listElement, matrix, matrixElement, multiViewEntry, select, select', snd, some, topα, (>.>))
 import Test.Util.Suite (TestBwdSpec, TestBwdSpec_new)
 import Util ((×))
 
 bwd_cases :: Array TestBwdSpec
 bwd_cases =
-   [ { file: "lookup.fld"
-     , bwd_expect_file: "lookup.expect.fld"
-     , δv: some select'
-     , fwd_expect: "⸨Some(\"Germany\")⸩"
-     }
-   , { file: "linkedOutputs/bar-chart-line-chart.fld"
+   [ { file: "linkedOutputs/bar-chart-line-chart.fld"
      , bwd_expect_file: "linkedOutputs/bar-chart-line-chart.expect.fld"
      , δv: multiViewEntry 0 (barChart (barSegment 1 0 select))
      , fwd_expect:
@@ -404,5 +399,20 @@ bwd_cases_new =
              >.> envVal "seq2" (listElement 2 select)
      , δv: listElement 2 select
      , fwd_expect: "2.5 :| 0.5 :| ⸨0.5⸩ :| 2.5 :| 2.5 :| 1.0 :| 0.5 :| []"
+     }
+   , { file: "lookup.fld"
+     , bwd_expect:
+          envVal "k" select
+             >.> envVal "tree"
+                ( constrArg "NonEmpty" 2
+                     ( constrArg "NonEmpty" 0
+                          ( constr "NonEmpty" select'
+                               >.> constrArg "NonEmpty" 1
+                                  (constr "Pair" select' >.> fst select)
+                          )
+                     )
+                )
+     , δv: some select'
+     , fwd_expect: "⸨Some(\"Germany\")⸩"
      }
    ]
