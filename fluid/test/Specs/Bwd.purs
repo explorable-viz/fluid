@@ -73,7 +73,6 @@ bwd_cases =
      , δv: dictVal "b" select >.> dictVal "c" select
      , fwd_expect: "{ b: ⸨0⸩, c: ⸨20⸩ }"
      }
-   , { file: "dict/get.fld", bwd_expect_file: "dict/get.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
    , { file: "dict/map.fld", bwd_expect_file: "dict/map.expect.fld", δv: select, fwd_expect: "⸨20⸩" }
    , { file: "dict/match.fld", bwd_expect_file: "dict/match.expect.fld", δv: select, fwd_expect: "" }
    , { file: "dtw/compute-dtw.fld"
@@ -332,5 +331,10 @@ bwd_cases_new =
      , bwd_expect: envVal "types" (listElement 2 select) >.> envVal "data" (listElement 4 (dictVal "energyType" select))
      , δv: listCell 2 select'
      , fwd_expect: "88 :| 6 :| ⸨4 :| []⸩"
+     }
+   , { file: "dict/get.fld"
+     , bwd_expect: envVal "d" (dictVal "ab" (dictVal "snd" select))
+     , δv: select
+     , fwd_expect: "⸨0⸩"
      }
    ]
