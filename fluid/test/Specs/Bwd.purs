@@ -134,7 +134,6 @@ bwd_cases =
 3, 11, 15, 2, 9"""
      , δv: matrixElement 1 1 select
      }
-   , { file: "nth.fld", bwd_expect_file: "nth.expect.fld", δv: select, fwd_expect: "⸨4⸩" }
    , { file: "output-not-source.fld"
      , bwd_expect_file: "output-not-source.expect.fld"
      , fwd_expect: "(⸨3⸩, ⸨True⸩)"
@@ -316,5 +315,10 @@ bwd_cases_new =
      , bwd_expect: envVal "b" select
      , δv: select
      , fwd_expect: "⸨0⸩"
+     }
+   , { file: "nth.fld"
+     , bwd_expect: envVal "xs" (listElement 1 select)
+     , δv: select
+     , fwd_expect: "⸨4⸩"
      }
    ]
