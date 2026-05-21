@@ -1,5 +1,5 @@
 import lib.graphics
-import dataset.renewablesRestricted
+import dataset.renewables_restricted
 
 def year: 2015
 

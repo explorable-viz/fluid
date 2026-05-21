@@ -1,4 +1,4 @@
-import dataset.nonRenewables
+import dataset.non_renewables
 
 def isCountry(name, x): name == x.country
 def isYear(year, x): year == x.year
