@@ -1,10 +1,14 @@
 import slicing.lookup_inputs
 
-def lookup(k, Empty): None
+def lookup(k, Empty):
+  return None
 def lookup(k, NonEmpty(t1, (key, val), t2)):
   match compare(k, key):
-    case LT: lookup(k, t1)
-    case EQ: Some(val)
-    case GT: lookup(k, t2)
+    case LT:
+      return lookup(k, t1)
+    case EQ:
+      return Some(val)
+    case GT:
+      return lookup(k, t2)
 
 lookup(k, tree)

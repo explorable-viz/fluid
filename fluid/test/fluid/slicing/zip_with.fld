@@ -1,8 +1,10 @@
 import slicing.zip_with_inputs
 
-def zip_with(op, [], ys): []
-def zip_with(op, x :| xs, []): []
+def zip_with(op, [], ys):
+  return []
+def zip_with(op, x :| xs, []):
+  return []
 def zip_with(op, x :| xs, y :| ys):
-  op(x, y) :| zip_with(op, xs, ys)
+  return op(x, y) :| zip_with(op, xs, ys)
 
 zip_with(lambda x, y: x ** 2 + y ** 2, xs, ys)

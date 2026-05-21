@@ -4,18 +4,20 @@ def totalFor(year, country, rows):
   def [row]:
     [row for row in rows if row.year == year if row.country == country]
 
-  ((row.nuclearOut + row.gasOut) + row.coalOut) + row.petrolOut
+  return ((row.nuclearOut + row.gasOut) + row.coalOut) + row.petrolOut
 
 def stack(year):
-  [{ y: country, z: totalFor(year, country, nonRenewables) } for country in [
+  return [{ y: country, z: totalFor(year, country, nonRenewables) } for country in [
     "BRA",
     "EGY",
     "IND",
     "JPN"
   ]]
 
-def isCountry(name, x): name == x.country
-def isYear(year, x): year == x.year
+def isCountry(name, x):
+  return name == x.country
+def isYear(year, x):
+  return year == x.year
 
 def plot(year, countries):
   def rens: filter(isYear(year), renewables)
@@ -27,12 +29,12 @@ def plot(year, countries):
     def rensCap: sum(map(lambda x: x.capacity, rens_))
     def x: head(filter(isCountry(country), nonRens))
     def nonRensCap: ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
-    {
+    return {
       x: rensCap / (rensCap + nonRensCap),
       y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
     }
 
-  map(plotCountry, countries)
+  return map(plotCountry, countries)
 
 MultiView([
   BarChart({

@@ -2,12 +2,14 @@ import lib.fnum
 import lib.dtw
 import slicing.dtw.dtw_inputs
 
-def d(x, y): (x - y) * (x - y)
+def d(x, y):
+  return (x - y) * (x - y)
 
-def avg(x, y): (x + y) / 2
+def avg(x, y):
+  return (x + y) / 2
 
 def avgSeq(seq1, seq2, f):
-  map(lambda (i, j): f(nth(i, seq1), nth(j, seq2)))
+  return map(lambda (i, j): f(nth(i, seq1), nth(j, seq2)))
 
 def (costs, matched):
   computeDTW(seq1, seq2, d, window)
