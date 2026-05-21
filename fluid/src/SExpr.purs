@@ -309,10 +309,10 @@ listCompFwd (α × (ListCompGuard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
    E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
 listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
-   σ <- clausesStateFwd (((Left p : Nil) × Nil × ListComp α s' qs) : Nil)
+   σ <- clausesStateFwd (((Left p : Nil) × Nil × returns (ListComp α s' qs)) : Nil)
    E.App (E.Lambda α (asElim σ)) <$> desug s
 listCompFwd (α × (ListCompGen p s : qs) × s') = do
-   let ks = orElseFwd α ((Left p : Nil) × ListComp α s' qs)
+   let ks = orElseFwd α ((Left p : Nil) × returns (ListComp α s' qs))
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
    E.App (E.App (E.Var "concat_map") (E.Lambda α (asElim σ))) <$> desug s
 
@@ -321,10 +321,10 @@ toClausesStateFwd :: forall a. Clauses a -> ClausesState' a
 toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
    where
    toClauseStateFwd :: Clause a -> ClauseState' a
-   toClauseStateFwd (Clause (NonEmptyList (p :| π) × b)) = (Left p : Nil) × π × runBlock b
+   toClauseStateFwd (Clause (NonEmptyList (p :| π) × b)) = (Left p : Nil) × π × b
 
 -- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
-type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Expr a
+type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Block a
 type ClausesState' a = List (ClauseState' a)
 
 popArgFwd :: forall a m. MonadError Error m => ClausesState' a -> m (ClausesState' a)
@@ -368,8 +368,8 @@ popRecordFwd _ _ = throw (shapeMismatch unit)
 clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
 clausesStateFwd ks = case ks of
    Nil -> error absurd
-   (Nil × Nil × s) : Nil ->
-      ContExpr <$> desug s
+   (Nil × Nil × b) : Nil ->
+      ContExpr <$> blockFwd b
    (Nil × _) : _ ->
       ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
    ((Left (PVar x) : _) × _) : _ ->
@@ -384,7 +384,7 @@ clausesStateFwd ks = case ks of
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and empty when the recursion terminates.
-type ClauseState a = List (Pattern + ListRestPattern) × Expr a
+type ClauseState a = List (Pattern + ListRestPattern) × Block a
 
 unless :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 unless (Left (PVar _)) = Nil
@@ -404,7 +404,7 @@ orElseFwd α = case _ of
    (p : π) × s ->
       (orElseFwd α ((π' <> π) × s) <#> popPatts (length π') <#> pushPattFor p)
          `appendList`
-            (unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p')
+            (unless p <#> \p' -> ((π <#> anon) × returns (ListEmpty α)) # pushPatt p')
       where
       π' = subpatts p
    where
