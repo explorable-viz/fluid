@@ -1,1 +1,3 @@
-{ a: 5, b: 6 } |dict_disjointUnion| { c: 7 }
+import slicing.dict.disjointUnion_inputs
+
+d1 |dict_disjointUnion| d2

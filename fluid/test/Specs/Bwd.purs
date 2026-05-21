@@ -48,11 +48,6 @@ bwd_cases =
 19, 26, 33,
 29, 40, 51)"""
      }
-   , { file: "dict/disjointUnion.fld"
-     , bwd_expect_file: "dict/disjointUnion.expect.fld"
-     , δv: dictKey "a" select' >.> dictVal "c" select
-     , fwd_expect: "{ ⸨a⸩: 5, b: 6, c: ⸨7⸩ }"
-     }
    , { file: "dict/foldl_with_index.fld"
      , bwd_expect_file: "dict/foldl_with_index.expect.fld"
      , δv: select
@@ -336,5 +331,10 @@ bwd_cases_new =
      , bwd_expect: envVal "e" select >.> envVal "f" select
      , δv: dict select'
      , fwd_expect: "⸨{ a: 5 }⸩"
+     }
+   , { file: "dict/disjointUnion.fld"
+     , bwd_expect: envVal "d1" (dictKey "a" select') >.> envVal "d2" (dictVal "c" select)
+     , δv: dictKey "a" select' >.> dictVal "c" select
+     , fwd_expect: "{ ⸨a⸩: 5, b: 6, c: ⸨7⸩ }"
      }
    ]
