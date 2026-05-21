@@ -116,16 +116,6 @@ bwd_cases =
      , δv: listCell 2 select'
      , fwd_expect: "88 :| 6 :| ⸨4 :| []⸩"
      }
-   , { file: "zeros.fld"
-     , bwd_expect_file: "zeros-1.expect.fld"
-     , δv: listCell 0 select' >.> listCell 2 select'
-     , fwd_expect: "⸨0 :| 0 :| ⸨[]⸩⸩"
-     }
-   , { file: "zeros.fld"
-     , bwd_expect_file: "zeros-2.expect.fld"
-     , δv: listCell 2 select'
-     , fwd_expect: "0 :| 0 :| ⸨[]⸩"
-     }
    , { file: "zipWith.fld"
      , bwd_expect_file: "zipWith-1.expect.fld"
      , δv: listElement 1 select'
@@ -332,5 +322,15 @@ bwd_cases_new =
      , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select' >.> listCell 2 select')
      , δv: listCell 2 select'
      , fwd_expect: "⸨1 :| 0 :| ⸨2 :| 0 :| 3 :| []⸩⸩"
+     }
+   , { file: "zeros.fld"
+     , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 2 select')
+     , δv: listCell 0 select' >.> listCell 2 select'
+     , fwd_expect: "⸨0 :| 0 :| ⸨[]⸩⸩"
+     }
+   , { file: "zeros.fld"
+     , bwd_expect: envVal "xs" (listCell 2 select')
+     , δv: listCell 2 select'
+     , fwd_expect: "0 :| 0 :| ⸨[]⸩"
      }
    ]
