@@ -48,16 +48,6 @@ bwd_cases =
 19, 26, 33,
 29, 40, 51)"""
      }
-   , { file: "dict/foldl_with_index.fld"
-     , bwd_expect_file: "dict/foldl_with_index.expect.fld"
-     , δv: select
-     , fwd_expect: "⸨0⸩"
-     }
-   , { file: "dict/intersectionWith.fld"
-     , bwd_expect_file: "dict/intersectionWith.expect.fld"
-     , δv: dictVal "b" select >.> dictVal "c" select
-     , fwd_expect: "{ b: ⸨0⸩, c: ⸨20⸩ }"
-     }
    , { file: "dict/map.fld", bwd_expect_file: "dict/map.expect.fld", δv: select, fwd_expect: "⸨20⸩" }
    , { file: "dict/match.fld", bwd_expect_file: "dict/match.expect.fld", δv: select, fwd_expect: "" }
    , { file: "dtw/compute-dtw.fld"
@@ -336,5 +326,15 @@ bwd_cases_new =
      , bwd_expect: envVal "d1" (dictKey "a" select') >.> envVal "d2" (dictVal "c" select)
      , δv: dictKey "a" select' >.> dictVal "c" select
      , fwd_expect: "{ ⸨a⸩: 5, b: 6, c: ⸨7⸩ }"
+     }
+   , { file: "dict/foldl_with_index.fld"
+     , bwd_expect: envVal "d" (dictVal "b" (listElement 0 select))
+     , δv: select
+     , fwd_expect: "⸨0⸩"
+     }
+   , { file: "dict/intersectionWith.fld"
+     , bwd_expect: envVal "d1" (dictVal "b" select >.> dictVal "c" select) >.> envVal "d2" (dictVal "b" select >.> dictVal "c" select)
+     , δv: dictVal "b" select >.> dictVal "c" select
+     , fwd_expect: "{ b: ⸨0⸩, c: ⸨20⸩ }"
      }
    ]
