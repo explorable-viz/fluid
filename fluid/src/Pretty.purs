@@ -17,7 +17,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricD
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Primitive.Parse (getPrec)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, runBlock)
 import Util (type (×), error, isEmpty, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
@@ -205,7 +205,7 @@ instance Ann a => Pretty (VarDefs a) where
    pretty ds = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> ds))
 
 instance Ann a => Pretty (Clause a) where
-   pretty (Clause (ps × e)) = lambda (toList ps) e
+   pretty (Clause (ps × b)) = lambda (toList ps) (runBlock b)
 
 instance Ann a => Pretty (Clauses a) where
    pretty (Clauses cs) = pretty (head cs) -- TODO: head ?
@@ -214,11 +214,11 @@ instance Ann a => Pretty (RecDefs a) where
    pretty bs = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> bs))
 
 instance Ann a => Pretty (Branch a) where
-   pretty (v × Clause (ps × e)) =
+   pretty (v × Clause (ps × b)) =
       text "def"
          <+> text v
          <> parens (prettyList (toList ps))
-         <> block (pretty e)
+         <> block (pretty (runBlock b))
 
 instance Ann a => Pretty (DictEntry a × Expr a) where
    pretty (k × v) =
