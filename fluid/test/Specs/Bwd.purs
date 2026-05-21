@@ -86,16 +86,6 @@ bwd_cases =
      , fwd_expect: "2.5 :| 0.5 :| ⸨0.5⸩ :| 2.5 :| 2.5 :| 1.0 :| 0.5 :| []"
      , δv: listElement 2 select
      }
-   , { file: "intersperse.fld"
-     , bwd_expect_file: "intersperse-1.expect.fld"
-     , δv: listCell 1 select'
-     , fwd_expect: "1 :| ⸨0 :| 2 :| 0 :| 3 :| []⸩"
-     }
-   , { file: "intersperse.fld"
-     , bwd_expect_file: "intersperse-2.expect.fld"
-     , δv: listCell 2 select'
-     , fwd_expect: "⸨1 :| 0 :| ⸨2 :| 0 :| 3 :| []⸩⸩"
-     }
    , { file: "lookup.fld"
      , bwd_expect_file: "lookup.expect.fld"
      , δv: some select'
@@ -332,5 +322,15 @@ bwd_cases_new =
      , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select')
      , δv: listCell 0 select' >.> listCell 1 select'
      , fwd_expect: "⸨5 :| ⸨6 :| []⸩⸩"
+     }
+   , { file: "intersperse.fld"
+     , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select')
+     , δv: listCell 1 select'
+     , fwd_expect: "1 :| ⸨0 :| 2 :| 0 :| 3 :| []⸩"
+     }
+   , { file: "intersperse.fld"
+     , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select' >.> listCell 2 select')
+     , δv: listCell 2 select'
+     , fwd_expect: "⸨1 :| 0 :| ⸨2 :| 0 :| 3 :| []⸩⸩"
      }
    ]
