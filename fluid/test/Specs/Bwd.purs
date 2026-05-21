@@ -116,11 +116,6 @@ bwd_cases =
      , δv: listCell 2 select'
      , fwd_expect: "88 :| 6 :| ⸨4 :| []⸩"
      }
-   , { file: "zipWith.fld"
-     , bwd_expect_file: "zipWith-1.expect.fld"
-     , δv: listElement 1 select'
-     , fwd_expect: "13.0 :| ⸨25.0⸩ :| 41.0 :| []"
-     }
    , { file: "linkedOutputs/bar-chart-line-chart.fld"
      , bwd_expect_file: "linkedOutputs/bar-chart-line-chart.expect.fld"
      , δv: multiViewEntry 0 (barChart (barSegment 1 0 select))
@@ -332,5 +327,10 @@ bwd_cases_new =
      , bwd_expect: envVal "xs" (listCell 2 select')
      , δv: listCell 2 select'
      , fwd_expect: "0 :| 0 :| ⸨[]⸩"
+     }
+   , { file: "zipWith.fld"
+     , bwd_expect: envVal "xs" (listElement 1 select) >.> envVal "ys" (listElement 1 select)
+     , δv: listElement 1 select'
+     , fwd_expect: "13.0 :| ⸨25.0⸩ :| 41.0 :| []"
      }
    ]
