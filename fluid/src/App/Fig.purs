@@ -14,6 +14,7 @@ import Control.Monad.Reader (class MonadReader)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
+import Data.Array as Array
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for_, sequence_)
@@ -279,8 +280,10 @@ loadFig options@{ inputs, linking } fluidSrc = do
       }
 
 ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)
-ιfromαs g = D.fromFoldable <<< Set.mapMaybe
-   (\α -> (α × _) <$> (asVal $ vertexData g (Vertex α)))
+ιfromαs g = D.fromFoldable
+   <<< Array.mapMaybe
+      (\α -> (α × _) <$> (asVal $ vertexData g (Vertex α)))
+   <<< Set.toUnfoldable
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
