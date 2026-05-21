@@ -1,4 +1,5 @@
-def xs: [[1, 4, 8], [3, 2, 17], [0, 14, 6]]
+import slicing.array.lookup_inputs
+
 def ys:
   [| nth2(i, j, xs) for (i, j) in (3, 3) |]
 
