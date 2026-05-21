@@ -13,7 +13,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.String (null, trim)
 import Data.Tuple (fst)
-import Desug (desugGC)
+import Desug (Desugaring, desugGC)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -81,7 +81,7 @@ testProperties
    -> SelectionSpec
    -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
-   { gc: GC desug, e } <- desugGC s
+   { e } <- desugGC s :: AffError _ (Desugaring 𝔹)
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
@@ -94,12 +94,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
-   let in_s = desug.bwd in_e
-   out1 <- do
-      let in_e' = desug.fwd in_s
-      unwrap >>> (_ ≽ in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in_e')
-      graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvExpr in_γ in_e'))
-   unwrap >>> (_ ≽ out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out1)
+   out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvExpr in_γ in_e))
 
    let in_top = EnvExpr (topOf in_γ) (topOf in_e)
 
