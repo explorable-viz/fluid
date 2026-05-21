@@ -1,6 +1,7 @@
 import renewables
 
-def totalFor(c, rows): sum([row.output for row in rows if row.country == c])
+def totalFor(c, rows):
+  return sum([row.output for row in rows if row.country == c])
 
 def data2015: [row for row in renewables if row.year == 2015]
 def countryData: [{
@@ -9,7 +10,7 @@ def countryData: [{
   } for c in ["China", "USA", "Germany"]]
 
 def series(energyType, country):
-  [
+  return [
     { x: row.year, y: row.output }
     for year in [2013 .. 2018] for row in renewables
     if row.year == year if row.energyType == energyType if row.country == country

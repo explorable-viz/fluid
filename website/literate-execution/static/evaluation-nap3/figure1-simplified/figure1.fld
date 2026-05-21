@@ -5,7 +5,7 @@ def eval_scores:
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
 def actions_by(key, keys):
-  [ { x: key_,
+  return [ { x: key_,
       segments: [
         { y: eval_score,
           z: count_if(
@@ -20,11 +20,13 @@ def risks_:
   dict([ (risk[ "ID#" ], risk) for risk in ccra3_risks ])
 
 def percent(x, y):
-  if y == 0: 0
-  else: x / y * 100
+  if y == 0:
+    return 0
+  else:
+    return x / y * 100
 
 def actions_by_chapter(owner):
-  [ { x: chapter,
+  return [ { x: chapter,
       segments: [
         { y: eval_score,
           z: def segment_risks: [
@@ -52,10 +54,10 @@ def nat_env_and_infra_depts:
 
 # action_counts in the [ { y, z } ] format produced by actions_by
 def total_actions(action_counts):
-  sum([ r.z for r in action_counts ])
+  return sum([ r.z for r in action_counts ])
 
 def actions_with_score(action_counts, eval_score):
-  sum([ r.z for r in action_counts if r.y == eval_score ])
+  return sum([ r.z for r in action_counts if r.y == eval_score ])
 
 def by_nat_env_and_infra:
   actions_by("Action Owner", nat_env_and_infra_depts)

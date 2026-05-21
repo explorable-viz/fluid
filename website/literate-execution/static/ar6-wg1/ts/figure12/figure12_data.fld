@@ -22,7 +22,7 @@ def models:
   ]
 
 def precip(ensemble_data):
-  mean([ ensemble_data[ model ] for model in models ])
+  return mean([ ensemble_data[ model ] for model in models ])
 
 def hydroData_agg: {
   pr: {

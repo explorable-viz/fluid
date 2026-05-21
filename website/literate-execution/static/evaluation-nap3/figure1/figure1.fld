@@ -5,7 +5,7 @@ def eval_scores:
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
 def actions_by(key, keys):
-  [ { x: key_,
+  return [ { x: key_,
       segments: [
         { y: eval_score,
           z: count_if(
@@ -53,17 +53,19 @@ def by_topology:
 
 # action_counts in the [ { y, z } ] format produced by actions_by
 def total_actions(action_counts):
-  sum([ r.z for r in action_counts ])
+  return sum([ r.z for r in action_counts ])
 
 def actions_with_score(action_counts, eval_score):
-  sum([ r.z for r in action_counts if r.y == eval_score ])
+  return sum([ r.z for r in action_counts if r.y == eval_score ])
 
 def proportion(x, y):
-  if y == 0: 0
-  else: x / y
+  if y == 0:
+    return 0
+  else:
+    return x / y
 
 def max_with_score(actions, eval_score):
-  maximum([
+  return maximum([
     proportion(actions_with_score(action_counts, eval_score), total_actions(action_counts))
     for { segments: action_counts } in actions
   ])
