@@ -27,7 +27,7 @@ import Parsing.Expr (Assoc(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import Primitive.Parse (OpDef(..), OpType(..), Fixity(..), opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, singletonBlock)
 import Util (type (+), type (×), error, nonEmpty, (×))
 
 pattern :: Parser Pattern
@@ -91,7 +91,7 @@ recDefs = many1 recDef
       ps <- commas1 pattern
       delim ')'
       e <- block expr
-      pure $ p × Clause (ps × e)
+      pure $ p × Clause (ps × singletonBlock e)
 
 expr :: Parser (Raw Expr)
 expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
@@ -243,7 +243,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                delim ':'
                e <- opTree
                delim ';'
-               pure $ p × Clause (ps × e)
+               pure $ p × Clause (ps × singletonBlock e)
 
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
@@ -251,7 +251,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             ps <- commas1 pattern
             delim ':'
             e <- opTree
-            pure $ Lambda (Clauses (nonEmpty (Clause (ps × e) : Nil)))
+            pure $ Lambda (Clauses (nonEmpty (Clause (ps × singletonBlock e) : Nil)))
 
          var :: Parser (Raw Expr)
          var = variable <#> Var

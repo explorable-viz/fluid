@@ -114,7 +114,21 @@ subpatts (Right (PListVar _)) = Nil
 subpatts (Right PListEnd) = Nil
 subpatts (Right (PListNext p o)) = Left p : Right o : Nil
 
-newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
+-- A statement is, for now, just an expression. Future variants (Return, Assign,
+-- Pass, mutual regions) will be added incrementally per the PurePy 0.9 sync (#1530).
+newtype Stmt a = ExprStmt (Expr a)
+-- A block is a non-empty sequence of statements; currently always a singleton.
+newtype Block a = Block (NonEmptyList (Stmt a))
+
+singletonBlock :: forall a. Expr a -> Block a
+singletonBlock e = Block (NonEmptyList (ExprStmt e :| Nil))
+
+-- Partial: assumes a singleton ExprStmt block. Holds while statements are only ExprStmt.
+runBlock :: forall a. Block a -> Expr a
+runBlock (Block (NonEmptyList (ExprStmt e :| Nil))) = e
+runBlock _ = error "runBlock: non-singleton block"
+
+newtype Clause a = Clause (NonEmptyList Pattern × Block a)
 
 type Branch a = Var × Clause a
 newtype Clauses a = Clauses (NonEmptyList (Clause a))
@@ -197,7 +211,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Dictionary top Nil)))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × singletonBlock (Dictionary top Nil))))) <*> desug s
 
 -- VarDefs
 varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
@@ -316,7 +330,7 @@ exprFwd (BinaryApp s1 op s2) =
 exprFwd (UnaryPrefixApp op s) =
    E.App (E.Op op) <$> desug s
 exprFwd (MatchAs s μ) =
-   E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
+   E.App <$> (E.Lambda top <$> desug (Clauses ((Clause <<< second singletonBlock) <$> first singleton <$> μ))) <*> desug s
 exprFwd (IfElse sss s) =
    ifElseFwd (sss × s)
 exprFwd (Paragraph elems) =
@@ -368,7 +382,7 @@ exprBwd (E.App (E.Op _) e) (UnaryPrefixApp op s) =
    UnaryPrefixApp op (desugBwd e s)
 exprBwd (E.App (E.Lambda _ σ) e) (MatchAs s μ) =
    MatchAs (desugBwd e s)
-      (first head <$> unwrap <$> unwrap (desugBwd σ (Clauses (Clause <$> first singleton <$> μ))))
+      (first head <<< second runBlock <$> unwrap <$> unwrap (desugBwd σ (Clauses ((Clause <<< second singletonBlock) <$> first singleton <$> μ))))
 exprBwd e@(E.App (E.Lambda _ (ElimConstr _)) _) (IfElse sss s) =
    let sss' × s' = ifElseBwd e (sss × s) in IfElse sss' s'
 exprBwd (E.Constr _ c (es : Nil)) (Paragraph elems) | c == cParagraph =
@@ -466,14 +480,14 @@ toClausesStateFwd :: forall a. Clauses a -> ClausesState' a
 toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
    where
    toClauseStateFwd :: Clause a -> ClauseState' a
-   toClauseStateFwd (Clause (NonEmptyList (p :| π) × s)) = (Left p : Nil) × π × s
+   toClauseStateFwd (Clause (NonEmptyList (p :| π) × b)) = (Left p : Nil) × π × runBlock b
 
 toClausesStateBwd :: forall a. ClausesState' a -> Clauses a
 toClausesStateBwd Nil = error (shapeMismatch unit)
 toClausesStateBwd (k : ks) = Clauses (NonEmptyList (k :| ks) <#> toClauseStateBwd)
    where
    toClauseStateBwd :: ClauseState' a -> Clause a
-   toClauseStateBwd ((Left p : Nil) × π × s) = Clause (NonEmptyList (p :| π) × s)
+   toClauseStateBwd ((Left p : Nil) × π × s) = Clause (NonEmptyList (p :| π) × singletonBlock s)
    toClauseStateBwd _ = error (shapeMismatch unit)
 
 -- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
@@ -672,9 +686,12 @@ orElseBwd (π0 × s) ks = case π0 of
 -- ======================
 -- boilerplate
 -- ======================
+derive instance Newtype (Block a) _
 derive instance Newtype (Clause a) _
 derive instance Newtype (Clauses a) _
 derive instance Newtype (RecDef a) _
+derive instance Functor Stmt
+derive instance Functor Block
 derive instance Functor Clause
 derive instance Functor Clauses
 derive instance Functor DictEntry
@@ -689,7 +706,7 @@ instance Functor Module where
       where
       mapDefs :: forall a b. (a -> b) -> VarDefs a + RecDefs a -> VarDefs b + RecDefs b
       mapDefs g (Left ds) = Left $ map g <$> ds
-      mapDefs g (Right ds) = Right $ (\(x × Clause (π × s)) -> x × Clause (π × (g <$> s))) <$> ds
+      mapDefs g (Right ds) = Right $ (\(x × Clause (π × b)) -> x × Clause (π × (g <$> b))) <$> ds
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join _ = error unimplemented
@@ -717,6 +734,16 @@ instance Show Pattern where
 derive instance Eq ListRestPattern
 derive instance Generic ListRestPattern _
 instance Show ListRestPattern where
+   show c = genericShow c
+
+derive instance Eq a => Eq (Stmt a)
+derive instance Generic (Stmt a) _
+instance Show a => Show (Stmt a) where
+   show c = genericShow c
+
+derive instance Eq a => Eq (Block a)
+derive instance Generic (Block a) _
+instance Show a => Show (Block a) where
    show c = genericShow c
 
 derive instance Eq a => Eq (Clause a)
