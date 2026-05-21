@@ -20,7 +20,7 @@ import Effect.Exception (Error)
 import Eval (GraphConfig, graphEval, graphGC, toGC, withOp)
 import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), dual)
-import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹, (≽))
 import Module (prepConfig)
 import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
@@ -100,7 +100,7 @@ testProperties s gconfig { δv, bwd_expect, bwd_expect', fwd_expect } = do
       let in_e' = desug.fwd in_s
       unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in_e')
       graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvExpr in_γ in_e'))
-   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out1)
+   unwrap >>> (_ ≽ out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out1)
 
    let in_top = EnvExpr (topOf in_γ) (topOf in_e)
 
@@ -109,9 +109,9 @@ testProperties s gconfig { δv, bwd_expect, bwd_expect', fwd_expect } = do
       withMsg "bwd_expect" $ checkPretty bwd_expect in_s
    case bwd_expect' of
       Nothing -> pure unit
-      Just sel ->
-         -- subsumption: closures may carry extra annotations
-         unwrap >>> (in_γ >= _) # checkSatisfies "bwd_expect'" (PrettyShow (sel𝔹 sel in_γ))
+      Just sel -> do
+         let expected = sel𝔹 sel in_γ
+         unwrap >>> (_ >= in_γ) # checkSatisfies "bwd_expect'" (PrettyShow expected)
    unless (null fwd_expect) do
       let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
       withMsg "fwd_expect" $ checkPretty fwd_expect (report out1)
