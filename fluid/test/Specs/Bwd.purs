@@ -4,14 +4,11 @@ import Prelude
 
 import App.Util (SelectionType(..))
 import App.Util.Selector (barChart, barSegment, constr, constrArg, dict, dictKey, dictVal, envVal, fst, listCell, listElement, matrix, matrixElement, multiViewEntry, select, select', snd, some, topα, (>.>))
-import Test.Util.Suite (TestBwdSpec, TestBwdSpec_new)
+import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
 
 bwd_cases :: Array TestBwdSpec
-bwd_cases = []
-
-bwd_cases_new :: Array TestBwdSpec_new
-bwd_cases_new =
+bwd_cases =
    [ { file: "add.fld"
      , bwd_expect: envVal "a" select >.> envVal "b" select >.> envVal "c" select
      , δv: select

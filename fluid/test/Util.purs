@@ -35,8 +35,7 @@ type TestSuite m = Array (String × m Unit)
 type SelectionSpec =
    { δv :: Selector Val
    , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
-   , bwd_expect :: String
-   , bwd_expect' :: Maybe (Selector Env) -- env-selector check; eventually replaces bwd_expect
+   , bwd_expect :: Maybe (Selector Env) -- env-selector check; Nothing for tests that don't perturb output
    }
 
 fluidSrcPaths :: Array Folder
@@ -81,7 +80,7 @@ testProperties
    -> GraphConfig
    -> SelectionSpec
    -> AffError m Unit
-testProperties s gconfig { δv, bwd_expect, bwd_expect', fwd_expect } = do
+testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
@@ -104,15 +103,12 @@ testProperties s gconfig { δv, bwd_expect, bwd_expect', fwd_expect } = do
 
    let in_top = EnvExpr (topOf in_γ) (topOf in_e)
 
-   -- empty string somewhat hacky encoding for "don't care"
-   unless (null bwd_expect) $ do
-      withMsg "bwd_expect" $ checkPretty bwd_expect in_s
-   case bwd_expect' of
+   case bwd_expect of
       Nothing -> pure unit
       Just sel -> do
          let expected = sel𝔹 sel in_γ
          unless (in_γ ≽ expected) $
-            throw ("bwd_expect' mismatch:\nactual in_γ\n" <> prettyP in_γ <> "\nexpected (sel𝔹)\n" <> prettyP expected)
+            throw ("bwd_expect mismatch:\nactual in_γ\n" <> prettyP in_γ <> "\nexpected (sel𝔹)\n" <> prettyP expected)
    unless (null fwd_expect) do
       let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
       withMsg "fwd_expect" $ checkPretty fwd_expect (report out1)
