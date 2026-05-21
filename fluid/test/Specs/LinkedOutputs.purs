@@ -33,7 +33,7 @@ linkedOutputs_spec1 =
                         )
                    )
               )
-   , file: "slicing/linkedOutputs/bar-chart-line-chart.fld"
+   , file: "slicing/linkedOutputs/bar_chart_line_chart.fld"
    }
 
 linkedOutputs_spec2 :: TestLinkedOutputsSpec
@@ -54,7 +54,7 @@ linkedOutputs_spec2 =
                         >.> scatterPoint 6 (dictVal f_y select)
                    )
               )
-   , file: "slicing/linkedOutputs/stacked-bar-scatter-plot.fld"
+   , file: "slicing/linkedOutputs/stacked_bar_scatter_plot.fld"
    }
 
 movingAverages_spec :: TestLinkedOutputsSpec

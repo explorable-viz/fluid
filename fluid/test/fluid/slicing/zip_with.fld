@@ -1,4 +1,4 @@
-import slicing.zipWith_inputs
+import slicing.zip_with_inputs
 
 def zip_with(op, [], ys): []
 def zip_with(op, x :| xs, []): []

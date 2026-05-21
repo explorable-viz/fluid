@@ -1,0 +1,3 @@
+import slicing.dict.disjoint_union_inputs
+
+d1 |dict_disjointUnion| d2
