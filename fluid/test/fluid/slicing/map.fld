@@ -1,1 +1,3 @@
-map((+)(2), [3, 4])
+import slicing.map_inputs
+
+map((+)(2), xs)

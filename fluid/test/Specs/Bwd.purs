@@ -101,11 +101,6 @@ bwd_cases =
      , δv: some select'
      , fwd_expect: "⸨Some(\"Germany\")⸩"
      }
-   , { file: "map.fld"
-     , bwd_expect_file: "map.expect.fld"
-     , δv: listCell 0 select' >.> listCell 1 select'
-     , fwd_expect: "⸨5 :| ⸨6 :| []⸩⸩"
-     }
    , { file: "matrix-update.fld"
      , bwd_expect_file: "matrix-update.expect.fld"
      , fwd_expect:
@@ -332,5 +327,10 @@ bwd_cases_new =
      , bwd_expect: envVal "data" (listElement 2 (dictVal "energyType" select)) >.> envVal "types" (listElement 2 select)
      , δv: listCell 2 select'
      , fwd_expect: "6.2 :| 260 :| ⸨19.9 :| 91 :| []⸩"
+     }
+   , { file: "map.fld"
+     , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select')
+     , δv: listCell 0 select' >.> listCell 1 select'
+     , fwd_expect: "⸨5 :| ⸨6 :| []⸩⸩"
      }
    ]
