@@ -133,11 +133,6 @@ bwd_cases =
 3, 11, 15, 2, 9"""
      , δv: matrixElement 1 1 select
      }
-   , { file: "output-not-source.fld"
-     , bwd_expect_file: "output-not-source.expect.fld"
-     , fwd_expect: "(⸨3⸩, ⸨True⸩)"
-     , δv: snd select -- selection on just first component will be discarded by bwdSlice; see #818.
-     }
    , { file: "section-5-example.fld"
      , bwd_expect_file: "section-5-example-1.expect.fld"
      , δv: listCell 0 select'
@@ -324,5 +319,10 @@ bwd_cases_new =
      , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select' >.> listCell 2 select' >.> listCell 3 select' >.> listCell 4 select' >.> listCell 5 select')
      , δv: select
      , fwd_expect: "⸨5⸩"
+     }
+   , { file: "output-not-source.fld"
+     , bwd_expect: envVal "x" select >.> envVal "n" select
+     , δv: snd select
+     , fwd_expect: "(⸨3⸩, ⸨True⸩)"
      }
    ]
