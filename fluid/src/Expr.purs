@@ -173,6 +173,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
    join (DProject e1 e2) (DProject e1' e2') = DProject (e1 ∨ e1') (e2 ∨ e2')
    join (App e1 e2) (App e1' e2') = App (e1 ∨ e1') (e2 ∨ e2')
+   join (Let def e) (Let def' e') = Let (def ∨ def') (e ∨ e')
    join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
    join (DocExpr doc e) (DocExpr doc' e') = DocExpr (doc ∨ doc') (e ∨ e')
    join _ _ = shapeMismatch unit
