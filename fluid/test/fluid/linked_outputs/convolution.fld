@@ -1,5 +1,5 @@
 import lib.matrix
-import linkedOutputs.convolutionData
+import linked_outputs.convolution_data
 
 def filter1_: [
     [0, 0, 0],

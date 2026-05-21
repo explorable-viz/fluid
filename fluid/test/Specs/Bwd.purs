@@ -283,7 +283,7 @@ bwd_cases =
      , δv: some select'
      , fwd_expect: "⸨Some(\"Germany\")⸩"
      }
-   , { file: "linkedOutputs/bar_chart_line_chart.fld"
+   , { file: "linked_outputs/bar_chart_line_chart.fld"
      , bwd_expect:
           envVal "renewables"
              ( listElement 28 (dictVal "output" select)
@@ -351,7 +351,7 @@ bwd_cases =
   tickLabels: { x: Default, y: Default }
 }) :| [])"""
      }
-   , { file: "linkedOutputs/stacked_bar_scatter_plot.fld"
+   , { file: "linked_outputs/stacked_bar_scatter_plot.fld"
      , bwd_expect:
           envVal "nonRenewables"
              ( listElement 45 (dictVal "nuclearOut" select >.> dictVal "gasOut" select >.> dictVal "coalOut" select >.> dictVal "petrolOut" select)

@@ -1,4 +1,4 @@
-import linkedOutputs.pairsData
+import linked_outputs.pairs_data
 
 def q: 1
 

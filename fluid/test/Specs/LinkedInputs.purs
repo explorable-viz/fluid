@@ -24,7 +24,7 @@ linkedInputs_spec3 =
                    >.> listElement 206 (dictVal "capacity" select)
                    >.> listElement 207 (dictVal "capacity" select)
               )
-   , file: "linkedInputs/energyscatter.fld"
+   , file: "linked_inputs/energyscatter.fld"
    }
 
 linkedInputs_spec4 :: TestLinkedInputsSpec
@@ -53,7 +53,7 @@ linkedInputs_spec4 =
                    >.> listElement 206 (dictVal "capacity" select >.> dictVal "output" select)
                    >.> listElement 207 (dictVal "capacity" select >.> dictVal "output" select)
               )
-   , file: "linkedInputs/energyscatter.fld"
+   , file: "linked_inputs/energyscatter.fld"
    }
 
 linkedInputs_spec5 :: TestLinkedInputsSpec
@@ -82,7 +82,7 @@ linkedInputs_spec5 =
                    >.> listElement 2 (dictVal "capacity" select)
                    >.> listElement 3 (dictVal "capacity" select)
               )
-   , file: "linkedInputs/mini-energyscatter.fld"
+   , file: "linked_inputs/mini_energyscatter.fld"
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
