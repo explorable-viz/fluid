@@ -9,13 +9,13 @@ graphics_cases =
    [ { file: "graphics/background.fld"
      , fwd_expect: mempty
      }
-   , { file: "graphics/grouped-bar-chart.fld"
+   , { file: "graphics/grouped_bar_chart.fld"
      , fwd_expect: mempty
      }
-   , { file: "graphics/line-chart.fld"
+   , { file: "graphics/line_chart.fld"
      , fwd_expect: mempty
      }
-   , { file: "graphics/stacked-bar-chart.fld"
+   , { file: "graphics/stacked_bar_chart.fld"
      , fwd_expect: mempty
      }
    ]

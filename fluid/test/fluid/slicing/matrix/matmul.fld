@@ -1,5 +1,5 @@
 import lib.matrix
-import slicing.matrix.leftMatrix
-import slicing.matrix.rightMatrix
+import slicing.matrix.left_matrix
+import slicing.matrix.right_matrix
 
 (mat_mul(leftMatrix, rightMatrix), mat_mul(rightMatrix, leftMatrix))

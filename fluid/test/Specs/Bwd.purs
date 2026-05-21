@@ -34,7 +34,7 @@ bwd_cases =
      , δv: select
      , fwd_expect: "⸨5⸩"
      }
-   , { file: "output-not-source.fld"
+   , { file: "output_not_source.fld"
      , bwd_expect: envVal "x" select >.> envVal "n" select
      , δv: snd select
      , fwd_expect: "(⸨3⸩, ⸨True⸩)"
@@ -54,12 +54,12 @@ bwd_cases =
      , δv: listCell 0 select'
      , fwd_expect: "⸨⸨8⸩ :| 7 :| []⸩"
      }
-   , { file: "list-comp.fld"
+   , { file: "list_comp.fld"
      , bwd_expect: envVal "data" (listElement 1 (dictVal "energyType" select)) >.> envVal "types" (listElement 1 select)
      , δv: listCell 1 select'
      , fwd_expect: "6.2 :| ⸨260 :| 19.9 :| 91 :| []⸩"
      }
-   , { file: "list-comp.fld"
+   , { file: "list_comp.fld"
      , bwd_expect: envVal "data" (listElement 2 (dictVal "energyType" select)) >.> envVal "types" (listElement 2 select)
      , δv: listCell 2 select'
      , fwd_expect: "6.2 :| 260 :| ⸨19.9 :| 91 :| []⸩"
@@ -89,22 +89,22 @@ bwd_cases =
      , δv: listCell 2 select'
      , fwd_expect: "0 :| 0 :| ⸨[]⸩"
      }
-   , { file: "zipWith.fld"
+   , { file: "zip_with.fld"
      , bwd_expect: envVal "xs" (listElement 1 select) >.> envVal "ys" (listElement 1 select)
      , δv: listElement 1 select'
      , fwd_expect: "13.0 :| ⸨25.0⸩ :| 41.0 :| []"
      }
-   , { file: "section-5-example.fld"
+   , { file: "section_5_example.fld"
      , bwd_expect: envVal "types" (listElement 0 select) >.> envVal "data" (listElement 1 (dictVal "energyType" select))
      , δv: listCell 0 select'
      , fwd_expect: "⸨88 :| 6 :| 4 :| []⸩"
      }
-   , { file: "section-5-example.fld"
+   , { file: "section_5_example.fld"
      , bwd_expect: envVal "data" (listElement 1 (dictVal "output" select) >.> listElement 2 (dictVal "output" select) >.> listElement 4 (dictVal "output" select))
      , δv: listElement 1 select
      , fwd_expect: "⸨88⸩ :| ⸨6⸩ :| ⸨4⸩ :| []"
      }
-   , { file: "section-5-example.fld"
+   , { file: "section_5_example.fld"
      , bwd_expect: envVal "types" (listElement 2 select) >.> envVal "data" (listElement 4 (dictVal "energyType" select))
      , δv: listCell 2 select'
      , fwd_expect: "88 :| 6 :| ⸨4 :| []⸩"
@@ -124,7 +124,7 @@ bwd_cases =
      , δv: dict select'
      , fwd_expect: "⸨{ a: 5 }⸩"
      }
-   , { file: "dict/disjointUnion.fld"
+   , { file: "dict/disjoint_union.fld"
      , bwd_expect: envVal "d1" (dictKey "a" select') >.> envVal "d2" (dictVal "c" select)
      , δv: dictKey "a" select' >.> dictVal "c" select
      , fwd_expect: "{ ⸨a⸩: 5, b: 6, c: ⸨7⸩ }"
@@ -134,7 +134,7 @@ bwd_cases =
      , δv: select
      , fwd_expect: "⸨0⸩"
      }
-   , { file: "dict/intersectionWith.fld"
+   , { file: "dict/intersection_with.fld"
      , bwd_expect: envVal "d1" (dictVal "b" select >.> dictVal "c" select) >.> envVal "d2" (dictVal "b" select >.> dictVal "c" select)
      , δv: dictVal "b" select >.> dictVal "c" select
      , fwd_expect: "{ b: ⸨0⸩, c: ⸨20⸩ }"
@@ -149,7 +149,7 @@ bwd_cases =
      , δv: select
      , fwd_expect: ""
      }
-   , { file: "matrix-update.fld"
+   , { file: "matrix_update.fld"
      , bwd_expect: envVal "pair" select
      , δv: matrixElement 1 1 select
      , fwd_expect:
@@ -159,7 +159,7 @@ bwd_cases =
 4, 10, 3, 7, 19,
 3, 11, 15, 2, 9"""
      }
-   , { file: "convolution/edgeDetect.fld"
+   , { file: "convolution/edge_detect.fld"
      , bwd_expect:
           envVal "filter"
              ( matrixElement 0 0 select >.> matrixElement 0 1 select >.> matrixElement 0 2 select
@@ -235,7 +235,7 @@ bwd_cases =
 19, 26, 33,
 29, 40, 51)"""
      }
-   , { file: "dtw/compute-dtw.fld"
+   , { file: "dtw/compute_dtw.fld"
      , bwd_expect:
           envVal "seq1"
              ( listElement 0 select >.> listElement 1 select
@@ -261,7 +261,7 @@ bwd_cases =
      , δv: listElement 1 select
      , fwd_expect: "(0, 0) :| ⸨(⸨1⸩, ⸨1⸩)⸩ :| (1, 2) :| (2, 3) :| (3, 4) :| (4, 5) :| (4, 6) :| []"
      }
-   , { file: "dtw/average-series.fld"
+   , { file: "dtw/average_series.fld"
      , bwd_expect:
           envVal "seq1" (listElement 1 select)
              >.> envVal "seq2" (listElement 2 select)
@@ -283,7 +283,7 @@ bwd_cases =
      , δv: some select'
      , fwd_expect: "⸨Some(\"Germany\")⸩"
      }
-   , { file: "linkedOutputs/bar-chart-line-chart.fld"
+   , { file: "linked_outputs/bar_chart_line_chart.fld"
      , bwd_expect:
           envVal "renewables"
              ( listElement 28 (dictVal "output" select)
@@ -351,7 +351,7 @@ bwd_cases =
   tickLabels: { x: Default, y: Default }
 }) :| [])"""
      }
-   , { file: "linkedOutputs/stacked-bar-scatter-plot.fld"
+   , { file: "linked_outputs/stacked_bar_scatter_plot.fld"
      , bwd_expect:
           envVal "nonRenewables"
              ( listElement 45 (dictVal "nuclearOut" select >.> dictVal "gasOut" select >.> dictVal "coalOut" select >.> dictVal "petrolOut" select)

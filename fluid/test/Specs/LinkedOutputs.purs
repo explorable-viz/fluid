@@ -33,7 +33,7 @@ linkedOutputs_spec1 =
                         )
                    )
               )
-   , file: "slicing/linkedOutputs/bar-chart-line-chart.fld"
+   , file: "slicing/linked_outputs/bar_chart_line_chart.fld"
    }
 
 linkedOutputs_spec2 :: TestLinkedOutputsSpec
@@ -54,7 +54,7 @@ linkedOutputs_spec2 =
                         >.> scatterPoint 6 (dictVal f_y select)
                    )
               )
-   , file: "slicing/linkedOutputs/stacked-bar-scatter-plot.fld"
+   , file: "slicing/linked_outputs/stacked_bar_scatter_plot.fld"
    }
 
 movingAverages_spec :: TestLinkedOutputsSpec
@@ -68,7 +68,7 @@ movingAverages_spec =
         }
    , δ_out: identity >>> (_ × Persistent) -- TODO: make this a non-trivial test
    , out_expect: identity >>> (_ × Persistent)
-   , file: "linkedOutputs/moving-average.fld"
+   , file: "linked_outputs/moving_average.fld"
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
@@ -82,7 +82,7 @@ linkedOutputs_cases =
           }
      , δ_out: snd select
      , out_expect: select
-     , file: "linkedOutputs/pairs.fld"
+     , file: "linked_outputs/pairs.fld"
      }
    , { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
@@ -112,7 +112,7 @@ linkedOutputs_cases =
                      >.> matrixElement 2 1 select
                      >.> matrixElement 2 2 select
                 )
-     , file: "linkedOutputs/convolution.fld"
+     , file: "linked_outputs/convolution.fld"
      }
    , linkedOutputs_spec1
    , linkedOutputs_spec2

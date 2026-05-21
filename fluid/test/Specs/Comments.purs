@@ -4,7 +4,7 @@ import Test.Util.Suite (TestSpec)
 
 comments_cases :: Array TestSpec
 comments_cases =
-   [ { file: "comments/nested-constr.fld"
+   [ { file: "comments/nested_constr.fld"
      , fwd_expect: """@doc(Paragraph("This" :| "is" :| "a" :| (@doc(Paragraph("This" :| "is" :| "a" :| "nested" :| "docComment!" :| [])) "some string") :| "docComment!" :| [])) False"""
      }
    , { file: "comments/dicts.fld"
@@ -17,10 +17,10 @@ comments_cases =
   g: { a: 5 }
 }"""
      }
-   , { file: "comments/app-arg.fld"
+   , { file: "comments/app_arg.fld"
      , fwd_expect: """@doc(Paragraph("Comments" :| "on" :| "arguments" :| "don't" :| "surface" :| "on" :| "the" :| "outermost" :| "application" :| [])) 5 :| 7 :| 13 :| 15 :| 4 :| 3 :| -3 :| []"""
      }
-   , { file: "comments/list-comp.fld"
+   , { file: "comments/list_comp.fld"
      , fwd_expect: """@doc(Paragraph("We" :| "can" :| "add" :| "comments" :| "to" :| "list" :| "comprehensions" :| [])) 14 :| 12 :| 10 :| 13 :| 11 :| 9 :| 12 :| 10 :| 8 :| []"""
      }
    , { file: "comments/app.fld"

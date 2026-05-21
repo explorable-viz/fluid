@@ -46,7 +46,7 @@
 	</DataPane>
 
 	<div class="flex-left-align">
-		<Figure {spec} fld="../fluid/moving-average.fld" />
+		<Figure {spec} fld="../fluid/moving_average.fld" />
 	</div>
 </Grid>
 

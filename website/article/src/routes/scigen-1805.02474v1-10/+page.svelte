@@ -29,7 +29,7 @@
 	</DataPane>
 
 	<div class="flex-left-align">
-		<Figure {spec} fld="../fluid/1805.02474v1-10.fld" />
+		<Figure {spec} fld="../fluid/_1805_02474v1_10.fld" />
 	</div>
 </Grid>
 

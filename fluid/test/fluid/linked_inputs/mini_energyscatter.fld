@@ -1,4 +1,4 @@
-import dataset.nonRenewables
+import dataset.energy_data
 
 def sumNonRenewables(x):
   ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap

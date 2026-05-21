@@ -1,4 +1,4 @@
-import slicing.dict.intersectionWith_inputs
+import slicing.dict.intersection_with_inputs
 
 dict_intersectionWith(def x: 2;
 
