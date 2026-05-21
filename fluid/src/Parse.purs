@@ -110,12 +110,12 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       pure $ MatchAs e bs
 
       where
-      branch :: Parser (Pattern × Raw Expr)
+      branch :: Parser (Pattern × Raw Block)
       branch = do
          reserved "case"
          p <- pattern
-         e <- block expr
-         pure (p × e)
+         b <- blockBody
+         pure (p × b)
 
    -- TODO: consider capturing 'def' parse for better error handling
    def :: Parser (Raw Expr)

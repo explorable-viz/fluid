@@ -176,11 +176,11 @@ instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons q qs) = pretty (singleton q) <+> pretty qs
    pretty Nil = empty
 
-instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
+instance Ann a => Pretty (NonEmptyList (Pattern × Block a)) where
    pretty cs = vsep (toList (pretty <$> cs))
 
-instance Ann a => Pretty (Pattern × Expr a) where
-   pretty (p × e) = text "case" <+> (pretty p) <> block (pretty e)
+instance Ann a => Pretty (Pattern × Block a) where
+   pretty (p × b) = text "case" <+> (pretty p) <> block (pretty b)
 
 instance Pretty Pattern where
    pretty (PVar x) = text x
