@@ -111,7 +111,8 @@ testProperties s gconfig { δv, bwd_expect, bwd_expect', fwd_expect } = do
       Nothing -> pure unit
       Just sel -> do
          let expected = sel𝔹 sel in_γ
-         unwrap >>> (in_γ ≽ _) # checkSatisfies "bwd_expect'" (PrettyShow expected)
+         unless (in_γ ≽ expected) $
+            throw ("bwd_expect' mismatch:\nactual in_γ\n" <> prettyP in_γ <> "\nexpected (sel𝔹)\n" <> prettyP expected)
    unless (null fwd_expect) do
       let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
       withMsg "fwd_expect" $ checkPretty fwd_expect (report out1)

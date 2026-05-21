@@ -115,6 +115,14 @@ dict :: Setter (Val (SelStates 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of
    Val α doc (Dictionary d) -> first (\α' -> Val α' doc (Dictionary d)) (persist δα α)
 
+matrix :: Setter (Val (SelStates 𝔹)) 𝔹
+matrix δα = unsafePartial $ case _ of
+   Val α doc (Matrix r) -> first (\α' -> Val α' doc (Matrix r)) (persist δα α)
+
+-- Flip only the outer Val annotation, regardless of payload (closure, etc.).
+topα :: Setter (Val (SelStates 𝔹)) 𝔹
+topα δα (Val α doc baseVal) = first (\α' -> Val α' doc baseVal) (persist δα α)
+
 dictKey :: String -> Setter (Val (SelStates 𝔹)) 𝔹
 dictKey s δα = unsafePartial $ case _ of
    Val α doc (Dictionary (DictRep d)) ->

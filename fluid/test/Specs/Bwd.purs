@@ -3,43 +3,13 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, envVal, fst, listCell, listElement, matrixElement, multiViewEntry, select, select', snd, some, (>.>))
+import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, envVal, fst, listCell, listElement, matrix, matrixElement, multiViewEntry, select, select', snd, some, topα, (>.>))
 import Test.Util.Suite (TestBwdSpec, TestBwdSpec_new)
 import Util ((×))
 
 bwd_cases :: Array TestBwdSpec
 bwd_cases =
-   [ { file: "convolution/edgeDetect.fld"
-     , bwd_expect_file: "convolution/edgeDetect.expect.fld"
-     , δv: matrixElement 0 0 select
-     , fwd_expect:
-          """⸨0⸩, -1, 2, 0, -1,
-0, 3, -2, 3, -2,
--1, 1, -5, 0, 4,
-1, -1, 4, 0, -4,
-1, 0, -3, 2, 0"""
-     }
-   , { file: "convolution/emboss.fld"
-     , bwd_expect_file: "convolution/emboss.expect.fld"
-     , δv: matrixElement 0 0 select
-     , fwd_expect:
-          """⸨5⸩, 4, 2, 5, 2,
-3, 1, 2, -1, -2,
-3, 0, 1, 0, -1,
-2, 1, -2, 0, 0,
-1, 0, -1, -1, -2"""
-     }
-   , { file: "convolution/gaussian.fld"
-     , bwd_expect_file: "convolution/gaussian.expect.fld"
-     , δv: matrixElement 0 0 select
-     , fwd_expect:
-          """⸨38⸩, 37, 28, 30, 38,
-38, 36, 46, 31, 34,
-37, 41, 54, 34, 20,
-21, 35, 31, 31, 42,
-13, 32, 35, 19, 26"""
-     }
-   , { file: "matrix/matmul.fld"
+   [ { file: "matrix/matmul.fld"
      , bwd_expect_file: "matrix/matmul.expect.fld"
      , δv: fst $ matrixElement 0 0 select
      , fwd_expect:
@@ -344,5 +314,68 @@ bwd_cases_new =
 14, 9, 20, 8, 1,
 4, 10, 3, 7, 19,
 3, 11, 15, 2, 9"""
+     }
+   , { file: "convolution/edgeDetect.fld"
+     , bwd_expect:
+          envVal "filter"
+             ( matrixElement 0 0 select >.> matrixElement 0 1 select >.> matrixElement 0 2 select
+                  >.> matrixElement 1 0 select
+                  >.> matrixElement 1 1 select
+                  >.> matrixElement 1 2 select
+                  >.> matrixElement 2 0 select
+                  >.> matrixElement 2 1 select
+                  >.> matrixElement 2 2 select
+             )
+             >.> envVal "inputImage"
+                (matrixElement 0 0 select >.> matrixElement 0 1 select >.> matrixElement 1 0 select)
+     , δv: matrixElement 0 0 select
+     , fwd_expect:
+          """⸨0⸩, -1, 2, 0, -1,
+0, 3, -2, 3, -2,
+-1, 1, -5, 0, 4,
+1, -1, 4, 0, -4,
+1, 0, -3, 2, 0"""
+     }
+   , { file: "convolution/emboss.fld"
+     , bwd_expect:
+          envVal "convolve" (topα select')
+             >.> envVal "filter"
+                ( matrix select' >.> matrixElement 1 1 select >.> matrixElement 1 2 select
+                     >.> matrixElement 2 1 select
+                     >.> matrixElement 2 2 select
+                )
+             >.> envVal "inputImage"
+                ( matrix select' >.> matrixElement 0 0 select >.> matrixElement 0 1 select
+                     >.> matrixElement 1 0 select
+                     >.> matrixElement 1 1 select
+                )
+     , δv: matrixElement 0 0 select
+     , fwd_expect:
+          """⸨5⸩, 4, 2, 5, 2,
+3, 1, 2, -1, -2,
+3, 0, 1, 0, -1,
+2, 1, -2, 0, 0,
+1, 0, -1, -1, -2"""
+     }
+   , { file: "convolution/gaussian.fld"
+     , bwd_expect:
+          envVal "convolve" (topα select')
+             >.> envVal "filter"
+                ( matrix select' >.> matrixElement 1 1 select >.> matrixElement 1 2 select
+                     >.> matrixElement 2 1 select
+                     >.> matrixElement 2 2 select
+                )
+             >.> envVal "inputImage"
+                ( matrix select' >.> matrixElement 0 0 select >.> matrixElement 0 1 select
+                     >.> matrixElement 1 0 select
+                     >.> matrixElement 1 1 select
+                )
+     , δv: matrixElement 0 0 select
+     , fwd_expect:
+          """⸨38⸩, 37, 28, 30, 38,
+38, 36, 46, 31, 34,
+37, 41, 54, 34, 20,
+21, 35, 31, 31, 42,
+13, 32, 35, 19, 26"""
      }
    ]
