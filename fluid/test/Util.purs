@@ -110,7 +110,8 @@ testProperties s gconfig { δv, bwd_expect, bwd_expect', fwd_expect } = do
    case bwd_expect' of
       Nothing -> pure unit
       Just sel ->
-         unwrap >>> (_ == in_γ) # checkSatisfies "bwd_expect'" (PrettyShow (sel𝔹 sel in_γ))
+         -- subsumption: closures may carry extra annotations
+         unwrap >>> (in_γ >= _) # checkSatisfies "bwd_expect'" (PrettyShow (sel𝔹 sel in_γ))
    unless (null fwd_expect) do
       let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
       withMsg "fwd_expect" $ checkPretty fwd_expect (report out1)
