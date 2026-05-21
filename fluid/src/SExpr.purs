@@ -57,7 +57,7 @@ data Expr a
    | ListEnum (Expr a) (Expr a)
    | ListComp a (Expr a) (List (Qualifier a))
    | Let (VarDefs a) (Block a)
-   | LetRec (RecDefs a) (Expr a)
+   | LetRec (RecDefs a) (Block a)
    | DocExpr (Expr a) (Expr a)
 
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
@@ -275,8 +275,8 @@ exprFwd (ListComp α s qs) =
    listCompFwd (α × qs × s)
 exprFwd (Let ds s) =
    varDefsFwd (ds × s)
-exprFwd (LetRec xcs s) =
-   E.LetRec <$> recDefsFwd xcs <*> desug s
+exprFwd (LetRec xcs b) =
+   E.LetRec <$> recDefsFwd xcs <*> blockFwd b
 exprFwd (DocExpr s s') = do
    e <- exprFwd s
    e' <- exprFwd s'
