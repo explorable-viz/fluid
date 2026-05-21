@@ -2,7 +2,7 @@ def split([]):
   return ([], [])
 def split(x :| xs):
   def (ys, zs): split(xs)
-  (x :| zs, ys)
+  return (x :| zs, ys)
 
 def merge(xs, ys):
   match (xs, ys):
@@ -21,6 +21,6 @@ def mergesort(xs):
     return xs
   else:
     def (ys, zs): split(xs)
-    merge(mergesort(ys), mergesort(zs))
+    return merge(mergesort(ys), mergesort(zs))
 
 mergesort([3, 1, 2])

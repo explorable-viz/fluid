@@ -131,8 +131,8 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       valDef :: Parser (Raw Expr)
       valDef = context "valDef" $ withPos do
          ds <- varDefs
-         e <- align expr
-         pure $ Let ds e
+         ss <- many1 (align stmt)
+         pure $ Let ds (Block ss)
 
    ifElse :: Parser (Raw Expr)
    ifElse = do
@@ -226,7 +226,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          letExpr = context "letExpr" do
             ds <- many1 varDef
             e <- opTree
-            pure $ Let ds e
+            pure $ Let ds (returns e)
             where
             varDef :: Parser (Raw VarDef)
             varDef = do

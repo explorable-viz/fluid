@@ -56,7 +56,7 @@ data Expr a
    | ListNonEmpty a (Expr a) (ListRest a)
    | ListEnum (Expr a) (Expr a)
    | ListComp a (Expr a) (List (Qualifier a))
-   | Let (VarDefs a) (Expr a)
+   | Let (VarDefs a) (Block a)
    | LetRec (RecDefs a) (Expr a)
    | DocExpr (Expr a) (Expr a)
 
@@ -185,11 +185,11 @@ varDefFwd (VarDef p s) =
    E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × returns (Dictionary top Nil))))) <*> desug s
 
 -- VarDefs
-varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
-varDefsFwd (NonEmptyList (d :| Nil) × s) =
-   E.Let <$> varDefFwd d <*> desug s
-varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
-   E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
+varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Block a -> m (E.Expr a)
+varDefsFwd (NonEmptyList (d :| Nil) × b) =
+   E.Let <$> varDefFwd d <*> blockFwd b
+varDefsFwd (NonEmptyList (d :| d' : ds) × b) =
+   E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × b)
 
 -- RecDefs
 -- In the formalism, "group by name" is part of the syntax.
