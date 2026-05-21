@@ -50,7 +50,7 @@ data Expr a
    | BinaryApp (Expr a) Var (Expr a)
    | UnaryPrefixApp Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
-   | IfElse (NonEmptyList (Expr a × Expr a)) (Expr a)
+   | IfElse (NonEmptyList (Expr a × Block a)) (Block a)
    | Paragraph (Paragraph a)
    | ListEmpty a
    | ListNonEmpty a (Expr a) (ListRest a)
@@ -266,7 +266,7 @@ exprFwd (UnaryPrefixApp op s) =
 exprFwd (MatchAs s μ) =
    E.App <$> (E.Lambda top <$> desug (Clauses ((Clause <<< second singletonBlock) <$> first singleton <$> μ))) <*> desug s
 exprFwd (IfElse sss s) =
-   ifElseFwd (sss × s)
+   ifElseFwd ((second runBlock <$> sss) × runBlock s)
 exprFwd (Paragraph elems) =
    paragraphFwd elems
 exprFwd (ListEmpty α) =

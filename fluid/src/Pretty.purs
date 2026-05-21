@@ -146,9 +146,9 @@ instance Ann a => Pretty (Expr a) where
    pretty (MatchAs s cs) = text "match" <+> pretty s <> block (pretty cs)
    pretty (IfElse (NonEmptyList (ss :| sss)) e) =
       vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))
-         <++> text "else" <> block (pretty e)
+         <++> text "else" <> block (pretty (runBlock e))
       where
-      prettyClause w (s × s') = text w <+> expr (pretty s) <> block (pretty s')
+      prettyClause w (s × s') = text w <+> expr (pretty s) <> block (pretty (runBlock s'))
 
    pretty (ListEmpty α) = highlightIf α (text "[]")
    pretty (ListNonEmpty α e rest) =

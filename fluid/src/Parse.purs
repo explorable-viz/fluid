@@ -134,12 +134,12 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       c <- clause
       cs <- many (align $ reserved "elif" *> clause)
       e <- align $ reserved "else" *> block expr
-      pure $ IfElse (nonEmpty (c : cs)) e
+      pure $ IfElse (nonEmpty (c : cs)) (singletonBlock e)
       where
       clause = do
          c <- opTree
          e <- block expr
-         pure (c × e)
+         pure (c × singletonBlock e)
 
    opTree :: Parser (Raw Expr)
    opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
