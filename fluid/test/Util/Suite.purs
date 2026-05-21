@@ -8,6 +8,7 @@ import App.View.Util (Fig, Options)
 import Bind (Bind)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
+import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
 import Effect.Aff (Error)
@@ -36,6 +37,13 @@ type TestBwdSpec =
    , fwd_expect :: String
    }
 
+type TestBwdSpec_new =
+   { file :: String
+   , bwd_expect :: Selector Env
+   , δv :: Selector Val
+   , fwd_expect :: String
+   }
+
 type TestLinkedOutputsSpec =
    { spec :: Options
    , δ_out :: Selector Val
@@ -57,7 +65,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
    asTest { file, fwd_expect } = do
-      test (File file) primitives { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
+      test (File file) primitives { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty, bwd_expect': Nothing } (n × is_bench)
 
 bwdSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestBwdSpec -> BenchSuite m
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
@@ -67,7 +75,16 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
    asTest :: TestBwdSpec -> m BenchRow
    asTest { file, bwd_expect_file, δv, fwd_expect } = do
       bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
-      test (folder </> File file) primitives { δv, fwd_expect, bwd_expect } (n × is_bench)
+      test (folder </> File file) primitives { δv, fwd_expect, bwd_expect, bwd_expect': Nothing } (n × is_bench)
+
+bwdSuite_new :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestBwdSpec_new -> BenchSuite m
+bwdSuite_new specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
+   where
+   folder = Folder "slicing"
+
+   asTest :: TestBwdSpec_new -> m BenchRow
+   asTest { file, bwd_expect, δv, fwd_expect } = do
+      test (folder </> File file) primitives { δv, fwd_expect, bwd_expect: mempty, bwd_expect': Just bwd_expect } (n × is_bench)
 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect, file } = do

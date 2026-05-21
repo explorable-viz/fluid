@@ -3,11 +3,13 @@ module Test.Util where
 import Prelude hiding (absurd, compare)
 
 import App.Util (Selector, getPersistent, unselected)
+import App.Util.Selector (sel𝔹)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Reader (class MonadReader)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.String (null, trim)
 import Data.Tuple (fst)
@@ -34,6 +36,7 @@ type SelectionSpec =
    { δv :: Selector Val
    , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
    , bwd_expect :: String
+   , bwd_expect' :: Maybe (Selector Env) -- env-selector check; eventually replaces bwd_expect
    }
 
 fluidSrcPaths :: Array Folder
@@ -78,7 +81,7 @@ testProperties
    -> GraphConfig
    -> SelectionSpec
    -> AffError m Unit
-testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
+testProperties s gconfig { δv, bwd_expect, bwd_expect', fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
@@ -104,6 +107,10 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    -- empty string somewhat hacky encoding for "don't care"
    unless (null bwd_expect) $ do
       withMsg "bwd_expect" $ checkPretty bwd_expect in_s
+   case bwd_expect' of
+      Nothing -> pure unit
+      Just sel ->
+         unwrap >>> (_ == in_γ) # checkSatisfies "bwd_expect'" (PrettyShow (sel𝔹 sel in_γ))
    unless (null fwd_expect) do
       let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
       withMsg "fwd_expect" $ checkPretty fwd_expect (report out1)

@@ -3,8 +3,8 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, fst, listCell, listElement, matrixElement, multiViewEntry, select, select', snd, some, (>.>))
-import Test.Util.Suite (TestBwdSpec)
+import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, envVal, fst, listCell, listElement, matrixElement, multiViewEntry, select, select', snd, some, (>.>))
+import Test.Util.Suite (TestBwdSpec, TestBwdSpec_new)
 import Util ((×))
 
 bwd_cases :: Array TestBwdSpec
@@ -78,11 +78,6 @@ bwd_cases =
      }
    , { file: "dict/get.fld", bwd_expect_file: "dict/get.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
    , { file: "dict/map.fld", bwd_expect_file: "dict/map.expect.fld", δv: select, fwd_expect: "⸨20⸩" }
-   , { file: "divide.fld"
-     , bwd_expect_file: "divide.expect.fld"
-     , δv: select
-     , fwd_expect: "⸨40.22222222222222⸩"
-     }
    , { file: "dict/match.fld", bwd_expect_file: "dict/match.expect.fld", δv: select, fwd_expect: "" }
    , { file: "dtw/compute-dtw.fld"
      , bwd_expect_file: "dtw/compute-dtw.expect.fld"
@@ -304,5 +299,14 @@ bwd_cases =
      , bwd_expect_file: "qcut.expect.fld"
      , δv: (_ × Persistent)
      , fwd_expect: "(1.01 :| 1.05 :| [], 0.051000000000000156) :| (1.07 :| 1.09 :| 1.22 :| 1.23 :| 1.24 :| 1.24 :| 1.25 :| 1.32 :| 1.32 :| 1.35 :| 1.39 :| 1.47 :| 1.57 :| 1.72 :| [], 0.6639999999999999) :| (1.73 :| 1.75 :| 1.76 :| 1.83 :| 1.87 :| 1.94 :| 2.04 :| 2.14 :| 2.18 :| 2.36 :| 2.37 :| 2.38 :| 2.52 :| 2.54 :| [], 0.8464999999999998) :| (2.61 :| 2.67 :| [], 0.09850000000000003) :| []"
+     }
+   ]
+
+bwd_cases_new :: Array TestBwdSpec_new
+bwd_cases_new =
+   [ { file: "divide.fld"
+     , bwd_expect: envVal "a" select >.> envVal "b" select
+     , δv: select
+     , fwd_expect: "⸨40.22222222222222⸩"
      }
    ]

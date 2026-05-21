@@ -2,7 +2,7 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel)
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, getPersistent, selStates)
 import Bind (Var)
 import Data.List (List(..), updateAt, (!!), (:))
 import Data.Maybe (fromJust)
@@ -18,6 +18,14 @@ import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Env, Val(..), matrixGet, matrixPut)
 
 type SelSetter f g = Setter (f (SelStates 𝔹)) (g (SelStates 𝔹))
+
+-- Interpret a selector in the plain-boolean world: apply it to a bot-shaped template
+-- and project the persistent component.
+sel𝔹 :: forall f a. Functor f => SetSel (f (SelStates 𝔹)) -> f a -> f 𝔹
+sel𝔹 sel template = getPersistent <$> γ'
+   where
+   γ' × _ = sel (const (selStates false false false) <$> template)
+
 type Setter b a = SetSel a -> SetSel b
 
 type ViewSetter f g = Endo g -> Endo f -- Only used in unexercised view setters
