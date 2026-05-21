@@ -48,11 +48,6 @@ bwd_cases =
 19, 26, 33,
 29, 40, 51)"""
      }
-   , { file: "dict/difference.fld"
-     , bwd_expect_file: "dict/difference.expect.fld"
-     , δv: dict select'
-     , fwd_expect: "⸨{ a: 5 }⸩"
-     }
    , { file: "dict/disjointUnion.fld"
      , bwd_expect_file: "dict/disjointUnion.expect.fld"
      , δv: dictKey "a" select' >.> dictVal "c" select
@@ -336,5 +331,10 @@ bwd_cases_new =
      , bwd_expect: envVal "a_2" select >.> envVal "b" select
      , δv: dictKey "ab" select'
      , fwd_expect: "{ a: 5, ⸨ab⸩: 6 }"
+     }
+   , { file: "dict/difference.fld"
+     , bwd_expect: envVal "e" select >.> envVal "f" select
+     , δv: dict select'
+     , fwd_expect: "⸨{ a: 5 }⸩"
      }
    ]
