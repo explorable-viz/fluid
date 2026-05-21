@@ -1,4 +1,4 @@
-import dataset.non_renewables
+import dataset.energy_data
 
 def totalFor(year, country, rows):
   def [row]:
