@@ -86,11 +86,6 @@ bwd_cases =
      , fwd_expect: "2.5 :| 0.5 :| ⸨0.5⸩ :| 2.5 :| 2.5 :| 1.0 :| 0.5 :| []"
      , δv: listElement 2 select
      }
-   , { file: "filter.fld"
-     , bwd_expect_file: "filter.expect.fld"
-     , δv: listCell 0 select'
-     , fwd_expect: "⸨⸨8⸩ :| 7 :| []⸩"
-     }
    , { file: "intersperse.fld"
      , bwd_expect_file: "intersperse-1.expect.fld"
      , δv: listCell 1 select'
@@ -332,5 +327,10 @@ bwd_cases_new =
      , bwd_expect: envVal "x" select >.> envVal "y" select
      , δv: select
      , fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩"
+     }
+   , { file: "filter.fld"
+     , bwd_expect: envVal "n" select >.> envVal "xs" (listElement 0 select)
+     , δv: listCell 0 select'
+     , fwd_expect: "⸨⸨8⸩ :| 7 :| []⸩"
      }
    ]
