@@ -25,7 +25,7 @@ import Test.Util.Suite (BenchSuite, SuiteFactory, bwdSuite, bwdSuite_new, linked
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> allTests)
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> tests)
 
 tests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 tests = allTests
