@@ -43,7 +43,7 @@ data Expr a
    | Constr a Ctr (List (Expr a))
    | Dictionary a (List (DictEntry a × Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
-   | Lambda (Clauses a)
+   | Lambda (LambdaClause a)
    | Project (Expr a) Var
    | DProject (Expr a) (Expr a)
    | App (Expr a) (Expr a)
@@ -120,6 +120,9 @@ newtype Clause a = Clause (NonEmptyList Pattern × Stmt a)
 type Branch a = Var × Clause a
 newtype Clauses a = Clauses (NonEmptyList (Clause a))
 
+-- Lambdas accept exactly one clause whose body is an expression (no defs / return-keyword).
+newtype LambdaClause a = LambdaClause (NonEmptyList Pattern × Expr a)
+
 newtype RecDef a = RecDef (NonEmptyList (Branch a))
 type RecDefs a = NonEmptyList (Branch a)
 
@@ -152,6 +155,10 @@ instance Desugarable ListRest E.Expr where
 instance Desugarable Clauses Elim where
    desug :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
    desug μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
+
+instance Desugarable LambdaClause Elim where
+   desug :: forall a m. BoundedLattice a => MonadError Error m => LambdaClause a -> m (Elim a)
+   desug (LambdaClause (ps × e)) = desug (Clauses (singleton (Clause (ps × Return e))))
 
 desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
 desugarModuleFwd = moduleFwd
@@ -458,10 +465,12 @@ anon (Right _) = Right pListVarAnon
 -- ======================
 derive instance Newtype (Clause a) _
 derive instance Newtype (Clauses a) _
+derive instance Newtype (LambdaClause a) _
 derive instance Newtype (RecDef a) _
 derive instance Functor Stmt
 derive instance Functor Clause
 derive instance Functor Clauses
+derive instance Functor LambdaClause
 derive instance Functor DictEntry
 derive instance Functor ListRest
 derive instance Functor VarDef
@@ -517,6 +526,11 @@ instance Show a => Show (Clause a) where
 derive instance Eq a => Eq (Clauses a)
 derive instance Generic (Clauses a) _
 instance Show a => Show (Clauses a) where
+   show c = genericShow c
+
+derive instance Eq a => Eq (LambdaClause a)
+derive instance Generic (LambdaClause a) _
+instance Show a => Show (LambdaClause a) where
    show c = genericShow c
 
 derive instance Eq a => Eq (VarDef a)

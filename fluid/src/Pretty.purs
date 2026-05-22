@@ -4,7 +4,7 @@ import Prelude
 
 import Bind (Bind, Var, (↦))
 import Data.List (List(..), fromFoldable, singleton, (:))
-import Data.List.NonEmpty (NonEmptyList(..), head, toList)
+import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.NonEmpty ((:|))
@@ -17,7 +17,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricD
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (assignment, block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Primitive.Parse (getPrec)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
 import Util (type (×), error, isEmpty, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
@@ -120,11 +120,7 @@ operatorApp n (UnaryPrefixApp op s) =
 operatorApp _ e = prettySimple e
 
 lambda :: forall a. Ann a => List Pattern -> Stmt a -> Doc
-lambda ps s = text "lambda" <+> prettyList ps <> text ":" <+> prettyLambdaBody s
-   where
-   prettyLambdaBody :: Stmt a -> Doc
-   prettyLambdaBody (Return e) = pretty e
-   prettyLambdaBody s' = pretty s'
+lambda ps s = text "lambda" <+> prettyList ps <> text ":" <+> pretty s
 
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
@@ -138,7 +134,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Dictionary α es) = highlightIf α (expr $ record $ map pretty es)
    pretty (Matrix α e (x × y) e') =
       highlightIf α (expr $ matrix (pretty e <+> text "for" <+> pair text x y <+> text "in" <+> pretty e'))
-   pretty (Lambda cs) = pretty cs -- Clauses
+   pretty (Lambda c) = pretty c
    pretty (Project s x) = expr $ prettySimple s <> text "." <> text x
    pretty (DProject e k) = expr $ prettySimple e <> brackets (expr $ pretty k)
    pretty (App s s') = expr $ prettyAppChain (App s s') Nil
@@ -213,8 +209,8 @@ instance Ann a => Pretty (Stmt a) where
 instance Ann a => Pretty (Clause a) where
    pretty (Clause (ps × b)) = lambda (toList ps) b
 
-instance Ann a => Pretty (Clauses a) where
-   pretty (Clauses cs) = pretty (head cs) -- TODO: head ?
+instance Ann a => Pretty (LambdaClause a) where
+   pretty (LambdaClause (ps × e)) = text "lambda" <+> prettyList (toList ps) <> text ":" <+> pretty e
 
 instance Ann a => Pretty (RecDefs a) where
    pretty bs = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> bs))
