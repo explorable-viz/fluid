@@ -19,7 +19,7 @@ import Data.Traversable (foldl, foldr)
 import DataType (cPair)
 import Lattice (Raw)
 import Parse.Number (float, integer)
-import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
+import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace, withPos')
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..)) as P
@@ -83,7 +83,26 @@ varDefs = many1 varDef
       pure $ VarDef p e
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+stmt = defer \_ -> ifStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+
+ifStmt :: Parser (Raw Stmt)
+ifStmt = defer \_ -> do
+   let
+      ifClause = do
+         c <- opTree'
+         b <- blockBody
+         pure (c × b)
+   reserved "if"
+   c <- ifClause
+   cs <- many (align $ reserved "elif" *> ifClause)
+   b <- align $ reserved "else" *> blockBody
+   pure $ If (nonEmpty (c : cs)) b
+
+-- Re-export opTree at top level so ifStmt can see it (opTree lives inside expr's
+-- where, but ifStmt is at top level and needs to parse a condition expression
+-- without the let/def alternatives that would leak indent state).
+opTree' :: Parser (Raw Expr)
+opTree' = defer \_ -> expr
 
 blockBody :: Parser (Raw Block)
 blockBody = defer \_ -> (Block <<< singleton) <$> block stmt
@@ -100,7 +119,7 @@ recDefs = many1 recDef
       pure $ p × Clause (ps × b)
 
 expr :: Parser (Raw Expr)
-expr = context "expr" $ matchAs <|> ifElse <|> def <|> ternary <?> "expression"
+expr = context "expr" $ matchAs <|> def <|> ternary <?> "expression"
    where
    ternary :: Parser (Raw Expr)
    ternary = defer \_ -> do
@@ -110,7 +129,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> ternary <?> "expression"
          cond <- opTree
          reserved "else"
          e2 <- expr
-         pure $ IfElse (singleton (cond × returns e1)) (returns e2)
+         pure $ Ternary cond e1 e2
 
    matchAs :: Parser (Raw Expr)
    matchAs = do
@@ -133,29 +152,16 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> ternary <?> "expression"
       funDef <|> valDef
       where
       funDef :: Parser (Raw Expr)
-      funDef = context "funDef" $ withPos do
+      funDef = context "funDef" $ withPos' do
          ds <- recDefs
          ss <- many1 (align stmt)
          pure $ LetRec ds (Block ss)
 
       valDef :: Parser (Raw Expr)
-      valDef = context "valDef" $ withPos do
+      valDef = context "valDef" $ withPos' do
          ds <- varDefs
          ss <- many1 (align stmt)
          pure $ Let ds (Block ss)
-
-   ifElse :: Parser (Raw Expr)
-   ifElse = do
-      reserved "if"
-      c <- clause
-      cs <- many (align $ reserved "elif" *> clause)
-      b <- align $ reserved "else" *> blockBody
-      pure $ IfElse (nonEmpty (c : cs)) b
-      where
-      clause = do
-         c <- opTree
-         b <- blockBody
-         pure (c × b)
 
    opTree :: Parser (Raw Expr)
    opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
