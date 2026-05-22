@@ -22,7 +22,7 @@ import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
+import Expr (Block(..), Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asExpr, fv)
 import File (class LoadFile, FileCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
@@ -184,6 +184,44 @@ eval doc_opt γ e0 αs = do
    funName (Op op) = op
    funName (App e _) = funName e
    funName _ = "unknown"
+
+evalStmt
+   :: forall m
+    . MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => Maybe (Val Vertex)
+   -> Env Vertex
+   -> Stmt Vertex
+   -> Set Vertex
+   -> m (Val Vertex)
+evalStmt doc_opt γ s αs = case s of
+   Return e -> eval doc_opt γ e αs
+   Match e σ -> do
+      v <- eval Nothing γ e αs
+      γ' × κ × αs' <- match v σ
+      eval doc_opt (γ <+> γ') (asExpr κ) αs'
+   Def (VarDef σ e) s' -> do
+      v <- eval Nothing γ e αs
+      γ' × _ × αs' <- withMsg "In variable def" $ match v σ
+      evalStmt doc_opt (γ <+> γ') s' αs'
+   DefRec (RecDefs α ρ) s' -> do
+      γ' <- closeDefs γ ρ (insert α αs)
+      evalStmt doc_opt (γ <+> γ') s' (insert α αs)
+
+evalBlock
+   :: forall m
+    . MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => Maybe (Val Vertex)
+   -> Env Vertex
+   -> Block Vertex
+   -> Set Vertex
+   -> m (Val Vertex)
+evalBlock doc_opt γ (Block s) αs = evalStmt doc_opt γ s αs
 
 evalVal
    :: forall m
