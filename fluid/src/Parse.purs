@@ -83,7 +83,19 @@ varDefs = many1 varDef
       pure $ VarDef p e
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> ifStmt <|> matchStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+
+defStmt :: Parser (Raw Stmt)
+defStmt = defer \_ -> defRecStmt <|> defValStmt
+   where
+   defRecStmt = defer \_ -> do
+      ds <- recDefs
+      body <- align stmt
+      pure $ DefRec ds body
+   defValStmt = defer \_ -> do
+      ds <- varDefs
+      body <- align stmt
+      pure $ Def ds body
 
 ifStmt :: Parser (Raw Stmt)
 ifStmt = defer \_ -> do

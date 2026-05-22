@@ -114,6 +114,8 @@ data Stmt a
    = Return (Expr a)
    | If (NonEmptyList (Expr a × Block a)) (Block a)
    | Match (Expr a) (NonEmptyList (Pattern × Block a))
+   | Def (VarDefs a) (Stmt a)
+   | DefRec (RecDefs a) (Stmt a)
 
 newtype Block a = Block (NonEmptyList (Stmt a))
 
@@ -292,6 +294,14 @@ stmtFwd (Return e) = desug e
 stmtFwd (If sss s) = ifElseFwd (sss × s)
 stmtFwd (Match s μ) =
    E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
+stmtFwd (Def ds body) = defStmtFwd ds body
+   where
+   defStmtFwd (NonEmptyList (d :| Nil)) b =
+      E.Let <$> varDefFwd d <*> stmtFwd b
+   defStmtFwd (NonEmptyList (d :| d' : ds')) b =
+      E.Let <$> varDefFwd d <*> defStmtFwd (NonEmptyList (d' :| ds')) b
+stmtFwd (DefRec xcs body) =
+   E.LetRec <$> recDefsFwd xcs <*> stmtFwd body
 
 blockFwd :: forall a m. BoundedLattice a => MonadError Error m => Block a -> m (E.Expr a)
 blockFwd (Block (NonEmptyList (s :| Nil))) = stmtFwd s
