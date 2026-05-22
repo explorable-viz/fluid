@@ -55,8 +55,6 @@ data Expr a
    | ListNonEmpty a (Expr a) (ListRest a)
    | ListEnum (Expr a) (Expr a)
    | ListComp a (Expr a) (List (Qualifier a))
-   | Let (VarDefs a) (Block a)
-   | LetRec (RecDefs a) (Block a)
    | DocExpr (Expr a) (Expr a)
 
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
@@ -148,6 +146,9 @@ instance Desugarable DictEntry E.Expr where
 instance Desugarable Expr E.Expr where
    desug = exprFwd
 
+instance Desugarable Block E.Expr where
+   desug = blockFwd
+
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
    desug (End α) = pure (enil α)
@@ -192,7 +193,7 @@ varDefFwd (VarDef p s) =
 -- VarDefs
 varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Block a -> m (E.Expr a)
 varDefsFwd (NonEmptyList (d :| Nil) × b) =
-   E.Let <$> varDefFwd d <*> blockFwd b
+   E.Let <$> varDefFwd d <*> desug b
 varDefsFwd (NonEmptyList (d :| d' : ds) × b) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × b)
 
@@ -278,10 +279,6 @@ exprFwd (ListComp α s (ListCompGen p s' : qs)) = unsafePartial $
    listCompFwd (α × (ListCompGen p s' : qs) × s)
 exprFwd (ListComp α s qs) =
    listCompFwd (α × qs × s)
-exprFwd (Let ds s) =
-   varDefsFwd (ds × s)
-exprFwd (LetRec xcs b) =
-   E.LetRec <$> recDefsFwd xcs <*> blockFwd b
 exprFwd (DocExpr s s') = do
    e <- exprFwd s
    e' <- exprFwd s'
@@ -309,11 +306,11 @@ blockFwd _ = error "blockFwd: non-singleton block"
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
 ifElseFwd (sss × s) =
-   foldr clause (blockFwd s) sss
+   foldr clause (desug s) sss
    where
    clause (s1 × b) e3 =
       E.App
-         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> blockFwd b) <*> (ContExpr <$> e3)))
+         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug b) <*> (ContExpr <$> e3)))
          <*> desug s1
 
 -- List Qualifier × Expr
@@ -384,7 +381,7 @@ clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses
 clausesStateFwd ks = case ks of
    Nil -> error absurd
    (Nil × Nil × b) : Nil ->
-      ContExpr <$> blockFwd b
+      ContExpr <$> desug b
    (Nil × _) : _ ->
       ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
    ((Left (PVar x) : _) × _) : _ ->

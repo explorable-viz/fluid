@@ -70,8 +70,6 @@ instance Ann a => IsSimple (Expr a) where
    isSimple (UnaryPrefixApp _ _) = false
    isSimple (Constr _ c _) | c == cCons = false
    isSimple (Lambda _) = false
-   isSimple (Let _ _) = false
-   isSimple (LetRec _ _) = false
    isSimple (Ternary _ _ _) = false
    isSimple _ = true
 
@@ -158,8 +156,6 @@ instance Ann a => Pretty (Expr a) where
 
    pretty (ListEnum s s') = brackets $ expr (pretty s <+> text ".." <+> pretty s')
    pretty (ListComp α s qs) = highlightIf α (brackets (expr (pretty s) <+> pretty qs)) -- Qualifier
-   pretty (Let ds s) = pretty ds <> (stmtOrExpr (line <> line) (text " ")) <> pretty s
-   pretty (LetRec h s) = pretty h <> (stmtOrExpr (line <> line) (text " ")) <> pretty s
    pretty (Paragraph p) = pretty p
    pretty (DocExpr p e) = text "@doc" <> parens (pretty p) </> pretty e
 

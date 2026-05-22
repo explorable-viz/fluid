@@ -138,7 +138,7 @@ recDefs = many1 recDef
       pure $ p × Clause (ps × b)
 
 expr :: Parser (Raw Expr)
-expr = context "expr" $ def <|> ternary <?> "expression"
+expr = context "expr" $ ternary <?> "expression"
    where
    ternary :: Parser (Raw Expr)
    ternary = defer \_ -> do
@@ -149,23 +149,6 @@ expr = context "expr" $ def <|> ternary <?> "expression"
          reserved "else"
          e2 <- expr
          pure $ Ternary cond e1 e2
-
-   -- TODO: consider capturing 'def' parse for better error handling
-   def :: Parser (Raw Expr)
-   def = context "def" do
-      funDef <|> valDef
-      where
-      funDef :: Parser (Raw Expr)
-      funDef = context "funDef" $ withPosReset do
-         ds <- recDefs
-         ss <- many1 (align stmt)
-         pure $ LetRec ds (Block ss)
-
-      valDef :: Parser (Raw Expr)
-      valDef = context "valDef" $ withPosReset do
-         ds <- varDefs
-         ss <- many1 (align stmt)
-         pure $ Let ds (Block ss)
 
    opTree :: Parser (Raw Expr)
    opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
@@ -425,8 +408,11 @@ parse parser input =
    printError (ParseError msg (Position { line, column })) =
       "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
 
-parseProgram :: String -> Either String (Raw Expr × List String)
-parseProgram = parse (withImports expr)
+parseProgram :: String -> Either String (Raw Block × List String)
+parseProgram = parse (withImports (programBody <#> Block <<< singleton))
+   where
+   programBody :: Parser (Raw Stmt)
+   programBody = stmt
 
 parseModule :: String -> Either String (Raw Module × List String)
 parseModule = parse (withImports module_)
