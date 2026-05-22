@@ -27,7 +27,7 @@ import Parsing.Expr (Assoc(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import Primitive.Parse (OpDef(..), OpType(..), Fixity(..), opDefs)
-import SExpr (Block(..), Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs, returns)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
 import Util (type (+), type (×), error, nonEmpty, (×))
 
 pattern :: Parser Pattern
@@ -141,8 +141,8 @@ matchStmt = defer \_ -> do
    bs <- block (many1 (align branch))
    pure $ Match e bs
 
-blockBody :: Parser (Raw Block)
-blockBody = defer \_ -> (Block <<< singleton) <$> block stmt
+blockBody :: Parser (Raw Stmt)
+blockBody = defer \_ -> block stmt
 
 recDefs :: Parser (Raw RecDefs)
 recDefs = many1 recDef
@@ -247,7 +247,7 @@ expr = context "expr" $ ternary <?> "expression"
             ps <- commas1 pattern
             delim ':'
             e <- ternary
-            pure $ Lambda (Clauses (nonEmpty (Clause (ps × returns e) : Nil)))
+            pure $ Lambda (Clauses (nonEmpty (Clause (ps × Return e) : Nil)))
 
          var :: Parser (Raw Expr)
          var = variable <#> Var
@@ -426,8 +426,8 @@ parse parser input =
    printError (ParseError msg (Position { line, column })) =
       "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
 
-parseProgram :: String -> Either String (Raw Block × List String)
-parseProgram = parse (withImports (programStmt <#> Block <<< singleton))
+parseProgram :: String -> Either String (Raw Stmt × List String)
+parseProgram = parse (withImports programStmt)
 
 parseModule :: String -> Either String (Raw Module × List String)
 parseModule = parse (withImports module_)

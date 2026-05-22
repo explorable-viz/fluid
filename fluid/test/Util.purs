@@ -25,7 +25,7 @@ import Module (prepConfig)
 import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import Expr (Block) as Expr
-import SExpr (Block, Expr) as SE
+import SExpr (Expr, Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, defined, log', spyWhen, throw, throwLeft, withMsg, (×))
@@ -77,7 +77,7 @@ testProperties
     . MonadReader FileCxt m
    => LoadFile m
    => MonadWriter BenchRow m
-   => Raw SE.Block
+   => Raw SE.Stmt
    -> GraphConfig
    -> SelectionSpec
    -> AffError m Unit
@@ -141,7 +141,7 @@ checkEq op1 op2 x y = do
    check (left == "") left
    check (right == "") right
 
-testPretty :: forall m a. Ann a => Show a => SE.Block a -> AffError m Unit
+testPretty :: forall m a. Ann a => Show a => SE.Stmt a -> AffError m Unit
 testPretty s = do
    log' ("**** prettyP")
    log' (prettyP s)

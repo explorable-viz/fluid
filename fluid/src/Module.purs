@@ -52,7 +52,7 @@ initialConfig e primitives moduleCxt = do
       pure (primitives' × modules' × restrict (fv e) γ)
    pure { n, primitives: primitives', γ }
 
-type Config = { s :: Raw S.Block, e :: Raw Block, gconfig :: GraphConfig }
+type Config = { s :: Raw S.Stmt, e :: Raw Block, gconfig :: GraphConfig }
 
 prelude :: ModuleName
 prelude = "lib/prelude"

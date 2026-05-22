@@ -110,17 +110,12 @@ subpatts (Right (PListNext p o)) = Left p : Right o : Nil
 
 data Stmt a
    = Return (Expr a)
-   | If (NonEmptyList (Expr a × Block a)) (Block a)
-   | Match (Expr a) (NonEmptyList (Pattern × Block a))
+   | If (NonEmptyList (Expr a × Stmt a)) (Stmt a)
+   | Match (Expr a) (NonEmptyList (Pattern × Stmt a))
    | Def (VarDefs a) (Stmt a)
    | DefRec (RecDefs a) (Stmt a)
 
-newtype Block a = Block (NonEmptyList (Stmt a))
-
-returns :: forall a. Expr a -> Block a
-returns e = Block (NonEmptyList (Return e :| Nil))
-
-newtype Clause a = Clause (NonEmptyList Pattern × Block a)
+newtype Clause a = Clause (NonEmptyList Pattern × Stmt a)
 
 type Branch a = Var × Clause a
 newtype Clauses a = Clauses (NonEmptyList (Clause a))
@@ -146,8 +141,8 @@ instance Desugarable DictEntry E.Expr where
 instance Desugarable Expr E.Expr where
    desug = exprFwd
 
-instance Desugarable Block E.Block where
-   desug = blockFwd_block
+instance Desugarable Stmt E.Block where
+   desug s = E.Block <$> stmtFwd_stmt s
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
@@ -188,12 +183,12 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × returns (Dictionary top Nil))))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Return (Dictionary top Nil))))) <*> desug s
 
 -- VarDefs
-varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Block a -> m (E.Expr a)
+varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Stmt a -> m (E.Expr a)
 varDefsFwd (NonEmptyList (d :| Nil) × b) =
-   E.Let <$> varDefFwd d <*> blockFwd b
+   E.Let <$> varDefFwd d <*> stmtFwd b
 varDefsFwd (NonEmptyList (d :| d' : ds) × b) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × b)
 
@@ -284,7 +279,7 @@ exprFwd (DocExpr s s') = do
    e' <- exprFwd s'
    pure $ E.DocExpr e e'
 
-type IfElseClauses a = NonEmptyList (Expr a × Block a) × Block a
+type IfElseClauses a = NonEmptyList (Expr a × Stmt a) × Stmt a
 
 stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Expr a)
 stmtFwd (Return e) = desug e
@@ -300,10 +295,6 @@ stmtFwd (Def ds body) = defStmtFwd ds body
 stmtFwd (DefRec xcs body) =
    E.LetRec <$> recDefsFwd xcs <*> stmtFwd body
 
-blockFwd :: forall a m. BoundedLattice a => MonadError Error m => Block a -> m (E.Expr a)
-blockFwd (Block (NonEmptyList (s :| Nil))) = stmtFwd s
-blockFwd _ = error "blockFwd: non-singleton block"
-
 -- Structure-preserving stmt desugaring. Def/DefRec emit core Stmt
 -- counterparts; other surface stmts fall back to stmtFwd and wrap in
 -- E.Return.
@@ -318,17 +309,13 @@ stmtFwd_stmt (DefRec xcs body) =
    E.DefRec <$> recDefsFwd xcs <*> stmtFwd_stmt body
 stmtFwd_stmt s = E.Return <$> stmtFwd s
 
-blockFwd_block :: forall a m. BoundedLattice a => MonadError Error m => Block a -> m (E.Block a)
-blockFwd_block (Block (NonEmptyList (s :| Nil))) = E.Block <$> stmtFwd_stmt s
-blockFwd_block _ = error "blockFwd_block: non-singleton block"
-
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
 ifElseFwd (sss × s) =
-   foldr clause (blockFwd s) sss
+   foldr clause (stmtFwd s) sss
    where
    clause (s1 × b) e3 =
       E.App
-         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> blockFwd b) <*> (ContExpr <$> e3)))
+         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> stmtFwd b) <*> (ContExpr <$> e3)))
          <*> desug s1
 
 -- List Qualifier × Expr
@@ -339,10 +326,10 @@ listCompFwd (α × (ListCompGuard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
    E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
 listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
-   σ <- clausesStateFwd (((Left p : Nil) × Nil × returns (ListComp α s' qs)) : Nil)
+   σ <- clausesStateFwd (((Left p : Nil) × Nil × Return (ListComp α s' qs)) : Nil)
    E.App (E.Lambda α (asElim σ)) <$> desug s
 listCompFwd (α × (ListCompGen p s : qs) × s') = do
-   let ks = orElseFwd α ((Left p : Nil) × returns (ListComp α s' qs))
+   let ks = orElseFwd α ((Left p : Nil) × Return (ListComp α s' qs))
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
    E.App (E.App (E.Var "concat_map") (E.Lambda α (asElim σ))) <$> desug s
 
@@ -354,7 +341,7 @@ toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
    toClauseStateFwd (Clause (NonEmptyList (p :| π) × b)) = (Left p : Nil) × π × b
 
 -- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
-type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Block a
+type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Stmt a
 type ClausesState' a = List (ClauseState' a)
 
 popArgFwd :: forall a m. MonadError Error m => ClausesState' a -> m (ClausesState' a)
@@ -399,7 +386,7 @@ clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses
 clausesStateFwd ks = case ks of
    Nil -> error absurd
    (Nil × Nil × b) : Nil ->
-      ContExpr <$> blockFwd b
+      ContExpr <$> stmtFwd b
    (Nil × _) : _ ->
       ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
    ((Left (PVar x) : _) × _) : _ ->
@@ -414,7 +401,7 @@ clausesStateFwd ks = case ks of
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and empty when the recursion terminates.
-type ClauseState a = List (Pattern + ListRestPattern) × Block a
+type ClauseState a = List (Pattern + ListRestPattern) × Stmt a
 
 unless :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 unless (Left (PVar _)) = Nil
@@ -434,7 +421,7 @@ orElseFwd α = case _ of
    (p : π) × s ->
       (orElseFwd α ((π' <> π) × s) <#> popPatts (length π') <#> pushPattFor p)
          `appendList`
-            (unless p <#> \p' -> ((π <#> anon) × returns (ListEmpty α)) # pushPatt p')
+            (unless p <#> \p' -> ((π <#> anon) × Return (ListEmpty α)) # pushPatt p')
       where
       π' = subpatts p
    where
@@ -469,12 +456,10 @@ anon (Right _) = Right pListVarAnon
 -- ======================
 -- boilerplate
 -- ======================
-derive instance Newtype (Block a) _
 derive instance Newtype (Clause a) _
 derive instance Newtype (Clauses a) _
 derive instance Newtype (RecDef a) _
 derive instance Functor Stmt
-derive instance Functor Block
 derive instance Functor Clause
 derive instance Functor Clauses
 derive instance Functor DictEntry
@@ -522,11 +507,6 @@ instance Show ListRestPattern where
 derive instance Eq a => Eq (Stmt a)
 derive instance Generic (Stmt a) _
 instance Show a => Show (Stmt a) where
-   show c = genericShow c
-
-derive instance Eq a => Eq (Block a)
-derive instance Generic (Block a) _
-instance Show a => Show (Block a) where
    show c = genericShow c
 
 derive instance Eq a => Eq (Clause a)

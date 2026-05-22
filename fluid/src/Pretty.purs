@@ -17,7 +17,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricD
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (assignment, block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Primitive.Parse (getPrec)
-import SExpr (Block(..), Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
 import Util (type (×), error, isEmpty, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
@@ -119,12 +119,12 @@ operatorApp n (UnaryPrefixApp op s) =
             text op <+> operatorApp n' s
 operatorApp _ e = prettySimple e
 
-lambda :: forall a. Ann a => List Pattern -> Block a -> Doc
-lambda ps b = text "lambda" <+> prettyList ps <> text ":" <+> prettyLambdaBody b
+lambda :: forall a. Ann a => List Pattern -> Stmt a -> Doc
+lambda ps s = text "lambda" <+> prettyList ps <> text ":" <+> prettyLambdaBody s
    where
-   prettyLambdaBody :: Block a -> Doc
-   prettyLambdaBody (Block (NonEmptyList (Return e :| Nil))) = pretty e
-   prettyLambdaBody b' = pretty b'
+   prettyLambdaBody :: Stmt a -> Doc
+   prettyLambdaBody (Return e) = pretty e
+   prettyLambdaBody s' = pretty s'
 
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
@@ -171,10 +171,10 @@ instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons q qs) = pretty (singleton q) <+> pretty qs
    pretty Nil = empty
 
-instance Ann a => Pretty (NonEmptyList (Pattern × Block a)) where
+instance Ann a => Pretty (NonEmptyList (Pattern × Stmt a)) where
    pretty cs = vsep (toList (pretty <$> cs))
 
-instance Ann a => Pretty (Pattern × Block a) where
+instance Ann a => Pretty (Pattern × Stmt a) where
    pretty (p × b) = text "case" <+> (pretty p) <> block (pretty b)
 
 instance Pretty Pattern where
@@ -198,9 +198,6 @@ instance Ann a => Pretty (VarDef a) where
 
 instance Ann a => Pretty (VarDefs a) where
    pretty ds = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> ds))
-
-instance Ann a => Pretty (Block a) where
-   pretty (Block ss) = vsep (toList (pretty <$> ss))
 
 instance Ann a => Pretty (Stmt a) where
    pretty (Return e) = text "return" <+> pretty e
