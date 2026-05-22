@@ -83,7 +83,25 @@ varDefs = many1 varDef
       pure $ VarDef p e
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return)
+
+-- Top-level programs may omit 'return' on the trailing expression that gives
+-- the program its value. Inside functions and other block bodies, 'return'
+-- is required.
+programStmt :: Parser (Raw Stmt)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> programDefStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+
+programDefStmt :: Parser (Raw Stmt)
+programDefStmt = defer \_ -> defRecStmt <|> defValStmt
+   where
+   defRecStmt = defer \_ -> do
+      ds <- recDefs
+      body <- align programStmt
+      pure $ DefRec ds body
+   defValStmt = defer \_ -> do
+      ds <- varDefs
+      body <- align programStmt
+      pure $ Def ds body
 
 defStmt :: Parser (Raw Stmt)
 defStmt = defer \_ -> defRecStmt <|> defValStmt
@@ -409,10 +427,7 @@ parse parser input =
       "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
 
 parseProgram :: String -> Either String (Raw Block × List String)
-parseProgram = parse (withImports (programBody <#> Block <<< singleton))
-   where
-   programBody :: Parser (Raw Stmt)
-   programBody = stmt
+parseProgram = parse (withImports (programStmt <#> Block <<< singleton))
 
 parseModule :: String -> Either String (Raw Module × List String)
 parseModule = parse (withImports module_)

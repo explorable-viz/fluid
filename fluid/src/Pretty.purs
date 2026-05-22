@@ -120,7 +120,11 @@ operatorApp n (UnaryPrefixApp op s) =
 operatorApp _ e = prettySimple e
 
 lambda :: forall a. Ann a => List Pattern -> Block a -> Doc
-lambda ps b = text "lambda" <+> prettyList ps <> text ":" <+> pretty b
+lambda ps b = text "lambda" <+> prettyList ps <> text ":" <+> prettyLambdaBody b
+   where
+   prettyLambdaBody :: Block a -> Doc
+   prettyLambdaBody (Block (NonEmptyList (Return e :| Nil))) = pretty e
+   prettyLambdaBody b' = pretty b'
 
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
@@ -199,7 +203,7 @@ instance Ann a => Pretty (Block a) where
    pretty (Block ss) = vsep (toList (pretty <$> ss))
 
 instance Ann a => Pretty (Stmt a) where
-   pretty (Return e) = pretty e
+   pretty (Return e) = text "return" <+> pretty e
    pretty (If (NonEmptyList (ss :| sss)) e) =
       vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))
          <++> text "else" <> block (pretty e)
