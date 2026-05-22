@@ -364,9 +364,7 @@ graphEval { n, γ } block = do
    _ × _ × g × inα × outα <- flip runAllocT n do
       blockα <- alloc block
       let
-         eα = case blockα of
-            Block (Return e) -> e
-            _ -> error "non-singleton Block at program root"
+         eα = blockToExpr blockα
          inα = EnvExpr γ eα
       g × outα <- runWithGraphT_spy (evalBlock Nothing γ blockα mempty) (vertices inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
@@ -376,3 +374,12 @@ graphEval { n, γ } block = do
    graph_fwd = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
    graph_bwd = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
    spyFun' b msg = spyFunWhen b msg (showVertices *** showGraph) showGraph
+
+blockToExpr :: forall a. Block a -> Expr a
+blockToExpr (Block s) = stmtToExpr s
+   where
+   stmtToExpr :: Stmt a -> Expr a
+   stmtToExpr (Return e) = e
+   stmtToExpr (Match _ _) = error "blockToExpr: Match not yet supported"
+   stmtToExpr (Def vd s') = Let vd (stmtToExpr s')
+   stmtToExpr (DefRec ρ s') = LetRec ρ (stmtToExpr s')

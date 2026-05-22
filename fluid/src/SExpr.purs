@@ -147,7 +147,7 @@ instance Desugarable Expr E.Expr where
    desug = exprFwd
 
 instance Desugarable Block E.Block where
-   desug b = E.Block <<< E.Return <$> blockFwd b
+   desug = blockFwd_block
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
@@ -303,6 +303,24 @@ stmtFwd (DefRec xcs body) =
 blockFwd :: forall a m. BoundedLattice a => MonadError Error m => Block a -> m (E.Expr a)
 blockFwd (Block (NonEmptyList (s :| Nil))) = stmtFwd s
 blockFwd _ = error "blockFwd: non-singleton block"
+
+-- Structure-preserving stmt desugaring. Def/DefRec emit core Stmt
+-- counterparts; other surface stmts fall back to stmtFwd and wrap in
+-- E.Return.
+stmtFwd_stmt :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Stmt a)
+stmtFwd_stmt (Def ds body) = defStmtFwd ds body
+   where
+   defStmtFwd (NonEmptyList (d :| Nil)) b =
+      E.Def <$> varDefFwd d <*> stmtFwd_stmt b
+   defStmtFwd (NonEmptyList (d :| d' : ds')) b =
+      E.Def <$> varDefFwd d <*> defStmtFwd (NonEmptyList (d' :| ds')) b
+stmtFwd_stmt (DefRec xcs body) =
+   E.DefRec <$> recDefsFwd xcs <*> stmtFwd_stmt body
+stmtFwd_stmt s = E.Return <$> stmtFwd s
+
+blockFwd_block :: forall a m. BoundedLattice a => MonadError Error m => Block a -> m (E.Block a)
+blockFwd_block (Block (NonEmptyList (s :| Nil))) = E.Block <$> stmtFwd_stmt s
+blockFwd_block _ = error "blockFwd_block: non-singleton block"
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
 ifElseFwd (sss × s) =
