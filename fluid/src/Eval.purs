@@ -359,12 +359,16 @@ toGC
    -> GaloisConnection (s 𝔹) (t 𝔹)
 toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
-graphEval :: forall m. MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
-graphEval { n, γ } e = do
+graphEval :: forall m. MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Block -> m (GraphEval GraphImpl EnvExpr Val)
+graphEval { n, γ } block = do
    _ × _ × g × inα × outα <- flip runAllocT n do
-      eα <- alloc e
-      let inα = EnvExpr γ eα
-      g × outα <- runWithGraphT_spy (eval Nothing γ eα mempty) (vertices inα)
+      blockα <- alloc block
+      let
+         eα = case blockα of
+            Block (Return e) -> e
+            _ -> error "non-singleton Block at program root"
+         inα = EnvExpr γ eα
+      g × outα <- runWithGraphT_spy (evalBlock Nothing γ blockα mempty) (vertices inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × inα × outα)
    pure { g, graph_fwd, graph_bwd, inα, outα }

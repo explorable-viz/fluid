@@ -24,7 +24,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf
 import Module (prepConfig)
 import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
-import Expr (Expr) as Expr
+import Expr (Block) as Expr
 import SExpr (Block, Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
@@ -82,7 +82,7 @@ testProperties
    -> SelectionSpec
    -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
-   let e = defined (desug s) :: Raw Expr.Expr
+   let e = defined (desug s) :: Raw Expr.Block
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e

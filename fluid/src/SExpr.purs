@@ -26,7 +26,7 @@ import Desugarable (class Desugarable, desug)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim)
-import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
+import Expr (Block(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
 import Lattice (class BoundedLattice, class JoinSemilattice, bot, top)
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -146,8 +146,8 @@ instance Desugarable DictEntry E.Expr where
 instance Desugarable Expr E.Expr where
    desug = exprFwd
 
-instance Desugarable Block E.Expr where
-   desug = blockFwd
+instance Desugarable Block E.Block where
+   desug b = E.Block <<< E.Return <$> blockFwd b
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
@@ -193,7 +193,7 @@ varDefFwd (VarDef p s) =
 -- VarDefs
 varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Block a -> m (E.Expr a)
 varDefsFwd (NonEmptyList (d :| Nil) × b) =
-   E.Let <$> varDefFwd d <*> desug b
+   E.Let <$> varDefFwd d <*> blockFwd b
 varDefsFwd (NonEmptyList (d :| d' : ds) × b) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × b)
 
@@ -306,11 +306,11 @@ blockFwd _ = error "blockFwd: non-singleton block"
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
 ifElseFwd (sss × s) =
-   foldr clause (desug s) sss
+   foldr clause (blockFwd s) sss
    where
    clause (s1 × b) e3 =
       E.App
-         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug b) <*> (ContExpr <$> e3)))
+         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> blockFwd b) <*> (ContExpr <$> e3)))
          <*> desug s1
 
 -- List Qualifier × Expr
@@ -381,7 +381,7 @@ clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses
 clausesStateFwd ks = case ks of
    Nil -> error absurd
    (Nil × Nil × b) : Nil ->
-      ContExpr <$> desug b
+      ContExpr <$> blockFwd b
    (Nil × _) : _ ->
       ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
    ((Left (PVar x) : _) × _) : _ ->
