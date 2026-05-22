@@ -19,7 +19,7 @@ import Data.Traversable (foldl, foldr)
 import DataType (cPair)
 import Lattice (Raw)
 import Parse.Number (float, integer)
-import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
+import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace, withPos')
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..)) as P
@@ -83,7 +83,21 @@ varDefs = many1 varDef
       pure $ VarDef p e
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+stmt = defer \_ -> ifStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+
+ifStmt :: Parser (Raw Stmt)
+ifStmt = defer \_ -> do
+   reserved "if"
+   c <- ifClause
+   cs <- many (align $ reserved "elif" *> ifClause)
+   b <- align $ reserved "else" *> blockBody
+   pure $ If (nonEmpty (c : cs)) b
+
+ifClause :: Parser (Raw Expr × Raw Block)
+ifClause = defer \_ -> do
+   c <- expr
+   b <- blockBody
+   pure (c × b)
 
 blockBody :: Parser (Raw Block)
 blockBody = defer \_ -> (Block <<< singleton) <$> block stmt
@@ -123,13 +137,13 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       funDef <|> valDef
       where
       funDef :: Parser (Raw Expr)
-      funDef = context "funDef" $ withPos do
+      funDef = context "funDef" $ withPos' do
          ds <- recDefs
          ss <- many1 (align stmt)
          pure $ LetRec ds (Block ss)
 
       valDef :: Parser (Raw Expr)
-      valDef = context "valDef" $ withPos do
+      valDef = context "valDef" $ withPos' do
          ds <- varDefs
          ss <- many1 (align stmt)
          pure $ Let ds (Block ss)
