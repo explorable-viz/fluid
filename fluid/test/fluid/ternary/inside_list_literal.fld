@@ -1,0 +1,2 @@
+# Ternary inside a list element. Result: 1 :| 4 :| [].
+[1 if True else 2, 3 if False else 4]
