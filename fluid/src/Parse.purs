@@ -19,7 +19,7 @@ import Data.Traversable (foldl, foldr)
 import DataType (cPair)
 import Lattice (Raw)
 import Parse.Number (float, integer)
-import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace, withPos')
+import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace, withPosReset)
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..)) as P
@@ -152,13 +152,13 @@ expr = context "expr" $ matchAs <|> def <|> ternary <?> "expression"
       funDef <|> valDef
       where
       funDef :: Parser (Raw Expr)
-      funDef = context "funDef" $ withPos' do
+      funDef = context "funDef" $ withPosReset do
          ds <- recDefs
          ss <- many1 (align stmt)
          pure $ LetRec ds (Block ss)
 
       valDef :: Parser (Raw Expr)
-      valDef = context "valDef" $ withPos' do
+      valDef = context "valDef" $ withPosReset do
          ds <- varDefs
          ss <- many1 (align stmt)
          pure $ Let ds (Block ss)

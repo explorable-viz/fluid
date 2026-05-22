@@ -76,10 +76,8 @@ align :: forall a. Parser a -> Parser a
 align p = checkIndent *> p
 
 -- Like withPos, but restores the indent reference on failure too.
--- Parsing.Indent's withPos leaves indent state mutated when its body throws,
--- which leaks across `<|>` alternatives and breaks layout-sensitive parses.
-withPos' :: forall a. Parser a -> Parser a
-withPos' p = do
+withPosReset :: forall a. Parser a -> Parser a
+withPosReset p = do
    saved <- lift get
    pos <- position
    lift (put pos)
