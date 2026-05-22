@@ -1,4 +1,4 @@
-# Ternary as the leaf expression of a function body (returned). Result: 3.
+# Ternary as the leaf expression of a function body (returned).
 def abs_(x):
   return x if x > 0 else 0 - x
 

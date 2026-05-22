@@ -1,2 +1,2 @@
-# Ternary is looser than +, so this parses as (1 + 2) if False else (3 + 4) = 7.
+# Ternary is looser than +, so this parses as (1 + 2) if False else (3 + 4).
 1 + 2 if False else 3 + 4
