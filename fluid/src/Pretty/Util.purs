@@ -10,6 +10,11 @@ block d = stmtOrExpr
    (text ":" <> inlOrMul (text " " <> d) (indent (line <> d)))
    (text ":" <+> d <> text ";")
 
+assignment :: Doc -> Doc
+assignment d = stmtOrExpr
+   (text "=" <> inlOrMul (text " " <> d) (indent (line <> d)))
+   (text "=" <+> d <> text ";")
+
 record :: List Doc -> Doc
 record ds = inlOrMul
    (text "{" <+> sep' (text ", ") ds <+> text "}")

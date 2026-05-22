@@ -1,5 +1,5 @@
-def filter:
-  def gaussian: [
+def filter =
+  def gaussian = [
       [1, 4, 1],
       [4, 16, 4],
       [1, 4, 1]

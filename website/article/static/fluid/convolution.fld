@@ -2,19 +2,19 @@ import convolution.test_image  # defines inputImage
 import convolution.emboss     # defines filter
 
 def lookup(m, n, image):
-  def (m_size, n_size): dims(image)
+  def (m_size, n_size) = dims(image)
   if m >= 0 and m < m_size and n >= 0 and n < n_size:
     return image!(m, n)
   else:
     return 0 # pad with zeros
 
 def matrix_sum(matr):
-  def (m, n): dims(matr)
+  def (m, n) = dims(matr)
   return foldl((+), 0, [matr!(i, j) for (i, j) in range2d((0, 0), (m, n))])
 
 def convolve(image, kernel):
-  def (k_i, k_j): dims(kernel)
-  def (half_i, half_j): (k_i |quot| 2, k_j |quot| 2)
+  def (k_i, k_j) = dims(kernel)
+  def (half_i, half_j) = (k_i |quot| 2, k_j |quot| 2)
 
   def inter_matrix(m, n):
     return @doc(f"""average these to compute element ({m}, {n})""")

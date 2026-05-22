@@ -2,7 +2,7 @@
 # Including only 3 countries here. Reduced Hydro value for China 2015 from 296 to 96 (ouch)
 # to make charts fit nicely into a proposal. Fix once proposal submitted!
 # https://www.ren21.net/wp-content/uploads/2019/05/GSR2014_Full-Report_English.pdf
-def data: [
+def data = [
   (2013, [
     ("China", [
       ("Bio", 6.2),

@@ -1,2 +1,2 @@
-def y: 2 if True else 5
+def y = 2 if True else 5
 y + 1

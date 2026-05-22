@@ -1,2 +1,2 @@
-def x: 3
-def y: 3
+def x = 3
+def y = 3

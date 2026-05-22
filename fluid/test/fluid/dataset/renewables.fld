@@ -1,2 +1,2 @@
-def renewables:
+def renewables =
   load_json("dataset/renewables.json")

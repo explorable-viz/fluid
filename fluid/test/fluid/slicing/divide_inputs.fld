@@ -1,2 +1,2 @@
-def a: 362
-def b: 9
+def a = 362
+def b = 9

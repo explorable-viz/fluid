@@ -15,12 +15,12 @@ def coords(Viewport(x, y, _, _, _, _, _, _, _)):
 
 # GraphicsElement -> Float
 def get_x(g):
-  def Point(x, _): coords(g)
+  def Point(x, _) = coords(g)
   return x
 
 # GraphicsElement -> Float
 def get_y(g):
-  def Point(_, y): coords(g)
+  def Point(_, y) = coords(g)
   return y
 
 # Want some kind of typeclass mechanism plus record accessors/updaters.
@@ -54,18 +54,18 @@ def dimensions(Viewport(_, _, w, h, _, _, _, _, _)):
   return Point(w, h)
 
 def coords_op(g):
-  def (Point(x, y), Point(w, h)):
+  def (Point(x, y), Point(w, h)) =
     prod(coords, dimensions, g)
   return Point(x + w, y + h)
 
 # GraphicsElement -> Float
 def width(g):
-  def Point(w, _): dimensions(g)
+  def Point(w, _) = dimensions(g)
   return w
 
 # GraphicsElement -> Float
 def height(g):
-  def Point(_, h): dimensions(g)
+  def Point(_, h) = dimensions(g)
   return h
 
 # Float -> Float -> List GraphicsElement -> List GraphicsElement
@@ -74,7 +74,7 @@ def space_right(z, sep, gs):
 
 # Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
 # different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org
-def colours1: [
+def colours1 = [
   "#66c2a5",
   "#a6d854",
   "#ffd92f",
@@ -85,7 +85,7 @@ def colours1: [
   "#e78ac3"
 ]
 
-def colours2: [
+def colours2 = [
   "#e41a1c",
   "#377eb8",
   "#4daf4a",
@@ -104,7 +104,7 @@ def colours2: [
 def scale_to_width(w, Rect(x, y, _, h, fill)):
   return Rect(x, y, w, h, fill)
 def scale_to_width(w, Viewport(x, y, w0, h, fill, margin, Scale(x_scale, y_scale), translate, g)):
-  def scale: Scale((x_scale * w) / w0, y_scale)
+  def scale = Scale((x_scale * w) / w0, y_scale)
   return Viewport(x, y, w, h, fill, margin, scale, translate, g)
 
 # Float -> List GraphicsElement -> List GraphicsElement
@@ -118,19 +118,19 @@ def group_right(sep, gs):
 # Heuristic saying how often to place a tick on an axis of length n.
 # Float -> Float
 def tick_every(n):
-  def m: floor(log_base(10, n))
+  def m = floor(log_base(10, n))
 
   if n <= 2 * 10 ** m:
     return 2 * 10 ** (m - 1)
   else:
     return 10 ** m
 
-def axis_stroke_width: 0.5
-def axis_colour: "black"
-def background_colour: "white"
-def default_margin: 24
-def marker_radius: 3.5
-def tick_length: 4
+def axis_stroke_width = 0.5
+def axis_colour = "black"
+def background_colour = "white"
+def default_margin = 24
+def marker_radius = 3.5
+def tick_length = 4
 
 # Helpers for axis functions.
 # Orient -> Colour -> Float -> GraphicsElement
@@ -161,15 +161,15 @@ def mk_point(Vert, x, y):
 # x is position of this axis on the other axis. Returns axis and position of last tick.
 # Orient -> Float -> Float -> Float -> GraphicsElement
 def axis(orient, x, start, end):
-  def tick_sp: tick_every(end - start)
-  def first_tick: ceiling_to_nearest(start, tick_sp)
-  def last_tick: ceiling_to_nearest(end, tick_sp)
-  def n: floor((end - first_tick) / tick_sp) + 1
-  def ys: iterate(n, (+)(tick_sp), first_tick)
-  def ys: start :| ys if first_tick > start else ys
-  def ys: concat2(ys, [last_tick]) if last_tick > end else ys
-  def ps: map(mk_point(orient, x), ys)
-  def ax:
+  def tick_sp = tick_every(end - start)
+  def first_tick = ceiling_to_nearest(start, tick_sp)
+  def last_tick = ceiling_to_nearest(end, tick_sp)
+  def n = floor((end - first_tick) / tick_sp) + 1
+  def ys = iterate(n, (+)(tick_sp), first_tick)
+  def ys = start :| ys if first_tick > start else ys
+  def ys = concat2(ys, [last_tick]) if last_tick > end else ys
+  def ps = map(mk_point(orient, x), ys)
+  def ax =
     Group([
       Line(head(ps), last(ps), axis_colour, axis_stroke_width),
       Polymarkers(ps, flip(map, ys, compose(labelled_tick(orient, axis_colour, tick_length), num_to_str)))
@@ -180,8 +180,8 @@ def axis(orient, x, start, end):
 # x is position of this axis on the other axis.
 # Orient -> Float -> List Cat -> GraphicsElement
 def cat_axis(orient, x, cat_values):
-  def ys: iterate(length(cat_values) + 1, (+)(1), 0)
-  def ps: map(mk_point(orient, x), ys)
+  def ys = iterate(length(cat_values) + 1, (+)(1), 0)
+  def ps = map(mk_point(orient, x), ys)
 
   return Group([
     Line(head(ps), last(ps), axis_colour, axis_stroke_width),
@@ -197,12 +197,12 @@ def viewport(x_start, x_finish, y_finish, margin, gs):
 # (categorical keys are the same for each x value and are ordered the same each time).
 # Bool -> Colours -> Float -> List (Float, List (Cat, Float)) -> GraphicsElement
 def line_chart(with_axes, colours, x_start, data):
-  def xs: map(fst, data)
-  def n_cat: length(snd(head(data)))
+  def xs = map(fst, data)
+  def n_cat = length(snd(head(data)))
 
   # (Int, Colour) -> GraphicsElement
   def plot((n, colour)):
-    def ps:
+    def ps =
       map(lambda (x, kvs): Point(x, snd(nth(n, kvs))), data)
 
     return Group([
@@ -211,15 +211,15 @@ def line_chart(with_axes, colours, x_start, data):
     ])
 
   # List GraphicsElement
-  def lines:
+  def lines =
     zip_with(curry(plot), iterate(n_cat, (+)(1), 0), colours)
-  def x_finish: last(xs)
-  def y_finish:
+  def x_finish = last(xs)
+  def y_finish =
     maximum(flip(map, data, lambda (_, kvs): maximum(map(snd, kvs))))
 
   if with_axes:
-    def (x_axis, x_finish): axis(Horiz, 0, x_start, x_finish)
-    def (y_axis, y_finish_): axis(Vert, x_start, 0, y_finish)
+    def (x_axis, x_finish) = axis(Horiz, 0, x_start, x_finish)
+    def (y_axis, y_finish_) = axis(Vert, x_start, 0, y_finish)
     return viewport(x_start, x_finish, y_finish_, default_margin, x_axis :| y_axis :| lines)
   else:
     return viewport(x_start, x_finish, y_finish, 0, lines)
@@ -227,14 +227,14 @@ def line_chart(with_axes, colours, x_start, data):
 # Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
 # (Colours -> List a -> GraphicsElement) -> Bool -> Colours -> Float -> List (Cat, a) -> GraphicsElement
 def categorical_chart(plot_value, with_axes, colours, sep, data):
-  def gs:
+  def gs =
     stack_right(sep, plot_value(colours, map(snd, data)))
-  def w: length(gs)
-  def h: maximum(map(height, gs))
+  def w = length(gs)
+  def h = maximum(map(height, gs))
 
   if with_axes:
-    def x_axis: cat_axis(Horiz, 0, map(fst, data))
-    def (y_axis, h_): axis(Vert, 0, 0, h)
+    def x_axis = cat_axis(Horiz, 0, map(fst, data))
+    def (y_axis, h_) = axis(Vert, 0, 0, h)
     return viewport(0, w, h_, default_margin, concat2(gs, [x_axis, y_axis]))
   else:
     return viewport(0, w, h, 0, gs)
@@ -247,32 +247,32 @@ def rects(colours, ns):
 # Can we use Group instead of Viewport here?
 # Colours -> List (a, Num) -> GraphicsElement
 def stacked_bar(colours, ns):
-  def heights: map(snd, ns)
-  def subtotals: scanl1((+), 0, heights)
-  def dims: zip(0 :| subtotals, heights)
-  def rects:
+  def heights = map(snd, ns)
+  def subtotals = scanl1((+), 0, heights)
+  def dims = zip(0 :| subtotals, heights)
+  def rects =
     map(lambda ((y, height), colour): Rect(0, y, 1, height, colour), zip(dims, colours))
 
   return Viewport(0, 0, 1, last(subtotals), "none", 0, Scale(1, 1), Translate(0, 0), Group(rects))
 
 # Bool -> Colours -> Float -> List (a, Float) -> GraphicsElement
-def bar_chart:
+def bar_chart =
   categorical_chart(rects)
 
 # For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
 # Bool -> Colours -> Float -> List (a, List (b, Float)) -> GraphicsElement
-def grouped_bar_chart:
+def grouped_bar_chart =
   categorical_chart(compose(map, flip(bar_chart(False), 0)))
 
 # See stacked_bar for strong (unjustified) assumption about uniformity of data.
 # Bool -> Colours -> Num -> List (a, List (b, Num)) -> GraphicsElement
-def stacked_bar_chart:
+def stacked_bar_chart =
   categorical_chart(compose(map, stacked_bar))
 
 # Bit of a hack, but how text fits into our model is a bit unclear at the moment.
 # Str -> GraphicsElement -> GraphicsElement
 def caption(str, Viewport(x, y, w, h, fill, margin, scale, translate, g)):
-  def g_:
+  def g_ =
     Group([
       String(x + w / 2, -2, str, "middle", "hanging"),
       Viewport(0, 0, w, h, fill, margin, scale, translate, g)

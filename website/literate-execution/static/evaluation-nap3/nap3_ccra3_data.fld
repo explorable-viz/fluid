@@ -1,2 +1,2 @@
-def nap3_actions: load_json("../dataset/ccra3-actions-for-nap3.json")
-def ccra3_risks: load_json("../dataset/ccra3-risks.json")
+def nap3_actions = load_json("../dataset/ccra3-actions-for-nap3.json")
+def ccra3_risks = load_json("../dataset/ccra3-risks.json")

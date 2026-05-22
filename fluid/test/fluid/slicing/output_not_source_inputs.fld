@@ -1,2 +1,2 @@
-def x: 3
-def n: 5
+def x = 3
+def n = 5

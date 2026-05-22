@@ -1,4 +1,4 @@
-def data: [
+def data = [
   { energyType: "Bio", output: 6.2 },
   { energyType: "Hydro", output: 260 },
   { energyType: "Solar", output: 19.9 },
@@ -6,4 +6,4 @@ def data: [
   { energyType: "Geo", output: 14.4 }
 ]
 
-def types: ["Hydro", "Solar", "Geo"]
+def types = ["Hydro", "Solar", "Geo"]

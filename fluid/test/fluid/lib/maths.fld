@@ -1,6 +1,6 @@
 def mul(x, y):
   return x * y
 
-def dub: mul(2)
+def dub = mul(2)
 
-def trip: mul(3)
+def trip = mul(3)

@@ -78,7 +78,7 @@ varDefs = many1 varDef
    where
    varDef :: Parser (Raw VarDef)
    varDef = do
-      p <- try (reserved "def" *> pattern <* delim ':')
+      p <- try (reserved "def" *> pattern <* reservedOperator "=")
       e <- sameOrIndented *> withPos expr
       pure $ VarDef p e
 

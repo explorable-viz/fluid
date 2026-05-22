@@ -1,7 +1,7 @@
 import lib.graphics
 import dataset.renewables_restricted
 
-def year1: head(data)
+def year1 = head(data)
 
 def addTotal(kvs):
   ("Total", sum(map(snd, kvs))) :| kvs

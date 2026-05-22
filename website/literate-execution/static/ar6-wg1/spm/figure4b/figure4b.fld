@@ -21,7 +21,7 @@ def mkBarChart(scenName, table):
   })
 
 def mkHistogram(xs, name, nbins):
-  def binWidth: (maximum(xs) - minimum(xs)) / nbins
+  def binWidth = (maximum(xs) - minimum(xs)) / nbins
 
   return BarChart({
     caption: "Histogram of distribution of " ++ name,
@@ -38,18 +38,18 @@ def mkHistogram(xs, name, nbins):
 def getHeight(offset, bar):
   return head(bar.segments).z + offset
 
-def changed126: map(lambda r: r.changed, ssp126preds)
-def changed245: map(lambda r: r.changed, ssp245preds)
-def ssp126Total:
+def changed126 = map(lambda r: r.changed, ssp126preds)
+def changed245 = map(lambda r: r.changed, ssp245preds)
+def ssp126Total =
   { type: "Total", emissions: sum(map(lambda r: r.emissions, ssp126Source)) }
-def ssp126table: ssp126Total :| ssp126Source
-def ssp245table:
+def ssp126table = ssp126Total :| ssp126Source
+def ssp245table =
   { type: "Total", emissions: find_percentile(50, changed245) } :| ssp245Source
-def ssp126: mkBarChart("SSP1-2.6", ssp126table)
-def ssp245: mkBarChart("SSP2-4.5", ssp245table)
-def totals: map(stackedBarHeight, map(get("Total"), [ssp126, ssp245]))
-def co2s: map(stackedBarHeight, map(get("CO2"), [ssp126, ssp245]))
-def nonco2: map(get("Non-CO2"), [ssp126, ssp245])
+def ssp126 = mkBarChart("SSP1-2.6", ssp126table)
+def ssp245 = mkBarChart("SSP2-4.5", ssp245table)
+def totals = map(stackedBarHeight, map(get("Total"), [ssp126, ssp245]))
+def co2s = map(stackedBarHeight, map(get("CO2"), [ssp126, ssp245]))
+def nonco2 = map(get("Non-CO2"), [ssp126, ssp245])
 
 MultiView([
   ssp126,

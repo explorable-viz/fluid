@@ -1,2 +1,2 @@
-def person: { name: "Alice", age: 30 }
-def describe: person.name
+def person = { name: "Alice", age: 30 }
+def describe = person.name
