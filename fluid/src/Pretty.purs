@@ -209,11 +209,6 @@ instance Ann a => Pretty (Block a) where
 
 instance Ann a => Pretty (Stmt a) where
    pretty (Return e) = pretty e
-   pretty (If (NonEmptyList (ss :| sss)) e) =
-      vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))
-         <++> text "else" <> block (pretty e)
-      where
-      prettyClause w (s × b) = text w <+> expr (pretty s) <> block (pretty b)
 
 instance Ann a => Pretty (Clause a) where
    pretty (Clause (ps × b)) = lambda (toList ps) b

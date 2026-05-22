@@ -3,8 +3,6 @@ module Parse.Parser where
 import Prelude hiding (between)
 
 import Control.Alt ((<|>))
-import Control.Monad.Error.Class (catchError, throwError)
-import Control.Monad.State.Class (get)
 import Control.Monad.State.Trans (put)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (cons, elem)
@@ -74,20 +72,6 @@ block e = delim ':' *> sameOrIndented *> withPos e
 
 align :: forall a. Parser a -> Parser a
 align p = checkIndent *> p
-
--- Like withPos, but restores the indent reference on failure too.
--- Parsing.Indent's withPos leaves indent state mutated when its body throws,
--- which leaks across `<|>` alternatives and breaks layout-sensitive parses.
-withPos' :: forall a. Parser a -> Parser a
-withPos' p = do
-   saved <- lift get
-   pos <- position
-   lift (put pos)
-   r <- catchError p \e -> do
-      lift (put saved)
-      throwError e
-   lift (put saved)
-   pure r
 
 identifier :: Parser Char -> Parser Char -> Parser String
 identifier start letter = lexeme $ do

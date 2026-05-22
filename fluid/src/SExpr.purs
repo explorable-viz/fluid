@@ -111,10 +111,7 @@ subpatts (Right (PListVar _)) = Nil
 subpatts (Right PListEnd) = Nil
 subpatts (Right (PListNext p o)) = Left p : Right o : Nil
 
-data Stmt a
-   = Return (Expr a)
-   | If (NonEmptyList (Expr a × Block a)) (Block a)
-
+data Stmt a = Return (Expr a)
 newtype Block a = Block (NonEmptyList (Stmt a))
 
 returns :: forall a. Expr a -> Block a
@@ -260,6 +257,8 @@ exprFwd (UnaryPrefixApp op s) =
    E.App (E.Op op) <$> desug s
 exprFwd (MatchAs s μ) =
    E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
+exprFwd (IfElse sss s) =
+   ifElseFwd (sss × s)
 exprFwd (Paragraph elems) =
    paragraphFwd elems
 exprFwd (ListEmpty α) =
@@ -278,8 +277,6 @@ exprFwd (Let ds s) =
    varDefsFwd (ds × s)
 exprFwd (LetRec xcs b) =
    E.LetRec <$> recDefsFwd xcs <*> blockFwd b
-exprFwd (IfElse sss s) =
-   ifElseFwd (sss × s)
 exprFwd (DocExpr s s') = do
    e <- exprFwd s
    e' <- exprFwd s'
@@ -287,12 +284,8 @@ exprFwd (DocExpr s s') = do
 
 type IfElseClauses a = NonEmptyList (Expr a × Block a) × Block a
 
-stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Expr a)
-stmtFwd (Return e) = desug e
-stmtFwd (If sss s) = ifElseFwd (sss × s)
-
 blockFwd :: forall a m. BoundedLattice a => MonadError Error m => Block a -> m (E.Expr a)
-blockFwd (Block (NonEmptyList (s :| Nil))) = stmtFwd s
+blockFwd (Block (NonEmptyList (Return e :| Nil))) = desug e
 blockFwd _ = error "blockFwd: non-singleton block"
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
