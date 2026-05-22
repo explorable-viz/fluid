@@ -1,2 +1,1 @@
-# First branch taken short-circuits over nested ternary on else.
 1 if True else 2 if False else 3

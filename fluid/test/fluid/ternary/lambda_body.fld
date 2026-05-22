@@ -1,2 +1,1 @@
-# Ternary in a lambda body.
 map(lambda x: x if x > 0 else 0, [0, 1, 2, -5])

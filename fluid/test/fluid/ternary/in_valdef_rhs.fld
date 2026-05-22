@@ -1,4 +1,2 @@
-# Common migration target: ternary as the RHS of a valDef where currently we'd
-# write 'def y: if cond: a else: b'.
 def y: 2 if True else 5
 y + 1
