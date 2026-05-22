@@ -89,7 +89,7 @@ ifStmt :: Parser (Raw Stmt)
 ifStmt = defer \_ -> do
    let
       ifClause = do
-         c <- opTree'
+         c <- expr
          b <- blockBody
          pure (c × b)
    reserved "if"
@@ -97,12 +97,6 @@ ifStmt = defer \_ -> do
    cs <- many (align $ reserved "elif" *> ifClause)
    b <- align $ reserved "else" *> blockBody
    pure $ If (nonEmpty (c : cs)) b
-
--- Re-export opTree at top level so ifStmt can see it (opTree lives inside expr's
--- where, but ifStmt is at top level and needs to parse a condition expression
--- without the let/def alternatives that would leak indent state).
-opTree' :: Parser (Raw Expr)
-opTree' = defer \_ -> expr
 
 blockBody :: Parser (Raw Block)
 blockBody = defer \_ -> (Block <<< singleton) <$> block stmt
