@@ -314,6 +314,9 @@ stmtFwd_stmt (Def ds body) = defStmtFwd ds body
       E.Def <$> varDefFwd d <*> defStmtFwd (NonEmptyList (d' :| ds')) b
 stmtFwd_stmt (DefRec xcs body) =
    E.DefRec <$> recDefsFwd xcs <*> stmtFwd_stmt body
+stmtFwd_stmt (Match s μ) = do
+   κ <- clausesStateFwd_stmt (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
+   E.Match <$> desug s <@> asElim κ
 stmtFwd_stmt s = E.Return <$> stmtFwd s
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
@@ -405,6 +408,27 @@ clausesStateFwd ks = case ks of
    ((p : _) × _) : _ -> do
       kss <- popConstrFwd (defined (dataTypeFor (definitely ("clausesStateFwd ctrFor failed for: " <> showPattern p) (ctrFor p)))) ks
       ContElim <$> ElimConstr <$> D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
+
+-- Variant whose terminal leaves wrap a core Stmt in ContStmt (rather than wrapping an
+-- expression in ContExpr). Used by stmt-yielding consumers such as core Match.
+-- The "remaining args" case is unreachable here: single-pattern surface forms (Match)
+-- never trigger currying.
+clausesStateFwd_stmt :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
+clausesStateFwd_stmt ks = case ks of
+   Nil -> error absurd
+   (Nil × Nil × b) : Nil ->
+      ContStmt <$> stmtFwd_stmt b
+   (Nil × _) : _ ->
+      error "clausesStateFwd_stmt: unexpected remaining args"
+   ((Left (PVar x) : _) × _) : _ ->
+      ContElim <$> ElimVar x <$> (clausesStateFwd_stmt =<< popVarFwd x ks)
+   ((Left (PRecord xps) : _) × _) : _ ->
+      ContElim <$> ElimDict (B.keys xps) <$> (clausesStateFwd_stmt =<< popRecordFwd (xps <#> fst) ks)
+   ((Right (PListVar x) : _) × _) : _ ->
+      ContElim <$> ElimVar x <$> (clausesStateFwd_stmt =<< popListVarFwd x ks)
+   ((p : _) × _) : _ -> do
+      kss <- popConstrFwd (defined (dataTypeFor (definitely ("clausesStateFwd_stmt ctrFor failed for: " <> showPattern p) (ctrFor p)))) ks
+      ContElim <$> ElimConstr <$> D.fromFoldable <$> sequence (rtraverse clausesStateFwd_stmt <$> kss)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and empty when the recursion terminates.
