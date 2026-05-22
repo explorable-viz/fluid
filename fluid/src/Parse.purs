@@ -100,8 +100,18 @@ recDefs = many1 recDef
       pure $ p × Clause (ps × b)
 
 expr :: Parser (Raw Expr)
-expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
+expr = context "expr" $ matchAs <|> ifElse <|> def <|> ternary <?> "expression"
    where
+   ternary :: Parser (Raw Expr)
+   ternary = do
+      e1 <- opTree
+      option e1 $ try do
+         reserved "if"
+         cond <- opTree
+         reserved "else"
+         e2 <- expr
+         pure $ IfElse (singleton (cond × returns e1)) (returns e2)
+
    matchAs :: Parser (Raw Expr)
    matchAs = do
       reserved "match"
