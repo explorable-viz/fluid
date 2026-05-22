@@ -105,6 +105,15 @@ instance FV (VarDef a) where
 instance FV (RecDefs a) where
    fv (RecDefs _ ρ) = fv ρ
 
+instance FV (Stmt a) where
+   fv (Return e) = fv e
+   fv (Match e σ) = fv e ∪ fv σ
+   fv (Def vd s) = fv vd ∪ (fv s \\ bv vd)
+   fv (DefRec ρ s) = fv ρ ∪ fv s
+
+instance FV (Block a) where
+   fv (Block s) = fv s
+
 instance FV a => FV (Dict a) where
    fv ρ = unions (fv <$> ρ) \\ S.fromFoldable (keys ρ)
 
@@ -167,6 +176,26 @@ instance JoinSemilattice a => JoinSemilattice (RecDefs a) where
 
 instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
    expand (RecDefs α ρ) (RecDefs _ ρ') = RecDefs α (expand ρ ρ')
+
+instance JoinSemilattice a => JoinSemilattice (Stmt a) where
+   join (Return e) (Return e') = Return (e ∨ e')
+   join (Match e σ) (Match e' σ') = Match (e ∨ e') (σ ∨ σ')
+   join (Def vd s) (Def vd' s') = Def (vd ∨ vd') (s ∨ s')
+   join (DefRec ρ s) (DefRec ρ' s') = DefRec (ρ ∨ ρ') (s ∨ s')
+   join _ _ = shapeMismatch unit
+
+instance BoundedJoinSemilattice a => Expandable (Stmt a) (Raw Stmt) where
+   expand (Return e) (Return e') = Return (expand e e')
+   expand (Match e σ) (Match e' σ') = Match (expand e e') (expand σ σ')
+   expand (Def vd s) (Def vd' s') = Def (expand vd vd') (expand s s')
+   expand (DefRec ρ s) (DefRec ρ' s') = DefRec (expand ρ ρ') (expand s s')
+   expand _ _ = shapeMismatch unit
+
+instance JoinSemilattice a => JoinSemilattice (Block a) where
+   join (Block s) (Block s') = Block (s ∨ s')
+
+instance BoundedJoinSemilattice a => Expandable (Block a) (Raw Block) where
+   expand (Block s) (Block s') = Block (expand s s')
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Var x) (Var x') = Var (x ≜ x')
@@ -240,6 +269,15 @@ instance Vertices (Cont Vertex) where
 instance Vertices (RecDefs Vertex) where
    vertices defs@(RecDefs α ρ) = singleton (DVertex (α × pack defs)) ∪ vertices ρ
 
+instance Vertices (Stmt Vertex) where
+   vertices (Return e) = vertices e
+   vertices (Match e σ) = vertices e ∪ vertices σ
+   vertices (Def vd s) = vertices vd ∪ vertices s
+   vertices (DefRec ρ s) = vertices ρ ∪ vertices s
+
+instance Vertices (Block Vertex) where
+   vertices (Block s) = vertices s
+
 instance Vertices (Module Vertex) where
    vertices (Module defs) = unions (go <$> defs)
       where
@@ -264,6 +302,13 @@ derive instance Traversable Expr
 derive instance Functor RecDefs
 derive instance Foldable RecDefs
 derive instance Traversable RecDefs
+derive instance Functor Stmt
+derive instance Foldable Stmt
+derive instance Traversable Stmt
+derive instance Newtype (Block a) _
+derive instance Functor Block
+derive instance Foldable Block
+derive instance Traversable Block
 derive instance Newtype (Module a) _
 derive instance Functor Module
 
@@ -302,6 +347,16 @@ instance Apply VarDef where
 
 instance Apply RecDefs where
    apply (RecDefs fα fρ) (RecDefs α ρ) = RecDefs (fα α) (((<*>) <$> fρ) <*> ρ)
+
+instance Apply Stmt where
+   apply (Return fe) (Return e) = Return (fe <*> e)
+   apply (Match fe fσ) (Match e σ) = Match (fe <*> e) (fσ <*> σ)
+   apply (Def fvd fs) (Def vd s) = Def (fvd <*> vd) (fs <*> s)
+   apply (DefRec fρ fs) (DefRec ρ s) = DefRec (fρ <*> ρ) (fs <*> s)
+   apply _ _ = shapeMismatch unit
+
+instance Apply Block where
+   apply (Block fs) (Block s) = Block (fs <*> s)
 
 -- Apply instance for Either no good here as doesn't assume fixed shape.
 instance Apply Module where
