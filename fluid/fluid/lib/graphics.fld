@@ -166,12 +166,8 @@ def axis(orient, x, start, end):
   def last_tick: ceiling_to_nearest(end, tick_sp)
   def n: floor((end - first_tick) / tick_sp) + 1
   def ys: iterate(n, (+)(tick_sp), first_tick)
-  def ys:
-    if first_tick > start: start :| ys
-    else: ys
-  def ys:
-    if last_tick > end: concat2(ys, [last_tick])
-    else: ys
+  def ys: start :| ys if first_tick > start else ys
+  def ys: concat2(ys, [last_tick]) if last_tick > end else ys
   def ps: map(mk_point(orient, x), ys)
   def ax:
     Group([

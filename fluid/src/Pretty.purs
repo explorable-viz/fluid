@@ -144,6 +144,9 @@ instance Ann a => Pretty (Expr a) where
    pretty (BinaryApp s op s') = expr $ operatorApp 0 (BinaryApp s op s')
    pretty (UnaryPrefixApp op s) = expr $ operatorApp 0 (UnaryPrefixApp op s)
    pretty (MatchAs s cs) = text "match" <+> pretty s <> block (pretty cs)
+   pretty (IfElse (NonEmptyList ((cond × Block (NonEmptyList (Return e1 :| Nil))) :| Nil)) (Block (NonEmptyList (Return e2 :| Nil))))
+      | isSimple e1 && isSimple e2 =
+           expr $ pretty e1 <+> text "if" <+> pretty cond <+> text "else" <+> pretty e2
    pretty (IfElse (NonEmptyList (ss :| sss)) e) =
       vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))
          <++> text "else" <> block (pretty e)
