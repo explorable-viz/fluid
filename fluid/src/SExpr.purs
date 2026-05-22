@@ -26,7 +26,7 @@ import Desugarable (class Desugarable, desug)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim)
-import Expr (Block(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
+import Expr (Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
 import Lattice (class BoundedLattice, class JoinSemilattice, bot, top)
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -141,8 +141,8 @@ instance Desugarable DictEntry E.Expr where
 instance Desugarable Expr E.Expr where
    desug = exprFwd
 
-instance Desugarable Stmt E.Block where
-   desug s = E.Block <$> stmtFwd_stmt s
+instance Desugarable Stmt E.Stmt where
+   desug = stmtFwd_stmt
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)

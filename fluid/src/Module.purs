@@ -15,7 +15,7 @@ import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Eval (GraphConfig, eval_primitives)
-import Expr (class FV, Block, Module, fv)
+import Expr (class FV, Module, Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -52,7 +52,7 @@ initialConfig e primitives moduleCxt = do
       pure (primitives' × modules' × restrict (fv e) γ)
    pure { n, primitives: primitives', γ }
 
-type Config = { s :: Raw S.Stmt, e :: Raw Block, gconfig :: GraphConfig }
+type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
 prelude :: ModuleName
 prelude = "lib/prelude"
@@ -61,7 +61,7 @@ prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt 
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    moduleCxt <- loadModuleGraph (prelude : imports)
-   e :: Raw Block <- desug s
+   e :: Raw Stmt <- desug s
    gconfig <- initialConfig e primitives moduleCxt
    pure { s, e, gconfig }
 

@@ -22,7 +22,7 @@ import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Expr (Block(..), Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asExpr, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asExpr, fv)
 import File (class LoadFile, FileCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
@@ -39,7 +39,7 @@ import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs, val)
+import Val (BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs, val)
 
 -- Needs a better name.
 type GraphConfig =
@@ -210,19 +210,6 @@ evalStmt doc_opt γ s αs = case s of
       γ' <- closeDefs γ ρ (insert α αs)
       evalStmt doc_opt (γ <+> γ') s' (insert α αs)
 
-evalBlock
-   :: forall m
-    . MonadWithGraphAlloc m
-   => MonadReader FileCxt m
-   => MonadAff m
-   => LoadFile m
-   => Maybe (Val Vertex)
-   -> Env Vertex
-   -> Block Vertex
-   -> Set Vertex
-   -> m (Val Vertex)
-evalBlock doc_opt γ (Block s) αs = evalStmt doc_opt γ s αs
-
 evalVal
    :: forall m
     . MonadWithGraphAlloc m
@@ -359,14 +346,12 @@ toGC
    -> GaloisConnection (s 𝔹) (t 𝔹)
 toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
-graphEval :: forall m. MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Block -> m (GraphEval GraphImpl EnvExpr Val)
-graphEval { n, γ } block = do
+graphEval :: forall m. MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
+graphEval { n, γ } stmt = do
    _ × _ × g × inα × outα <- flip runAllocT n do
-      blockα <- alloc block
-      let
-         eα = blockToExpr blockα
-         inα = EnvExpr γ eα
-      g × outα <- runWithGraphT_spy (evalBlock Nothing γ blockα mempty) (vertices inα)
+      sα <- alloc stmt
+      let inα = EnvStmt γ sα
+      g × outα <- runWithGraphT_spy (evalStmt Nothing γ sα mempty) (vertices inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × inα × outα)
    pure { g, graph_fwd, graph_bwd, inα, outα }
@@ -374,12 +359,3 @@ graphEval { n, γ } block = do
    graph_fwd = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
    graph_bwd = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
    spyFun' b msg = spyFunWhen b msg (showVertices *** showGraph) showGraph
-
-blockToExpr :: forall a. Block a -> Expr a
-blockToExpr (Block s) = stmtToExpr s
-   where
-   stmtToExpr :: Stmt a -> Expr a
-   stmtToExpr (Return e) = e
-   stmtToExpr (Match _ _) = error "blockToExpr: Match not yet supported"
-   stmtToExpr (Def vd s') = Let vd (stmtToExpr s')
-   stmtToExpr (DefRec ρ s') = LetRec ρ (stmtToExpr s')

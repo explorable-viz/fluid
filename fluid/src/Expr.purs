@@ -67,8 +67,6 @@ data Stmt a
    | Def (VarDef a) (Stmt a)
    | DefRec (RecDefs a) (Stmt a)
 
-newtype Block a = Block (Stmt a)
-
 newtype Module a = Module (List (VarDef a + RecDefs a))
 
 class FV a where
@@ -110,9 +108,6 @@ instance FV (Stmt a) where
    fv (Match e σ) = fv e ∪ fv σ
    fv (Def vd s) = fv vd ∪ (fv s \\ bv vd)
    fv (DefRec ρ s) = fv ρ ∪ fv s
-
-instance FV (Block a) where
-   fv (Block s) = fv s
 
 instance FV a => FV (Dict a) where
    fv ρ = unions (fv <$> ρ) \\ S.fromFoldable (keys ρ)
@@ -190,12 +185,6 @@ instance BoundedJoinSemilattice a => Expandable (Stmt a) (Raw Stmt) where
    expand (Def vd s) (Def vd' s') = Def (expand vd vd') (expand s s')
    expand (DefRec ρ s) (DefRec ρ' s') = DefRec (expand ρ ρ') (expand s s')
    expand _ _ = shapeMismatch unit
-
-instance JoinSemilattice a => JoinSemilattice (Block a) where
-   join (Block s) (Block s') = Block (s ∨ s')
-
-instance BoundedJoinSemilattice a => Expandable (Block a) (Raw Block) where
-   expand (Block s) (Block s') = Block (expand s s')
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Var x) (Var x') = Var (x ≜ x')
@@ -275,9 +264,6 @@ instance Vertices (Stmt Vertex) where
    vertices (Def vd s) = vertices vd ∪ vertices s
    vertices (DefRec ρ s) = vertices ρ ∪ vertices s
 
-instance Vertices (Block Vertex) where
-   vertices (Block s) = vertices s
-
 instance Vertices (Module Vertex) where
    vertices (Module defs) = unions (go <$> defs)
       where
@@ -305,10 +291,6 @@ derive instance Traversable RecDefs
 derive instance Functor Stmt
 derive instance Foldable Stmt
 derive instance Traversable Stmt
-derive instance Newtype (Block a) _
-derive instance Functor Block
-derive instance Foldable Block
-derive instance Traversable Block
 derive instance Newtype (Module a) _
 derive instance Functor Module
 
@@ -355,9 +337,6 @@ instance Apply Stmt where
    apply (DefRec fρ fs) (DefRec ρ s) = DefRec (fρ <*> ρ) (fs <*> s)
    apply _ _ = shapeMismatch unit
 
-instance Apply Block where
-   apply (Block fs) (Block s) = Block (fs <*> s)
-
 -- Apply instance for Either no good here as doesn't assume fixed shape.
 instance Apply Module where
    apply (Module Nil) (Module Nil) = Module Nil
@@ -396,6 +375,7 @@ derive instance Eq a => Eq (Elim a)
 derive instance Eq a => Eq (Cont a)
 derive instance Eq a => Eq (VarDef a)
 derive instance Eq a => Eq (RecDefs a)
+derive instance Eq a => Eq (Stmt a)
 
 instance TypeName (RecDefs a) where
    typeName _ = "RecDefs"

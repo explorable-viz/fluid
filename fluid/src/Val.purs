@@ -22,7 +22,7 @@ import Dict (Dict)
 import Dict as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Expr (Elim, Expr, fv)
+import Expr (Elim, Stmt, fv)
 import File (class LoadFile, FileCxt)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
@@ -115,7 +115,7 @@ instance Map (Env a) String (Val a) where
    insert k v (Env γ) = Env (insert k v γ)
    toUnfoldable (Env γ) = toUnfoldable γ
 
-data EnvExpr a = EnvExpr (Env a) (Expr a)
+data EnvStmt a = EnvStmt (Env a) (Stmt a)
 
 -- Goes from smaller environment to larger (injection into a biproduct).
 unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
@@ -189,19 +189,19 @@ derive instance Functor Val
 derive instance Functor Env
 derive instance Functor Fun
 derive instance Functor BaseVal
-derive instance Functor EnvExpr
+derive instance Functor EnvStmt
 derive instance Traversable MatrixDim
 derive instance Traversable Val
 derive instance Traversable BaseVal
 derive instance Traversable Fun
 derive instance Traversable Env
-derive instance Traversable EnvExpr
+derive instance Traversable EnvStmt
 derive instance Foldable MatrixDim
 derive instance Foldable Val
 derive instance Foldable BaseVal
 derive instance Foldable Fun
 derive instance Foldable Env
-derive instance Foldable EnvExpr
+derive instance Foldable EnvStmt
 
 instance Apply Val where
    apply (Val fα Nothing fv) (Val α Nothing v) = Val (fα α) Nothing (fv <*> v)
@@ -239,8 +239,8 @@ instance Apply MatrixDim where
 instance Apply Env where
    apply (Env fγ) (Env γ) = Env (((<*>) <$> fγ) <*> γ)
 
-instance Apply EnvExpr where
-   apply (EnvExpr fγ fe) (EnvExpr γ e) = EnvExpr (fγ <*> γ) (fe <*> e)
+instance Apply EnvStmt where
+   apply (EnvStmt fγ fs) (EnvStmt γ s) = EnvStmt (fγ <*> γ) (fs <*> s)
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d
@@ -346,7 +346,7 @@ derive instance Eq a => Eq (MatrixRep a)
 derive instance Eq a => Eq (MatrixDim a)
 derive instance Eq a => Eq (Fun a)
 derive instance Eq a => Eq (Env a)
-derive instance Eq a => Eq (EnvExpr a)
+derive instance Eq a => Eq (EnvStmt a)
 
 derive instance Newtype (Env a) _
 
@@ -394,5 +394,5 @@ instance Vertices (Fun Vertex) where
 instance Vertices (Env Vertex) where
    vertices (Env γ) = unions (vertices <$> values γ)
 
-instance Vertices (EnvExpr Vertex) where
-   vertices (EnvExpr γ e) = vertices γ ∪ vertices e
+instance Vertices (EnvStmt Vertex) where
+   vertices (EnvStmt γ s) = vertices γ ∪ vertices s

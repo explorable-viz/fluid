@@ -24,12 +24,12 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf
 import Module (prepConfig)
 import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
-import Expr (Block) as Expr
+import Expr (Stmt) as Expr
 import SExpr (Expr, Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, defined, log', spyWhen, throw, throwLeft, withMsg, (×))
-import Val (class Ann, Env, EnvExpr(..), Val)
+import Val (class Ann, Env, EnvStmt(..), Val)
 
 type TestSuite m = Array (String × m Unit)
 
@@ -82,22 +82,22 @@ testProperties
    -> SelectionSpec
    -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
-   let e = defined (desug s) :: Raw Expr.Block
+   let s' = defined (desug s) :: Raw Expr.Stmt
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
-      graphEval gconfig e
+      graphEval gconfig s'
    let GC evalG = graphGC graphed # toGC
 
    let v = map (const top) outα :: Val 𝔹
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
 
-   in0@(EnvExpr in_γ in_e) <- do
+   in0@(EnvStmt in_γ in_s) <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
-   out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvExpr in_γ in_e))
+   out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvStmt in_γ in_s))
 
-   let in_top = EnvExpr (topOf in_γ) (topOf in_e)
+   let in_top = EnvStmt (topOf in_γ) (topOf in_s)
 
    case bwd_expect of
       Nothing -> pure unit

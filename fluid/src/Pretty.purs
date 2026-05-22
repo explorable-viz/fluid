@@ -22,7 +22,7 @@ import Util (type (×), error, isEmpty, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, class Highlightable, BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), Fun, MatrixRep(..), Val(..), highlightIf)
+import Val (class Ann, class Highlightable, BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), Fun, MatrixRep(..), Val(..), highlightIf)
 
 class Pretty p where
    pretty :: p -> Doc
@@ -294,6 +294,12 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.LetRec (E.RecDefs _ p) e') = text "def" <+> pretty p <++> pretty e'
    pretty (E.DocExpr p e) = text "@doc" <> parens (pretty p) <+> pretty e
 
+instance Highlightable a => Pretty (E.Stmt a) where
+   pretty (E.Return e) = text "return" <+> pretty e
+   pretty (E.Match e σ) = text "match" <+> pretty e <> block (pretty σ)
+   pretty (E.Def (E.VarDef o e) s) = text "def" <+> pretty o <> block (pretty e) <++> pretty s
+   pretty (E.DefRec (E.RecDefs _ ρ) s) = text "def" <+> pretty ρ <++> pretty s
+
 instance Highlightable a => Pretty (Cont a) where
    pretty (ContExpr e) = pretty e
    pretty (ContElim σ) = pretty σ
@@ -319,8 +325,8 @@ instance Highlightable a => Pretty (Env a) where
       go ((x × v) : rest) =
          (text x <+> text "->" <+> pretty v <+> text ",") <++> go rest
 
-instance Highlightable a => Pretty (EnvExpr a) where
-   pretty (EnvExpr γ e) = (pretty γ) <++> (pretty e)
+instance Highlightable a => Pretty (EnvStmt a) where
+   pretty (EnvStmt γ s) = (pretty γ) <++> (pretty s)
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = pretty x <> pretty ":" <+> pretty σ

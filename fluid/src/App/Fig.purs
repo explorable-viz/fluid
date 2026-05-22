@@ -39,7 +39,7 @@ import Test.Util.Debug (tracing)
 import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
-import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
+import Val (Env(..), EnvStmt(..), Val(..), asVal, unrestrictGC)
 
 str
    :: { output :: String -- pseudo-variable to use as name of output view
@@ -183,10 +183,10 @@ drawFile :: File × String -> Effect Unit
 drawFile (File fileName × src) =
    addEditorView (codeMirrorDiv fileName) >>= loadCode src
 
-unprojExpr :: forall a. BoundedMeetSemilattice a => Raw EnvExpr -> GaloisConnection (Env a) (EnvExpr a)
-unprojExpr (EnvExpr _ e) = GC
-   { fwd: \γ -> EnvExpr γ (topOf e)
-   , bwd: \(EnvExpr γ _) -> γ
+unprojStmt :: forall a. BoundedMeetSemilattice a => Raw EnvStmt -> GaloisConnection (Env a) (EnvStmt a)
+unprojStmt (EnvStmt _ s) = GC
+   { fwd: \γ -> EnvStmt γ (topOf s)
+   , bwd: \(EnvStmt γ _) -> γ
    }
 
 type IO a = { γ :: Env a, v :: Val a }
@@ -204,12 +204,12 @@ lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
 loadFig options@{ inputs, linking } fluidSrc = do
    { s, e, gconfig } <- prepConfig primitives fluidSrc
-   eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
+   eval@({ inα: EnvStmt γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval
       inputs' = Set.fromFoldable inputs
-      EnvExpr γ e' = erase eval.inα
-      GC focus = unrestrictGC γ inputs' >>> unprojExpr (EnvExpr γ e')
+      EnvStmt γ s' = erase eval.inα
+      GC focus = unrestrictGC γ inputs' >>> unprojStmt (EnvStmt γ s')
       Env γ_restricted = restrict inputs' γα
       in_roots = Set.fromFoldable $ (\(Val α _ _) -> α) <$> γ_restricted
 
