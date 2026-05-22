@@ -104,7 +104,10 @@ apply
 apply doc_opt (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
-   eval doc_opt (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
+   case κ of
+      ContExpr e -> eval doc_opt (γ1 <+> γ2 <+> γ3) e (insert α αs)
+      ContStmt s -> evalStmt doc_opt (γ1 <+> γ2 <+> γ3) s (insert α αs)
+      ContElim _ -> error "Eliminator unexpected as closure body"
 apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
    where
@@ -203,7 +206,10 @@ evalStmt doc_opt γ s αs = case s of
    Match e σ -> do
       v <- eval Nothing γ e αs
       γ' × κ × αs' <- match v σ
-      eval doc_opt (γ <+> γ') (asExpr κ) αs'
+      case κ of
+         ContExpr e' -> eval doc_opt (γ <+> γ') e' αs'
+         ContStmt s' -> evalStmt doc_opt (γ <+> γ') s' αs'
+         ContElim _ -> error "Eliminator unexpected as match branch"
    Def (VarDef σ e) s' -> do
       v <- eval Nothing γ e αs
       γ' × _ × αs' <- withMsg "In variable def" $ match v σ
