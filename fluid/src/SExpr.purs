@@ -192,13 +192,6 @@ varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m
 varDefFwd (VarDef p s) =
    E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Return (Dictionary top Nil))))) <*> desug s
 
--- VarDefs
-varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Stmt a -> m (E.Expr a)
-varDefsFwd (NonEmptyList (d :| Nil) × b) =
-   E.Let <$> varDefFwd d <*> stmtFwd b
-varDefsFwd (NonEmptyList (d :| d' : ds) × b) =
-   E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × b)
-
 -- RecDefs
 -- In the formalism, "group by name" is part of the syntax.
 recDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
