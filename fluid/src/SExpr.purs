@@ -49,7 +49,6 @@ data Expr a
    | App (Expr a) (Expr a)
    | BinaryApp (Expr a) Var (Expr a)
    | UnaryPrefixApp Var (Expr a)
-   | MatchAs (Expr a) (NonEmptyList (Pattern × Block a))
    | Ternary (Expr a) (Expr a) (Expr a)
    | Paragraph (Paragraph a)
    | ListEmpty a
@@ -114,6 +113,7 @@ subpatts (Right (PListNext p o)) = Left p : Right o : Nil
 data Stmt a
    = Return (Expr a)
    | If (NonEmptyList (Expr a × Block a)) (Block a)
+   | Match (Expr a) (NonEmptyList (Pattern × Block a))
 
 newtype Block a = Block (NonEmptyList (Stmt a))
 
@@ -258,8 +258,6 @@ exprFwd (BinaryApp s1 op s2) =
    E.App <$> (E.App (E.Op op) <$> desug s1) <*> desug s2
 exprFwd (UnaryPrefixApp op s) =
    E.App (E.Op op) <$> desug s
-exprFwd (MatchAs s μ) =
-   E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
 exprFwd (Ternary cond e1 e2) =
    E.App
       <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug e1) <*> (ContExpr <$> desug e2)))
@@ -292,6 +290,8 @@ type IfElseClauses a = NonEmptyList (Expr a × Block a) × Block a
 stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Expr a)
 stmtFwd (Return e) = desug e
 stmtFwd (If sss s) = ifElseFwd (sss × s)
+stmtFwd (Match s μ) =
+   E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
 
 blockFwd :: forall a m. BoundedLattice a => MonadError Error m => Block a -> m (E.Expr a)
 blockFwd (Block (NonEmptyList (s :| Nil))) = stmtFwd s

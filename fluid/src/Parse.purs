@@ -83,7 +83,7 @@ varDefs = many1 varDef
       pure $ VarDef p e
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> ifStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
 
 ifStmt :: Parser (Raw Stmt)
 ifStmt = defer \_ -> do
@@ -97,6 +97,19 @@ ifStmt = defer \_ -> do
    cs <- many (align $ reserved "elif" *> ifClause)
    b <- align $ reserved "else" *> blockBody
    pure $ If (nonEmpty (c : cs)) b
+
+matchStmt :: Parser (Raw Stmt)
+matchStmt = defer \_ -> do
+   let
+      branch = do
+         reserved "case"
+         p <- pattern
+         b <- blockBody
+         pure (p × b)
+   reserved "match"
+   e <- expr
+   bs <- block (many1 (align branch))
+   pure $ Match e bs
 
 blockBody :: Parser (Raw Block)
 blockBody = defer \_ -> (Block <<< singleton) <$> block stmt
@@ -113,7 +126,7 @@ recDefs = many1 recDef
       pure $ p × Clause (ps × b)
 
 expr :: Parser (Raw Expr)
-expr = context "expr" $ matchAs <|> def <|> ternary <?> "expression"
+expr = context "expr" $ def <|> ternary <?> "expression"
    where
    ternary :: Parser (Raw Expr)
    ternary = defer \_ -> do
@@ -124,21 +137,6 @@ expr = context "expr" $ matchAs <|> def <|> ternary <?> "expression"
          reserved "else"
          e2 <- expr
          pure $ Ternary cond e1 e2
-
-   matchAs :: Parser (Raw Expr)
-   matchAs = do
-      reserved "match"
-      e <- opTree
-      bs <- block (many1 (align branch))
-      pure $ MatchAs e bs
-
-      where
-      branch :: Parser (Pattern × Raw Block)
-      branch = do
-         reserved "case"
-         p <- pattern
-         b <- blockBody
-         pure (p × b)
 
    -- TODO: consider capturing 'def' parse for better error handling
    def :: Parser (Raw Expr)

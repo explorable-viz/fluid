@@ -73,7 +73,6 @@ instance Ann a => IsSimple (Expr a) where
    isSimple (Let _ _) = false
    isSimple (LetRec _ _) = false
    isSimple (Ternary _ _ _) = false
-   isSimple (MatchAs _ _) = false
    isSimple _ = true
 
 instance Highlightable a => IsSimple (E.Expr a) where
@@ -143,7 +142,6 @@ instance Ann a => Pretty (Expr a) where
    pretty (App s s') = expr $ prettyAppChain (App s s') Nil
    pretty (BinaryApp s op s') = expr $ operatorApp 0 (BinaryApp s op s')
    pretty (UnaryPrefixApp op s) = expr $ operatorApp 0 (UnaryPrefixApp op s)
-   pretty (MatchAs s cs) = text "match" <+> pretty s <> block (pretty cs)
    pretty (Ternary cond e1 e2) =
       expr $ pretty e1 <+> text "if" <+> pretty cond <+> text "else" <+> pretty e2
 
@@ -211,6 +209,7 @@ instance Ann a => Pretty (Stmt a) where
          <++> text "else" <> block (pretty e)
       where
       prettyClause w (s × b) = text w <+> expr (pretty s) <> block (pretty b)
+   pretty (Match s cs) = text "match" <+> pretty s <> block (pretty cs)
 
 instance Ann a => Pretty (Clause a) where
    pretty (Clause (ps × b)) = lambda (toList ps) b
