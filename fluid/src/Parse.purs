@@ -214,9 +214,7 @@ expr = context "expr" $ def <|> ternary <?> "expression"
 
       simple :: Parser (Raw Expr)
       simple = context "simple" $
-         letExpr
-            <|> letRecExpr
-            <|> matrix
+         matrix
             <|> bracketsExpr
             <|> lambda
             <|> dict
@@ -229,35 +227,6 @@ expr = context "expr" $ def <|> ternary <?> "expression"
             <|> number
                <?> "simple expression"
          where
-
-         letExpr :: Parser (Raw Expr)
-         letExpr = context "letExpr" do
-            ds <- many1 varDef
-            e <- ternary
-            pure $ Let ds (returns e)
-            where
-            varDef :: Parser (Raw VarDef)
-            varDef = do
-               p <- try (reserved "def" *> pattern <* delim ':')
-               e <- ternary
-               delim ';'
-               pure $ VarDef p e
-
-         letRecExpr :: Parser (Raw Expr)
-         letRecExpr = context "letRecExpr" do
-            ds <- many1 recDef
-            e <- ternary
-            pure $ LetRec ds (returns e)
-            where
-            recDef :: Parser (Raw Branch)
-            recDef = do
-               p <- try (reserved "def" *> variable <* delim '(')
-               ps <- commas1 pattern
-               delim ')'
-               delim ':'
-               e <- ternary
-               delim ';'
-               pure $ p × Clause (ps × returns e)
 
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
