@@ -265,7 +265,7 @@ exprFwd (UnaryPrefixApp op s) =
    E.App (E.Op op) <$> desug s
 exprFwd (Ternary cond e1 e2) =
    E.App
-      <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug e1) <*> (ContExpr <$> desug e2)))
+      <$> (E.Lambda top <$> (elimBool <$> (ContStmt <$> E.Return <$> desug e1) <*> (ContStmt <$> E.Return <$> desug e2)))
       <*> desug cond
 exprFwd (Paragraph elems) =
    paragraphFwd elems
@@ -315,7 +315,7 @@ stmtFwd_stmt (Def ds body) = defStmtFwd ds body
 stmtFwd_stmt (DefRec xcs body) =
    E.DefRec <$> recDefsFwd xcs <*> stmtFwd_stmt body
 stmtFwd_stmt (Match s μ) = do
-   κ <- clausesStateFwd_stmt (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
+   κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ
 stmtFwd_stmt s = E.Return <$> stmtFwd s
 
@@ -325,7 +325,7 @@ ifElseFwd (sss × s) =
    where
    clause (s1 × b) e3 =
       E.App
-         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> stmtFwd b) <*> (ContExpr <$> e3)))
+         <$> (E.Lambda top <$> (elimBool <$> (ContStmt <$> E.Return <$> stmtFwd b) <*> (ContStmt <$> E.Return <$> e3)))
          <*> desug s1
 
 -- List Qualifier × Expr
@@ -334,7 +334,7 @@ listCompFwd (α × Nil × s) =
    econs α <$> desug s <@> enil α
 listCompFwd (α × (ListCompGuard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
-   E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
+   E.App (E.Lambda α (elimBool (ContStmt (E.Return e)) (ContStmt (E.Return (enil α))))) <$> desug s
 listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
    σ <- clausesStateFwd (((Left p : Nil) × Nil × Return (ListComp α s' qs)) : Nil)
    E.App (E.Lambda α (asElim σ)) <$> desug s
@@ -396,9 +396,9 @@ clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses
 clausesStateFwd ks = case ks of
    Nil -> error absurd
    (Nil × Nil × b) : Nil ->
-      ContExpr <$> stmtFwd b
+      ContStmt <$> E.Return <$> stmtFwd b
    (Nil × _) : _ ->
-      ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
+      ContStmt <$> E.Return <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
    ((Left (PVar x) : _) × _) : _ ->
       ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
    ((Left (PRecord xps) : _) × _) : _ ->
@@ -408,27 +408,6 @@ clausesStateFwd ks = case ks of
    ((p : _) × _) : _ -> do
       kss <- popConstrFwd (defined (dataTypeFor (definitely ("clausesStateFwd ctrFor failed for: " <> showPattern p) (ctrFor p)))) ks
       ContElim <$> ElimConstr <$> D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
-
--- Variant whose terminal leaves wrap a core Stmt in ContStmt (rather than wrapping an
--- expression in ContExpr). Used by stmt-yielding consumers such as core Match.
--- The "remaining args" case is unreachable here: single-pattern surface forms (Match)
--- never trigger currying.
-clausesStateFwd_stmt :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
-clausesStateFwd_stmt ks = case ks of
-   Nil -> error absurd
-   (Nil × Nil × b) : Nil ->
-      ContStmt <$> stmtFwd_stmt b
-   (Nil × _) : _ ->
-      error "clausesStateFwd_stmt: unexpected remaining args"
-   ((Left (PVar x) : _) × _) : _ ->
-      ContElim <$> ElimVar x <$> (clausesStateFwd_stmt =<< popVarFwd x ks)
-   ((Left (PRecord xps) : _) × _) : _ ->
-      ContElim <$> ElimDict (B.keys xps) <$> (clausesStateFwd_stmt =<< popRecordFwd (xps <#> fst) ks)
-   ((Right (PListVar x) : _) × _) : _ ->
-      ContElim <$> ElimVar x <$> (clausesStateFwd_stmt =<< popListVarFwd x ks)
-   ((p : _) × _) : _ -> do
-      kss <- popConstrFwd (defined (dataTypeFor (definitely ("clausesStateFwd_stmt ctrFor failed for: " <> showPattern p) (ctrFor p)))) ks
-      ContElim <$> ElimConstr <$> D.fromFoldable <$> sequence (rtraverse clausesStateFwd_stmt <$> kss)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and empty when the recursion terminates.

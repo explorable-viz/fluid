@@ -297,7 +297,6 @@ instance Highlightable a => Pretty (E.Stmt a) where
    pretty (E.DefRec (E.RecDefs _ ρ) s) = text "def" <+> pretty ρ <++> pretty s
 
 instance Highlightable a => Pretty (Cont a) where
-   pretty (ContExpr e) = pretty e
    pretty (ContElim σ) = pretty σ
    pretty (ContStmt s) = pretty s
 

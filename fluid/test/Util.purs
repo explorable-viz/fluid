@@ -25,7 +25,7 @@ import Module (prepConfig)
 import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import Expr (Stmt) as Expr
-import SExpr (Expr, Stmt) as SE
+import SExpr (Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, defined, log', spyWhen, throw, throwLeft, withMsg, (×))

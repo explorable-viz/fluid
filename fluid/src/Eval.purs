@@ -78,8 +78,6 @@ matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
    γ' × κ' × βs <- matchMany vs κ
    pure $ γ `disjointUnion` γ' × κ' × (αs ∪ βs)
-matchMany (_ : vs) (ContExpr _) = throw $
-   show (length vs + 1) <> " extra argument(s) to constructor/dictionary; did you forget parentheses in lambda pattern?"
 matchMany (_ : vs) (ContStmt _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/dictionary; did you forget parentheses in lambda pattern?"
 
@@ -105,9 +103,8 @@ apply doc_opt (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
    case κ of
-      ContExpr e -> eval doc_opt (γ1 <+> γ2 <+> γ3) e (insert α αs)
       ContStmt s -> evalStmt doc_opt (γ1 <+> γ2 <+> γ3) s (insert α αs)
-      ContElim _ -> error "Eliminator unexpected as closure body"
+      _ -> error "Stmt continuation expected as closure body"
 apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
    where
