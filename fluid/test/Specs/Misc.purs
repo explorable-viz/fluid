@@ -50,4 +50,15 @@ misc_cases =
    , { file: "module/import_simple.fld", fwd_expect: "84" }
    , { file: "module/import_simple_unused.fld", fwd_expect: "84" }
    , { file: "module/import_modules.fld", fwd_expect: "84" }
+   , { file: "ternary/basic_true.fld", fwd_expect: "5" }
+   , { file: "ternary/basic_false.fld", fwd_expect: "6" }
+   , { file: "ternary/looser_than_plus.fld", fwd_expect: "7" }
+   , { file: "ternary/right_assoc_false.fld", fwd_expect: "3" }
+   , { file: "ternary/right_assoc_true.fld", fwd_expect: "1" }
+   , { file: "ternary/in_valdef_rhs.fld", fwd_expect: "3" }
+   , { file: "ternary/condition_parenthesised.fld", fwd_expect: "10" }
+   , { file: "ternary/listcomp_guard_unaffected.fld", fwd_expect: "2 :| 3 :| []" }
+   , { file: "ternary/inside_list_literal.fld", fwd_expect: "1 :| 4 :| []" }
+   , { file: "ternary/in_function_body.fld", fwd_expect: "3" }
+   , { file: "ternary/lambda_body.fld", fwd_expect: "0 :| 1 :| 2 :| 0 :| []" }
    ]
