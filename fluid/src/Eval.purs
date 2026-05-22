@@ -79,7 +79,9 @@ matchMany (v : vs) (ContElim σ) = do
    γ' × κ' × βs <- matchMany vs κ
    pure $ γ `disjointUnion` γ' × κ' × (αs ∪ βs)
 matchMany (_ : vs) (ContExpr _) = throw $
-   show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
+   show (length vs + 1) <> " extra argument(s) to constructor/dictionary; did you forget parentheses in lambda pattern?"
+matchMany (_ : vs) (ContStmt _) = throw $
+   show (length vs + 1) <> " extra argument(s) to constructor/dictionary; did you forget parentheses in lambda pattern?"
 
 closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =

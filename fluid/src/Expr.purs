@@ -52,6 +52,7 @@ data Elim a
 data Cont a
    = ContExpr (Expr a)
    | ContElim (Elim a)
+   | ContStmt (Stmt a)
 
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
@@ -96,6 +97,7 @@ instance FV (Elim a) where
 instance FV (Cont a) where
    fv (ContElim σ) = fv σ
    fv (ContExpr e) = fv e
+   fv (ContStmt s) = fv s
 
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
@@ -137,6 +139,7 @@ instance BV (VarDef a) where
 instance BV (Cont a) where
    bv (ContElim σ) = bv σ
    bv (ContExpr _) = empty
+   bv (ContStmt _) = empty
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    join (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (κ ∨ κ')
@@ -153,11 +156,13 @@ instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
    join (ContExpr e) (ContExpr e') = ContExpr (e ∨ e')
    join (ContElim σ) (ContElim σ') = ContElim (σ ∨ σ')
+   join (ContStmt s) (ContStmt s') = ContStmt (s ∨ s')
    join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
    expand (ContExpr e) (ContExpr e') = ContExpr (expand e e')
    expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
+   expand (ContStmt s) (ContStmt s') = ContStmt (expand s s')
    expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (VarDef a) where
@@ -254,6 +259,7 @@ instance Vertices (VarDef Vertex) where
 instance Vertices (Cont Vertex) where
    vertices (ContExpr e) = vertices e
    vertices (ContElim σ) = vertices σ
+   vertices (ContStmt s) = vertices s
 
 instance Vertices (RecDefs Vertex) where
    vertices defs@(RecDefs α ρ) = singleton (DVertex (α × pack defs)) ∪ vertices ρ
@@ -322,6 +328,7 @@ instance Apply Elim where
 instance Apply Cont where
    apply (ContExpr f) (ContExpr e) = ContExpr (f <*> e)
    apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
+   apply (ContStmt fs) (ContStmt s) = ContStmt (fs <*> s)
    apply _ _ = shapeMismatch unit
 
 instance Apply VarDef where

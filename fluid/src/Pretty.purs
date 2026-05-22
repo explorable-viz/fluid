@@ -303,6 +303,7 @@ instance Highlightable a => Pretty (E.Stmt a) where
 instance Highlightable a => Pretty (Cont a) where
    pretty (ContExpr e) = pretty e
    pretty (ContElim σ) = pretty σ
+   pretty (ContStmt s) = pretty s
 
 instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x k) = pretty x <> text "->" <> pretty k
