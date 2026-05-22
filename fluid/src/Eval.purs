@@ -22,7 +22,7 @@ import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asExpr, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), fv)
 import File (class LoadFile, FileCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
@@ -207,9 +207,8 @@ evalStmt doc_opt γ s αs = case s of
       v <- eval Nothing γ e αs
       γ' × κ × αs' <- match v σ
       case κ of
-         ContExpr e' -> eval doc_opt (γ <+> γ') e' αs'
          ContStmt s' -> evalStmt doc_opt (γ <+> γ') s' αs'
-         ContElim _ -> error "Eliminator unexpected as match branch"
+         _ -> error "Stmt continuation expected as match branch"
    Def (VarDef σ e) s' -> do
       v <- eval Nothing γ e αs
       γ' × _ × αs' <- withMsg "In variable def" $ match v σ

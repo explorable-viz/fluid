@@ -58,10 +58,6 @@ asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
 asElim _ = error "Eliminator expected"
 
-asExpr :: forall a. Cont a -> Expr a
-asExpr (ContExpr e) = e
-asExpr _ = error "Expression expected"
-
 data Stmt a
    = Return (Expr a)
    | Match (Expr a) (Elim a)
