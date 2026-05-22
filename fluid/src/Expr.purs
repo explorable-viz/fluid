@@ -61,6 +61,14 @@ asExpr :: forall a. Cont a -> Expr a
 asExpr (ContExpr e) = e
 asExpr _ = error "Expression expected"
 
+data Stmt a
+   = Return (Expr a)
+   | Match (Expr a) (Elim a)
+   | Def (VarDef a) (Stmt a)
+   | DefRec (RecDefs a) (Stmt a)
+
+newtype Block a = Block (Stmt a)
+
 newtype Module a = Module (List (VarDef a + RecDefs a))
 
 class FV a where
