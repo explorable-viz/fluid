@@ -9,6 +9,7 @@ misc_cases =
    , { file: "assert_stmt.fld", fwd_expect: "10" }
    , { file: "assert_implicit.fld", fwd_expect: "10" }
    , { file: "bare_return.fld", fwd_expect: "None" }
+   , { file: "zero_arg.fld", fwd_expect: "\"hello\"" }
    , { file: "boolean_precedence.fld", fwd_expect: "True" }
    , { file: "compose.fld", fwd_expect: "5" }
    , { file: "custom_infix.fld", fwd_expect: "True" }

@@ -1,4 +1,4 @@
-def f(x):
+def f():
    return
 
-f(0)
+f()

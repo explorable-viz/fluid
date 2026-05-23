@@ -18,7 +18,7 @@ import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import Data.String.Common (joinWith)
 import Data.Traversable (foldl, foldr)
-import DataType (cNone, cPair)
+import DataType (cNoArgs, cNone, cPair)
 import Lattice (Raw)
 import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
@@ -158,9 +158,13 @@ recDefs = many1 recDef
    recDef :: Parser (Raw Branch)
    recDef = do
       p <- try (reserved "def" *> variable <* delim '(')
-      ps <- commas1 pattern
+      ps0 <- commas pattern
       delim ')'
       b <- blockBody
+      let
+         ps = case ps0 of
+            Nil -> NonEmptyList (PConstr cNoArgs Nil :| Nil)
+            x : xs -> NonEmptyList (x :| xs)
       pure $ p × Clause (ps × b)
 
 expr :: Parser (Raw Expr)
@@ -231,7 +235,9 @@ expr = context "expr" $ ternary <?> "expression"
                close ')'
                case e of
                   (Constr a c es) -> chain (Constr a c (es <> ps <> Nil))
-                  _ -> chain (foldl App e ps)
+                  _ -> case ps of
+                     Nil -> chain (App e (Constr unit cNoArgs Nil))
+                     x : xs -> chain (foldl App e (x : xs))
 
       simple :: Parser (Raw Expr)
       simple = context "simple" $

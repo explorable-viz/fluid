@@ -126,6 +126,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Int α n) = highlightIf α (number n)
    pretty (Float α n) = highlightIf α (number n)
    pretty (Str α str) = highlightIf α (string str)
+   pretty (Constr _ "__NoArgs" Nil) = text "()"
    pretty (Constr α c Nil) = highlightIf α (text c)
    pretty (Constr α c as) = highlightIf α (expr $ prettyConstr c as)
    pretty (Dictionary α Nil) = highlightIf α (text "{}")
@@ -174,6 +175,7 @@ instance Ann a => Pretty (Pattern × Stmt a) where
 instance Pretty Pattern where
    pretty (PVar x) = text x
    pretty (PRecord xps) = record $ map pretty xps
+   pretty (PConstr "__NoArgs" Nil) = text "()"
    pretty (PConstr c Nil) = text c
    pretty (PConstr c ps) = prettyConstr c ps
    pretty (PListEmpty) = text "[]"
@@ -219,6 +221,8 @@ instance Ann a => Pretty (RecDefs a) where
    pretty bs = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> bs))
 
 instance Ann a => Pretty (Branch a) where
+   pretty (v × Clause (NonEmptyList (PConstr "__NoArgs" Nil :| Nil) × b)) =
+      text "def" <+> text v <> text "()" <> block (pretty b)
    pretty (v × Clause (ps × b)) =
       text "def"
          <+> text v
@@ -258,6 +262,7 @@ prettyConsArg e lhs = case rootOp e of
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
 prettyAppChain (App f a) as = prettyAppChain f (a : as)
+prettyAppChain f (Constr _ "__NoArgs" Nil : Nil) = prettySimple f <> text "()"
 prettyAppChain f as = prettySimple f <> parens (prettyList as)
 
 commas :: List Doc -> Doc
