@@ -39,7 +39,7 @@ import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), forDefs, val)
+import Val (BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, forDefs, val)
 
 -- Needs a better name.
 type GraphConfig =
@@ -103,11 +103,7 @@ apply doc_opt (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
    case κ of
-      ContStmt s -> do
-         r <- evalStmt doc_opt (γ1 <+> γ2 <+> γ3) s (insert α αs)
-         case r of
-            Returns v' -> pure v'
-            Assigns _ -> error "Closure body must return"
+      ContStmt s -> asReturns <$> evalStmt doc_opt (γ1 <+> γ2 <+> γ3) s (insert α αs)
       _ -> error "Stmt continuation expected as closure body"
 apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
@@ -355,11 +351,7 @@ graphEval { n, γ } stmt = do
    _ × _ × g × inα × outα <- flip runAllocT n do
       sα <- alloc stmt
       let inα = EnvStmt γ sα
-      g × r <- runWithGraphT_spy (evalStmt Nothing γ sα mempty) (vertices inα)
-      let
-         outα = case r of
-            Returns v -> v
-            Assigns _ -> error "Program must return"
+      g × outα <- runWithGraphT_spy (asReturns <$> evalStmt Nothing γ sα mempty) (vertices inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × inα × outα)
    pure { g, graph_fwd, graph_bwd, inα, outα }

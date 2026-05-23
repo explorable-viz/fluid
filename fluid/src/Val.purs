@@ -31,13 +31,17 @@ import Graph.WithGraph (class MonadWithGraphAlloc, new)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Pretty.Doc (Doc, text)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
+import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, error, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
 
 data Val a = Val a (Maybe (Val a)) (BaseVal a)
 
 data Result a = Returns (Val a) | Assigns (Env a)
+
+asReturns :: forall a. Result a -> Val a
+asReturns (Returns v) = v
+asReturns (Assigns _) = error "Returns expected"
 
 data BaseVal a
    = Int Int
