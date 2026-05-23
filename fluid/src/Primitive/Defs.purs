@@ -25,7 +25,7 @@ import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst)
-import DataType (cCons, cFalse, cNil, cNothing, cPair, cJust, cTrue)
+import DataType (cCons, cFalse, cNil, cNone, cNothing, cPair, cJust, cTrue)
 import Debug (trace)
 import Dict (fromFoldable)
 import Dict (fromFoldable) as D
@@ -52,7 +52,7 @@ primitives :: Raw Env
 primitives = wrap $ D.fromFoldable
    [ ":" × Val bot Nothing (Fun (PartialConstr cCons Nil))
    , unary "ceiling" { i: number, o: int, fwd: ceil }
-   , extern debugLog
+   , extern print_
    , extern dims
    , extern error_
    , extern loadJson
@@ -100,12 +100,12 @@ error_ =
    op _ (Val _ _ (Str s) : Nil) = pure $ error s
    op _ _ = throw "String expected"
 
-debugLog :: ForeignOp
-debugLog =
-   ForeignOp ("debug_log" × ForeignOp' { arity: 1, op })
+print_ :: ForeignOp
+print_ =
+   ForeignOp ("print" × ForeignOp' { arity: 1, op })
    where
    op :: Op
-   op _ (x : Nil) = pure $ trace x (const x)
+   op doc_opt (x : Nil) = trace x \_ -> val doc_opt empty (Constr cNone Nil)
    op _ _ = throw "Single argument expected"
 
 loadJson :: ForeignOp
