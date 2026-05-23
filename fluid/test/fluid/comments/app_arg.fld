@@ -1,4 +1,3 @@
-para =
-  f"""Comments on arguments don't surface on the outermost application"""
+para = f"""Comments on arguments don't surface on the outermost application"""
 
 @doc(para) map((+)(1), [4, 6, 12, 14, 3, 2, -4])

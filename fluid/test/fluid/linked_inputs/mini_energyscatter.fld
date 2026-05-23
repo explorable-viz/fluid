@@ -10,27 +10,20 @@ def year_check(year, x):
   return year == x.year
 
 def energy(year, c_names):
-  rens2018 =
-    filter(year_check(year), renewables)
+  rens2018 = filter(year_check(year), renewables)
 
-  nonrens2018 =
-    filter(year_check(year), nonRenewables)
+  nonrens2018 = filter(year_check(year), nonRenewables)
 
   def energy_per_country(c_name):
-    filteredRen =
-      filter(country_check(c_name), rens2018)
+    filteredRen = filter(country_check(c_name), rens2018)
 
-    non_ren_x =
-      head(filter(country_check(c_name), nonrens2018))
+    non_ren_x = head(filter(country_check(c_name), nonrens2018))
 
-    rensOut =
-      sum(map(lambda x: x.output, filteredRen))
+    rensOut = sum(map(lambda x: x.output, filteredRen))
 
-    rensCap =
-      sum(map(lambda x: x.capacity, filteredRen))
+    rensCap = sum(map(lambda x: x.capacity, filteredRen))
 
-    nonRensCap =
-      sumNonRenewables(non_ren_x)
+    nonRensCap = sumNonRenewables(non_ren_x)
 
     return {
       name: c_name,

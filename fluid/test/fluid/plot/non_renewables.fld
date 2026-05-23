@@ -1,8 +1,7 @@
 countries = ["BRA", "EGY", "IND", "JPN"]
 
 def totalFor(year, country):
-  [row] =
-    [row for row in nonRenewables if row.year == year if row.country == country]
+  [row] = [row for row in nonRenewables if row.year == year if row.country == country]
 
   return ((row.nuclearOut + row.gasOut) + row.coalOut) + row.petrolOut
 

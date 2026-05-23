@@ -54,8 +54,7 @@ def dimensions(Viewport(_, _, w, h, _, _, _, _, _)):
   return Point(w, h)
 
 def coords_op(g):
-  (Point(x, y), Point(w, h)) =
-    prod(coords, dimensions, g)
+  (Point(x, y), Point(w, h)) = prod(coords, dimensions, g)
   return Point(x + w, y + h)
 
 # GraphicsElement -> Float
@@ -169,8 +168,7 @@ def axis(orient, x, start, end):
   ys = start :| ys if first_tick > start else ys
   ys = concat2(ys, [last_tick]) if last_tick > end else ys
   ps = map(mk_point(orient, x), ys)
-  ax =
-    Group([
+  ax = Group([
       Line(head(ps), last(ps), axis_colour, axis_stroke_width),
       Polymarkers(ps, flip(map, ys, compose(labelled_tick(orient, axis_colour, tick_length), num_to_str)))
     ])
@@ -202,8 +200,7 @@ def line_chart(with_axes, colours, x_start, data):
 
   # (Int, Colour) -> GraphicsElement
   def plot((n, colour)):
-    ps =
-      map(lambda (x, kvs): Point(x, snd(nth(n, kvs))), data)
+    ps = map(lambda (x, kvs): Point(x, snd(nth(n, kvs))), data)
 
     return Group([
       Polyline(ps, colour, 1),
@@ -211,11 +208,9 @@ def line_chart(with_axes, colours, x_start, data):
     ])
 
   # List GraphicsElement
-  lines =
-    zip_with(curry(plot), iterate(n_cat, (+)(1), 0), colours)
+  lines = zip_with(curry(plot), iterate(n_cat, (+)(1), 0), colours)
   x_finish = last(xs)
-  y_finish =
-    maximum(flip(map, data, lambda (_, kvs): maximum(map(snd, kvs))))
+  y_finish = maximum(flip(map, data, lambda (_, kvs): maximum(map(snd, kvs))))
 
   if with_axes:
     (x_axis, x_finish) = axis(Horiz, 0, x_start, x_finish)
@@ -227,8 +222,7 @@ def line_chart(with_axes, colours, x_start, data):
 # Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
 # (Colours -> List a -> GraphicsElement) -> Bool -> Colours -> Float -> List (Cat, a) -> GraphicsElement
 def categorical_chart(plot_value, with_axes, colours, sep, data):
-  gs =
-    stack_right(sep, plot_value(colours, map(snd, data)))
+  gs = stack_right(sep, plot_value(colours, map(snd, data)))
   w = length(gs)
   h = maximum(map(height, gs))
 
@@ -250,30 +244,25 @@ def stacked_bar(colours, ns):
   heights = map(snd, ns)
   subtotals = scanl1((+), 0, heights)
   dims = zip(0 :| subtotals, heights)
-  rects =
-    map(lambda ((y, height), colour): Rect(0, y, 1, height, colour), zip(dims, colours))
+  rects = map(lambda ((y, height), colour): Rect(0, y, 1, height, colour), zip(dims, colours))
 
   return Viewport(0, 0, 1, last(subtotals), "none", 0, Scale(1, 1), Translate(0, 0), Group(rects))
 
 # Bool -> Colours -> Float -> List (a, Float) -> GraphicsElement
-bar_chart =
-  categorical_chart(rects)
+bar_chart = categorical_chart(rects)
 
 # For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
 # Bool -> Colours -> Float -> List (a, List (b, Float)) -> GraphicsElement
-grouped_bar_chart =
-  categorical_chart(compose(map, flip(bar_chart(False), 0)))
+grouped_bar_chart = categorical_chart(compose(map, flip(bar_chart(False), 0)))
 
 # See stacked_bar for strong (unjustified) assumption about uniformity of data.
 # Bool -> Colours -> Num -> List (a, List (b, Num)) -> GraphicsElement
-stacked_bar_chart =
-  categorical_chart(compose(map, stacked_bar))
+stacked_bar_chart = categorical_chart(compose(map, stacked_bar))
 
 # Bit of a hack, but how text fits into our model is a bit unclear at the moment.
 # Str -> GraphicsElement -> GraphicsElement
 def caption(str, Viewport(x, y, w, h, fill, margin, scale, translate, g)):
-  g_ =
-    Group([
+  g_ = Group([
       String(x + w / 2, -2, str, "middle", "hanging"),
       Viewport(0, 0, w, h, fill, margin, scale, translate, g)
     ])

@@ -1,7 +1,6 @@
 import nap3_ccra3_data
 
-eval_scores =
-  [ "Significantly addressed", "Recognised but not addressed",
+eval_scores = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
 def actions_by(key, keys):
@@ -16,11 +15,9 @@ def actions_by(key, keys):
       ] } for key_ in keys
   ]
 
-risks_ =
-  dict([ (r[ "ID#" ], r) for r in ccra3_risks ])
+risks_ = dict([ (r[ "ID#" ], r) for r in ccra3_risks ])
 
-actions_by_chapter =
-  [ { x: chapter,
+actions_by_chapter = [ { x: chapter,
       segments: [
         { y: eval_score,
           z: count_if(
@@ -32,17 +29,13 @@ actions_by_chapter =
       ] } for chapter in [ "3", "4", "5", "6", "7" ]
   ]
 
-departments =
-  [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+departments = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
-nat_env_and_infra_depts =
-  [ "Defra", "DESNZ", "DfT", "DLUHC" ]
+nat_env_and_infra_depts = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
 
-by_action_owner =
-  actions_by("Action Owner", departments)
+by_action_owner = actions_by("Action Owner", departments)
 
-by_topology =
-  actions_by(
+by_topology = actions_by(
     "Typology",
     [ "No and low regret adaptation, including capacity building",
       "Climate-smart design, considering uncertainty",
@@ -70,8 +63,7 @@ def max_with_score(actions, eval_score):
     for { segments: action_counts } in actions
   ])
 
-by_nat_env_and_infra =
-  actions_by("Action Owner", nat_env_and_infra_depts)
+by_nat_env_and_infra = actions_by("Action Owner", nat_env_and_infra_depts)
 
 MultiView([
   f"""

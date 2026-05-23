@@ -24,8 +24,7 @@ def mergesort(xs):
     return merge(mergesort(ys), mergesort(zs))
 
 def find_quantile(q, p, xs):
-  rank =
-    (p / q) * (length(xs) - 1)
+  rank = (p / q) * (length(xs) - 1)
 
   if rank == floor(rank):
     return nth(rank, xs)
@@ -43,24 +42,19 @@ def accum_bins(data, Nil):
 def accum_bins(data, [l]):
   return []
 def accum_bins(data, l :| r :| es):
-  (ge, le) =
-    split_on(lambda x: x <= r, data)
+  (ge, le) = split_on(lambda x: x <= r, data)
   return (le, r - l) :| accum_bins(ge, r :| es)
 
 def cut(xs, nbins):
   low = minimum(xs)
-  binwidth =
-    (maximum(xs) - low) / nbins
-  edges =
-    [low + x * binwidth for x in [0 .. nbins]]
+  binwidth = (maximum(xs) - low) / nbins
+  edges = [low + x * binwidth for x in [0 .. nbins]]
 
   return accum_bins(xs, edges)
 
 def qcut(xs, qs):
-  (low, high) =
-    (minimum(xs), maximum(xs))
-  edges =
-    append((low :| [find_percentile(x, xs) for x in qs], [high]))
+  (low, high) = (minimum(xs), maximum(xs))
+  edges = append((low :| [find_percentile(x, xs) for x in qs], [high]))
 
   return accum_bins(xs, edges)
 

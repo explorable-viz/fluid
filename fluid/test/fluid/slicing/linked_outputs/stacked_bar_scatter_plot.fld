@@ -1,8 +1,7 @@
 import dataset.energy_data
 
 def totalFor(year, country, rows):
-  [row] =
-    [row for row in rows if row.year == year if row.country == country]
+  [row] = [row for row in rows if row.year == year if row.country == country]
 
   return ((row.nuclearOut + row.gasOut) + row.coalOut) + row.petrolOut
 

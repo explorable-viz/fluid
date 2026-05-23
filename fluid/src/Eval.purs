@@ -22,7 +22,7 @@ import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asStmt, fv)
 import File (class LoadFile, FileCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
@@ -102,9 +102,7 @@ apply
 apply doc_opt (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
-   case κ of
-      ContStmt s -> asReturns <$> evalStmt doc_opt (γ1 <+> γ2 <+> γ3) s (insert α αs)
-      _ -> error "Stmt continuation expected as closure body"
+   asReturns <$> evalStmt doc_opt (γ1 <+> γ2 <+> γ3) (asStmt κ) (insert α αs)
 apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
    where
