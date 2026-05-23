@@ -291,6 +291,7 @@ instance Highlightable a => Pretty (E.Stmt a) where
    pretty (E.Match e σ) = text "match" <+> pretty e <> block (pretty σ)
    pretty (E.Def (E.VarDef o e) s) = text "def" <+> pretty o <> block (pretty e) <++> pretty s
    pretty (E.DefRec (E.RecDefs _ ρ) s) = text "def" <+> pretty ρ <++> pretty s
+   pretty (E.Seq s1 s2) = pretty s1 <++> pretty s2
 
 instance Highlightable a => Pretty (Cont a) where
    pretty (ContElim σ) = pretty σ

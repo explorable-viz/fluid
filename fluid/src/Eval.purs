@@ -206,6 +206,9 @@ evalStmt doc_opt γ s αs = case s of
    DefRec (RecDefs α ρ) s' -> do
       γ' <- closeDefs γ ρ (insert α αs)
       evalStmt doc_opt (γ <+> γ') s' (insert α αs)
+   Seq s1 s2 -> do
+      _ <- evalStmt Nothing γ s1 αs
+      evalStmt doc_opt γ s2 αs
 
 evalVal
    :: forall m
