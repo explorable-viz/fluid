@@ -203,6 +203,7 @@ instance Ann a => Pretty (Stmt a) where
    pretty (Match s cs) = text "match" <+> pretty s <> block (pretty cs)
    pretty (Def ds body) = pretty ds <> line <> pretty body
    pretty (DefRec xcs body) = pretty xcs <> line <> pretty body
+   pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
 
 instance Ann a => Pretty (Clause a) where
    pretty (Clause (ps × b)) = lambda (toList ps) b

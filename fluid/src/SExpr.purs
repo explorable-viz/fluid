@@ -114,6 +114,7 @@ data Stmt a
    | Match (Expr a) (NonEmptyList (Pattern × Stmt a))
    | Def (VarDefs a) (Stmt a)
    | DefRec (RecDefs a) (Stmt a)
+   | Seq (Stmt a) (Stmt a)
 
 newtype Clause a = Clause (NonEmptyList Pattern × Stmt a)
 
@@ -295,6 +296,7 @@ stmtFwd (Match s μ) = do
    E.Match <$> desug s <@> asElim κ
 stmtFwd (If sss s) = ifElseFwd (sss × s)
 stmtFwd (Return e) = E.Return <$> desug e
+stmtFwd (Seq s1 s2) = E.Seq <$> stmtFwd s1 <*> stmtFwd s2
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Stmt a)
 ifElseFwd (sss × s) =
