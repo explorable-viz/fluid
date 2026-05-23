@@ -206,6 +206,7 @@ evalStmt doc_opt γ s αs = case s of
    DefRec (RecDefs α ρ) -> do
       γ' <- closeDefs γ ρ (insert α αs)
       pure (Assigns γ' (insert α αs))
+   Pass -> pure (Assigns empty empty)
    Seq s1 s2 -> do
       γ' × αs' <- asAssigns <$> evalStmt Nothing γ s1 αs
       evalStmt doc_opt (γ <+> γ') s2 αs'

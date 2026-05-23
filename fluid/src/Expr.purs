@@ -60,6 +60,7 @@ data Stmt a
    | Match (Expr a) (Elim a)
    | Def (VarDef a)
    | DefRec (RecDefs a)
+   | Pass
    | Seq (Stmt a) (Stmt a)
 
 newtype Module a = Module (List (VarDef a + RecDefs a))
@@ -101,6 +102,7 @@ instance FV (Stmt a) where
    fv (Match e σ) = fv e ∪ fv σ
    fv (Def vd) = fv vd
    fv (DefRec ρ) = fv ρ
+   fv Pass = empty
    fv (Seq s s') = fv s ∪ fv s'
 
 instance FV a => FV (Dict a) where
@@ -171,6 +173,7 @@ instance JoinSemilattice a => JoinSemilattice (Stmt a) where
    join (Match e σ) (Match e' σ') = Match (e ∨ e') (σ ∨ σ')
    join (Def vd) (Def vd') = Def (vd ∨ vd')
    join (DefRec ρ) (DefRec ρ') = DefRec (ρ ∨ ρ')
+   join Pass Pass = Pass
    join (Seq s1 s2) (Seq s1' s2') = Seq (s1 ∨ s1') (s2 ∨ s2')
    join _ _ = shapeMismatch unit
 
@@ -179,6 +182,7 @@ instance BoundedJoinSemilattice a => Expandable (Stmt a) (Raw Stmt) where
    expand (Match e σ) (Match e' σ') = Match (expand e e') (expand σ σ')
    expand (Def vd) (Def vd') = Def (expand vd vd')
    expand (DefRec ρ) (DefRec ρ') = DefRec (expand ρ ρ')
+   expand Pass Pass = Pass
    expand (Seq s1 s2) (Seq s1' s2') = Seq (expand s1 s1') (expand s2 s2')
    expand _ _ = shapeMismatch unit
 
@@ -253,6 +257,7 @@ instance Vertices (Stmt Vertex) where
    vertices (Match e σ) = vertices e ∪ vertices σ
    vertices (Def vd) = vertices vd
    vertices (DefRec ρ) = vertices ρ
+   vertices Pass = empty
    vertices (Seq s1 s2) = vertices s1 ∪ vertices s2
 
 instance Vertices (Module Vertex) where
@@ -324,6 +329,7 @@ instance Apply Stmt where
    apply (Match fe fσ) (Match e σ) = Match (fe <*> e) (fσ <*> σ)
    apply (Def fvd) (Def vd) = Def (fvd <*> vd)
    apply (DefRec fρ) (DefRec ρ) = DefRec (fρ <*> ρ)
+   apply Pass Pass = Pass
    apply (Seq fs1 fs2) (Seq s1 s2) = Seq (fs1 <*> s1) (fs2 <*> s2)
    apply _ _ = shapeMismatch unit
 

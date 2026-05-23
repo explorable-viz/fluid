@@ -84,7 +84,7 @@ varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (reserved "pass" *> pure Pass)
 
 stmts :: Parser (Raw Stmt)
 stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
@@ -93,7 +93,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser (Raw Stmt)
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (reserved "pass" *> pure Pass) <|> (Return <$> expr)
 
 programStmts :: Parser (Raw Stmt)
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
