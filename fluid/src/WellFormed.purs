@@ -9,7 +9,7 @@ import Data.Either (Either(..))
 import Data.Foldable (all, foldl, for_, traverse_)
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.String.Common (joinWith)
@@ -18,7 +18,7 @@ import Effect.Exception (Error)
 import Expr (bv, fv)
 import Expr (Module(..), RecDefs(..)) as E
 import Lattice (Raw)
-import SExpr (Clause(..), Expr, Module, Stmt(..), VarDef(..)) as S
+import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module, ParagraphElem(..), Stmt(..), VarDef(..)) as S
 import Util (isEmpty, throw, (×))
 import Util.Map (keys)
 import Util.Set ((\\), (∪))
@@ -87,6 +87,84 @@ mergeRes :: Result -> Result -> Result
 mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
+
+-- ======================
+-- Syntactic helpers (PurePy spec §2.2)
+-- ======================
+
+-- assigns(s): over-approximation of variables assigned anywhere in s, without
+-- descending into nested function definitions. Each def's NAME is included;
+-- its body's assigns are not.
+assigns :: forall a. S.Stmt a -> Set Var
+assigns S.Pass = Set.empty
+assigns (S.Def (S.VarDef p _)) = bv p
+assigns (S.ExprStmt _) = Set.empty
+assigns (S.Assert _ _) = Set.empty
+assigns (S.Return _) = Set.empty
+assigns (S.If clauses elseBody) =
+   unions (assigns <$> (snd <$> clauses)) ∪ assigns elseBody
+assigns (S.Match _ branches) =
+   unions (assigns <$> (snd <$> branches))
+assigns (S.DefRec rs) = unions (Set.singleton <<< fst <$> rs)
+assigns (S.Seq s1 s2) = assigns s1 ∪ assigns s2
+
+-- captures(s): vars from the enclosing scope referenced by closures (lambdas or
+-- nested function definitions) within s. The interesting cases are def-regions
+-- and lambdas; other forms just recurse.
+captures :: forall a. S.Stmt a -> Set Var
+captures S.Pass = Set.empty
+captures (S.Def (S.VarDef _ e)) = capturesE e
+captures (S.ExprStmt e) = capturesE e
+captures (S.Assert cond msg) = capturesE cond ∪ maybe Set.empty capturesE msg
+captures (S.Return e) = capturesE e
+captures (S.If clauses elseBody) =
+   unions ((\(cond × body) -> capturesE cond ∪ captures body) <$> clauses)
+      ∪ captures elseBody
+captures (S.Match scrut branches) =
+   capturesE scrut ∪ unions ((\(_ × body) -> captures body) <$> branches)
+captures (S.DefRec rs) =
+   (unions (branchCaptures <$> rs)) \\ unions (Set.singleton <<< fst <$> rs)
+   where
+   branchCaptures (_ × S.Clause (ps × body)) =
+      (fv body \\ unions (bv <$> ps)) \\ assigns body
+captures (S.Seq s1 s2) = captures s1 ∪ captures s2
+
+-- captures lifted to expressions. Vars on their own don't capture; only
+-- closure-introducing forms do.
+capturesE :: forall a. S.Expr a -> Set Var
+capturesE (S.Var _) = Set.empty
+capturesE (S.Op _) = Set.empty
+capturesE (S.Int _ _) = Set.empty
+capturesE (S.Float _ _) = Set.empty
+capturesE (S.Str _ _) = Set.empty
+capturesE (S.Constr _ _ es) = unions (capturesE <$> es)
+capturesE (S.Dictionary _ entries) =
+   unions ((\(k × v) -> capturesEntry k ∪ capturesE v) <$> entries)
+   where
+   capturesEntry (S.ExprKey e) = capturesE e
+   capturesEntry (S.VarKey _ _) = Set.empty
+capturesE (S.Matrix _ body (x × y) source) =
+   (capturesE body \\ (Set.singleton x ∪ Set.singleton y)) ∪ capturesE source
+capturesE (S.Lambda (S.LambdaClause (ps × body))) =
+   fv body \\ unions (bv <$> ps)
+capturesE (S.Project e _) = capturesE e
+capturesE (S.DProject e e') = capturesE e ∪ capturesE e'
+capturesE (S.App e e') = capturesE e ∪ capturesE e'
+capturesE (S.BinaryApp e _ e') = capturesE e ∪ capturesE e'
+capturesE (S.UnaryPrefixApp _ e) = capturesE e
+capturesE (S.Ternary cond e1 e2) = capturesE cond ∪ capturesE e1 ∪ capturesE e2
+capturesE (S.Paragraph elems) = unions (capturesPe <$> elems)
+   where
+   capturesPe (S.Token _) = Set.empty
+   capturesPe (S.Unquote e) = capturesE e
+capturesE (S.ListEmpty _) = Set.empty
+capturesE (S.ListNonEmpty _ e l) = capturesE e ∪ capturesEListRest l
+   where
+   capturesEListRest (S.End _) = Set.empty
+   capturesEListRest (S.Next _ e' l') = capturesE e' ∪ capturesEListRest l'
+capturesE (S.ListEnum e1 e2) = capturesE e1 ∪ capturesE e2
+capturesE (S.ListComp _ e _) = capturesE e -- simplified; full qualifier handling later
+capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
 -- ======================
 -- Unreachable-statement check
