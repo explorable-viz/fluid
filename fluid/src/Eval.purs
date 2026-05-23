@@ -107,6 +107,7 @@ apply doc_opt (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
          r <- evalStmt doc_opt (γ1 <+> γ2 <+> γ3) s (insert α αs)
          case r of
             Returns v' -> pure v'
+            Assigns _ -> error "Closure body must return"
       _ -> error "Stmt continuation expected as closure body"
 apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
@@ -355,7 +356,10 @@ graphEval { n, γ } stmt = do
       sα <- alloc stmt
       let inα = EnvStmt γ sα
       g × r <- runWithGraphT_spy (evalStmt Nothing γ sα mempty) (vertices inα)
-      let outα = case r of Returns v -> v
+      let
+         outα = case r of
+            Returns v -> v
+            Assigns _ -> error "Program must return"
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × inα × outα)
    pure { g, graph_fwd, graph_bwd, inα, outα }
