@@ -100,6 +100,7 @@ cCons = ":" :: Ctr
 cPair = "Pair" :: Ctr -- Pair
 cNothing = "Nothing" :: Ctr -- Maybe
 cJust = "Just" :: Ctr
+cNone = "None" :: Ctr -- NoneType
 cText = "Text" :: Ctr
 cLink = "Link" :: Ctr
 -- Field names used internally by rendering layer.
@@ -139,6 +140,9 @@ dataTypes = L.fromFoldable
    , dataType "Maybe"
         [ cNothing × 0
         , cJust × 1 -- any
+        ]
+   , dataType "NoneType"
+        [ cNone × 0
         ]
    , dataType "Ordering"
         [ "GT" × 0
