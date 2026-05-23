@@ -1,0 +1,6 @@
+def x = 1
+if x > 0:
+   pass
+else:
+   pass
+return x
