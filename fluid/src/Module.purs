@@ -24,6 +24,7 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
+import WellFormed (checkModule, checkProgram)
 import SExpr as S
 import Util (type (×), error, throwLeft, withMsg, (×))
 import Util.Map (restrict)
@@ -60,6 +61,7 @@ prelude = "lib/prelude"
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
+   checkProgram s
    moduleCxt <- loadModuleGraph (prelude : imports)
    e :: Raw Stmt <- desug s
    gconfig <- initialConfig e primitives moduleCxt
@@ -98,6 +100,7 @@ loadModuleGraph roots = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
       mod × imports <- throwLeft <#> withMsg ("Loading module " <> path) $ parseModule src
+      checkModule mod
       mod' <- desugarModuleFwd mod
       let imports' = if path == prelude then imports else prelude : imports
       pure $ mod' × imports'
