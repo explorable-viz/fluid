@@ -11,7 +11,8 @@ import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either, choose)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (toList)
+import Data.List.NonEmpty (NonEmptyList(..), toList)
+import Data.NonEmpty ((:|))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import Data.String.Common (joinWith)
@@ -85,35 +86,28 @@ varDefs = many1 varDef
 stmt :: Parser (Raw Stmt)
 stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return)
 
+stmts :: Parser (Raw Stmt)
+stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
+
 -- Top-level programs may omit 'return' on the trailing expression that gives
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser (Raw Stmt)
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> programDefStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (Return <$> expr)
 
-programDefStmt :: Parser (Raw Stmt)
-programDefStmt = defer \_ -> defRecStmt <|> defValStmt
-   where
-   defRecStmt = defer \_ -> do
-      ds <- recDefs
-      body <- align programStmt
-      pure $ Seq (DefRec ds) body
-   defValStmt = defer \_ -> do
-      d <- varDef
-      body <- align programStmt
-      pure $ Seq (Def d) body
+programStmts :: Parser (Raw Stmt)
+programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
+
+foldr1Seq :: forall a. NonEmptyList (Stmt a) -> Stmt a
+foldr1Seq (NonEmptyList (s :| ss)) = case ss of
+   Nil -> s
+   s' : rest -> Seq s (foldr1Seq (NonEmptyList (s' :| rest)))
 
 defStmt :: Parser (Raw Stmt)
 defStmt = defer \_ -> defRecStmt <|> defValStmt
    where
-   defRecStmt = defer \_ -> do
-      ds <- recDefs
-      body <- align stmt
-      pure $ Seq (DefRec ds) body
-   defValStmt = defer \_ -> do
-      d <- varDef
-      body <- align stmt
-      pure $ Seq (Def d) body
+   defRecStmt = defer \_ -> DefRec <$> recDefs
+   defValStmt = defer \_ -> Def <$> varDef
 
 ifStmt :: Parser (Raw Stmt)
 ifStmt = defer \_ -> do
@@ -142,7 +136,7 @@ matchStmt = defer \_ -> do
    pure $ Match e bs
 
 blockBody :: Parser (Raw Stmt)
-blockBody = defer \_ -> block stmt
+blockBody = defer \_ -> block stmts
 
 recDefs :: Parser (Raw RecDefs)
 recDefs = many1 recDef
@@ -427,7 +421,7 @@ parse parser input =
       "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
 
 parseProgram :: String -> Either String (Raw Stmt × List String)
-parseProgram = parse (withImports programStmt)
+parseProgram = parse (withImports programStmts)
 
 parseModule :: String -> Either String (Raw Module × List String)
 parseModule = parse (withImports module_)
