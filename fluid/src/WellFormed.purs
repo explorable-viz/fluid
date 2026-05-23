@@ -4,22 +4,22 @@ import Prelude
 
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Array (fromFoldable) as Array
 import Data.Either (Either(..))
-import Data.Foldable (all, foldl, for_, traverse_)
+import Data.Foldable (foldl, for_)
+import Data.List.NonEmpty (head, tail)
+import Data.Traversable (traverse)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set, unions)
 import Data.Set as Set
-import Data.String.Common (joinWith)
 import Data.Tuple (fst, snd)
 import Effect.Exception (Error)
 import Expr (bv, fv)
 import Expr (Module(..), RecDefs(..)) as E
 import Lattice (Raw)
 import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module, ParagraphElem(..), Stmt(..), VarDef(..)) as S
-import Util (isEmpty, throw, (×))
+import Util (throw, (×))
 import Util.Map (keys)
 import Util.Set ((\\), (∪))
 import Val (Env)
@@ -29,9 +29,7 @@ import Val (Env)
 -- ======================
 
 checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m Unit
-checkProgram initialScope s = do
-   check s
-   checkScope initialScope s
+checkProgram initialScope s = void $ checkDA (mapFromSet true initialScope) s
 
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
@@ -167,78 +165,78 @@ capturesE (S.ListComp _ e _) = capturesE e -- simplified; full qualifier handlin
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
 -- ======================
--- Unreachable-statement check
+-- Well-formedness judgement (PurePy spec §2.3)
 -- ======================
 --
--- Uses a Boolean classification (Returns vs not) until the full checkDA
--- refactor lands. The Result type above is in place; consumers come later.
+-- checkDA Γ s computes Result for s under context Γ, and verifies every
+-- variable reference is tt-bound. Returns | Assigns Δ.
 
-isReturns :: forall a. S.Stmt a -> Boolean
-isReturns (S.Return _) = true
-isReturns (S.Seq s1 _) = isReturns s1
-isReturns (S.If clauses elseBody) =
-   all isReturns (snd <$> clauses) && isReturns elseBody
-isReturns (S.Match _ branches) =
-   all isReturns (snd <$> branches)
-isReturns _ = false
-
-check :: forall m a. MonadError Error m => S.Stmt a -> m Unit
-check (S.Seq s1 s2)
-   | isReturns s1 = throw "Unreachable statement"
-   | otherwise = check s1 *> check s2
-check (S.If clauses elseBody) =
-   traverse_ (check <<< snd) clauses *> check elseBody
-check (S.Match _ branches) =
-   traverse_ (check <<< snd) branches
-check (S.DefRec defs) = traverse_ checkBranch defs
-   where
-   checkBranch (_ × S.Clause (_ × body)) = check body
-check _ = pure unit
-
--- ======================
--- Variable-in-scope check (PurePy 'var' rule)
--- ======================
-
-checkScope :: forall m a. MonadError Error m => Set Var -> S.Stmt a -> m Unit
-checkScope scope (S.Return e) = checkExprScope scope e
-checkScope _ S.Pass = pure unit
-checkScope scope (S.Def (S.VarDef _ e)) = checkExprScope scope e
-checkScope scope (S.DefRec rs) = do
-   let regionNames = unions (Set.singleton <<< fst <$> rs)
-   let scope' = scope ∪ regionNames
-   traverse_ (checkBranch scope') rs
-   where
-   checkBranch sc (_ × S.Clause (ps × body)) =
-      checkScope (sc ∪ unions (bv <$> ps)) body
-checkScope scope (S.ExprStmt e) = checkExprScope scope e
-checkScope scope (S.Assert cond msg) = do
-   checkExprScope scope cond
+checkDA :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m Result
+checkDA _ S.Pass = pure (Assigns Map.empty)
+checkDA γ (S.Return e) = do
+   checkExprDA γ e
+   pure Returns
+checkDA γ (S.ExprStmt e) = do
+   checkExprDA γ e
+   pure (Assigns Map.empty)
+checkDA γ (S.Assert cond msg) = do
+   checkExprDA γ cond
    case msg of
-      Just m -> checkExprScope scope m
+      Just m -> checkExprDA γ m
       Nothing -> pure unit
-checkScope scope (S.Seq s1 s2) = do
-   checkScope scope s1
-   checkScope (scope ∪ bvBlock s1) s2
-checkScope scope (S.If clauses elseBody) = do
-   for_ clauses \(cond × body) -> do
-      checkExprScope scope cond
-      checkScope scope body
-   checkScope scope elseBody
-checkScope scope (S.Match scrut branches) = do
-   checkExprScope scope scrut
-   for_ branches \(p × body) ->
-      checkScope (scope ∪ bv p) body
+   pure (Assigns Map.empty)
+checkDA γ (S.Def (S.VarDef p e)) = do
+   checkExprDA γ e
+   pure (Assigns (mapFromSet true (bv p)))
+checkDA γ (S.DefRec rs) = do
+   let regionNames = unions (Set.singleton <<< fst <$> rs)
+   let γ' = γ `overrideCtx` mapFromSet true regionNames
+   for_ rs \(_ × S.Clause (ps × body)) -> do
+      let params = unions (bv <$> ps)
+      let γ'' = γ' `overrideCtx` mapFromSet true params
+      void $ checkDA γ'' body
+   pure (Assigns (mapFromSet true regionNames))
+checkDA γ (S.Seq s1 s2) = do
+   r1 <- checkDA γ s1
+   case r1 of
+      Returns -> throw "Unreachable statement"
+      Assigns δ -> do
+         r2 <- checkDA (γ `overrideCtx` δ) s2
+         pure (overrideRes r1 r2)
+checkDA γ (S.If clauses elseBody) = do
+   clauseRs <- traverse
+      ( \(cond × body) -> do
+           checkExprDA γ cond
+           checkDA γ body
+      )
+      clauses
+   elseR <- checkDA γ elseBody
+   pure $ foldl mergeRes elseR clauseRs
+checkDA γ (S.Match scrut branches) = do
+   checkExprDA γ scrut
+   branchRs <- traverse
+      ( \(p × body) -> do
+           let pBindings = bv p
+           let γ' = γ `overrideCtx` mapFromSet true pBindings
+           r <- checkDA γ' body
+           -- pattern bindings are branch-local; strip from result
+           pure $ stripVars pBindings r
+      )
+      branches
+   pure $ foldl mergeRes (head branchRs) (tail branchRs)
 
-checkExprScope :: forall m a. MonadError Error m => Set Var -> S.Expr a -> m Unit
-checkExprScope scope e = do
-   let unbound = fv e \\ scope
-   when (not isEmpty unbound)
-      $ throw
-      $ "Unbound name: " <> joinWith ", " (Array.fromFoldable unbound)
+-- Check every variable reference in an expression is tt-bound in Γ.
+checkExprDA :: forall m a. MonadError Error m => Ctx -> S.Expr a -> m Unit
+checkExprDA γ e = do
+   let refs = fv e
+   for_ refs \v -> case Map.lookup v γ of
+      Just true -> pure unit
+      Just false -> throw $ "Not definitely assigned: " <> v
+      Nothing -> throw $ "Unbound name: " <> v
 
--- Names a stmt makes visible in its enclosing block (for sequencing).
-bvBlock :: forall a. S.Stmt a -> Set Var
-bvBlock (S.Def (S.VarDef p _)) = bv p
-bvBlock (S.DefRec rs) = unions (Set.singleton <<< fst <$> rs)
-bvBlock (S.Seq s1 s2) = bvBlock s1 ∪ bvBlock s2
-bvBlock _ = mempty
+mapFromSet :: forall k v. Ord k => v -> Set k -> Map k v
+mapFromSet v = foldl (\acc k -> Map.insert k v acc) Map.empty
+
+stripVars :: Set Var -> Result -> Result
+stripVars _ Returns = Returns
+stripVars vars (Assigns δ) = Assigns (foldl (flip Map.delete) δ vars)
