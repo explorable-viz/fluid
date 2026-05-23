@@ -73,14 +73,14 @@ pConsOp = do
    reservedOperator ":|"
    pure \e e' -> PConstr ":" (e : e' : Nil)
 
+varDef :: Parser (Raw VarDef)
+varDef = do
+   p <- try (reserved "def" *> pattern <* reservedOperator "=")
+   e <- sameOrIndented *> withPos expr
+   pure $ VarDef p e
+
 varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
-   where
-   varDef :: Parser (Raw VarDef)
-   varDef = do
-      p <- try (reserved "def" *> pattern <* reservedOperator "=")
-      e <- sameOrIndented *> withPos expr
-      pure $ VarDef p e
 
 stmt :: Parser (Raw Stmt)
 stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return)
@@ -99,9 +99,9 @@ programDefStmt = defer \_ -> defRecStmt <|> defValStmt
       body <- align programStmt
       pure $ DefRec ds body
    defValStmt = defer \_ -> do
-      ds <- varDefs
+      d <- varDef
       body <- align programStmt
-      pure $ Def ds body
+      pure $ Def d body
 
 defStmt :: Parser (Raw Stmt)
 defStmt = defer \_ -> defRecStmt <|> defValStmt
@@ -111,9 +111,9 @@ defStmt = defer \_ -> defRecStmt <|> defValStmt
       body <- align stmt
       pure $ DefRec ds body
    defValStmt = defer \_ -> do
-      ds <- varDefs
+      d <- varDef
       body <- align stmt
-      pure $ Def ds body
+      pure $ Def d body
 
 ifStmt :: Parser (Raw Stmt)
 ifStmt = defer \_ -> do

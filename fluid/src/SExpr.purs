@@ -112,7 +112,7 @@ data Stmt a
    = Return (Expr a)
    | If (NonEmptyList (Expr a × Stmt a)) (Stmt a)
    | Match (Expr a) (NonEmptyList (Pattern × Stmt a))
-   | Def (VarDefs a) (Stmt a)
+   | Def (VarDef a) (Stmt a)
    | DefRec (RecDefs a) (Stmt a)
    | Seq (Stmt a) (Stmt a)
 
@@ -283,12 +283,7 @@ exprFwd (DocExpr s s') = do
 type IfElseClauses a = NonEmptyList (Expr a × Stmt a) × Stmt a
 
 stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Stmt a)
-stmtFwd (Def ds body) = defStmtFwd ds body
-   where
-   defStmtFwd (NonEmptyList (d :| Nil)) b =
-      E.Seq <$> (E.Def <$> varDefFwd d) <*> stmtFwd b
-   defStmtFwd (NonEmptyList (d :| d' : ds')) b =
-      E.Seq <$> (E.Def <$> varDefFwd d) <*> defStmtFwd (NonEmptyList (d' :| ds')) b
+stmtFwd (Def vd body) = E.Seq <$> (E.Def <$> varDefFwd vd) <*> stmtFwd body
 stmtFwd (DefRec xcs body) =
    E.Seq <$> (E.DefRec <$> recDefsFwd xcs) <*> stmtFwd body
 stmtFwd (Match s μ) = do
