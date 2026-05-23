@@ -6,11 +6,12 @@ import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (fromFoldable) as Array
 import Data.Either (Either(..))
-import Data.Foldable (all, for_, traverse_)
-import Data.List.NonEmpty (NonEmptyList, snoc)
+import Data.Foldable (all, foldl, for_, traverse_)
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, unions)
-import Data.Set (singleton) as Set
+import Data.Set as Set
 import Data.String.Common (joinWith)
 import Data.Tuple (fst, snd)
 import Effect.Exception (Error)
@@ -46,32 +47,66 @@ envNames :: forall a. Env a -> Set Var
 envNames = keys
 
 -- ======================
--- Unreachable-statement check
+-- Definite-assignment contexts and result types (PurePy spec §2.1)
 -- ======================
 
-data Result = TyReturns | TyAssigns
+-- Context Γ : Var ⇀ B, where B = {tt, ff}. Absent key = ⊥ (undefined).
+-- True = definitely assigned (tt); False = not definitely assigned (ff).
+type Ctx = Map Var Boolean
+
+-- Well-formedness result type R ::= Returns | Assigns Δ.
+data Result = Returns | Assigns Ctx
 
 derive instance Eq Result
 
-resultType :: forall a. S.Stmt a -> Result
-resultType (S.Return _) = TyReturns
-resultType S.Pass = TyAssigns
-resultType (S.Def _) = TyAssigns
-resultType (S.DefRec _) = TyAssigns
-resultType (S.ExprStmt _) = TyAssigns
-resultType (S.Assert _ _) = TyAssigns
-resultType (S.Seq s1 s2) = case resultType s1 of
-   TyReturns -> TyReturns
-   TyAssigns -> resultType s2
-resultType (S.If clauses elseBody) = merge (snoc (snd <$> clauses <#> resultType) (resultType elseBody))
-resultType (S.Match _ branches) = merge (branches <#> snd <#> resultType)
+-- Sequential composition Γ · Δ on contexts. Right-biased: Δ overrides Γ.
+overrideCtx :: Ctx -> Ctx -> Ctx
+overrideCtx = flip Map.union
 
-merge :: NonEmptyList Result -> Result
-merge ts = if all (_ == TyReturns) ts then TyReturns else TyAssigns
+-- Parallel composition Γ ⊕ Δ on contexts.
+-- Both defined → conjunction of statuses.
+-- Only one defined → ff (the var is "lost" in the merge).
+-- Both ⊥ → ⊥.
+mergeCtx :: Ctx -> Ctx -> Ctx
+mergeCtx γ1 γ2 =
+   foldl (\acc k -> Map.insert k (mergedAt k) acc) Map.empty allKeys
+   where
+   allKeys :: Set Var
+   allKeys = Set.fromFoldable (Map.keys γ1) `Set.union` Set.fromFoldable (Map.keys γ2)
+   mergedAt k = case Map.lookup k γ1, Map.lookup k γ2 of
+      Just a, Just b -> a && b
+      _, _ -> false
+
+-- Lifted to Result. Returns is zero for · and unit for ⊕.
+overrideRes :: Result -> Result -> Result
+overrideRes _ Returns = Returns
+overrideRes Returns _ = Returns
+overrideRes (Assigns a) (Assigns b) = Assigns (overrideCtx a b)
+
+mergeRes :: Result -> Result -> Result
+mergeRes Returns r = r
+mergeRes r Returns = r
+mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
+
+-- ======================
+-- Unreachable-statement check
+-- ======================
+--
+-- Uses a Boolean classification (Returns vs not) until the full checkDA
+-- refactor lands. The Result type above is in place; consumers come later.
+
+isReturns :: forall a. S.Stmt a -> Boolean
+isReturns (S.Return _) = true
+isReturns (S.Seq s1 _) = isReturns s1
+isReturns (S.If clauses elseBody) =
+   all isReturns (snd <$> clauses) && isReturns elseBody
+isReturns (S.Match _ branches) =
+   all isReturns (snd <$> branches)
+isReturns _ = false
 
 check :: forall m a. MonadError Error m => S.Stmt a -> m Unit
 check (S.Seq s1 s2)
-   | resultType s1 == TyReturns = throw "Unreachable statement"
+   | isReturns s1 = throw "Unreachable statement"
    | otherwise = check s1 *> check s2
 check (S.If clauses elseBody) =
    traverse_ (check <<< snd) clauses *> check elseBody
