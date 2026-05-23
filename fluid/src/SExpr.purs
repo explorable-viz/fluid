@@ -145,7 +145,7 @@ instance Desugarable Expr E.Expr where
    desug = exprFwd
 
 instance Desugarable Stmt E.Stmt where
-   desug = stmtFwd_stmt
+   desug = stmtFwd
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
@@ -281,28 +281,28 @@ exprFwd (DocExpr s s') = do
 
 type IfElseClauses a = NonEmptyList (Expr a × Stmt a) × Stmt a
 
-stmtFwd_stmt :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Stmt a)
-stmtFwd_stmt (Def ds body) = defStmtFwd ds body
+stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Stmt a)
+stmtFwd (Def ds body) = defStmtFwd ds body
    where
    defStmtFwd (NonEmptyList (d :| Nil)) b =
-      E.Def <$> varDefFwd d <*> stmtFwd_stmt b
+      E.Def <$> varDefFwd d <*> stmtFwd b
    defStmtFwd (NonEmptyList (d :| d' : ds')) b =
       E.Def <$> varDefFwd d <*> defStmtFwd (NonEmptyList (d' :| ds')) b
-stmtFwd_stmt (DefRec xcs body) =
-   E.DefRec <$> recDefsFwd xcs <*> stmtFwd_stmt body
-stmtFwd_stmt (Match s μ) = do
+stmtFwd (DefRec xcs body) =
+   E.DefRec <$> recDefsFwd xcs <*> stmtFwd body
+stmtFwd (Match s μ) = do
    κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ
-stmtFwd_stmt (If sss s) = ifElseFwd (sss × s)
-stmtFwd_stmt (Return e) = E.Return <$> desug e
+stmtFwd (If sss s) = ifElseFwd (sss × s)
+stmtFwd (Return e) = E.Return <$> desug e
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Stmt a)
 ifElseFwd (sss × s) =
-   foldr clause (stmtFwd_stmt s) sss
+   foldr clause (stmtFwd s) sss
    where
    clause (s1 × b) e3 = do
       cond <- desug s1
-      b' <- stmtFwd_stmt b
+      b' <- stmtFwd b
       e3' <- e3
       pure $ E.Match cond (elimBool (ContStmt b') (ContStmt e3'))
 
@@ -374,7 +374,7 @@ clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses
 clausesStateFwd ks = case ks of
    Nil -> error absurd
    (Nil × Nil × b) : Nil ->
-      ContStmt <$> stmtFwd_stmt b
+      ContStmt <$> stmtFwd b
    (Nil × _) : _ ->
       ContStmt <$> E.Return <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
    ((Left (PVar x) : _) × _) : _ ->
