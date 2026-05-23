@@ -206,6 +206,10 @@ evalStmt doc_opt γ s αs = case s of
    DefRec (RecDefs α ρ) s' -> do
       γ' <- closeDefs γ ρ (insert α αs)
       evalStmt doc_opt (γ <+> γ') s' (insert α αs)
+   Assign (VarDef σ e) -> do
+      v <- eval Nothing γ e αs
+      γ' × _ × _ <- withMsg "In assignment" $ match v σ
+      pure (Assigns γ')
    Seq s1 s2 -> do
       γ' <- asAssigns <$> evalStmt Nothing γ s1 αs
       evalStmt doc_opt (γ <+> γ') s2 αs
