@@ -60,7 +60,7 @@ data Stmt a
    | Match (Expr a) (Elim a)
    | Def (VarDef a) (Stmt a)
    | DefRec (RecDefs a) (Stmt a)
-   | Assign (VarDef a)
+   | Def' (VarDef a)
    | Seq (Stmt a) (Stmt a)
 
 newtype Module a = Module (List (VarDef a + RecDefs a))
@@ -102,7 +102,7 @@ instance FV (Stmt a) where
    fv (Match e σ) = fv e ∪ fv σ
    fv (Def vd s) = fv vd ∪ (fv s \\ bv vd)
    fv (DefRec ρ s) = fv ρ ∪ fv s
-   fv (Assign vd) = fv vd
+   fv (Def' vd) = fv vd
    fv (Seq s s') = fv s ∪ fv s'
 
 instance FV a => FV (Dict a) where
@@ -173,7 +173,7 @@ instance JoinSemilattice a => JoinSemilattice (Stmt a) where
    join (Match e σ) (Match e' σ') = Match (e ∨ e') (σ ∨ σ')
    join (Def vd s) (Def vd' s') = Def (vd ∨ vd') (s ∨ s')
    join (DefRec ρ s) (DefRec ρ' s') = DefRec (ρ ∨ ρ') (s ∨ s')
-   join (Assign vd) (Assign vd') = Assign (vd ∨ vd')
+   join (Def' vd) (Def' vd') = Def' (vd ∨ vd')
    join (Seq s1 s2) (Seq s1' s2') = Seq (s1 ∨ s1') (s2 ∨ s2')
    join _ _ = shapeMismatch unit
 
@@ -182,7 +182,7 @@ instance BoundedJoinSemilattice a => Expandable (Stmt a) (Raw Stmt) where
    expand (Match e σ) (Match e' σ') = Match (expand e e') (expand σ σ')
    expand (Def vd s) (Def vd' s') = Def (expand vd vd') (expand s s')
    expand (DefRec ρ s) (DefRec ρ' s') = DefRec (expand ρ ρ') (expand s s')
-   expand (Assign vd) (Assign vd') = Assign (expand vd vd')
+   expand (Def' vd) (Def' vd') = Def' (expand vd vd')
    expand (Seq s1 s2) (Seq s1' s2') = Seq (expand s1 s1') (expand s2 s2')
    expand _ _ = shapeMismatch unit
 
@@ -257,7 +257,7 @@ instance Vertices (Stmt Vertex) where
    vertices (Match e σ) = vertices e ∪ vertices σ
    vertices (Def vd s) = vertices vd ∪ vertices s
    vertices (DefRec ρ s) = vertices ρ ∪ vertices s
-   vertices (Assign vd) = vertices vd
+   vertices (Def' vd) = vertices vd
    vertices (Seq s1 s2) = vertices s1 ∪ vertices s2
 
 instance Vertices (Module Vertex) where
@@ -329,7 +329,7 @@ instance Apply Stmt where
    apply (Match fe fσ) (Match e σ) = Match (fe <*> e) (fσ <*> σ)
    apply (Def fvd fs) (Def vd s) = Def (fvd <*> vd) (fs <*> s)
    apply (DefRec fρ fs) (DefRec ρ s) = DefRec (fρ <*> ρ) (fs <*> s)
-   apply (Assign fvd) (Assign vd) = Assign (fvd <*> vd)
+   apply (Def' fvd) (Def' vd) = Def' (fvd <*> vd)
    apply (Seq fs1 fs2) (Seq s1 s2) = Seq (fs1 <*> s1) (fs2 <*> s2)
    apply _ _ = shapeMismatch unit
 
