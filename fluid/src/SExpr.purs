@@ -311,7 +311,7 @@ stmtFwd_stmt (Match s μ) = do
    κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ
 stmtFwd_stmt (If sss s) = ifElseFwd_stmt (sss × s)
-stmtFwd_stmt s = E.Return <$> stmtFwd s
+stmtFwd_stmt (Return e) = E.Return <$> desug e
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
 ifElseFwd (sss × s) =
