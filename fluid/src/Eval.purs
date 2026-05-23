@@ -208,11 +208,11 @@ evalStmt doc_opt γ s αs = case s of
       evalStmt doc_opt (γ <+> γ') s' (insert α αs)
    Def' (VarDef σ e) -> do
       v <- eval Nothing γ e αs
-      γ' × _ × _ <- withMsg "In assignment" $ match v σ
-      pure (Assigns γ')
+      γ' × _ × αs' <- withMsg "In assignment" $ match v σ
+      pure (Assigns γ' αs')
    Seq s1 s2 -> do
-      γ' <- asAssigns <$> evalStmt Nothing γ s1 αs
-      evalStmt doc_opt (γ <+> γ') s2 αs
+      γ' × αs' <- asAssigns <$> evalStmt Nothing γ s1 αs
+      evalStmt doc_opt (γ <+> γ') s2 αs'
 
 evalVal
    :: forall m

@@ -37,14 +37,14 @@ import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈),
 
 data Val a = Val a (Maybe (Val a)) (BaseVal a)
 
-data Result a = Returns (Val a) | Assigns (Env a)
+data Result a = Returns (Val a) | Assigns (Env a) (Set.Set a)
 
 asReturns :: forall a. Result a -> Val a
 asReturns (Returns v) = v
-asReturns (Assigns _) = error "Returns expected"
+asReturns (Assigns _ _) = error "Returns expected"
 
-asAssigns :: forall a. Result a -> Env a
-asAssigns (Assigns γ) = γ
+asAssigns :: forall a. Result a -> Env a × Set.Set a
+asAssigns (Assigns γ αs) = γ × αs
 asAssigns (Returns _) = error "Assigns expected"
 
 data BaseVal a
