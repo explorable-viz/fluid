@@ -201,8 +201,8 @@ instance Ann a => Pretty (Stmt a) where
       where
       prettyClause w (s × b) = text w <+> expr (pretty s) <> block (pretty b)
    pretty (Match s cs) = text "match" <+> pretty s <> block (pretty cs)
-   pretty (Def ds body) = pretty ds <> line <> pretty body
-   pretty (DefRec xcs body) = pretty xcs <> line <> pretty body
+   pretty (Def vd) = pretty vd
+   pretty (DefRec xcs) = pretty xcs
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
 
 instance Ann a => Pretty (Clause a) where

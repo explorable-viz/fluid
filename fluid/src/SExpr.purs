@@ -112,8 +112,8 @@ data Stmt a
    = Return (Expr a)
    | If (NonEmptyList (Expr a × Stmt a)) (Stmt a)
    | Match (Expr a) (NonEmptyList (Pattern × Stmt a))
-   | Def (VarDef a) (Stmt a)
-   | DefRec (RecDefs a) (Stmt a)
+   | Def (VarDef a)
+   | DefRec (RecDefs a)
    | Seq (Stmt a) (Stmt a)
 
 newtype Clause a = Clause (NonEmptyList Pattern × Stmt a)
@@ -283,9 +283,8 @@ exprFwd (DocExpr s s') = do
 type IfElseClauses a = NonEmptyList (Expr a × Stmt a) × Stmt a
 
 stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Stmt a)
-stmtFwd (Def vd body) = E.Seq <$> (E.Def <$> varDefFwd vd) <*> stmtFwd body
-stmtFwd (DefRec xcs body) =
-   E.Seq <$> (E.DefRec <$> recDefsFwd xcs) <*> stmtFwd body
+stmtFwd (Def vd) = E.Def <$> varDefFwd vd
+stmtFwd (DefRec xcs) = E.DefRec <$> recDefsFwd xcs
 stmtFwd (Match s μ) = do
    κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ

@@ -97,11 +97,11 @@ programDefStmt = defer \_ -> defRecStmt <|> defValStmt
    defRecStmt = defer \_ -> do
       ds <- recDefs
       body <- align programStmt
-      pure $ DefRec ds body
+      pure $ Seq (DefRec ds) body
    defValStmt = defer \_ -> do
       d <- varDef
       body <- align programStmt
-      pure $ Def d body
+      pure $ Seq (Def d) body
 
 defStmt :: Parser (Raw Stmt)
 defStmt = defer \_ -> defRecStmt <|> defValStmt
@@ -109,11 +109,11 @@ defStmt = defer \_ -> defRecStmt <|> defValStmt
    defRecStmt = defer \_ -> do
       ds <- recDefs
       body <- align stmt
-      pure $ DefRec ds body
+      pure $ Seq (DefRec ds) body
    defValStmt = defer \_ -> do
       d <- varDef
       body <- align stmt
-      pure $ Def d body
+      pure $ Seq (Def d) body
 
 ifStmt :: Parser (Raw Stmt)
 ifStmt = defer \_ -> do
