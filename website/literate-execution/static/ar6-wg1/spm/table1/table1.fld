@@ -13,7 +13,7 @@ def newDataTable(offset):
   }, tableData)
 
 def getByScenario(data, scenario):
-  return from_some(find_with_key("scenario", scenario, data))
+  return from_just(find_with_key("scenario", scenario, data))
 
 probAsText = likelihood_map(likelihoods)
 

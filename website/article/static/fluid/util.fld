@@ -23,10 +23,10 @@ def findIndex(fName, x, y :| ys):
     return findIndex(fName, x, ys) + 1
 
 def find_with_key_(fName, x, table):
-  return from_some(find_with_key(fName, x, table))
+  return from_just(find_with_key(fName, x, table))
 
 def findWhere(pred, table):
-  return from_some(find(pred, table))
+  return from_just(find(pred, table))
 
 def model(m, t):
   return find_with_key_("model", m, t)

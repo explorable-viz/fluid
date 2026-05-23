@@ -5,7 +5,7 @@ def stackedBarHeight(stackedBar):
   return sum([segment.z for segment in stackedBar.segments])
 
 def get(x, BarChart(record)):
-  return from_some(find_with_key("x", x, record.stackedBars))
+  return from_just(find_with_key("x", x, record.stackedBars))
 
 def mkBarChart(scenName, table):
   return BarChart({

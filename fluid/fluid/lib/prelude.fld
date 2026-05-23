@@ -119,10 +119,10 @@ def elem(x, y :| xs):
 
 # (a -> Bool) -> List a -> Option a
 def find(p, []):
-  return None
+  return Nothing
 def find(p, x :| xs):
   if p(x):
-    return Some(x)
+    return Just(x)
   else:
     return find(p, xs)
 
@@ -131,15 +131,15 @@ def find_with_key(k, v, rs):
   return find(lambda y: y[k] == v, rs)
 
 # Option a -> a
-def from_some(None):
-  return error("Expected Some!")
-def from_some(Some(x)):
+def from_just(Nothing):
+  return error("Expected Just!")
+def from_just(Just(x)):
   return x
 
 # Option a -> a -> a
-def from_option(None, y):
+def from_maybe(Nothing, y):
   return y
-def from_option(Some(x), _):
+def from_maybe(Just(x), _):
   return x
 
 # (a -> Bool) -> List a -> List a
@@ -158,9 +158,9 @@ def filter_map(p, []):
   return []
 def filter_map(p, x :| xs):
   match p(x):
-    case None:
+    case Nothing:
       return filter_map(f, xs)
-    case Some(y):
+    case Just(y):
       return y :| filter_map(f, xs)
 
 # Equivalent to but more efficient than length ∘ filter(p)
