@@ -11,15 +11,12 @@ import Lattice (Raw)
 import SExpr (Clause(..), Module, Stmt(..)) as S
 import Util (throw, (×))
 
--- Per PurePy spec: well-formedness rules over the surface AST.
-
 checkProgram :: forall m. MonadError Error m => Raw S.Stmt -> m Unit
 checkProgram = check
 
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
 
--- Surface stmt result type: every stmt either Returns or Assigns.
 data Result = TyReturns | TyAssigns
 
 derive instance Eq Result
@@ -43,7 +40,7 @@ merge ts = if all (_ == TyReturns) ts then TyReturns else TyAssigns
 
 check :: forall m a. MonadError Error m => S.Stmt a -> m Unit
 check (S.Seq s1 s2)
-   | resultType s1 == TyReturns = throw "Unreachable code after return"
+   | resultType s1 == TyReturns = throw "Unreachable statement"
    | otherwise = check s1 *> check s2
 check (S.If clauses elseBody) =
    traverse_ (check <<< snd) clauses *> check elseBody
