@@ -39,7 +39,7 @@ import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, forDefs, val)
+import Val (BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asAssigns, asReturns, forDefs, val)
 
 -- Needs a better name.
 type GraphConfig =
@@ -207,8 +207,8 @@ evalStmt doc_opt γ s αs = case s of
       γ' <- closeDefs γ ρ (insert α αs)
       evalStmt doc_opt (γ <+> γ') s' (insert α αs)
    Seq s1 s2 -> do
-      _ <- evalStmt Nothing γ s1 αs
-      evalStmt doc_opt γ s2 αs
+      γ' <- asAssigns <$> evalStmt Nothing γ s1 αs
+      evalStmt doc_opt (γ <+> γ') s2 αs
 
 evalVal
    :: forall m

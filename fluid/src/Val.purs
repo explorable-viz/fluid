@@ -43,6 +43,10 @@ asReturns :: forall a. Result a -> Val a
 asReturns (Returns v) = v
 asReturns (Assigns _) = error "Returns expected"
 
+asAssigns :: forall a. Result a -> Env a
+asAssigns (Assigns γ) = γ
+asAssigns (Returns _) = error "Assigns expected"
+
 data BaseVal a
    = Int Int
    | Float Number
