@@ -561,7 +561,7 @@ instance FV (Expr a) where
    fv (Str _ _) = Set.empty
    fv (Constr _ _ es) = Set.unions (fv <$> es)
    fv (Dictionary _ entries) = Set.unions ((\(k × v) -> fv k ∪ fv v) <$> entries)
-   fv (Matrix _ e1 (x × y) e2) = fv e1 ∪ (fv e2 \\ (Set.singleton x ∪ Set.singleton y))
+   fv (Matrix _ body (x × y) source) = (fv body \\ (Set.singleton x ∪ Set.singleton y)) ∪ fv source
    fv (Lambda lc) = fv lc
    fv (Project e _) = fv e
    fv (DProject e e') = fv e ∪ fv e'
