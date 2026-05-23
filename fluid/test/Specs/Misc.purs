@@ -8,6 +8,7 @@ misc_cases =
    , { file: "array.fld", fwd_expect: "(0, (3, 3))" }
    , { file: "assert_stmt.fld", fwd_expect: "10" }
    , { file: "assert_implicit.fld", fwd_expect: "10" }
+   , { file: "bare_return.fld", fwd_expect: "None" }
    , { file: "boolean_precedence.fld", fwd_expect: "True" }
    , { file: "compose.fld", fwd_expect: "5" }
    , { file: "custom_infix.fld", fwd_expect: "True" }
