@@ -6,6 +6,8 @@ misc_cases :: Array TestSpec
 misc_cases =
    [ { file: "arithmetic.fld", fwd_expect: "42" }
    , { file: "array.fld", fwd_expect: "(0, (3, 3))" }
+   , { file: "assert_stmt.fld", fwd_expect: "10" }
+   , { file: "assert_implicit.fld", fwd_expect: "10" }
    , { file: "boolean_precedence.fld", fwd_expect: "True" }
    , { file: "compose.fld", fwd_expect: "5" }
    , { file: "custom_infix.fld", fwd_expect: "True" }

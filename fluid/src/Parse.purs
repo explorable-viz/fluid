@@ -22,7 +22,7 @@ import Lattice (Raw)
 import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
-import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
+import Parsing.Combinators (choice, many, many1, option, optionMaybe, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..)) as P
 import Parsing.Expr (Assoc(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
@@ -84,7 +84,14 @@ varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (reserved "pass" *> pure Pass) <|> (expr <#> ExprStmt)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (expr <#> ExprStmt)
+
+assertStmt :: Parser (Raw Stmt)
+assertStmt = do
+   reserved "assert"
+   cond <- expr
+   msg <- optionMaybe (delim ',' *> expr)
+   pure $ Assert cond msg
 
 stmts :: Parser (Raw Stmt)
 stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
@@ -93,7 +100,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser (Raw Stmt)
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (reserved "pass" *> pure Pass) <|> (Return <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (Return <$> expr)
 
 programStmts :: Parser (Raw Stmt)
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq

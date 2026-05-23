@@ -12,7 +12,7 @@ import Data.Function (on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), foldr, groupBy, head, toList)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, second)
@@ -116,6 +116,7 @@ data Stmt a
    | DefRec (RecDefs a)
    | Pass
    | ExprStmt (Expr a)
+   | Assert (Expr a) (Maybe (Expr a))
    | Seq (Stmt a) (Stmt a)
 
 newtype Clause a = Clause (NonEmptyList Pattern × Stmt a)
@@ -294,6 +295,10 @@ stmtFwd (If sss s) = ifElseFwd (sss × s)
 stmtFwd (Return e) = E.Return <$> desug e
 stmtFwd Pass = pure E.Pass
 stmtFwd (ExprStmt e) = E.ExprStmt <$> desug e
+stmtFwd (Assert cond msg_opt) =
+   stmtFwd (If (singleton (App (Var "not") cond × ExprStmt (App (Var "error") msg))) Pass)
+   where
+   msg = fromMaybe (Str top "AssertionError") msg_opt
 stmtFwd (Seq s1 s2) = E.Seq <$> stmtFwd s1 <*> stmtFwd s2
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Stmt a)

@@ -1,0 +1,5 @@
+def f(x):
+   assert x > 0, "must be positive"
+   return x * 2
+
+f(5)

@@ -205,6 +205,8 @@ instance Ann a => Pretty (Stmt a) where
    pretty (DefRec xcs) = pretty xcs
    pretty Pass = text "pass"
    pretty (ExprStmt e) = pretty e
+   pretty (Assert cond Nothing) = text "assert" <+> pretty cond
+   pretty (Assert cond (Just msg)) = text "assert" <+> pretty cond <> text "," <+> pretty msg
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
 
 instance Ann a => Pretty (Clause a) where
