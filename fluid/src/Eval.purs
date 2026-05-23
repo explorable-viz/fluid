@@ -204,7 +204,7 @@ evalStmt doc_opt γ s αs = case s of
       v <- eval Nothing γ e αs
       γ' × κ × αs' <- match v σ
       case κ of
-         ContStmt s' -> evalStmt doc_opt (γ <+> γ') s' αs'
+         ContStmt s' -> evalStmt doc_opt (γ <+> γ') s' (αs ∪ αs')
          _ -> error "Stmt continuation expected as match branch"
    Def (VarDef σ e) s' -> do
       v <- eval Nothing γ e αs

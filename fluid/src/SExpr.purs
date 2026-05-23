@@ -318,7 +318,7 @@ ifElseFwd (sss × s) =
    where
    clause (s1 × b) e3 =
       E.App
-         <$> (E.Lambda top <$> (elimBool <$> (ContStmt <$> E.Return <$> stmtFwd b) <*> (ContStmt <$> E.Return <$> e3)))
+         <$> (E.Lambda top <$> (elimBool <$> (ContStmt <$> stmtFwd_stmt b) <*> (ContStmt <$> E.Return <$> e3)))
          <*> desug s1
 
 -- List Qualifier × Expr
@@ -389,7 +389,7 @@ clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses
 clausesStateFwd ks = case ks of
    Nil -> error absurd
    (Nil × Nil × b) : Nil ->
-      ContStmt <$> E.Return <$> stmtFwd b
+      ContStmt <$> stmtFwd_stmt b
    (Nil × _) : _ ->
       ContStmt <$> E.Return <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
    ((Left (PVar x) : _) × _) : _ ->
