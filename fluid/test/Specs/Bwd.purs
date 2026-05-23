@@ -3,7 +3,7 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, constr, constrArg, dict, dictKey, dictVal, envVal, fst, listCell, listElement, matrix, matrixElement, multiViewEntry, select, select', snd, some, topα, (>.>))
+import App.Util.Selector (barChart, barSegment, constr, constrArg, dict, dictKey, dictVal, envVal, fst, listCell, listElement, matrix, matrixElement, multiViewEntry, select, select', snd, just, topα, (>.>))
 import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
 
@@ -280,8 +280,8 @@ bwd_cases =
                           )
                      )
                 )
-     , δv: some select'
-     , fwd_expect: "⸨Some(\"Germany\")⸩"
+     , δv: just select'
+     , fwd_expect: "⸨Just(\"Germany\")⸩"
      }
    , { file: "linked_outputs/bar_chart_line_chart.fld"
      , bwd_expect:

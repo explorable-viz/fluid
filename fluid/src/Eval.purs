@@ -22,7 +22,7 @@ import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asStmt, fv)
 import File (class LoadFile, FileCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
@@ -39,7 +39,7 @@ import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs, val)
+import Val (BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, forDefs, val)
 
 -- Needs a better name.
 type GraphConfig =
@@ -78,8 +78,8 @@ matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
    γ' × κ' × βs <- matchMany vs κ
    pure $ γ `disjointUnion` γ' × κ' × (αs ∪ βs)
-matchMany (_ : vs) (ContExpr _) = throw $
-   show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
+matchMany (_ : vs) (ContStmt _) = throw $
+   show (length vs + 1) <> " extra argument(s) to constructor/dictionary; did you forget parentheses in lambda pattern?"
 
 closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
@@ -102,7 +102,7 @@ apply
 apply doc_opt (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
-   eval doc_opt (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
+   asReturns <$> evalStmt doc_opt (γ1 <+> γ2 <+> γ3) (asStmt κ) (insert α αs)
 apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
    where
@@ -166,13 +166,6 @@ eval doc_opt γ e0 αs = do
             v <- eval Nothing γ e αs
             v' <- eval Nothing γ e' αs
             withMsg ("In " <> funName e) $ apply doc_opt v v'
-         Let (VarDef σ e) e' -> do
-            v <- eval Nothing γ e αs
-            γ' × _ × αs' <- withMsg "In variable def" $ match v σ
-            eval doc_opt (γ <+> γ') e' αs'
-         LetRec (RecDefs α ρ) e -> do
-            γ' <- closeDefs γ ρ (insert α αs)
-            eval doc_opt (γ <+> γ') e (insert α αs)
          DocExpr e e' -> do
             v <- eval Nothing γ e αs
             traceWhen (isJust doc_opt) "Outer doc trumps inner doc"
@@ -184,6 +177,42 @@ eval doc_opt γ e0 αs = do
    funName (Op op) = op
    funName (App e _) = funName e
    funName _ = "unknown"
+
+evalStmt
+   :: forall m
+    . MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => Maybe (Val Vertex)
+   -> Env Vertex
+   -> Stmt Vertex
+   -> Set Vertex
+   -> m (Result Vertex)
+evalStmt doc_opt γ s αs = case s of
+   Return e -> Returns <$> eval doc_opt γ e αs
+   Match e σ -> do
+      v <- eval Nothing γ e αs
+      γ' × κ × αs' <- match v σ
+      case κ of
+         ContStmt s' -> evalStmt doc_opt (γ <+> γ') s' (αs ∪ αs')
+         _ -> error "Stmt continuation expected as match branch"
+   Def (VarDef σ e) -> do
+      v <- eval Nothing γ e αs
+      γ' × _ × αs' <- withMsg "In assignment" $ match v σ
+      pure (Assigns γ' αs')
+   DefRec (RecDefs α ρ) -> do
+      γ' <- closeDefs γ ρ (insert α αs)
+      pure (Assigns γ' (insert α αs))
+   Pass -> pure (Assigns empty empty)
+   ExprStmt e -> do
+      _ <- eval Nothing γ e αs
+      pure (Assigns empty empty)
+   Seq s1 s2 -> do
+      r1 <- evalStmt Nothing γ s1 αs
+      case r1 of
+         Returns _ -> pure r1
+         Assigns γ' αs' -> evalStmt doc_opt (γ <+> γ') s2 αs'
 
 evalVal
    :: forall m
@@ -321,12 +350,12 @@ toGC
    -> GaloisConnection (s 𝔹) (t 𝔹)
 toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
-graphEval :: forall m. MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
-graphEval { n, γ } e = do
+graphEval :: forall m. MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
+graphEval { n, γ } stmt = do
    _ × _ × g × inα × outα <- flip runAllocT n do
-      eα <- alloc e
-      let inα = EnvExpr γ eα
-      g × outα <- runWithGraphT_spy (eval Nothing γ eα mempty) (vertices inα)
+      sα <- alloc stmt
+      let inα = EnvStmt γ sα
+      g × outα <- runWithGraphT_spy (asReturns <$> evalStmt Nothing γ sα mempty) (vertices inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × inα × outα)
    pure { g, graph_fwd, graph_bwd, inα, outα }

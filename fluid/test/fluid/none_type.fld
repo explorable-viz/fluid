@@ -1,0 +1,7 @@
+def f(x):
+   if x:
+      return None
+   else:
+      return None
+
+f(True)

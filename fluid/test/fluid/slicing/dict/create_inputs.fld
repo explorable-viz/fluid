@@ -1,3 +1,3 @@
-def a_1: "a"
-def a_2: "a"
-def b: "b"
+a_1 = "a"
+a_2 = "a"
+b = "b"

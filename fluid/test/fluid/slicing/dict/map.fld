@@ -1,10 +1,6 @@
 import slicing.dict.map_inputs
 
-def incHead:
-  def x: 3
-
-  lambda xs: head(xs) + x
-def d_:
-  dict_map(incHead, dict_difference(d, e))
+incHead = lambda xs: head(xs) + 3
+d_ = dict_map(incHead, dict_difference(d, e))
 
 d_.a + d_.b

@@ -12,7 +12,7 @@ import Data.Function (on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), foldr, groupBy, head, toList)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, second)
@@ -26,7 +26,7 @@ import Desugarable (class Desugarable, desug)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim)
-import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
+import Expr (Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
 import Lattice (class BoundedLattice, class JoinSemilattice, bot, top)
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -43,21 +43,18 @@ data Expr a
    | Constr a Ctr (List (Expr a))
    | Dictionary a (List (DictEntry a × Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
-   | Lambda (Clauses a)
+   | Lambda (LambdaClause a)
    | Project (Expr a) Var
    | DProject (Expr a) (Expr a)
    | App (Expr a) (Expr a)
    | BinaryApp (Expr a) Var (Expr a)
    | UnaryPrefixApp Var (Expr a)
-   | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
-   | IfElse (NonEmptyList (Expr a × Expr a)) (Expr a)
+   | Ternary (Expr a) (Expr a) (Expr a)
    | Paragraph (Paragraph a)
    | ListEmpty a
    | ListNonEmpty a (Expr a) (ListRest a)
    | ListEnum (Expr a) (Expr a)
    | ListComp a (Expr a) (List (Qualifier a))
-   | Let (VarDefs a) (Expr a)
-   | LetRec (RecDefs a) (Expr a)
    | DocExpr (Expr a) (Expr a)
 
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
@@ -111,10 +108,24 @@ subpatts (Right (PListVar _)) = Nil
 subpatts (Right PListEnd) = Nil
 subpatts (Right (PListNext p o)) = Left p : Right o : Nil
 
-newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
+data Stmt a
+   = Return (Expr a)
+   | If (NonEmptyList (Expr a × Stmt a)) (Stmt a)
+   | Match (Expr a) (NonEmptyList (Pattern × Stmt a))
+   | Def (VarDef a)
+   | DefRec (RecDefs a)
+   | Pass
+   | ExprStmt (Expr a)
+   | Assert (Expr a) (Maybe (Expr a))
+   | Seq (Stmt a) (Stmt a)
+
+newtype Clause a = Clause (NonEmptyList Pattern × Stmt a)
 
 type Branch a = Var × Clause a
 newtype Clauses a = Clauses (NonEmptyList (Clause a))
+
+-- Lambdas accept exactly one clause whose body is an expression (no defs / return-keyword).
+newtype LambdaClause a = LambdaClause (NonEmptyList Pattern × Expr a)
 
 newtype RecDef a = RecDef (NonEmptyList (Branch a))
 type RecDefs a = NonEmptyList (Branch a)
@@ -137,6 +148,9 @@ instance Desugarable DictEntry E.Expr where
 instance Desugarable Expr E.Expr where
    desug = exprFwd
 
+instance Desugarable Stmt E.Stmt where
+   desug = stmtFwd
+
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
    desug (End α) = pure (enil α)
@@ -145,6 +159,10 @@ instance Desugarable ListRest E.Expr where
 instance Desugarable Clauses Elim where
    desug :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
    desug μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
+
+instance Desugarable LambdaClause Elim where
+   desug :: forall a m. BoundedLattice a => MonadError Error m => LambdaClause a -> m (Elim a)
+   desug (LambdaClause (ps × e)) = desug (Clauses (singleton (Clause (ps × Return e))))
 
 desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
 desugarModuleFwd = moduleFwd
@@ -176,14 +194,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Dictionary top Nil)))) <*> desug s
-
--- VarDefs
-varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
-varDefsFwd (NonEmptyList (d :| Nil) × s) =
-   E.Let <$> varDefFwd d <*> desug s
-varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
-   E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
+   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Return (Dictionary top Nil))))) <*> desug s
 
 -- RecDefs
 -- In the formalism, "group by name" is part of the syntax.
@@ -249,10 +260,10 @@ exprFwd (BinaryApp s1 op s2) =
    E.App <$> (E.App (E.Op op) <$> desug s1) <*> desug s2
 exprFwd (UnaryPrefixApp op s) =
    E.App (E.Op op) <$> desug s
-exprFwd (MatchAs s μ) =
-   E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
-exprFwd (IfElse sss s) =
-   ifElseFwd (sss × s)
+exprFwd (Ternary cond e1 e2) =
+   E.App
+      <$> (E.Lambda top <$> (elimBool <$> (ContStmt <$> E.Return <$> desug e1) <*> (ContStmt <$> E.Return <$> desug e2)))
+      <*> desug cond
 exprFwd (Paragraph elems) =
    paragraphFwd elems
 exprFwd (ListEmpty α) =
@@ -267,25 +278,38 @@ exprFwd (ListComp α s (ListCompGen p s' : qs)) = unsafePartial $
    listCompFwd (α × (ListCompGen p s' : qs) × s)
 exprFwd (ListComp α s qs) =
    listCompFwd (α × qs × s)
-exprFwd (Let ds s) =
-   varDefsFwd (ds × s)
-exprFwd (LetRec xcs s) =
-   E.LetRec <$> recDefsFwd xcs <*> desug s
 exprFwd (DocExpr s s') = do
    e <- exprFwd s
    e' <- exprFwd s'
    pure $ E.DocExpr e e'
 
-type IfElseClauses a = NonEmptyList (Expr a × Expr a) × Expr a
+type IfElseClauses a = NonEmptyList (Expr a × Stmt a) × Stmt a
 
-ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
-ifElseFwd (sss × s) =
-   foldr clause (desug s) sss
+stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Stmt a)
+stmtFwd (Def vd) = E.Def <$> varDefFwd vd
+stmtFwd (DefRec xcs) = E.DefRec <$> recDefsFwd xcs
+stmtFwd (Match s μ) = do
+   κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
+   E.Match <$> desug s <@> asElim κ
+stmtFwd (If sss s) = ifElseFwd (sss × s)
+stmtFwd (Return e) = E.Return <$> desug e
+stmtFwd Pass = pure E.Pass
+stmtFwd (ExprStmt e) = E.ExprStmt <$> desug e
+stmtFwd (Assert cond msg_opt) =
+   stmtFwd (If (singleton (App (Var "not") cond × ExprStmt (App (Var "error") msg))) Pass)
    where
-   clause (s1 × s2) e3 =
-      E.App
-         <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> e3)))
-         <*> desug s1
+   msg = fromMaybe (Str top "AssertionError") msg_opt
+stmtFwd (Seq s1 s2) = E.Seq <$> stmtFwd s1 <*> stmtFwd s2
+
+ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Stmt a)
+ifElseFwd (sss × s) =
+   foldr clause (stmtFwd s) sss
+   where
+   clause (s1 × b) e3 = do
+      cond <- desug s1
+      b' <- stmtFwd b
+      e3' <- e3
+      pure $ E.Match cond (elimBool (ContStmt b') (ContStmt e3'))
 
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
@@ -293,12 +317,12 @@ listCompFwd (α × Nil × s) =
    econs α <$> desug s <@> enil α
 listCompFwd (α × (ListCompGuard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
-   E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
+   E.App (E.Lambda α (elimBool (ContStmt (E.Return e)) (ContStmt (E.Return (enil α))))) <$> desug s
 listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
-   σ <- clausesStateFwd (((Left p : Nil) × Nil × ListComp α s' qs) : Nil)
+   σ <- clausesStateFwd (((Left p : Nil) × Nil × Return (ListComp α s' qs)) : Nil)
    E.App (E.Lambda α (asElim σ)) <$> desug s
 listCompFwd (α × (ListCompGen p s : qs) × s') = do
-   let ks = orElseFwd α ((Left p : Nil) × ListComp α s' qs)
+   let ks = orElseFwd α ((Left p : Nil) × Return (ListComp α s' qs))
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
    E.App (E.App (E.Var "concat_map") (E.Lambda α (asElim σ))) <$> desug s
 
@@ -307,10 +331,10 @@ toClausesStateFwd :: forall a. Clauses a -> ClausesState' a
 toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
    where
    toClauseStateFwd :: Clause a -> ClauseState' a
-   toClauseStateFwd (Clause (NonEmptyList (p :| π) × s)) = (Left p : Nil) × π × s
+   toClauseStateFwd (Clause (NonEmptyList (p :| π) × b)) = (Left p : Nil) × π × b
 
 -- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
-type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Expr a
+type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Stmt a
 type ClausesState' a = List (ClauseState' a)
 
 popArgFwd :: forall a m. MonadError Error m => ClausesState' a -> m (ClausesState' a)
@@ -354,10 +378,10 @@ popRecordFwd _ _ = throw (shapeMismatch unit)
 clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
 clausesStateFwd ks = case ks of
    Nil -> error absurd
-   (Nil × Nil × s) : Nil ->
-      ContExpr <$> desug s
+   (Nil × Nil × b) : Nil ->
+      ContStmt <$> stmtFwd b
    (Nil × _) : _ ->
-      ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
+      ContStmt <$> E.Return <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
    ((Left (PVar x) : _) × _) : _ ->
       ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
    ((Left (PRecord xps) : _) × _) : _ ->
@@ -370,7 +394,7 @@ clausesStateFwd ks = case ks of
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and empty when the recursion terminates.
-type ClauseState a = List (Pattern + ListRestPattern) × Expr a
+type ClauseState a = List (Pattern + ListRestPattern) × Stmt a
 
 unless :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 unless (Left (PVar _)) = Nil
@@ -390,7 +414,7 @@ orElseFwd α = case _ of
    (p : π) × s ->
       (orElseFwd α ((π' <> π) × s) <#> popPatts (length π') <#> pushPattFor p)
          `appendList`
-            (unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p')
+            (unless p <#> \p' -> ((π <#> anon) × Return (ListEmpty α)) # pushPatt p')
       where
       π' = subpatts p
    where
@@ -427,9 +451,12 @@ anon (Right _) = Right pListVarAnon
 -- ======================
 derive instance Newtype (Clause a) _
 derive instance Newtype (Clauses a) _
+derive instance Newtype (LambdaClause a) _
 derive instance Newtype (RecDef a) _
+derive instance Functor Stmt
 derive instance Functor Clause
 derive instance Functor Clauses
+derive instance Functor LambdaClause
 derive instance Functor DictEntry
 derive instance Functor ListRest
 derive instance Functor VarDef
@@ -442,7 +469,7 @@ instance Functor Module where
       where
       mapDefs :: forall a b. (a -> b) -> VarDefs a + RecDefs a -> VarDefs b + RecDefs b
       mapDefs g (Left ds) = Left $ map g <$> ds
-      mapDefs g (Right ds) = Right $ (\(x × Clause (π × s)) -> x × Clause (π × (g <$> s))) <$> ds
+      mapDefs g (Right ds) = Right $ (\(x × Clause (π × b)) -> x × Clause (π × (g <$> b))) <$> ds
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join _ = error unimplemented
@@ -472,6 +499,11 @@ derive instance Generic ListRestPattern _
 instance Show ListRestPattern where
    show c = genericShow c
 
+derive instance Eq a => Eq (Stmt a)
+derive instance Generic (Stmt a) _
+instance Show a => Show (Stmt a) where
+   show c = genericShow c
+
 derive instance Eq a => Eq (Clause a)
 derive instance Generic (Clause a) _
 instance Show a => Show (Clause a) where
@@ -480,6 +512,11 @@ instance Show a => Show (Clause a) where
 derive instance Eq a => Eq (Clauses a)
 derive instance Generic (Clauses a) _
 instance Show a => Show (Clauses a) where
+   show c = genericShow c
+
+derive instance Eq a => Eq (LambdaClause a)
+derive instance Generic (LambdaClause a) _
+instance Show a => Show (LambdaClause a) where
    show c = genericShow c
 
 derive instance Eq a => Eq (VarDef a)

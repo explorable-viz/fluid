@@ -9,7 +9,7 @@ import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cSome, f_points, f_segments, f_stackedBars, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cJust, f_points, f_segments, f_stackedBars, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely, error, (×))
@@ -54,8 +54,8 @@ fst = constrArg cPair 0
 snd :: SelSetter Val Val
 snd = constrArg cPair 1
 
-some :: Setter (Val (SelStates 𝔹)) 𝔹
-some = constr cSome
+just :: Setter (Val (SelStates 𝔹)) 𝔹
+just = constr cJust
 
 multiView :: SelSetter Val Val
 multiView = constrArg cMultiView 0

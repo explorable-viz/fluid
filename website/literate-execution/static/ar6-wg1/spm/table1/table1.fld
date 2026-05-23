@@ -2,7 +2,7 @@ import lib.stats
 import table1_data
 
 def newDataTable(offset):
-  map(lambda s: {
+  return map(lambda s: {
     scenario: s.scenario,
     beNear: s.bestEstNear + offset,
     nearRange: (s.lowNear, s.highNear),
@@ -13,21 +13,25 @@ def newDataTable(offset):
   }, tableData)
 
 def getByScenario(data, scenario):
-  from_some(find_with_key("scenario", scenario, data))
+  return from_just(find_with_key("scenario", scenario, data))
 
-def probAsText: likelihood_map(likelihoods)
+probAsText = likelihood_map(likelihoods)
 
-def mean(xs): sum(xs) / length(xs)
+def mean(xs):
+  return sum(xs) / length(xs)
 
 def calcLikelihood((min, max), target):
-  if max < target: 0.05
+  if max < target:
+    return 0.05
   else:
-    if target <= min: 0.95
-    else: (target - min) / (max - min)
+    if target <= min:
+      return 0.95
+    else:
+      return (target - min) / (max - min)
 
-def getByScenario_: getByScenario(newDataTable(0))
-def ssp119: getByScenario_("SSP1-1.9")
-def ssp245: getByScenario_("SSP2-4.5")
+getByScenario_ = getByScenario(newDataTable(0))
+ssp119 = getByScenario_("SSP1-1.9")
+ssp245 = getByScenario_("SSP2-4.5")
 
 MultiView([
   f"""Under the low GHG emissions scenario (SSP1-1.9), global warming of 2°C would

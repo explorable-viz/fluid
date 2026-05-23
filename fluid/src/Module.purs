@@ -15,7 +15,7 @@ import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Eval (GraphConfig, eval_primitives)
-import Expr (class FV, Expr, Module, fv)
+import Expr (class FV, Module, Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -24,6 +24,7 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
+import WellFormed (checkModule, checkProgram)
 import SExpr as S
 import Util (type (×), error, throwLeft, withMsg, (×))
 import Util.Map (restrict)
@@ -52,7 +53,7 @@ initialConfig e primitives moduleCxt = do
       pure (primitives' × modules' × restrict (fv e) γ)
    pure { n, primitives: primitives', γ }
 
-type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
+type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
 prelude :: ModuleName
 prelude = "lib/prelude"
@@ -60,8 +61,9 @@ prelude = "lib/prelude"
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
+   checkProgram s
    moduleCxt <- loadModuleGraph (prelude : imports)
-   e <- desug s
+   e :: Raw Stmt <- desug s
    gconfig <- initialConfig e primitives moduleCxt
    pure { s, e, gconfig }
 
@@ -98,6 +100,7 @@ loadModuleGraph roots = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
       mod × imports <- throwLeft <#> withMsg ("Loading module " <> path) $ parseModule src
+      checkModule mod
       mod' <- desugarModuleFwd mod
       let imports' = if path == prelude then imports else prelude : imports
       pure $ mod' × imports'

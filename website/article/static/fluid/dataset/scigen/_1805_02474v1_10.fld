@@ -1,2 +1,1 @@
-def tableData:
-   load_json("../dataset/scigen/_1805_02474v1_10.json")
+tableData = load_json("../dataset/scigen/_1805_02474v1_10.json")

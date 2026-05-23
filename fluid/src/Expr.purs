@@ -35,8 +35,6 @@ data Expr a
    | Lambda a (Elim a)
    | DProject (Expr a) (Expr a)
    | App (Expr a) (Expr a)
-   | Let (VarDef a) (Expr a)
-   | LetRec (RecDefs a) (Expr a)
    | DocExpr (Expr a) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
@@ -50,16 +48,25 @@ data Elim a
 
 -- Continuation of an eliminator branch.
 data Cont a
-   = ContExpr (Expr a)
-   | ContElim (Elim a)
+   = ContElim (Elim a)
+   | ContStmt (Stmt a)
 
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
 asElim _ = error "Eliminator expected"
 
-asExpr :: forall a. Cont a -> Expr a
-asExpr (ContExpr e) = e
-asExpr _ = error "Expression expected"
+asStmt :: forall a. Cont a -> Stmt a
+asStmt (ContStmt s) = s
+asStmt _ = error "Statement expected"
+
+data Stmt a
+   = Return (Expr a)
+   | Match (Expr a) (Elim a)
+   | Def (VarDef a)
+   | DefRec (RecDefs a)
+   | Pass
+   | ExprStmt (Expr a)
+   | Seq (Stmt a) (Stmt a)
 
 newtype Module a = Module (List (VarDef a + RecDefs a))
 
@@ -78,8 +85,6 @@ instance FV (Expr a) where
    fv (Lambda _ σ) = fv σ
    fv (DProject e x) = fv e ∪ fv x
    fv (App e1 e2) = fv e1 ∪ fv e2
-   fv (Let def e) = fv def ∪ (fv e \\ bv def)
-   fv (LetRec ρ e) = fv ρ ∪ fv e
    fv (DocExpr doc e) = fv doc ∪ fv e
 
 instance FV (Elim a) where
@@ -89,13 +94,22 @@ instance FV (Elim a) where
 
 instance FV (Cont a) where
    fv (ContElim σ) = fv σ
-   fv (ContExpr e) = fv e
+   fv (ContStmt s) = fv s
 
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
 
 instance FV (RecDefs a) where
    fv (RecDefs _ ρ) = fv ρ
+
+instance FV (Stmt a) where
+   fv (Return e) = fv e
+   fv (Match e σ) = fv e ∪ fv σ
+   fv (Def vd) = fv vd
+   fv (DefRec ρ) = fv ρ
+   fv Pass = empty
+   fv (ExprStmt e) = fv e
+   fv (Seq s s') = fv s ∪ fv s'
 
 instance FV a => FV (Dict a) where
    fv ρ = unions (fv <$> ρ) \\ S.fromFoldable (keys ρ)
@@ -124,7 +138,7 @@ instance BV (VarDef a) where
 
 instance BV (Cont a) where
    bv (ContElim σ) = bv σ
-   bv (ContExpr _) = empty
+   bv (ContStmt _) = empty
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    join (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (κ ∨ κ')
@@ -139,13 +153,13 @@ instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
-   join (ContExpr e) (ContExpr e') = ContExpr (e ∨ e')
    join (ContElim σ) (ContElim σ') = ContElim (σ ∨ σ')
+   join (ContStmt s) (ContStmt s') = ContStmt (s ∨ s')
    join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
-   expand (ContExpr e) (ContExpr e') = ContExpr (expand e e')
    expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
+   expand (ContStmt s) (ContStmt s') = ContStmt (expand s s')
    expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (VarDef a) where
@@ -160,6 +174,26 @@ instance JoinSemilattice a => JoinSemilattice (RecDefs a) where
 instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
    expand (RecDefs α ρ) (RecDefs _ ρ') = RecDefs α (expand ρ ρ')
 
+instance JoinSemilattice a => JoinSemilattice (Stmt a) where
+   join (Return e) (Return e') = Return (e ∨ e')
+   join (Match e σ) (Match e' σ') = Match (e ∨ e') (σ ∨ σ')
+   join (Def vd) (Def vd') = Def (vd ∨ vd')
+   join (DefRec ρ) (DefRec ρ') = DefRec (ρ ∨ ρ')
+   join Pass Pass = Pass
+   join (ExprStmt e) (ExprStmt e') = ExprStmt (e ∨ e')
+   join (Seq s1 s2) (Seq s1' s2') = Seq (s1 ∨ s1') (s2 ∨ s2')
+   join _ _ = shapeMismatch unit
+
+instance BoundedJoinSemilattice a => Expandable (Stmt a) (Raw Stmt) where
+   expand (Return e) (Return e') = Return (expand e e')
+   expand (Match e σ) (Match e' σ') = Match (expand e e') (expand σ σ')
+   expand (Def vd) (Def vd') = Def (expand vd vd')
+   expand (DefRec ρ) (DefRec ρ') = DefRec (expand ρ ρ')
+   expand Pass Pass = Pass
+   expand (ExprStmt e) (ExprStmt e') = ExprStmt (expand e e')
+   expand (Seq s1 s2) (Seq s1' s2') = Seq (expand s1 s1') (expand s2 s2')
+   expand _ _ = shapeMismatch unit
+
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Var x) (Var x') = Var (x ≜ x')
    join (Op op) (Op op') = Op (op ≜ op')
@@ -173,8 +207,6 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
    join (DProject e1 e2) (DProject e1' e2') = DProject (e1 ∨ e1') (e2 ∨ e2')
    join (App e1 e2) (App e1' e2') = App (e1 ∨ e1') (e2 ∨ e2')
-   join (Let def e) (Let def' e') = Let (def ∨ def') (e ∨ e')
-   join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
    join (DocExpr doc e) (DocExpr doc' e') = DocExpr (doc ∨ doc') (e ∨ e')
    join _ _ = shapeMismatch unit
 
@@ -191,8 +223,6 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
    expand (DProject e1 e2) (DProject e1' e2') = DProject (expand e1 e1') (expand e2 e2')
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
-   expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
-   expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
    expand (DocExpr doc e) (DocExpr doc' e') = DocExpr (expand doc doc') (expand e e')
    expand _ _ = shapeMismatch unit
 
@@ -213,8 +243,6 @@ instance Vertices (Expr Vertex) where
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
    vertices (DProject e e') = vertices e ∪ vertices e'
    vertices (App e1 e2) = vertices e1 ∪ vertices e2
-   vertices (Let def e) = vertices def ∪ vertices e
-   vertices (LetRec ρ e) = vertices ρ ∪ vertices e
    vertices (DocExpr e e') = vertices e ∪ vertices e'
 
 instance Vertices (Elim Vertex) where
@@ -226,11 +254,20 @@ instance Vertices (VarDef Vertex) where
    vertices (VarDef σ e) = vertices σ ∪ vertices e
 
 instance Vertices (Cont Vertex) where
-   vertices (ContExpr e) = vertices e
    vertices (ContElim σ) = vertices σ
+   vertices (ContStmt s) = vertices s
 
 instance Vertices (RecDefs Vertex) where
    vertices defs@(RecDefs α ρ) = singleton (DVertex (α × pack defs)) ∪ vertices ρ
+
+instance Vertices (Stmt Vertex) where
+   vertices (Return e) = vertices e
+   vertices (Match e σ) = vertices e ∪ vertices σ
+   vertices (Def vd) = vertices vd
+   vertices (DefRec ρ) = vertices ρ
+   vertices Pass = empty
+   vertices (ExprStmt e) = vertices e
+   vertices (Seq s1 s2) = vertices s1 ∪ vertices s2
 
 instance Vertices (Module Vertex) where
    vertices (Module defs) = unions (go <$> defs)
@@ -256,6 +293,9 @@ derive instance Traversable Expr
 derive instance Functor RecDefs
 derive instance Foldable RecDefs
 derive instance Traversable RecDefs
+derive instance Functor Stmt
+derive instance Foldable Stmt
+derive instance Traversable Stmt
 derive instance Newtype (Module a) _
 derive instance Functor Module
 
@@ -273,8 +313,6 @@ instance Apply Expr where
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
    apply (DProject fd fk) (DProject d k) = DProject (fd <*> d) (fk <*> k)
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
-   apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
-   apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
    apply (DocExpr fe fe') (DocExpr e e') = DocExpr (fe <*> e) (fe' <*> e')
    apply _ _ = shapeMismatch unit
 
@@ -285,8 +323,8 @@ instance Apply Elim where
    apply _ _ = shapeMismatch unit
 
 instance Apply Cont where
-   apply (ContExpr f) (ContExpr e) = ContExpr (f <*> e)
    apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
+   apply (ContStmt fs) (ContStmt s) = ContStmt (fs <*> s)
    apply _ _ = shapeMismatch unit
 
 instance Apply VarDef where
@@ -294,6 +332,16 @@ instance Apply VarDef where
 
 instance Apply RecDefs where
    apply (RecDefs fα fρ) (RecDefs α ρ) = RecDefs (fα α) (((<*>) <$> fρ) <*> ρ)
+
+instance Apply Stmt where
+   apply (Return fe) (Return e) = Return (fe <*> e)
+   apply (Match fe fσ) (Match e σ) = Match (fe <*> e) (fσ <*> σ)
+   apply (Def fvd) (Def vd) = Def (fvd <*> vd)
+   apply (DefRec fρ) (DefRec ρ) = DefRec (fρ <*> ρ)
+   apply Pass Pass = Pass
+   apply (ExprStmt fe) (ExprStmt e) = ExprStmt (fe <*> e)
+   apply (Seq fs1 fs2) (Seq s1 s2) = Seq (fs1 <*> s1) (fs2 <*> s2)
+   apply _ _ = shapeMismatch unit
 
 -- Apply instance for Either no good here as doesn't assume fixed shape.
 instance Apply Module where
@@ -333,6 +381,7 @@ derive instance Eq a => Eq (Elim a)
 derive instance Eq a => Eq (Cont a)
 derive instance Eq a => Eq (VarDef a)
 derive instance Eq a => Eq (RecDefs a)
+derive instance Eq a => Eq (Stmt a)
 
 instance TypeName (RecDefs a) where
    typeName _ = "RecDefs"

@@ -6,6 +6,10 @@ misc_cases :: Array TestSpec
 misc_cases =
    [ { file: "arithmetic.fld", fwd_expect: "42" }
    , { file: "array.fld", fwd_expect: "(0, (3, 3))" }
+   , { file: "assert_stmt.fld", fwd_expect: "10" }
+   , { file: "assert_implicit.fld", fwd_expect: "10" }
+   , { file: "bare_return.fld", fwd_expect: "None" }
+   , { file: "zero_arg.fld", fwd_expect: "\"hello\"" }
    , { file: "boolean_precedence.fld", fwd_expect: "True" }
    , { file: "compose.fld", fwd_expect: "5" }
    , { file: "custom_infix.fld", fwd_expect: "True" }
@@ -20,6 +24,7 @@ misc_cases =
           \(2 :| 2 :| -2 :| -2 :| []) :| []"
      }
    , { file: "elif.fld", fwd_expect: """"much more" :| "more" :| "less" :| "much less" :| []""" }
+   , { file: "expr_stmt.fld", fwd_expect: "6" }
    , { file: "factorial.fld", fwd_expect: "40320" }
    , { file: "filter.fld", fwd_expect: "8 :| 7 :| []" }
    , { file: "first_class_constr.fld", fwd_expect: "(10 :| []) :| (12 :| []) :| (20 :| []) :| []" }
@@ -32,12 +37,15 @@ misc_cases =
      }
    , { file: "lexical_scoping.fld", fwd_expect: "\"6\"" } -- avoid triple-quotes here as VSCode gets confused
    , { file: "length.fld", fwd_expect: "2" }
-   , { file: "lookup.fld", fwd_expect: """Some("sarah")""" }
+   , { file: "lookup.fld", fwd_expect: """Just("sarah")""" }
    , { file: "map.fld", fwd_expect: "5 :| 7 :| 13 :| 15 :| 4 :| 3 :| -3 :| []" }
    , { file: "merge_sort.fld", fwd_expect: "1 :| 2 :| 3 :| []" }
+   , { file: "mutual.fld", fwd_expect: "True" }
    , { file: "normalise.fld", fwd_expect: "(33, 66)" }
    , { file: "not_parens_op.fld", fwd_expect: """@doc("hello") -42""" }
    , { file: "nub.fld", fwd_expect: "1 :| 2 :| 3 :| 4 :| []" }
+   , { file: "none_type.fld", fwd_expect: "None" }
+   , { file: "pass.fld", fwd_expect: "1" }
    , { file: "paragraph.fld"
      , fwd_expect: """Paragraph(Text("As shown in Table 3, BiLSTM gives significantly  ") :| Text("better") :| [])"""
      }
@@ -50,4 +58,15 @@ misc_cases =
    , { file: "module/import_simple.fld", fwd_expect: "84" }
    , { file: "module/import_simple_unused.fld", fwd_expect: "84" }
    , { file: "module/import_modules.fld", fwd_expect: "84" }
+   , { file: "ternary/basic_true.fld", fwd_expect: "5" }
+   , { file: "ternary/basic_false.fld", fwd_expect: "6" }
+   , { file: "ternary/looser_than_plus.fld", fwd_expect: "7" }
+   , { file: "ternary/right_assoc_false.fld", fwd_expect: "3" }
+   , { file: "ternary/right_assoc_true.fld", fwd_expect: "1" }
+   , { file: "ternary/in_valdef_rhs.fld", fwd_expect: "3" }
+   , { file: "ternary/condition_parenthesised.fld", fwd_expect: "10" }
+   , { file: "ternary/listcomp_guard_unaffected.fld", fwd_expect: "2 :| 3 :| []" }
+   , { file: "ternary/inside_list_literal.fld", fwd_expect: "1 :| 4 :| []" }
+   , { file: "ternary/in_function_body.fld", fwd_expect: "3" }
+   , { file: "ternary/lambda_body.fld", fwd_expect: "0 :| 1 :| 2 :| 0 :| []" }
    ]

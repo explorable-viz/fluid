@@ -1,9 +1,10 @@
 import slicing.section_5_example_inputs
 
-def map(f, []): []
-def map(f, x :| xs): f(x) :| map(f, xs)
+def map(f, []):
+  return []
+def map(f, x :| xs):
+  return f(x) :| map(f, xs)
 
-def output:
-  [row.output for type in types for row in data if row.energyType == type]
+output = [row.output for type in types for row in data if row.energyType == type]
 
 map(lambda x: floor((x / sum(output)) * 100), output)

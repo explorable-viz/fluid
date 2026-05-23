@@ -6,20 +6,22 @@ import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
 import App.View.Util (Fig, Options)
 import Bind (Bind)
-import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Error.Class (class MonadError, catchError)
 import Control.Monad.Reader (class MonadReader)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
-import Effect.Aff (Error)
+import Effect.Aff (Error, message)
 import Effect.Aff.Class (class MonadAff)
 import File (class LoadFile, File(..), FileCxt, Folder(..), loadFile, (</>))
 import Lattice (botOf)
+import Module (prepConfig)
 import Primitive.Defs (primitives)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
 import Test.Util (checkEq, test)
 import Test.Util.Debug (timing)
-import Util (type (×), (×))
+import Util (type (×), throw, (×))
 import Val (Val, Env)
 
 -- benchmarks parameterised on number of iterations
@@ -92,3 +94,27 @@ linkedInputsTest { spec, δ_in, in_expect, file } = do
 
 linkedInputsSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestLinkedInputsSpec -> Array (String × m Unit)
 linkedInputsSuite testSpecs = testSpecs <#> (_.file &&& (linkedInputsTest >>> void))
+
+type IllFormedSpec =
+   { file :: String
+   , expected_error :: String
+   }
+
+illFormedSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array IllFormedSpec -> Array (String × m Unit)
+illFormedSuite specs = specs <#> (_.file &&& asTest)
+   where
+   folder = Folder "ill_formed"
+
+   asTest :: IllFormedSpec -> m Unit
+   asTest { file, expected_error } = do
+      fluidSrc <- loadFile [ Folder "fluid", Folder "test/fluid" ] (folder </> File file)
+      result <- catchError (prepConfig primitives fluidSrc *> pure (Left unit)) (pure <<< Right)
+      case result of
+         Right err ->
+            let
+               msg = message err
+            in
+               when (msg /= expected_error)
+                  $ throw
+                  $ "Expected error: " <> expected_error <> "; got: " <> msg
+         Left _ -> throw $ "Expected ill-formed: " <> file

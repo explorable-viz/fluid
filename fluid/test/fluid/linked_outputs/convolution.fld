@@ -1,19 +1,19 @@
 import lib.matrix
 import linked_outputs.convolution_data
 
-def filter1_: [
+filter1_ = [
     [0, 0, 0],
     [3, 7, 1],
     [0, 0, 0]
   ]
-def filter1: [| nth2(i, j, filter1_) for (i, j) in (3, 3) |]
-def image1: [| nth2(i, j, data) for (i, j) in (5, 5) |]
-def filter2_: [
+filter1 = [| nth2(i, j, filter1_) for (i, j) in (3, 3) |]
+image1 = [| nth2(i, j, data) for (i, j) in (5, 5) |]
+filter2_ = [
     [0, 2, 0],
     [0, 7, 0],
     [0, 5, 0]
   ]
-def filter2: [| nth2(i, j, filter2_) for (i, j) in (3, 3) |]
-def image2: [| nth2(i, j, data) for (i, j) in (5, 5) |]
+filter2 = [| nth2(i, j, filter2_) for (i, j) in (3, 3) |]
+image2 = [| nth2(i, j, data) for (i, j) in (5, 5) |]
 
 (convolve(image1, filter1, wrap), convolve(image2, filter2, zero))

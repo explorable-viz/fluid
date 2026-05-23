@@ -1,4 +1,4 @@
-def better: "better"
+better = "better"
 
 Paragraph([
   Text("As shown in Table 3, BiLSTM gives significantly  "),

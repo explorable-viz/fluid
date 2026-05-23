@@ -1,9 +1,8 @@
-def path: "../../dataset/TS/inputdata_TS_12/v20230301/WaterCyclePanels/"
-def hydroData: load_json(path ++ "Hydro_vars_change_20210201_derived_extra_raw.json")
+path = "../../dataset/TS/inputdata_TS_12/v20230301/WaterCyclePanels/"
+hydroData = load_json(path ++ "Hydro_vars_change_20210201_derived_extra_raw.json")
 
 # extract from data set instead?
-def models:
-  [
+models = [
     "HadGEM3-GC31-MM_ssp585",
     "EC-Earth3-Veg_ssp585",
     "ACCESS-CM2_ssp585",
@@ -22,9 +21,9 @@ def models:
   ]
 
 def precip(ensemble_data):
-  mean([ ensemble_data[ model ] for model in models ])
+  return mean([ ensemble_data[ model ] for model in models ])
 
-def hydroData_agg: {
+hydroData_agg = {
   pr: {
     std: { extra_annual: dict_map(precip, hydroData.pr.std.extra_annual.ens) }
   }

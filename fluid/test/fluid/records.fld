@@ -1,6 +1,9 @@
-def f({ fst: x, snd: [] }): x
-def f({ fst: x, snd: y :| xs }): y
-def g({  }): 7
+def f({ fst: x, snd: [] }):
+  return x
+def f({ fst: x, snd: y :| xs }):
+  return y
+def g({  }):
+  return 7
 
 {
   a: f({ snd: [], fst: 2 }),

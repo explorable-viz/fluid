@@ -1,7 +1,4 @@
-def decr:
-  def x: 2
-
-  flip((-), x)
-def x: 8
+decr = (lambda x: flip((-), x))(2)
+x = 8
 
 num_to_str(decr(x))

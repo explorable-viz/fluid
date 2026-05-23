@@ -1,6 +1,8 @@
 import slicing.dict.match_inputs
 
-def f({ fst: x, snd: [] }): x
-def f({ fst: x, snd: y :| ys }): y
+def f({ fst: x, snd: [] }):
+  return x
+def f({ fst: x, snd: y :| ys }):
+  return y
 
 { a: f({ snd: [], fst: n }) }

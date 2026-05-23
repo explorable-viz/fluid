@@ -1,10 +1,13 @@
 import slicing.filter_inputs
 
-def filter(p, []): []
+def filter(p, []):
+  return []
 def filter(p, x :| xs):
-  def ys: filter(p, xs)
+  ys = filter(p, xs)
 
-  if p(x): x :| ys
-  else: ys
+  if p(x):
+    return x :| ys
+  else:
+    return ys
 
 filter((<)(n), xs)

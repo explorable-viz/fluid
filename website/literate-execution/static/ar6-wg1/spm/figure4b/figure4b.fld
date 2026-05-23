@@ -2,13 +2,13 @@ import lib.stats
 import figure4b_data
 
 def stackedBarHeight(stackedBar):
-  sum([segment.z for segment in stackedBar.segments])
+  return sum([segment.z for segment in stackedBar.segments])
 
 def get(x, BarChart(record)):
-  from_some(find_with_key("x", x, record.stackedBars))
+  return from_just(find_with_key("x", x, record.stackedBars))
 
 def mkBarChart(scenName, table):
-  BarChart({
+  return BarChart({
     caption: "Scenario " ++ scenName,
     size: { width: 275, height: 185 },
     tickLabels: { x: Default, y: Default },
@@ -21,9 +21,9 @@ def mkBarChart(scenName, table):
   })
 
 def mkHistogram(xs, name, nbins):
-  def binWidth: (maximum(xs) - minimum(xs)) / nbins
+  binWidth = (maximum(xs) - minimum(xs)) / nbins
 
-  BarChart({
+  return BarChart({
     caption: "Histogram of distribution of " ++ name,
     size: { width: 275, height: 185 },
     tickLabels: { x: Default, y: Default },
@@ -35,20 +35,19 @@ def mkHistogram(xs, name, nbins):
     legend: True
   })
 
-def getHeight(offset, bar): head(bar.segments).z + offset
+def getHeight(offset, bar):
+  return head(bar.segments).z + offset
 
-def changed126: map(lambda r: r.changed, ssp126preds)
-def changed245: map(lambda r: r.changed, ssp245preds)
-def ssp126Total:
-  { type: "Total", emissions: sum(map(lambda r: r.emissions, ssp126Source)) }
-def ssp126table: ssp126Total :| ssp126Source
-def ssp245table:
-  { type: "Total", emissions: find_percentile(50, changed245) } :| ssp245Source
-def ssp126: mkBarChart("SSP1-2.6", ssp126table)
-def ssp245: mkBarChart("SSP2-4.5", ssp245table)
-def totals: map(stackedBarHeight, map(get("Total"), [ssp126, ssp245]))
-def co2s: map(stackedBarHeight, map(get("CO2"), [ssp126, ssp245]))
-def nonco2: map(get("Non-CO2"), [ssp126, ssp245])
+changed126 = map(lambda r: r.changed, ssp126preds)
+changed245 = map(lambda r: r.changed, ssp245preds)
+ssp126Total = { type: "Total", emissions: sum(map(lambda r: r.emissions, ssp126Source)) }
+ssp126table = ssp126Total :| ssp126Source
+ssp245table = { type: "Total", emissions: find_percentile(50, changed245) } :| ssp245Source
+ssp126 = mkBarChart("SSP1-2.6", ssp126table)
+ssp245 = mkBarChart("SSP2-4.5", ssp245table)
+totals = map(stackedBarHeight, map(get("Total"), [ssp126, ssp245]))
+co2s = map(stackedBarHeight, map(get("CO2"), [ssp126, ssp245]))
+nonco2 = map(get("Non-CO2"), [ssp126, ssp245])
 
 MultiView([
   ssp126,

@@ -1,5 +1,3 @@
 import slicing.dict.intersection_with_inputs
 
-dict_intersectionWith(def x: 2;
-
-(lambda n, m: (n + m) * x), d1, d2)
+dict_intersectionWith(lambda n, m: (n + m) * 2, d1, d2)
