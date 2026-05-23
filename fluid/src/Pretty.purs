@@ -289,8 +289,8 @@ instance Highlightable a => Pretty (E.Expr a) where
 instance Highlightable a => Pretty (E.Stmt a) where
    pretty (E.Return e) = text "return" <+> pretty e
    pretty (E.Match e σ) = text "match" <+> pretty e <> block (pretty σ)
-   pretty (E.DefRec (E.RecDefs _ ρ) s) = text "def" <+> pretty ρ <++> pretty s
    pretty (E.Def (E.VarDef o e)) = text "def" <+> pretty o <> block (pretty e)
+   pretty (E.DefRec (E.RecDefs _ ρ)) = text "def" <+> pretty ρ
    pretty (E.Seq s1 s2) = pretty s1 <++> pretty s2
 
 instance Highlightable a => Pretty (Cont a) where

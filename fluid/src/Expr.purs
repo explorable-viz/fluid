@@ -58,8 +58,8 @@ asElim _ = error "Eliminator expected"
 data Stmt a
    = Return (Expr a)
    | Match (Expr a) (Elim a)
-   | DefRec (RecDefs a) (Stmt a)
    | Def (VarDef a)
+   | DefRec (RecDefs a)
    | Seq (Stmt a) (Stmt a)
 
 newtype Module a = Module (List (VarDef a + RecDefs a))
@@ -99,8 +99,8 @@ instance FV (RecDefs a) where
 instance FV (Stmt a) where
    fv (Return e) = fv e
    fv (Match e σ) = fv e ∪ fv σ
-   fv (DefRec ρ s) = fv ρ ∪ fv s
    fv (Def vd) = fv vd
+   fv (DefRec ρ) = fv ρ
    fv (Seq s s') = fv s ∪ fv s'
 
 instance FV a => FV (Dict a) where
@@ -169,16 +169,16 @@ instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
 instance JoinSemilattice a => JoinSemilattice (Stmt a) where
    join (Return e) (Return e') = Return (e ∨ e')
    join (Match e σ) (Match e' σ') = Match (e ∨ e') (σ ∨ σ')
-   join (DefRec ρ s) (DefRec ρ' s') = DefRec (ρ ∨ ρ') (s ∨ s')
    join (Def vd) (Def vd') = Def (vd ∨ vd')
+   join (DefRec ρ) (DefRec ρ') = DefRec (ρ ∨ ρ')
    join (Seq s1 s2) (Seq s1' s2') = Seq (s1 ∨ s1') (s2 ∨ s2')
    join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Stmt a) (Raw Stmt) where
    expand (Return e) (Return e') = Return (expand e e')
    expand (Match e σ) (Match e' σ') = Match (expand e e') (expand σ σ')
-   expand (DefRec ρ s) (DefRec ρ' s') = DefRec (expand ρ ρ') (expand s s')
    expand (Def vd) (Def vd') = Def (expand vd vd')
+   expand (DefRec ρ) (DefRec ρ') = DefRec (expand ρ ρ')
    expand (Seq s1 s2) (Seq s1' s2') = Seq (expand s1 s1') (expand s2 s2')
    expand _ _ = shapeMismatch unit
 
@@ -251,8 +251,8 @@ instance Vertices (RecDefs Vertex) where
 instance Vertices (Stmt Vertex) where
    vertices (Return e) = vertices e
    vertices (Match e σ) = vertices e ∪ vertices σ
-   vertices (DefRec ρ s) = vertices ρ ∪ vertices s
    vertices (Def vd) = vertices vd
+   vertices (DefRec ρ) = vertices ρ
    vertices (Seq s1 s2) = vertices s1 ∪ vertices s2
 
 instance Vertices (Module Vertex) where
@@ -322,8 +322,8 @@ instance Apply RecDefs where
 instance Apply Stmt where
    apply (Return fe) (Return e) = Return (fe <*> e)
    apply (Match fe fσ) (Match e σ) = Match (fe <*> e) (fσ <*> σ)
-   apply (DefRec fρ fs) (DefRec ρ s) = DefRec (fρ <*> ρ) (fs <*> s)
    apply (Def fvd) (Def vd) = Def (fvd <*> vd)
+   apply (DefRec fρ) (DefRec ρ) = DefRec (fρ <*> ρ)
    apply (Seq fs1 fs2) (Seq s1 s2) = Seq (fs1 <*> s1) (fs2 <*> s2)
    apply _ _ = shapeMismatch unit
 

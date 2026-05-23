@@ -289,7 +289,7 @@ stmtFwd (Def ds body) = defStmtFwd ds body
    defStmtFwd (NonEmptyList (d :| d' : ds')) b =
       E.Seq <$> (E.Def <$> varDefFwd d) <*> defStmtFwd (NonEmptyList (d' :| ds')) b
 stmtFwd (DefRec xcs body) =
-   E.DefRec <$> recDefsFwd xcs <*> stmtFwd body
+   E.Seq <$> (E.DefRec <$> recDefsFwd xcs) <*> stmtFwd body
 stmtFwd (Match s μ) = do
    κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ
