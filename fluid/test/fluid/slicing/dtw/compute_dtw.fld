@@ -5,7 +5,7 @@ import slicing.dtw.dtw_inputs
 def d(x, y):
   return (x - y) * (x - y)
 
-def (costs, matched) =
+(costs, matched) =
   computeDTW(seq1, seq2, d, window)
 
 matched

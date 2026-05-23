@@ -6,21 +6,21 @@ def isYear(year, x):
   return year == x.year
 
 def plot(year, countries):
-  def rens =
+  rens =
     filter(isYear(year), renewables)
-  def nonRens =
+  nonRens =
     filter(isYear(year), nonRenewables)
 
   def plotCountry(country):
-    def rens_ =
+    rens_ =
       filter(isCountry(country), rens)
-    def rensOut =
+    rensOut =
       sum(map(lambda x: x.output, rens_))
-    def rensCap =
+    rensCap =
       sum(map(lambda x: x.capacity, rens_))
-    def x =
+    x =
       head(filter(isCountry(country), nonRens))
-    def nonRensCap =
+    nonRensCap =
       ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
 
     return {

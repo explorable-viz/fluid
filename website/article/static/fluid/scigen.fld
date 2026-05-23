@@ -1,4 +1,4 @@
-def ordinalMap = [
+ordinalMap = [
   { lastDigit: 1, suffix: "st" },
   { lastDigit: 2, suffix: "nd" },
   { lastDigit: 3, suffix: "rd" }
@@ -17,7 +17,7 @@ def ordinal(n):
         return error("n > 20 not supported")
 
 def rankLabel(word, n):
-  def prefix = "" if n == 1 else ordinal(n) ++ "-"
+  prefix = "" if n == 1 else ordinal(n) ++ "-"
   return prefix ++ word
 
 def trendWord(n1, n2, compareWord):

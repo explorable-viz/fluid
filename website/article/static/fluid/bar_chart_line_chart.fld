@@ -3,8 +3,8 @@ import renewables
 def totalFor(c, rows):
   return sum([row.output for row in rows if row.country == c])
 
-def data2015 = [row for row in renewables if row.year == 2015]
-def countryData = [{
+data2015 = [row for row in renewables if row.year == 2015]
+countryData = [{
     x: c,
     segments: [{ y: "output", z: totalFor(c, data2015) }]
   } for c in ["China", "USA", "Germany"]]

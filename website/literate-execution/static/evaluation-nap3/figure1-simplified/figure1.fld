@@ -1,6 +1,6 @@
 import nap3_ccra3_data
 
-def eval_scores =
+eval_scores =
   [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
@@ -16,7 +16,7 @@ def actions_by(key, keys):
       ] } for key_ in keys
   ]
 
-def risks_ =
+risks_ =
   dict([ (risk[ "ID#" ], risk) for risk in ccra3_risks ])
 
 def percent(x, y):
@@ -40,16 +40,16 @@ def actions_by_chapter(owner):
              )
         } for eval_score in eval_scores  ] }
     for chapter in ["3", "4", "5", "6", "7"]
-    def chapter_actions =
+    chapter_actions =
       [ action for action in nap3_actions
         if risks_[ action["Risk ID#" ] ][ "Chapter" ] == chapter and find_str(owner, action["Action Owner"]) /= -1
       ]
   ]
 
-def departments =
+departments =
   [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
-def nat_env_and_infra_depts =
+nat_env_and_infra_depts =
   [ "Defra", "DESNZ", "DfT", "DLUHC" ]
 
 # action_counts in the [ { y, z } ] format produced by actions_by
@@ -59,7 +59,7 @@ def total_actions(action_counts):
 def actions_with_score(action_counts, eval_score):
   return sum([ r.z for r in action_counts if r.y == eval_score ])
 
-def by_nat_env_and_infra =
+by_nat_env_and_infra =
   actions_by("Action Owner", nat_env_and_infra_depts)
 
 MultiView([

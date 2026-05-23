@@ -38,7 +38,7 @@ def on(bin_op, prop, x, y):
   return bin_op(prop(x), prop(y))
 
 # Num -> Num
-def negate = (-)(0)
+negate = (-)(0)
 
 # Log of x in base y.
 # Float -> Float -> Float
@@ -146,7 +146,7 @@ def from_option(Some(x), _):
 def filter(p, []):
   return []
 def filter(p, x :| xs):
-  def ys = filter(p, xs)
+  ys = filter(p, xs)
 
   if p(x):
     return x :| ys
@@ -178,7 +178,7 @@ def span(p, Nil):
   return { init: Nil, rest: Nil }
 def span(p, x :| xs_):
   if p(x):
-    def { init: ys, rest: zs } = span(p, xs_)
+    { init: ys, rest: zs } = span(p, xs_)
     return { init: x :| ys, rest: zs }
   else:
     return { init: Nil, rest: x :| xs_ }
@@ -188,7 +188,7 @@ def span(p, x :| xs_):
 def group_by(eq, Nil):
   return Nil
 def group_by(eq, x :| xs):
-  def { init: ys, rest: zs } = span(eq(x), xs)
+  { init: ys, rest: zs } = span(eq(x), xs)
   return (x :| ys) :| group_by(eq, zs)
 
 # (a -> b -> a) -> a -> List b -> a
@@ -216,7 +216,7 @@ def foldr1(op, x :| y :| xs):
 # (a -> b -> a) -> a -> List b -> List a
 def scanl1(op, z, xs):
   def go(x, continue, acc):
-    def next = op(acc, x)
+    next = op(acc, x)
     return next :| continue(next)
   return foldr(go, const([]), xs, z)
 
@@ -244,14 +244,14 @@ def concat2(x :| xs, ys):
   return x :| concat2(xs, ys)
 
 # List (List a) -> List a
-def concat = foldr(concat2, [])
+concat = foldr(concat2, [])
 
 # (a -> List b) -> List a -> List b
 def concat_map(f, xs):
   return concat(map(f, xs))
 
 # List String -> String
-def join = foldr((++), "")
+join = foldr((++), "")
 
 # List a -> a -> List a
 def intersperse([], _):
@@ -269,11 +269,11 @@ def iterate(n, f, z):
     return z :| map(f, iterate(n - 1, f, z))
 
 # List Num -> Num
-def sum = foldr((+), 0)
+sum = foldr((+), 0)
 
 # List Num -> Num
 def mean(xs):
-  def (s, n) = foldl(lambda (s, n), x: (s + x, n + 1), (0, 0), xs)
+  (s, n) = foldl(lambda (s, n), x: (s + x, n + 1), (0, 0), xs)
   return s / n
 
 # List a -> a
@@ -295,7 +295,7 @@ def reverse(x :| xs):
   return append((reverse(xs), [x]))
 
 # Int -> a -> List a
-def repeat = flip(iterate, id)
+repeat = flip(iterate, id)
 
 # Int -> List a -> List a
 def take(n, xs):
@@ -360,16 +360,16 @@ def min(n, m):
     return m
 
 # List Int -> Int
-def maximum = foldr1(max)
+maximum = foldr1(max)
 
 # List Int -> Int
-def minimum = foldr1(min)
+minimum = foldr1(min)
 
 # List (a, b) -> (List a, List b)
 def unzip([]):
   return ([], [])
 def unzip((x, y) :| zs):
-  def (xs, ys) = unzip(zs)
+  (xs, ys) = unzip(zs)
   return (x :| xs, y :| ys)
 
 # (a -> b -> c) -> List a -> List b -> List c
@@ -381,7 +381,7 @@ def zip_with(op, x :| xs, y :| ys):
   return op(x, y) :| zip_with(op, xs, ys)
 
 # List a -> List b -> List (a, b)
-def zip = zip_with(curry(id))
+zip = zip_with(curry(id))
 
 # Int -> Int -> List Int
 def range(n, m):

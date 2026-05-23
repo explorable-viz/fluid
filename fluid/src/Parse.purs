@@ -76,7 +76,7 @@ pConsOp = do
 
 varDef :: Parser (Raw VarDef)
 varDef = do
-   p <- try (reserved "def" *> pattern <* reservedOperator "=")
+   p <- try (pattern <* reservedOperator "=")
    e <- sameOrIndented *> withPos expr
    pure $ VarDef p e
 

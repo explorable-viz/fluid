@@ -12,7 +12,7 @@ def costMatrixInit(rows, cols, window):
   return [| initV(n, m) for (n, m) in (rows, cols) |]
 
 def minAndPrev((i, j), im1, jm1, ijm1):
-  def minim =
+  minim =
     minimal([im1, jm1, ijm1])
 
   if minim |eq| im1:
@@ -30,32 +30,32 @@ def extractPath(indmatrix, (n, m), accum):
     return extractPath(indmatrix, indmatrix ! (n, m), (n - 1, m - 1) :| accum)
 
 def localMinUpdate(seq1, seq2, cost, (costmatrix, indmatrix), (i, j)):
-  def iEntr = nth(i, seq1)
-  def jEntr = nth(j, seq2)
-  def dist = cost(iEntr, jEntr)
-  def ip = i + 1
-  def jp = j + 1
-  def im1 =
+  iEntr = nth(i, seq1)
+  jEntr = nth(j, seq2)
+  dist = cost(iEntr, jEntr)
+  ip = i + 1
+  jp = j + 1
+  im1 =
     costmatrix ! (i, jp)
-  def jm1 =
+  jm1 =
     costmatrix ! (ip, j)
-  def im1jm1 = costmatrix ! (i, j)
-  def (prev, FNum(minim)) =
+  im1jm1 = costmatrix ! (i, j)
+  (prev, FNum(minim)) =
     minAndPrev((i, j), im1, jm1, im1jm1)
-  def newVal = FNum(dist + minim)
+  newVal = FNum(dist + minim)
 
   return (matrixUpdate(costmatrix, (ip, jp), newVal), matrixUpdate(indmatrix, (ip, jp), prev))
 
 def computeDTW(seq1, seq2, cost, window):
-  def n = length(seq1)
-  def m = length(seq2)
-  def initD =
+  n = length(seq1)
+  m = length(seq2)
+  initD =
     costMatrixInit(n + 1, m + 1, window)
-  def initI =
+  initI =
     [| 0 for (i, j) in (n + 1, m + 1) |]
-  def indexing =
+  indexing =
     nextIndices(n, m, window)
-  def (finished, indices) =
+  (finished, indices) =
     foldl(localMinUpdate(seq1, seq2, cost), (initD, initI), indexing)
 
   return (finished, extractPath(indices, (n, m), Nil))

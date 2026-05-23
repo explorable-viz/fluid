@@ -1,6 +1,6 @@
 import slicing.array.lookup_inputs
 
-def ys =
+ys =
   [| nth2(i, j, xs) for (i, j) in (3, 3) |]
 
 ys ! (2, 1)

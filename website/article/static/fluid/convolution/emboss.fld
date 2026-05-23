@@ -1,4 +1,4 @@
-def filter =
+filter =
   [| nth2(i, j, [
     [-2, -1, 0],
     [-1, 1, 1],

@@ -1,2 +1,2 @@
-def filter =
+filter =
   [| nth2(i, j, [[0, 1, 0], [1, -4, 1], [0, 1, 0]]) for (i, j) in (3, 3) |]

@@ -15,7 +15,7 @@ def newDataTable(offset):
 def getByScenario(data, scenario):
   return from_some(find_with_key("scenario", scenario, data))
 
-def probAsText = likelihood_map(likelihoods)
+probAsText = likelihood_map(likelihoods)
 
 def mean(xs):
   return sum(xs) / length(xs)
@@ -29,9 +29,9 @@ def calcLikelihood((min, max), target):
     else:
       return (target - min) / (max - min)
 
-def getByScenario_ = getByScenario(newDataTable(0))
-def ssp119 = getByScenario_("SSP1-1.9")
-def ssp245 = getByScenario_("SSP2-4.5")
+getByScenario_ = getByScenario(newDataTable(0))
+ssp119 = getByScenario_("SSP1-1.9")
+ssp245 = getByScenario_("SSP2-4.5")
 
 MultiView([
   f"""Under the low GHG emissions scenario (SSP1-1.9), global warming of 2°C would

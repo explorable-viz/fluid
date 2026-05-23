@@ -1,5 +1,5 @@
-def k = 6
-def tree =
+k = 6
+tree =
   NonEmpty(
     NonEmpty(Empty, (3, "USA"), Empty),
     (4, "China"),

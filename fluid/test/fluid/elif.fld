@@ -1,5 +1,5 @@
 def graded_leq_p(n, m):
-  def ratio = n / m
+  ratio = n / m
   if ratio <= 0.5:
     return "much less"
   elif ratio <= 1.0:

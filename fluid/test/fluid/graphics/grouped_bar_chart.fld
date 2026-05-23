@@ -1,7 +1,7 @@
 import lib.graphics
 import dataset.renewables_restricted
 
-def year = 2015
+year = 2015
 
 def exclude(countries, yearData):
   return flip(map, yearData, second(filter(lambda (country, countryData): not(elem(country, countries)))))

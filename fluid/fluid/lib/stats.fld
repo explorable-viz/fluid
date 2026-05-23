@@ -1,7 +1,7 @@
 def split([]):
   return ([], [])
 def split(x :| xs):
-  def (ys, zs) = split(xs)
+  (ys, zs) = split(xs)
   return (x :| zs, ys)
 
 def merge(xs, ys):
@@ -20,46 +20,46 @@ def mergesort(xs):
   if length(xs) < 2:
     return xs
   else:
-    def (ys, zs) = split(xs)
+    (ys, zs) = split(xs)
     return merge(mergesort(ys), mergesort(zs))
 
 def find_quantile(q, p, xs):
-  def rank =
+  rank =
     (p / q) * (length(xs) - 1)
 
   if rank == floor(rank):
     return nth(rank, xs)
   else:
-    def x1 = floor(rank)
-    def x2 = ceiling(rank)
-    def left = nth(x1, xs)
-    def right = nth(x2, xs)
+    x1 = floor(rank)
+    x2 = ceiling(rank)
+    left = nth(x1, xs)
+    right = nth(x2, xs)
     return left + (rank - x1) * (right - left)
 
-def find_percentile = find_quantile(100)
+find_percentile = find_quantile(100)
 
 def accum_bins(data, Nil):
   return []
 def accum_bins(data, [l]):
   return []
 def accum_bins(data, l :| r :| es):
-  def (ge, le) =
+  (ge, le) =
     split_on(lambda x: x <= r, data)
   return (le, r - l) :| accum_bins(ge, r :| es)
 
 def cut(xs, nbins):
-  def low = minimum(xs)
-  def binwidth =
+  low = minimum(xs)
+  binwidth =
     (maximum(xs) - low) / nbins
-  def edges =
+  edges =
     [low + x * binwidth for x in [0 .. nbins]]
 
   return accum_bins(xs, edges)
 
 def qcut(xs, qs):
-  def (low, high) =
+  (low, high) =
     (minimum(xs), maximum(xs))
-  def edges =
+  edges =
     append((low :| [find_percentile(x, xs) for x in qs], [high]))
 
   return accum_bins(xs, edges)
@@ -83,7 +83,7 @@ def leq_p(n, m):
     return "more"
 
 def graded_leq_p(n, m):
-  def ratio = n / m
+  ratio = n / m
 
   if ratio <= 1.0:
     if ratio <= 0.5:
