@@ -310,6 +310,7 @@ stmtFwd_stmt (DefRec xcs body) =
 stmtFwd_stmt (Match s μ) = do
    κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ
+stmtFwd_stmt (If sss s) = ifElseFwd_stmt (sss × s)
 stmtFwd_stmt s = E.Return <$> stmtFwd s
 
 ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
@@ -320,6 +321,16 @@ ifElseFwd (sss × s) =
       E.App
          <$> (E.Lambda top <$> (elimBool <$> (ContStmt <$> stmtFwd_stmt b) <*> (ContStmt <$> E.Return <$> e3)))
          <*> desug s1
+
+ifElseFwd_stmt :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Stmt a)
+ifElseFwd_stmt (sss × s) =
+   foldr clause (stmtFwd_stmt s) sss
+   where
+   clause (s1 × b) e3 = do
+      cond <- desug s1
+      b' <- stmtFwd_stmt b
+      e3' <- e3
+      pure $ E.Match cond (elimBool (ContStmt b') (ContStmt e3'))
 
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
