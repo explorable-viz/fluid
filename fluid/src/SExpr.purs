@@ -4,15 +4,17 @@ import Prelude hiding (absurd, top, unless)
 
 import Bind (Bind, Var, varAnon, (↦))
 import Bind (keys) as B
+import Data.Set (Set, empty, singleton, unions) as Set
 import Control.Monad.Error.Class (class MonadError)
 import Data.Bitraversable (rtraverse)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
+import Data.List (List(..), drop, take, unzip, zip, zipWith, (:))
+import Data.List (difference) as L
 import Data.List.NonEmpty (NonEmptyList(..), foldr, groupBy, head, toList)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, second)
@@ -25,8 +27,9 @@ import DataType (Ctr, DataType, arity, cCons, cParagraph, cFalse, cNil, cTrue, c
 import Desugarable (class Desugarable, desug)
 import Dict as D
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), asElim)
+import Expr (class BV, class FV, Cont(..), Elim(..), asElim, bv, fv)
 import Expr (Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
+import Util.Set ((\\), (∪))
 import Lattice (class BoundedLattice, class JoinSemilattice, bot, top)
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -400,7 +403,7 @@ unless :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 unless (Left (PVar _)) = Nil
 unless (Left (PRecord _)) = Nil
 unless (Left (PConstr c _)) =
-   (S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c)
+   (S.toUnfoldable (ctrs (defined (dataTypeFor c))) `L.difference` singleton c)
       <#> \c' -> Left (PConstr c' (replicate (defined (arity c')) pVarAnon))
 unless (Left PListEmpty) = Left (PConstr cCons (replicate 2 pVarAnon)) : Nil
 unless (Left (PListNonEmpty _ _)) = Left PListEmpty : Nil
@@ -533,3 +536,92 @@ derive instance Eq a => Eq (ParagraphElem a)
 derive instance Generic (ParagraphElem a) _
 instance Show a => Show (ParagraphElem a) where
    show c = genericShow c
+
+-- ======================
+-- Free / bound variables
+-- ======================
+
+instance BV Pattern where
+   bv (PVar x) = Set.singleton x
+   bv (PConstr _ ps) = Set.unions (bv <$> ps)
+   bv (PRecord xps) = Set.unions ((bv <<< snd) <$> xps)
+   bv PListEmpty = Set.empty
+   bv (PListNonEmpty p lr) = bv p ∪ bv lr
+
+instance BV ListRestPattern where
+   bv (PListNext p lr) = bv p ∪ bv lr
+   bv (PListVar x) = Set.singleton x
+   bv PListEnd = Set.empty
+
+instance FV (Expr a) where
+   fv (Var x) = Set.singleton x
+   fv (Op op) = Set.singleton op
+   fv (Int _ _) = Set.empty
+   fv (Float _ _) = Set.empty
+   fv (Str _ _) = Set.empty
+   fv (Constr _ _ es) = Set.unions (fv <$> es)
+   fv (Dictionary _ entries) = Set.unions ((\(k × v) -> fv k ∪ fv v) <$> entries)
+   fv (Matrix _ e1 (x × y) e2) = fv e1 ∪ (fv e2 \\ (Set.singleton x ∪ Set.singleton y))
+   fv (Lambda lc) = fv lc
+   fv (Project e _) = fv e
+   fv (DProject e e') = fv e ∪ fv e'
+   fv (App e e') = fv e ∪ fv e'
+   fv (BinaryApp e op e') = fv e ∪ Set.singleton op ∪ fv e'
+   fv (UnaryPrefixApp op e) = Set.singleton op ∪ fv e
+   fv (Ternary cond e1 e2) = fv cond ∪ fv e1 ∪ fv e2
+   fv (Paragraph elems) = Set.unions (fv <$> elems)
+   fv (ListEmpty _) = Set.empty
+   fv (ListNonEmpty _ e l) = fv e ∪ fv l
+   fv (ListEnum e1 e2) = fv e1 ∪ fv e2
+   fv (ListComp _ e quals) = qualsFv quals e
+   fv (DocExpr e e') = fv e ∪ fv e'
+
+instance FV (Stmt a) where
+   fv (Return e) = fv e
+   fv (If clauses elseBody) =
+      Set.unions ((\(c × b) -> fv c ∪ fv b) <$> clauses) ∪ fv elseBody
+   fv (Match scrut branches) =
+      fv scrut ∪ Set.unions ((\(p × b) -> fv b \\ bv p) <$> branches)
+   fv (Def vd) = fv vd
+   fv (DefRec rs) = fvRecDefs rs
+   fv Pass = Set.empty
+   fv (ExprStmt e) = fv e
+   fv (Assert cond msg) = fv cond ∪ maybe Set.empty fv msg
+   fv (Seq s1 s2) = fv s1 ∪ fv s2
+
+instance FV (VarDef a) where
+   fv (VarDef _ e) = fv e
+
+instance FV (LambdaClause a) where
+   fv (LambdaClause (ps × e)) = fv e \\ Set.unions (bv <$> ps)
+
+instance FV (Clause a) where
+   fv (Clause (ps × b)) = fv b \\ Set.unions (bv <$> ps)
+
+instance FV (DictEntry a) where
+   fv (ExprKey e) = fv e
+   fv (VarKey _ _) = Set.empty
+
+instance FV (ListRest a) where
+   fv (End _) = Set.empty
+   fv (Next _ e l) = fv e ∪ fv l
+
+instance FV (ParagraphElem a) where
+   fv (Token _) = Set.empty
+   fv (Unquote e) = fv e
+
+-- RecDefs is a NonEmptyList Branch; the recursive group is mutually-bound, so
+-- free vars are the union of each clause body's frees minus all branches' names
+-- and each clause's own pattern bindings.
+fvRecDefs :: forall a. RecDefs a -> Set.Set Var
+fvRecDefs rs =
+   Set.unions (fv <$> (snd <$> rs)) \\ Set.unions (Set.singleton <<< fst <$> rs)
+
+-- List-comprehension qualifiers bind their variables for subsequent qualifiers
+-- (and the producing expression). Process right-to-left.
+qualsFv :: forall a. List (Qualifier a) -> Expr a -> Set.Set Var
+qualsFv Nil e = fv e
+qualsFv (q : qs) e = case q of
+   ListCompGuard cond -> fv cond ∪ qualsFv qs e
+   ListCompGen p src -> fv src ∪ (qualsFv qs e \\ bv p)
+   ListCompDecl (VarDef p src) -> fv src ∪ (qualsFv qs e \\ bv p)
