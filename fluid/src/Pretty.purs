@@ -261,8 +261,13 @@ prettyConsArg e lhs = case rootOp e of
    Just op -> if (if lhs then (<=) else (<)) (getPrec op) (getPrec ":") then parens (pretty e) else pretty e
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
+prettyAppChain (App f (Constr _ "__NoArgs" Nil)) as =
+   prettyAppChain f Nil <> text "()" <> renderArgs as
+   where
+   renderArgs Nil = mempty
+   renderArgs xs = parens (prettyList xs)
 prettyAppChain (App f a) as = prettyAppChain f (a : as)
-prettyAppChain f (Constr _ "__NoArgs" Nil : Nil) = prettySimple f <> text "()"
+prettyAppChain f Nil = prettySimple f
 prettyAppChain f as = prettySimple f <> parens (prettyList as)
 
 commas :: List Doc -> Doc

@@ -10,6 +10,17 @@ misc_cases =
    , { file: "assert_implicit.fld", fwd_expect: "10" }
    , { file: "bare_return.fld", fwd_expect: "None" }
    , { file: "zero_arg.fld", fwd_expect: "\"hello\"" }
+   , { file: "early_return.fld", fwd_expect: "\"smaller\"" }
+   , { file: "both_branches.fld", fwd_expect: "\"smaller\"" }
+   , { file: "branch_local.fld", fwd_expect: "6" }
+   , { file: "closure_capture.fld", fwd_expect: "6" }
+   , { file: "param_reassign.fld", fwd_expect: "15" }
+   , { file: "self_capture_def.fld", fwd_expect: "cl" }
+   , { file: "lambda.fld", fwd_expect: "15" }
+   , { file: "self.fld", fwd_expect: "120" }
+   , { file: "implicit_none.fld", fwd_expect: "None" }
+   , { file: "mutual_after_rebind.fld", fwd_expect: "(0, 1)" }
+   , { file: "mutual_def_in_branch.fld", fwd_expect: "(\"via mutual region\", \"via mutual region\")" }
    , { file: "boolean_precedence.fld", fwd_expect: "True" }
    , { file: "compose.fld", fwd_expect: "5" }
    , { file: "custom_infix.fld", fwd_expect: "True" }
