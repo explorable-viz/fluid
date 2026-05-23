@@ -76,8 +76,6 @@ instance Ann a => IsSimple (Expr a) where
 instance Highlightable a => IsSimple (E.Expr a) where
    isSimple (E.Constr _ c _) | c == cCons = false
    isSimple (E.Lambda _ _) = false
-   isSimple (E.Let _ _) = false
-   isSimple (E.LetRec _ _) = false
    isSimple _ = true
 
 instance Highlightable a => IsSimple (Val a) where
@@ -286,8 +284,6 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Lambda a o) = highlightIf a (text "lambda") <+> pretty o -- really?
    pretty (E.DProject e x) = pretty e <> brackets (pretty x)
    pretty (E.App e e') = pretty e <> parens (pretty e') -- TODO
-   pretty (E.Let (E.VarDef o e) e') = text "def" <+> pretty o <> block (pretty e) <++> pretty e'
-   pretty (E.LetRec (E.RecDefs _ p) e') = text "def" <+> pretty p <++> pretty e'
    pretty (E.DocExpr p e) = text "@doc" <> parens (pretty p) <+> pretty e
 
 instance Highlightable a => Pretty (E.Stmt a) where

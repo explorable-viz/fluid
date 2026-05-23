@@ -168,13 +168,6 @@ eval doc_opt γ e0 αs = do
             v <- eval Nothing γ e αs
             v' <- eval Nothing γ e' αs
             withMsg ("In " <> funName e) $ apply doc_opt v v'
-         Let (VarDef σ e) e' -> do
-            v <- eval Nothing γ e αs
-            γ' × _ × αs' <- withMsg "In variable def" $ match v σ
-            eval doc_opt (γ <+> γ') e' αs'
-         LetRec (RecDefs α ρ) e -> do
-            γ' <- closeDefs γ ρ (insert α αs)
-            eval doc_opt (γ <+> γ') e (insert α αs)
          DocExpr e e' -> do
             v <- eval Nothing γ e αs
             traceWhen (isJust doc_opt) "Outer doc trumps inner doc"
