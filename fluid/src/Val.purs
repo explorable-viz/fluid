@@ -37,6 +37,8 @@ import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈),
 
 data Val a = Val a (Maybe (Val a)) (BaseVal a)
 
+data Result a = Returns (Val a)
+
 data BaseVal a
    = Int Int
    | Float Number
