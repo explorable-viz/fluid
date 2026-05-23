@@ -281,23 +281,6 @@ exprFwd (DocExpr s s') = do
 
 type IfElseClauses a = NonEmptyList (Expr a × Stmt a) × Stmt a
 
-stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Expr a)
-stmtFwd (Return e) = desug e
-stmtFwd (If sss s) = ifElseFwd (sss × s)
-stmtFwd (Match s μ) =
-   E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
-stmtFwd (Def ds body) = defStmtFwd ds body
-   where
-   defStmtFwd (NonEmptyList (d :| Nil)) b =
-      E.Let <$> varDefFwd d <*> stmtFwd b
-   defStmtFwd (NonEmptyList (d :| d' : ds')) b =
-      E.Let <$> varDefFwd d <*> defStmtFwd (NonEmptyList (d' :| ds')) b
-stmtFwd (DefRec xcs body) =
-   E.LetRec <$> recDefsFwd xcs <*> stmtFwd body
-
--- Structure-preserving stmt desugaring. Def/DefRec emit core Stmt
--- counterparts; other surface stmts fall back to stmtFwd and wrap in
--- E.Return.
 stmtFwd_stmt :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Stmt a)
 stmtFwd_stmt (Def ds body) = defStmtFwd ds body
    where
@@ -310,20 +293,11 @@ stmtFwd_stmt (DefRec xcs body) =
 stmtFwd_stmt (Match s μ) = do
    κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ
-stmtFwd_stmt (If sss s) = ifElseFwd_stmt (sss × s)
+stmtFwd_stmt (If sss s) = ifElseFwd (sss × s)
 stmtFwd_stmt (Return e) = E.Return <$> desug e
 
-ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Expr a)
+ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Stmt a)
 ifElseFwd (sss × s) =
-   foldr clause (stmtFwd s) sss
-   where
-   clause (s1 × b) e3 =
-      E.App
-         <$> (E.Lambda top <$> (elimBool <$> (ContStmt <$> stmtFwd_stmt b) <*> (ContStmt <$> E.Return <$> e3)))
-         <*> desug s1
-
-ifElseFwd_stmt :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Stmt a)
-ifElseFwd_stmt (sss × s) =
    foldr clause (stmtFwd_stmt s) sss
    where
    clause (s1 × b) e3 = do
