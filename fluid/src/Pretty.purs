@@ -204,6 +204,7 @@ instance Ann a => Pretty (Stmt a) where
    pretty (Def vd) = pretty vd
    pretty (DefRec xcs) = pretty xcs
    pretty Pass = text "pass"
+   pretty (ExprStmt e) = pretty e
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
 
 instance Ann a => Pretty (Clause a) where
@@ -294,6 +295,7 @@ instance Highlightable a => Pretty (E.Stmt a) where
    pretty (E.Def (E.VarDef o e)) = pretty o <+> text "=" <+> pretty e
    pretty (E.DefRec (E.RecDefs _ ρ)) = text "def" <+> pretty ρ
    pretty E.Pass = text "pass"
+   pretty (E.ExprStmt e) = pretty e
    pretty (E.Seq s1 s2) = pretty s1 <++> pretty s2
 
 instance Highlightable a => Pretty (Cont a) where

@@ -84,7 +84,7 @@ varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (reserved "pass" *> pure Pass)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> (reserved "return" *> expr <#> Return) <|> (reserved "pass" *> pure Pass) <|> (expr <#> ExprStmt)
 
 stmts :: Parser (Raw Stmt)
 stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq

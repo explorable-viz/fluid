@@ -20,6 +20,7 @@ misc_cases =
           \(2 :| 2 :| -2 :| -2 :| []) :| []"
      }
    , { file: "elif.fld", fwd_expect: """"much more" :| "more" :| "less" :| "much less" :| []""" }
+   , { file: "expr_stmt.fld", fwd_expect: "6" }
    , { file: "factorial.fld", fwd_expect: "40320" }
    , { file: "filter.fld", fwd_expect: "8 :| 7 :| []" }
    , { file: "first_class_constr.fld", fwd_expect: "(10 :| []) :| (12 :| []) :| (20 :| []) :| []" }
