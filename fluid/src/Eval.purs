@@ -199,14 +199,10 @@ evalStmt doc_opt γ s αs = case s of
       case κ of
          ContStmt s' -> evalStmt doc_opt (γ <+> γ') s' (αs ∪ αs')
          _ -> error "Stmt continuation expected as match branch"
-   Def (VarDef σ e) s' -> do
-      v <- eval Nothing γ e αs
-      γ' × _ × αs' <- withMsg "In variable def" $ match v σ
-      evalStmt doc_opt (γ <+> γ') s' αs'
    DefRec (RecDefs α ρ) s' -> do
       γ' <- closeDefs γ ρ (insert α αs)
       evalStmt doc_opt (γ <+> γ') s' (insert α αs)
-   Def' (VarDef σ e) -> do
+   Def (VarDef σ e) -> do
       v <- eval Nothing γ e αs
       γ' × _ × αs' <- withMsg "In assignment" $ match v σ
       pure (Assigns γ' αs')

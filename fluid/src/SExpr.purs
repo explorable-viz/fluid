@@ -285,9 +285,9 @@ stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.
 stmtFwd (Def ds body) = defStmtFwd ds body
    where
    defStmtFwd (NonEmptyList (d :| Nil)) b =
-      E.Seq <$> (E.Def' <$> varDefFwd d) <*> stmtFwd b
+      E.Seq <$> (E.Def <$> varDefFwd d) <*> stmtFwd b
    defStmtFwd (NonEmptyList (d :| d' : ds')) b =
-      E.Seq <$> (E.Def' <$> varDefFwd d) <*> defStmtFwd (NonEmptyList (d' :| ds')) b
+      E.Seq <$> (E.Def <$> varDefFwd d) <*> defStmtFwd (NonEmptyList (d' :| ds')) b
 stmtFwd (DefRec xcs body) =
    E.DefRec <$> recDefsFwd xcs <*> stmtFwd body
 stmtFwd (Match s μ) = do
