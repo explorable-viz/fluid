@@ -186,14 +186,19 @@ checkDA γ (S.Assert cond msg) = do
       Nothing -> pure unit
    pure (Assigns Map.empty)
 checkDA γ (S.Def (S.VarDef p e)) = do
+   let assigned = bv p
+   let bad = assigned `Set.intersection` capturesE e
+   for_ (Set.toUnfoldable bad :: Array Var) \x ->
+      throw $ "Variable captured by its own definition: " <> x
    checkExprDA γ e
-   pure (Assigns (mapFromSet true (bv p)))
+   pure (Assigns (mapFromSet true assigned))
 checkDA γ (S.DefRec rs) = do
    let regionNames = unions (Set.singleton <<< fst <$> rs)
    let γ' = γ `overrideCtx` mapFromSet true regionNames
    for_ rs \(_ × S.Clause (ps × body)) -> do
       let params = unions (bv <$> ps)
-      let γ'' = γ' `overrideCtx` mapFromSet true params
+      let locals_ff = assigns body \\ params
+      let γ'' = γ' `overrideCtx` mapFromSet true params `overrideCtx` mapFromSet false locals_ff
       void $ checkDA γ'' body
    pure (Assigns (mapFromSet true regionNames))
 checkDA γ (S.Seq s1 s2) = do
@@ -201,6 +206,9 @@ checkDA γ (S.Seq s1 s2) = do
    case r1 of
       Returns -> throw "Unreachable statement"
       Assigns δ -> do
+         let bad = captures s1 `Set.intersection` assigns s2
+         for_ (Set.toUnfoldable bad :: Array Var) \x ->
+            throw $ "Captured variable reassigned: " <> x
          r2 <- checkDA (γ `overrideCtx` δ) s2
          pure (overrideRes r1 r2)
 checkDA γ (S.If clauses elseBody) = do
