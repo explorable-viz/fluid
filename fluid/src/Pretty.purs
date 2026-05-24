@@ -5,7 +5,7 @@ import Prelude
 import Bind (Bind, Var, (↦))
 import Data.List (List(..), fromFoldable, singleton, (:))
 import Data.List.NonEmpty (NonEmptyList(..), toList)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Data.NonEmpty ((:|))
 import Data.Traversable (class Foldable)
@@ -199,7 +199,7 @@ instance Ann a => Pretty (Stmt a) where
    pretty (Return e) = text "return" <+> pretty e
    pretty (If (NonEmptyList (ss :| sss)) e) =
       vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))
-         <++> text "else" <> block (pretty e)
+         <++> maybe mempty (\b -> text "else" <> block (pretty b)) e
       where
       prettyClause w (s × b) = text w <+> expr (pretty s) <> block (pretty b)
    pretty (Match s cs) = text "match" <+> pretty s <> block (pretty cs)

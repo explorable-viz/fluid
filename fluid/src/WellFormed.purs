@@ -39,7 +39,7 @@ implicitNone (S.ExprStmt e) = S.ExprStmt e
 implicitNone (S.Assert e e') = S.Assert e e'
 implicitNone (S.Def d) = S.Def d
 implicitNone (S.Seq s1 s2) = S.Seq (implicitNone s1) (implicitNone s2)
-implicitNone (S.If es s) = S.If ((\(e × s') -> e × implicitNone s') <$> es) (implicitNone s)
+implicitNone (S.If es s) = S.If ((\(e × s') -> e × implicitNone s') <$> es) (implicitNone <$> s)
 implicitNone (S.Match e ps) = S.Match e ((\(p × s) -> p × implicitNone s) <$> ps)
 implicitNone (S.DefRec ds) =
    S.DefRec ((\(x × S.Clause r (ps × s)) -> x × S.Clause r (ps × close r (implicitNone s))) <$> ds)
@@ -65,7 +65,7 @@ assigns (S.Def (S.VarDef p _)) = bv p
 assigns (S.ExprStmt _) = Set.empty
 assigns (S.Assert _ _) = Set.empty
 assigns (S.Return _) = Set.empty
-assigns (S.If es s) = unions (assigns <$> (snd <$> es)) ∪ assigns s
+assigns (S.If es s) = unions (assigns <$> (snd <$> es)) ∪ maybe Set.empty assigns s
 assigns (S.Match _ ps) = unions (assigns <$> (snd <$> ps))
 assigns (S.DefRec ds) = unions (Set.singleton <<< fst <$> ds)
 assigns (S.Seq s1 s2) = assigns s1 ∪ assigns s2
@@ -77,7 +77,7 @@ captures (S.ExprStmt e) = capturesE e
 captures (S.Assert e e') = capturesE e ∪ maybe Set.empty capturesE e'
 captures (S.Return e) = capturesE e
 captures (S.If es s) =
-   unions ((\(e × s') -> capturesE e ∪ captures s') <$> es) ∪ captures s
+   unions ((\(e × s') -> capturesE e ∪ captures s') <$> es) ∪ maybe Set.empty captures s
 captures (S.Match e ps) =
    capturesE e ∪ unions ((\(_ × s) -> captures s) <$> ps)
 captures (S.DefRec ds) =
@@ -170,7 +170,9 @@ checkDA γ (S.If es s) = do
            pure (r × ((assignsEmpty <$ e) × s''))
       )
       es
-   r × s' <- checkDA γ s
+   r × s' <- case s of
+      Just s'' -> map Just <$> checkDA γ s''
+      Nothing -> pure (assignsEmpty × Nothing)
    pure (foldl1 mergeRes (NEL.cons r (fst <$> es')) × S.If (snd <$> es') s')
 checkDA γ (S.Match e ps) = do
    checkExprDA γ e

@@ -113,7 +113,7 @@ subpatts (Right (PListNext p o)) = Left p : Right o : Nil
 
 data Stmt a
    = Return (Expr a)
-   | If (NonEmptyList (Expr a × Stmt a)) (Stmt a)
+   | If (NonEmptyList (Expr a × Stmt a)) (Maybe (Stmt a))
    | Match (Expr a) (NonEmptyList (Pattern × Stmt a))
    | Def (VarDef a)
    | DefRec (RecDefs a)
@@ -303,12 +303,12 @@ stmtFwd (DefRec xcs) = E.DefRec <$> recDefsFwd xcs
 stmtFwd (Match s μ) = do
    κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause bot <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ
-stmtFwd (If sss s) = ifElseFwd (sss × s)
+stmtFwd (If sss s) = ifElseFwd (sss × fromMaybe Pass s)
 stmtFwd (Return e) = E.Return <$> desug e
 stmtFwd Pass = pure E.Pass
 stmtFwd (ExprStmt e) = E.ExprStmt <$> desug e
 stmtFwd (Assert cond msg_opt) =
-   stmtFwd (If (singleton (App (Var "not") cond × ExprStmt (App (Var "error") msg))) Pass)
+   stmtFwd (If (singleton (App (Var "not") cond × ExprStmt (App (Var "error") msg))) Nothing)
    where
    msg = fromMaybe (Str top "AssertionError") msg_opt
 stmtFwd (Seq s1 s2) = E.Seq <$> stmtFwd s1 <*> stmtFwd s2
