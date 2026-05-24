@@ -100,11 +100,26 @@ No undo for GitHub Projects v2 field mutations.
 
 ## GitHub conventions
 
-- **Issue titles**: noun phrase describing goal.
-- **New issues**: add to [project board](https://github.com/orgs/explorable-viz/projects/1) as Proposed or Planned.
+- **Issue titles**: noun phrase describing goal. "Fluid" is redundant in titles (repo is Fluid) — omit it.
+- **Issue bodies**: do not hard-wrap paragraphs; GitHub markdown flows them, hard wraps render as ragged short lines. Code fences: omit language tag rather than guess.
+- **See also footer**: when an issue references other issues or external resources, end with a `## See also` paragraph listing them as bullets. Bare `#N` links render the issue title inline.
+- **New issues**: add to [project board](https://github.com/orgs/fluid-org/projects/1) and populate **Status** (usually `Proposed` for new work) and **Aspect**. Also set Type, labels, and milestone when appropriate.
 - **Labels**: use existing labels (`implementation`, `testing`, `setup`, `documentation`).
 - **Milestones**: all issues must belong to milestone.
 - **Issue bodies**: keep checklist items updated.
+
+## Testing
+
+`yarn test` runs the unit test suite via `fluid/test/Test.purs`'s `tests`, which defaults to `allTests`. To run a focused subset:
+
+1. Edit `fluid/test/Test.purs`: change `tests = allTests` to `tests = scratchpad`.
+2. Edit `scratchpad` to select cases. Whole suite: `scratchpad = second void <$> suite misc_cases (1 × false)`. Specific files: `scratchpad = filterSuite [ "lambda.fld", "self.fld" ] misc_cases suite` (use `illFormed_cases` and `illFormedSuite` for ill-formed).
+3. `yarn build && yarn test`.
+4. When done, revert `tests = allTests`. Leave `scratchpad` as-is; it's a working area.
+
+Do not invent ad hoc CLI invocations of `fluid.mjs` to run individual `.fld` files — the test harness sets up paths, prelude, and reports errors in the same form tests assert against.
+
+`yarn test` doesn't exercise website fixtures. Run `./script/test-website-all.sh` from the repo root after changes that touch parsing, desugaring, evaluation, or well-formedness; before pushing a commit that completes a meaningful chunk of work; or whenever in doubt about wider impact. Don't run it on every change — it's slow (a few minutes per website).
 
 ## Token setup
 
