@@ -1,0 +1,8 @@
+# Contiguous same-name clauses with disjoint patterns: piecewise definition.
+# Accepted by Fluid; rejected by PurePy's stricter distinct-names rule.
+def f([]):
+   return 0
+def f([x]):
+   return x
+
+f([3])

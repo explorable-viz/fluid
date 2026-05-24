@@ -4,7 +4,7 @@ import Prelude hiding (absurd, top, unless)
 
 import Bind (Bind, Var, varAnon, (↦))
 import Bind (keys) as B
-import Data.Set (Set, empty, singleton, unions) as Set
+import Data.Set (Set, empty, insert, member, singleton, unions) as Set
 import Control.Monad.Error.Class (class MonadError)
 import Data.Bitraversable (rtraverse)
 import Data.Either (Either(..))
@@ -200,11 +200,25 @@ varDefFwd (VarDef p s) =
    E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Return (Dictionary top Nil))))) <*> desug s
 
 -- RecDefs
--- In the formalism, "group by name" is part of the syntax.
+-- In the formalism, "group by name" is part of the syntax. Clauses for a given
+-- name must be contiguous; non-contiguous same-name groups would otherwise be
+-- silently merged by Map.fromFoldable, dropping the earlier definition.
 recDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
-recDefsFwd xcs = E.RecDefs top <$> D.fromFoldable <$> traverse recDefFwd xcss
+recDefsFwd xcs = do
+   let xcss = map RecDef (groupBy (eq `on` fst) xcs)
+   let names = (fst <<< head <<< unwrap) <$> toList xcss
+   case findDuplicate names of
+      Just x -> throw $ "Non-contiguous clauses for: " <> x
+      Nothing -> pure unit
+   E.RecDefs top <$> D.fromFoldable <$> traverse recDefFwd xcss
    where
-   xcss = map RecDef (groupBy (eq `on` fst) xcs) :: NonEmptyList (RecDef a)
+   findDuplicate :: List Var -> Maybe Var
+   findDuplicate = go Set.empty
+      where
+      go _ Nil = Nothing
+      go seen (x : xs)
+         | x `Set.member` seen = Just x
+         | otherwise = go (Set.insert x seen) xs
 
 -- RecDef
 recDefFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDef a -> m (Bind (Elim a))

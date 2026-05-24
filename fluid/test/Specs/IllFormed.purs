@@ -15,4 +15,5 @@ illFormed_cases =
    , { file: "self_capture_lambda.fld", expected_error: "Variable captured by its own definition: f" }
    , { file: "unbound_local.fld", expected_error: "Not definitely assigned: y" }
    , { file: "duplicate_def_in_region.fld", expected_error: "Shape mismatch" }
+   , { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }
    ]

@@ -1,0 +1,11 @@
+# Fluid generalises PurePy's distinct-names rule by permitting piecewise
+# definitions, but clauses for a given name must be contiguous within their
+# mutual region; otherwise the earlier clauses would be silently discarded.
+def f([]):
+   return 0
+def g():
+   return 1
+def f([x]):
+   return x
+
+f([])

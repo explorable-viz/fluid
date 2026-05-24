@@ -16,6 +16,7 @@ misc_cases =
    , { file: "closure_capture.fld", fwd_expect: "6" }
    , { file: "param_reassign.fld", fwd_expect: "15" }
    , { file: "self_capture_def.fld", fwd_expect: "cl" }
+   , { file: "piecewise_def.fld", fwd_expect: "3" }
    , { file: "lambda.fld", fwd_expect: "15" }
    , { file: "self.fld", fwd_expect: "120" }
    , { file: "implicit_none.fld", fwd_expect: "None" }

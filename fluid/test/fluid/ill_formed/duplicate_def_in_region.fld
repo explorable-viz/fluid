@@ -1,3 +1,7 @@
+# Fluid generalises PurePy's distinct-names rule: clauses for the same name in
+# a mutual region are allowed only when their patterns are non-overlapping
+# (piecewise definition). Here both clauses have identical shape, so overlap
+# detection during eliminator construction rejects them.
 def f():
    return 0
 def g():
