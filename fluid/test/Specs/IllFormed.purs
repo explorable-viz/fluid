@@ -2,18 +2,27 @@ module Test.Specs.IllFormed where
 
 import Test.Util.Suite (IllFormedSpec)
 
+-- Spec-derived (PurePy corpus): each entry corresponds to a test in
+-- pure-py-spec/test/ill-formed/semantic.
+purepy_cases :: Array IllFormedSpec
+purepy_cases =
+   [ { file: "purepy/unreachable.fld", expected_error: "Unreachable statement" }
+   , { file: "purepy/mutual_split.fld", expected_error: "Unbound name: odd" }
+   , { file: "purepy/cond_partial_def.fld", expected_error: "Not definitely assigned: x" }
+   , { file: "purepy/no_else.fld", expected_error: "Not definitely assigned: x" }
+   , { file: "purepy/shadow_captured.fld", expected_error: "Captured variable reassigned: x" }
+   , { file: "purepy/shadow_captured_global.fld", expected_error: "Captured variable reassigned: x" }
+   , { file: "purepy/shadow_captured_mutual.fld", expected_error: "Captured variable reassigned: g" }
+   , { file: "purepy/self_capture.fld", expected_error: "Variable captured by its own definition: x" }
+   , { file: "purepy/self_capture_lambda.fld", expected_error: "Variable captured by its own definition: f" }
+   , { file: "purepy/unbound_local.fld", expected_error: "Not definitely assigned: y" }
+   , { file: "purepy/duplicate_def_in_region.fld", expected_error: "Shape mismatch" }
+   , { file: "purepy/mutual_split_by_assign.fld", expected_error: "Unbound name: g" }
+   , { file: "purepy/mutual_def_block_local.fld", expected_error: "Not definitely assigned: g" }
+   ]
+
+-- Fluid-specific ill-formed cases (no PurePy correspondent).
 illFormed_cases :: Array IllFormedSpec
 illFormed_cases =
-   [ { file: "unreachable.fld", expected_error: "Unreachable statement" }
-   , { file: "mutual_split.fld", expected_error: "Unbound name: odd" }
-   , { file: "cond_partial_def.fld", expected_error: "Not definitely assigned: x" }
-   , { file: "no_else.fld", expected_error: "Not definitely assigned: x" }
-   , { file: "shadow_captured.fld", expected_error: "Captured variable reassigned: x" }
-   , { file: "shadow_captured_global.fld", expected_error: "Captured variable reassigned: x" }
-   , { file: "shadow_captured_mutual.fld", expected_error: "Captured variable reassigned: g" }
-   , { file: "self_capture.fld", expected_error: "Variable captured by its own definition: x" }
-   , { file: "self_capture_lambda.fld", expected_error: "Variable captured by its own definition: f" }
-   , { file: "unbound_local.fld", expected_error: "Not definitely assigned: y" }
-   , { file: "duplicate_def_in_region.fld", expected_error: "Shape mismatch" }
-   , { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }
+   [ { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }
    ]

@@ -1,0 +1,17 @@
+# Mutual region of {f, g} is split by an intervening assignment.
+# f references g, but g is defined in a separate region after c = 100.
+def f(n):
+   if n == 0:
+      return 0
+   else:
+      return g(n - 1)
+
+c = 100
+
+def g(n):
+   if n == 0:
+      return c
+   else:
+      return f(n - 1)
+
+f(5)

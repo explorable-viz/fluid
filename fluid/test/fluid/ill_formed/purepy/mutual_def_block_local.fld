@@ -1,0 +1,13 @@
+# g is defined only in the if branch; after the if-else merge it is ff.
+b = True
+
+if b:
+   def f():
+      return g()
+   def g():
+      return "g via mutual block"
+else:
+   def f():
+      return "f only"
+
+g()
