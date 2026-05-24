@@ -52,10 +52,7 @@ def actions_with_score(action_counts, eval_score):
   return sum([ r.z for r in action_counts if r.y == eval_score ])
 
 def proportion(x, y):
-  if y == 0:
-    return 0
-  else:
-    return x / y
+  return 0 if y == 0 else x / y
 
 def max_with_score(actions, eval_score):
   return maximum([

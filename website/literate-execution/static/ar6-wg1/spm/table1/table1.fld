@@ -23,11 +23,9 @@ def mean(xs):
 def calcLikelihood((min, max), target):
   if max < target:
     return 0.05
-  else:
-    if target <= min:
-      return 0.95
-    else:
-      return (target - min) / (max - min)
+  if target <= min:
+    return 0.95
+  return (target - min) / (max - min)
 
 getByScenario_ = getByScenario(newDataTable(0))
 ssp119 = getByScenario_("SSP1-1.9")
