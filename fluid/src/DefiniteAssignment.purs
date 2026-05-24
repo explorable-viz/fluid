@@ -17,9 +17,6 @@ data TyResult a = Returns | Assigns a
 derive instance Functor TyResult
 derive instance Eq a => Eq (TyResult a)
 
-assignsEmpty :: TyResult Ctx
-assignsEmpty = Assigns Map.empty
-
 fromSet :: forall k v. Ord k => v -> Set k -> Map k v
 fromSet v = foldl (\m k -> Map.insert k v m) Map.empty
 

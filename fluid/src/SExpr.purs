@@ -24,7 +24,8 @@ import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
-import DefiniteAssignment (Ctx, TyResult(..), assignsEmpty)
+import Data.Map as Map
+import DefiniteAssignment (Ctx, TyResult(..))
 import Lattice (class JoinSemilattice)
 import Desugarable (class Desugarable, desug)
 import Dict as D
@@ -163,7 +164,7 @@ instance Desugarable Clauses Elim where
    desug μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
 
 instance Desugarable LambdaClause Elim where
-   desug (LambdaClause (ps × e)) = desug (Clauses (singleton (Clause assignsEmpty (ps × Return e))))
+   desug (LambdaClause (ps × e)) = desug (Clauses (singleton (Clause (Assigns Map.empty) (ps × Return e))))
 
 desugarModuleFwd :: forall m. MonadError Error m => Module (TyResult Ctx) -> m (E.Module (TyResult Ctx))
 desugarModuleFwd = moduleFwd
@@ -195,7 +196,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- in evaluation.
 varDefFwd :: forall m. MonadError Error m => VarDef (TyResult Ctx) -> m (E.VarDef (TyResult Ctx))
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause assignsEmpty (singleton p × Return (Dictionary Returns Nil))))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause (Assigns Map.empty) (singleton p × Return (Dictionary Returns Nil))))) <*> desug s
 
 recDefsFwd :: forall m. MonadError Error m => RecDefs (TyResult Ctx) -> m (E.RecDefs (TyResult Ctx))
 recDefsFwd xcs = do
@@ -222,21 +223,21 @@ recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (close <<< sn
 paragraphFwd :: forall m. MonadError Error m => List (ParagraphElem (TyResult Ctx)) -> m (E.Expr (TyResult Ctx))
 paragraphFwd elems = do
    es <- paragraphElemsFwd elems
-   pure (E.Constr assignsEmpty cParagraph (es : Nil))
+   pure (E.Constr (Assigns Map.empty) cParagraph (es : Nil))
 
 paragraphElemsFwd
    :: forall m
     . MonadError Error m
    => List (ParagraphElem (TyResult Ctx))
    -> m (E.Expr (TyResult Ctx))
-paragraphElemsFwd Nil = pure (enil assignsEmpty)
+paragraphElemsFwd Nil = pure (enil (Assigns Map.empty))
 paragraphElemsFwd (Token s : elems) = do
    e' <- paragraphElemsFwd elems
-   pure (econs assignsEmpty (E.Str assignsEmpty s) e')
+   pure (econs (Assigns Map.empty) (E.Str (Assigns Map.empty) s) e')
 paragraphElemsFwd (Unquote s : elems) = do
    e <- desug s
    e' <- paragraphElemsFwd elems
-   pure (econs assignsEmpty e e')
+   pure (econs (Assigns Map.empty) e e')
 
 -- Expr
 exprFwd :: forall m. MonadError Error m => Expr (TyResult Ctx) -> m (E.Expr (TyResult Ctx))
@@ -300,7 +301,7 @@ stmtFwd :: forall m. MonadError Error m => Stmt (TyResult Ctx) -> m (E.Stmt (TyR
 stmtFwd (Def vd) = E.Def <$> varDefFwd vd
 stmtFwd (DefRec xcs) = E.DefRec <$> recDefsFwd xcs
 stmtFwd (Match s μ) = do
-   κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause assignsEmpty <$> first singleton <$> μ)))
+   κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause (Assigns Map.empty) <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ
 stmtFwd (If sss s) = ifElseFwd (sss × fromMaybe Pass s)
 stmtFwd (Return e) = E.Return <$> desug e

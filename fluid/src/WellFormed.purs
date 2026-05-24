@@ -13,7 +13,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (Ctx, TyResult(..), assignsEmpty, fromSet, mergeRes, overrideCtx, overrideRes)
+import DefiniteAssignment (Ctx, TyResult(..), fromSet, mergeRes, overrideCtx, overrideRes)
 import Effect.Exception (Error)
 import Expr (bv, fv)
 import Lattice (Raw)
@@ -91,23 +91,23 @@ capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
 wellFormed :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m (TyResult Ctx × S.Stmt (TyResult Ctx))
-wellFormed _ S.Pass = pure (assignsEmpty × S.Pass)
+wellFormed _ S.Pass = pure (Assigns Map.empty × S.Pass)
 wellFormed γ (S.Return e) = do
    wellFormedExpr γ e
-   pure (Returns × S.Return (assignsEmpty <$ e))
+   pure (Returns × S.Return (Assigns Map.empty <$ e))
 wellFormed γ (S.ExprStmt e) = do
    wellFormedExpr γ e
-   pure (assignsEmpty × S.ExprStmt (assignsEmpty <$ e))
+   pure (Assigns Map.empty × S.ExprStmt (Assigns Map.empty <$ e))
 wellFormed γ (S.Assert e e') = do
    wellFormedExpr γ e
    for_ e' (wellFormedExpr γ)
-   pure (assignsEmpty × S.Assert (assignsEmpty <$ e) ((assignsEmpty <$ _) <$> e'))
+   pure (Assigns Map.empty × S.Assert (Assigns Map.empty <$ e) ((Assigns Map.empty <$ _) <$> e'))
 wellFormed γ (S.Def (S.VarDef p e)) = do
    let xs = bv p
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throw $ "Variable captured by its own definition: " <> x
    wellFormedExpr γ e
-   pure (Assigns (fromSet true xs) × S.Def (S.VarDef p (assignsEmpty <$ e)))
+   pure (Assigns (fromSet true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e)))
 wellFormed γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
    let γ' = γ `overrideCtx` fromSet true fs
@@ -135,12 +135,12 @@ wellFormed γ (S.If es s) = do
       ( \(e × s') -> do
            wellFormedExpr γ e
            r × s'' <- wellFormed γ s'
-           pure (r × ((assignsEmpty <$ e) × s''))
+           pure (r × ((Assigns Map.empty <$ e) × s''))
       )
       es
    r × s' <- case s of
       Just s'' -> map Just <$> wellFormed γ s''
-      Nothing -> pure (assignsEmpty × Nothing)
+      Nothing -> pure (Assigns Map.empty × Nothing)
    pure (foldl1 mergeRes (NEL.cons r (fst <$> es')) × S.If (snd <$> es') s')
 wellFormed γ (S.Match e ps) = do
    wellFormedExpr γ e
@@ -151,7 +151,7 @@ wellFormed γ (S.Match e ps) = do
            pure (stripVars xs r × (p × s'))
       )
       ps
-   pure (mergeRes (foldl1 mergeRes (fst <$> ps')) assignsEmpty × S.Match (assignsEmpty <$ e) (snd <$> ps'))
+   pure (mergeRes (foldl1 mergeRes (fst <$> ps')) (Assigns Map.empty) × S.Match (Assigns Map.empty <$ e) (snd <$> ps'))
 
 wellFormedExpr :: forall m a. MonadError Error m => Ctx -> S.Expr a -> m Unit
 wellFormedExpr γ e =
