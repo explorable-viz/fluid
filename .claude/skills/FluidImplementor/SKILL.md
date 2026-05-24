@@ -13,7 +13,7 @@ Working notes for implementing changes to the Fluid language and runtime.
 
 ## Committing
 
-- Commit at natural checkpoints — particularly structural/refactoring steps that pass tests without changing behaviour. Don't pile a refactor on top of a feature in one commit.
+- Commit at all natural checkpoints — particularly structural/refactoring steps that pass tests without changing behaviour.
 
 ## Running a single test (or a focused subset)
 

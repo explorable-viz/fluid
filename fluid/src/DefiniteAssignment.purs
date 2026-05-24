@@ -19,6 +19,13 @@ data TyResult = Returns | Assigns Ctx
 
 derive instance Eq TyResult
 
+-- Unit of overrideRes (sequential composition · ): a "no-op" Assigns whose
+-- context contributes nothing. Reading (TyResult, mergeRes, overrideRes) as a
+-- near-semiring with Returns as additive unit, this is the multiplicative
+-- identity.
+assignsEmpty :: TyResult
+assignsEmpty = Assigns Map.empty
+
 -- Sequential composition Γ · Δ on contexts. Right-biased: Δ overrides Γ.
 overrideCtx :: Ctx -> Ctx -> Ctx
 overrideCtx = flip Map.union

@@ -14,13 +14,13 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (Ctx, TyResult(..), mergeRes, overrideCtx, overrideRes)
+import DefiniteAssignment (Ctx, TyResult(..), assignsEmpty, mergeRes, overrideCtx, overrideRes)
 import Effect.Exception (Error)
 import Expr (bv, fv)
 import Expr (Module(..), RecDefs(..)) as E
 import Lattice (Raw)
 import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module, ParagraphElem(..), Stmt(..), VarDef(..)) as S
-import Util (throw, (×))
+import Util (type (×), throw, (×))
 import Util.Map (keys)
 import Util.Set ((\\), (∪))
 import Val (Env)
@@ -29,8 +29,8 @@ import Val (Env)
 -- Entry points
 -- ======================
 
-checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m Unit
-checkProgram initialScope s = void $ checkDA (mapFromSet true initialScope) s
+checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m (S.Stmt TyResult)
+checkProgram initialScope s = snd <$> checkDA (mapFromSet true initialScope) s
 
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
@@ -130,71 +130,81 @@ capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 -- checkDA Γ s computes TyResult for s under context Γ, and verifies every
 -- variable reference is tt-bound. Returns | Assigns Δ.
 
-checkDA :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m TyResult
-checkDA _ S.Pass = pure (Assigns Map.empty)
+-- checkDA validates and produces an annotated AST. The annotation type
+-- TyResult is meaningful at Clause sites (each carries its body's TyResult);
+-- elsewhere it's a sentinel.
+checkDA :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m (TyResult × S.Stmt TyResult)
+checkDA _ S.Pass = pure (Assigns Map.empty × S.Pass)
 checkDA γ (S.Return e) = do
    checkExprDA γ e
-   pure Returns
+   pure (Returns × S.Return (assignsEmpty <$ e))
 checkDA γ (S.ExprStmt e) = do
    checkExprDA γ e
-   pure (Assigns Map.empty)
+   pure (Assigns Map.empty × S.ExprStmt (assignsEmpty <$ e))
 checkDA γ (S.Assert cond msg) = do
    checkExprDA γ cond
    case msg of
       Just m -> checkExprDA γ m
       Nothing -> pure unit
-   pure (Assigns Map.empty)
+   pure (Assigns Map.empty × S.Assert (assignsEmpty <$ cond) ((assignsEmpty <$ _) <$> msg))
 checkDA γ (S.Def (S.VarDef p e)) = do
    let assigned = bv p
    let bad = assigned `Set.intersection` capturesE e
    for_ (Set.toUnfoldable bad :: Array Var) \x ->
       throw $ "Variable captured by its own definition: " <> x
    checkExprDA γ e
-   pure (Assigns (mapFromSet true assigned))
+   pure (Assigns (mapFromSet true assigned) × S.Def (S.VarDef p (assignsEmpty <$ e)))
 checkDA γ (S.DefRec rs) = do
    let regionNames = unions (Set.singleton <<< fst <$> rs)
    let γ' = γ `overrideCtx` mapFromSet true regionNames
-   for_ rs \(_ × S.Clause _ (ps × body)) -> do
-      let params = unions (bv <$> ps)
-      let locals_ff = assigns body \\ params
-      let γ'' = γ' `overrideCtx` mapFromSet true params `overrideCtx` mapFromSet false locals_ff
-      void $ checkDA γ'' body
-   pure (Assigns (mapFromSet true regionNames))
+   rs' <- traverse
+      ( \(name × S.Clause _ (ps × body)) -> do
+           let params = unions (bv <$> ps)
+           let locals_ff = assigns body \\ params
+           let γ'' = γ' `overrideCtx` mapFromSet true params `overrideCtx` mapFromSet false locals_ff
+           rBody × body' <- checkDA γ'' body
+           pure (name × S.Clause rBody (ps × body'))
+      )
+      rs
+   pure (Assigns (mapFromSet true regionNames) × S.DefRec rs')
 checkDA γ (S.Seq s1 s2) = do
-   r1 <- checkDA γ s1
+   r1 × s1' <- checkDA γ s1
    case r1 of
       Returns -> throw "Unreachable statement"
       Assigns δ -> do
          let bad = captures s1 `Set.intersection` assigns s2
          for_ (Set.toUnfoldable bad :: Array Var) \x ->
             throw $ "Captured variable reassigned: " <> x
-         r2 <- checkDA (γ `overrideCtx` δ) s2
-         pure (overrideRes r1 r2)
+         r2 × s2' <- checkDA (γ `overrideCtx` δ) s2
+         pure (overrideRes r1 r2 × S.Seq s1' s2')
 checkDA γ (S.If clauses elseBody) = do
-   clauseRs <- traverse
+   clauses' <- traverse
       ( \(cond × body) -> do
            checkExprDA γ cond
-           checkDA γ body
+           r × body' <- checkDA γ body
+           pure (r × ((assignsEmpty <$ cond) × body'))
       )
       clauses
-   elseR <- checkDA γ elseBody
-   pure $ foldl mergeRes elseR clauseRs
+   elseR × elseBody' <- checkDA γ elseBody
+   let merged = foldl mergeRes elseR (fst <$> clauses')
+   pure (merged × S.If (snd <$> clauses') elseBody')
 checkDA γ (S.Match scrut branches) = do
    checkExprDA γ scrut
-   branchRs <- traverse
+   branches' <- traverse
       ( \(p × body) -> do
            let pBindings = bv p
            let γ' = γ `overrideCtx` mapFromSet true pBindings
-           r <- checkDA γ' body
+           r × body' <- checkDA γ' body
            -- pattern bindings are branch-local; strip from result
-           pure $ stripVars pBindings r
+           pure (stripVars pBindings r × (p × body'))
       )
       branches
    -- Merge with Assigns ∅ representing the implicit no-matching-case fall-
    -- through, mirroring how if-no-else merges with an implicit Pass else.
    -- DA does not reason about exhaustiveness; a static totality check belongs
    -- in PurePy once it gains match.
-   pure $ mergeRes (foldl mergeRes (head branchRs) (tail branchRs)) (Assigns Map.empty)
+   let merged = mergeRes (foldl mergeRes (head (fst <$> branches')) (tail (fst <$> branches'))) (Assigns Map.empty)
+   pure (merged × S.Match (assignsEmpty <$ scrut) (snd <$> branches'))
 
 -- Check every variable reference in an expression is tt-bound in Γ.
 checkExprDA :: forall m a. MonadError Error m => Ctx -> S.Expr a -> m Unit
