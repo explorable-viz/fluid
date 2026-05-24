@@ -23,14 +23,15 @@ import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (replicate)
-import DataType (Ctr, DataType, arity, cCons, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
+import DataType (Ctr, DataType, arity, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
+import DefiniteAssignment (TyResult(..))
 import Desugarable (class Desugarable, desug)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (class BV, class FV, Cont(..), Elim(..), asElim, bv, fv)
 import Expr (Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
 import Util.Set ((\\), (∪))
-import Lattice (class BoundedLattice, class JoinSemilattice, bot, top)
+import Lattice (class JoinSemilattice, bot, top)
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Pair (Pair(..))
@@ -155,19 +156,16 @@ instance Desugarable Stmt E.Stmt where
    desug = stmtFwd
 
 instance Desugarable ListRest E.Expr where
-   desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
    desug (End α) = pure (enil α)
    desug (Next α s l) = econs α <$> desug s <*> desug l
 
 instance Desugarable Clauses Elim where
-   desug :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
    desug μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
 
 instance Desugarable LambdaClause Elim where
-   desug :: forall a m. BoundedLattice a => MonadError Error m => LambdaClause a -> m (Elim a)
    desug (LambdaClause (ps × e)) = desug (Clauses (singleton (Clause bot (ps × Return e))))
 
-desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
+desugarModuleFwd :: forall m. MonadError Error m => Module TyResult -> m (E.Module TyResult)
 desugarModuleFwd = moduleFwd
 
 -- helpers
@@ -181,25 +179,25 @@ elimBool :: forall a. Cont a -> Cont a -> Elim a
 elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
 -- Module. Surface language supports "blocks" of variable declarations; core does not. Currently no backward.
-moduleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
+moduleFwd :: forall m. MonadError Error m => Module TyResult -> m (E.Module TyResult)
 moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten <$> ds))
    where
-   varDefOrRecDefsFwd :: VarDef a + RecDefs a -> m (E.VarDef a + E.RecDefs a)
+   varDefOrRecDefsFwd :: VarDef TyResult + RecDefs TyResult -> m (E.VarDef TyResult + E.RecDefs TyResult)
    varDefOrRecDefsFwd (Left d) = Left <$> varDefFwd d
    varDefOrRecDefsFwd (Right xcs) = Right <$> recDefsFwd xcs
 
-   flatten :: VarDefs a + RecDefs a -> List (VarDef a + RecDefs a)
+   flatten :: VarDefs TyResult + RecDefs TyResult -> List (VarDef TyResult + RecDefs TyResult)
    flatten (Left ds') = Left <$> toList ds'
    flatten (Right δ) = pure (Right δ)
 
 -- Use of eliminators to establish module bindings is a bit naff, because we don't really have a notion of
 -- "rest of module" to use as continuation. So use empty dictionary (unit tuple) as continuation, and disregard
 -- in evaluation.
-varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
+varDefFwd :: forall m. MonadError Error m => VarDef TyResult -> m (E.VarDef TyResult)
 varDefFwd (VarDef p s) =
    E.VarDef <$> desug (Clauses (singleton (Clause bot (singleton p × Return (Dictionary top Nil))))) <*> desug s
 
-recDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
+recDefsFwd :: forall m. MonadError Error m => RecDefs TyResult -> m (E.RecDefs TyResult)
 recDefsFwd xcs = do
    let xcss = map RecDef (groupBy (eq `on` fst) xcs)
    let names = (fst <<< head <<< unwrap) <$> toList xcss
@@ -215,21 +213,22 @@ recDefsFwd xcs = do
          | x `Set.member` seen = Just x
          | otherwise = go (Set.insert x seen) xs
 
--- RecDef
-recDefFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDef a -> m (Bind (Elim a))
-recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (snd <$> unwrap xcs))
+recDefFwd :: forall m. MonadError Error m => RecDef TyResult -> m (Bind (Elim TyResult))
+recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (close <<< snd <$> unwrap xcs))
+   where
+   close (Clause Returns body) = Clause Returns body
+   close (Clause (Assigns δ) (ps × s)) = Clause (Assigns δ) (ps × Seq s (Return (Constr Returns cNone Nil)))
 
-paragraphFwd :: forall m a. BoundedLattice a => MonadError Error m => List (ParagraphElem a) -> m (E.Expr a)
+paragraphFwd :: forall m. MonadError Error m => List (ParagraphElem TyResult) -> m (E.Expr TyResult)
 paragraphFwd elems = do
    es <- paragraphElemsFwd elems
    pure (E.Constr bot cParagraph (es : Nil))
 
 paragraphElemsFwd
-   :: forall a m
-    . BoundedLattice a
-   => MonadError Error m
-   => List (ParagraphElem a)
-   -> m (E.Expr a)
+   :: forall m
+    . MonadError Error m
+   => List (ParagraphElem TyResult)
+   -> m (E.Expr TyResult)
 paragraphElemsFwd Nil = pure (enil bot)
 paragraphElemsFwd (Token s : elems) = do
    e' <- paragraphElemsFwd elems
@@ -240,7 +239,7 @@ paragraphElemsFwd (Unquote s : elems) = do
    pure (econs bot e e')
 
 -- Expr
-exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
+exprFwd :: forall m. MonadError Error m => Expr TyResult -> m (E.Expr TyResult)
 exprFwd (Var x) =
    pure $ E.Var x
 exprFwd (Op op) =
@@ -297,7 +296,7 @@ exprFwd (DocExpr s s') = do
 
 type IfElseClauses a = NonEmptyList (Expr a × Stmt a) × Stmt a
 
-stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.Stmt a)
+stmtFwd :: forall m. MonadError Error m => Stmt TyResult -> m (E.Stmt TyResult)
 stmtFwd (Def vd) = E.Def <$> varDefFwd vd
 stmtFwd (DefRec xcs) = E.DefRec <$> recDefsFwd xcs
 stmtFwd (Match s μ) = do
@@ -313,7 +312,7 @@ stmtFwd (Assert cond msg_opt) =
    msg = fromMaybe (Str top "AssertionError") msg_opt
 stmtFwd (Seq s1 s2) = E.Seq <$> stmtFwd s1 <*> stmtFwd s2
 
-ifElseFwd :: forall a m. BoundedLattice a => MonadError Error m => IfElseClauses a -> m (E.Stmt a)
+ifElseFwd :: forall m. MonadError Error m => IfElseClauses TyResult -> m (E.Stmt TyResult)
 ifElseFwd (sss × s) =
    foldr clause (stmtFwd s) sss
    where
@@ -324,7 +323,7 @@ ifElseFwd (sss × s) =
       pure $ E.Match cond (elimBool (ContStmt b') (ContStmt e3'))
 
 -- List Qualifier × Expr
-listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
+listCompFwd :: forall m. MonadError Error m => TyResult × List (Qualifier TyResult) × Expr TyResult -> m (E.Expr TyResult)
 listCompFwd (α × Nil × s) =
    econs α <$> desug s <@> enil α
 listCompFwd (α × (ListCompGuard s : qs) × s') = do
@@ -339,32 +338,32 @@ listCompFwd (α × (ListCompGen p s : qs) × s') = do
    E.App (E.App (E.Var "concat_map") (E.Lambda α (asElim σ))) <$> desug s
 
 -- Clauses
-toClausesStateFwd :: forall a. Clauses a -> ClausesState' a
+toClausesStateFwd :: Clauses TyResult -> ClausesState' TyResult
 toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
    where
-   toClauseStateFwd :: Clause a -> ClauseState' a
+   toClauseStateFwd :: Clause TyResult -> ClauseState' TyResult
    toClauseStateFwd (Clause _ (NonEmptyList (p :| π) × b)) = (Left p : Nil) × π × b
 
 -- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
 type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Stmt a
 type ClausesState' a = List (ClauseState' a)
 
-popArgFwd :: forall a m. MonadError Error m => ClausesState' a -> m (ClausesState' a)
+popArgFwd :: forall m. MonadError Error m => ClausesState' TyResult -> m (ClausesState' TyResult)
 popArgFwd ((Nil × (p : π) × s) : ks) = (((Left p : Nil) × π × s) : _) <$> popArgFwd ks
 popArgFwd Nil = pure Nil
 popArgFwd _ = throw (shapeMismatch unit)
 
-popVarFwd :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
+popVarFwd :: forall m. MonadError Error m => Var -> ClausesState' TyResult -> m (ClausesState' TyResult)
 popVarFwd x (((Left (PVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVarFwd (x ≜ x') ks
 popVarFwd _ Nil = pure Nil
 popVarFwd _ _ = throw (shapeMismatch unit)
 
-popListVarFwd :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
+popListVarFwd :: forall m. MonadError Error m => Var -> ClausesState' TyResult -> m (ClausesState' TyResult)
 popListVarFwd x (((Right (PListVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popListVarFwd (x ≜ x') ks
 popListVarFwd _ Nil = pure Nil
 popListVarFwd _ _ = throw (shapeMismatch unit)
 
-popConstrFwd :: forall a m. MonadError Error m => DataType -> ClausesState' a -> m (List (Ctr × ClausesState' a))
+popConstrFwd :: forall m. MonadError Error m => DataType -> ClausesState' TyResult -> m (List (Ctr × ClausesState' TyResult))
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
 popConstrFwd d (((p : π') × π'' × s) : ks) =
    assert (length π == defined (arity c) && defined (dataTypeFor c) == d) $
@@ -374,20 +373,20 @@ popConstrFwd d (((p : π') × π'' × s) : ks) =
    c = definitely ("Failed to distinguish constructor: " <> showPattern p) (ctrFor p)
 popConstrFwd _ Nil = pure Nil
 
-forConstrFwd :: forall a. Ctr -> ClauseState' a -> Endo (List (Ctr × ClausesState' a))
+forConstrFwd :: Ctr -> ClauseState' TyResult -> Endo (List (Ctr × ClausesState' TyResult))
 forConstrFwd c k Nil = (c × (k : Nil)) : Nil
 forConstrFwd c k ((c' × ks') : cks)
    | c == c' = (c' × (k : ks')) : cks
    | otherwise = (c' × ks') : forConstrFwd c k cks
 
-popRecordFwd :: forall a m. MonadError Error m => List Var -> ClausesState' a -> m (ClausesState' a)
+popRecordFwd :: forall m. MonadError Error m => List Var -> ClausesState' TyResult -> m (ClausesState' TyResult)
 popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
    assert ((xps <#> fst) == xs) $ ((((xps <#> snd >>> Left) <> π) × π' × s) : _) <$> popRecordFwd xs ks
 popRecordFwd _ Nil = pure Nil
 popRecordFwd _ _ = throw (shapeMismatch unit)
 
 -- Implementing Desugarable would require another newtype
-clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
+clausesStateFwd :: forall m. MonadError Error m => ClausesState' TyResult -> m (Cont TyResult)
 clausesStateFwd ks = case ks of
    Nil -> error absurd
    (Nil × Nil × b) : Nil ->

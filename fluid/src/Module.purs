@@ -23,6 +23,7 @@ import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse (parseModule, parseProgram)
+import DefiniteAssignment (TyResult(..))
 import SExpr (desugarModuleFwd)
 import WellFormed (checkModule, checkProgram, envNames, moduleExports)
 import SExpr as S
@@ -103,7 +104,8 @@ loadModuleGraph roots = do
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
       mod × imports <- throwLeft <#> withMsg ("Loading module " <> path) $ parseModule src
       checkModule mod
-      mod' <- desugarModuleFwd mod
+      modTy <- desugarModuleFwd (Returns <$ mod)
+      let mod' = (unit <$ modTy) :: Raw Module
       let imports' = if path == prelude then imports else prelude : imports
       pure $ mod' × imports'
 

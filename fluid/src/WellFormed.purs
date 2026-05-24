@@ -6,7 +6,6 @@ import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Either (Either(..))
 import Data.Foldable (foldl, for_)
-import Data.List (List(..))
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.List.NonEmpty as NEL
@@ -15,7 +14,6 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DataType (cNone)
 import DefiniteAssignment (Ctx, TyResult(..), assignsEmpty, fromSet, mergeRes, overrideCtx, overrideRes)
 import Effect.Exception (Error)
 import Expr (bv, fv)
@@ -28,24 +26,7 @@ import Util.Set ((\\), (∪))
 import Val (Env)
 
 checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m (S.Stmt TyResult)
-checkProgram γ0 s = do
-   _ × s' <- checkDA (fromSet true γ0) s
-   pure (implicitNone s')
-
-implicitNone :: S.Stmt TyResult -> S.Stmt TyResult
-implicitNone S.Pass = S.Pass
-implicitNone (S.Return e) = S.Return e
-implicitNone (S.ExprStmt e) = S.ExprStmt e
-implicitNone (S.Assert e e') = S.Assert e e'
-implicitNone (S.Def d) = S.Def d
-implicitNone (S.Seq s1 s2) = S.Seq (implicitNone s1) (implicitNone s2)
-implicitNone (S.If es s) = S.If ((\(e × s') -> e × implicitNone s') <$> es) (implicitNone <$> s)
-implicitNone (S.Match e ps) = S.Match e ((\(p × s) -> p × implicitNone s) <$> ps)
-implicitNone (S.DefRec ds) =
-   S.DefRec ((\(x × S.Clause r (ps × s)) -> x × S.Clause r (ps × close r (implicitNone s))) <$> ds)
-   where
-   close Returns s = s
-   close (Assigns _) s = S.Seq s (S.Return (S.Constr Returns cNone Nil))
+checkProgram γ0 s = snd <$> checkDA (fromSet true γ0) s
 
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
