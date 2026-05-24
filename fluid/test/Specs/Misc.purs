@@ -21,6 +21,7 @@ misc_cases =
    , { file: "lambda.fld", fwd_expect: "15" }
    , { file: "self.fld", fwd_expect: "120" }
    , { file: "implicit_none.fld", fwd_expect: "None" }
+   , { file: "implicit_return.fld", fwd_expect: "None" }
    , { file: "mutual_after_rebind.fld", fwd_expect: "(0, 1)" }
    , { file: "mutual_def_in_branch.fld", fwd_expect: "(\"via mutual region\", \"via mutual region\")" }
    , { file: "boolean_precedence.fld", fwd_expect: "True" }

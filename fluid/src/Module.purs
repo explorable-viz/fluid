@@ -63,8 +63,9 @@ prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    moduleCxt <- loadModuleGraph (prelude : imports)
    let scope = envNames primitives ∪ Set.unions (moduleExports <$> Map.values moduleCxt.modules)
-   _sty <- checkProgram scope s
-   e :: Raw Stmt <- desug s
+   sty <- checkProgram scope s
+   eTy <- desug sty
+   let e = (unit <$ eTy) :: Raw Stmt
    gconfig <- initialConfig e primitives moduleCxt
    pure { s, e, gconfig }
 

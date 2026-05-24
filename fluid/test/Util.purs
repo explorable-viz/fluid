@@ -13,7 +13,6 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.String (null, trim)
 import Data.Tuple (fst)
-import Desugarable (desug)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -28,7 +27,7 @@ import Expr (Stmt) as Expr
 import SExpr (Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, defined, log', spyWhen, throw, throwLeft, withMsg, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, throwLeft, withMsg, (×))
 import Val (class Ann, Env, EnvStmt(..), Val)
 
 type TestSuite m = Array (String × m Unit)
@@ -46,9 +45,9 @@ test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw Env -> Sel
 test file primitives spec (n × _) = do
    fluidSrc <- loadFile fluidSrcPaths file
    log' ("**** prepConfig")
-   { s, gconfig } <- prepConfig primitives fluidSrc
+   { s, e, gconfig } <- prepConfig primitives fluidSrc
    testPretty s
-   _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
+   _ × res <- runWriterT (replicateM n (testProperties s e gconfig spec))
    pure $ res `divRow` n
 
 graphBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
@@ -78,11 +77,11 @@ testProperties
    => LoadFile m
    => MonadWriter BenchRow m
    => Raw SE.Stmt
+   -> Raw Expr.Stmt
    -> GraphConfig
    -> SelectionSpec
    -> AffError m Unit
-testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
-   let s' = defined (desug s) :: Raw Expr.Stmt
+testProperties _ s' gconfig { δv, bwd_expect, fwd_expect } = do
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig s'

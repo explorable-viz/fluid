@@ -9,6 +9,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
+import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class JoinSemilattice, class MeetSemilattice)
 
 -- Context Γ : Var ⇀ B, where B = {tt, ff}. Absent key = ⊥ (undefined).
 -- True = definitely assigned (tt); False = not definitely assigned (ff).
@@ -25,6 +26,21 @@ derive instance Eq TyResult
 -- identity.
 assignsEmpty :: TyResult
 assignsEmpty = Assigns Map.empty
+
+-- Trivial Lattice instances so TyResult can sit in the AST's annotation slot
+-- (which is constrained to BoundedLattice). The values are not meaningfully
+-- consumed; the lattice ops are never called on TyResult in practice.
+instance JoinSemilattice TyResult where
+   join _ b = b
+
+instance MeetSemilattice TyResult where
+   meet a _ = a
+
+instance BoundedJoinSemilattice TyResult where
+   bot = assignsEmpty
+
+instance BoundedMeetSemilattice TyResult where
+   top = Returns
 
 -- Sequential composition Γ · Δ on contexts. Right-biased: Δ overrides Γ.
 overrideCtx :: Ctx -> Ctx -> Ctx

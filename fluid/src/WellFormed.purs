@@ -6,7 +6,9 @@ import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Either (Either(..))
 import Data.Foldable (foldl, for_)
+import Data.List (List(..))
 import Data.List.NonEmpty (head, tail)
+import DataType (cNone)
 import Data.Traversable (traverse)
 import Data.Map (Map)
 import Data.Map as Map
@@ -30,7 +32,33 @@ import Val (Env)
 -- ======================
 
 checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m (S.Stmt TyResult)
-checkProgram initialScope s = snd <$> checkDA (mapFromSet true initialScope) s
+checkProgram initialScope s = do
+   _ × s' <- checkDA (mapFromSet true initialScope) s
+   pure (implicitNone s')
+
+-- Post-validation normalisation: function bodies whose TyResult is Assigns
+-- (fall-through possible) get an implicit `return None` appended.
+implicitNone :: S.Stmt TyResult -> S.Stmt TyResult
+implicitNone S.Pass = S.Pass
+implicitNone (S.Return e) = S.Return e
+implicitNone (S.ExprStmt e) = S.ExprStmt e
+implicitNone (S.Assert cond msg) = S.Assert cond msg
+implicitNone (S.Def vd) = S.Def vd
+implicitNone (S.Seq s1 s2) = S.Seq (implicitNone s1) (implicitNone s2)
+implicitNone (S.If clauses elseBody) =
+   S.If ((\(c × b) -> c × implicitNone b) <$> clauses) (implicitNone elseBody)
+implicitNone (S.Match scrut branches) =
+   S.Match scrut ((\(p × b) -> p × implicitNone b) <$> branches)
+implicitNone (S.DefRec rs) =
+   S.DefRec
+      ( ( \(name × S.Clause r (ps × body)) ->
+             name × S.Clause r (ps × addReturnNone r (implicitNone body))
+        ) <$> rs
+      )
+   where
+   addReturnNone :: TyResult -> S.Stmt TyResult -> S.Stmt TyResult
+   addReturnNone Returns body = body
+   addReturnNone (Assigns _) body = S.Seq body (S.Return (S.Constr Returns cNone Nil))
 
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
