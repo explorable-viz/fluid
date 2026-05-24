@@ -233,7 +233,8 @@ checkDA γ (S.Match scrut branches) = do
       branches
    -- Merge with Assigns ∅ representing the implicit no-matching-case fall-
    -- through, mirroring how if-no-else merges with an implicit Pass else.
-   -- DA does not reason about exhaustiveness.
+   -- DA does not reason about exhaustiveness; a static totality check belongs
+   -- in PurePy once it gains match.
    pure $ mergeRes (foldl mergeRes (head branchRs) (tail branchRs)) (Assigns Map.empty)
 
 -- Check every variable reference in an expression is tt-bound in Γ.
