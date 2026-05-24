@@ -26,7 +26,7 @@ import Util.Set ((\\), (∪))
 import Val (Env)
 
 checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
-checkProgram γ0 s = snd <$> checkDA (fromSet true γ0) s
+checkProgram γ0 s = snd <$> wellFormed (fromSet true γ0) s
 
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
@@ -94,25 +94,25 @@ capturesE (S.ListEnum e1 e2) = capturesE e1 ∪ capturesE e2
 capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
-checkDA :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m (TyResult Ctx × S.Stmt (TyResult Ctx))
-checkDA _ S.Pass = pure (assignsEmpty × S.Pass)
-checkDA γ (S.Return e) = do
-   checkExprDA γ e
+wellFormed :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m (TyResult Ctx × S.Stmt (TyResult Ctx))
+wellFormed _ S.Pass = pure (assignsEmpty × S.Pass)
+wellFormed γ (S.Return e) = do
+   wellFormedExpr γ e
    pure (Returns × S.Return (assignsEmpty <$ e))
-checkDA γ (S.ExprStmt e) = do
-   checkExprDA γ e
+wellFormed γ (S.ExprStmt e) = do
+   wellFormedExpr γ e
    pure (assignsEmpty × S.ExprStmt (assignsEmpty <$ e))
-checkDA γ (S.Assert e e') = do
-   checkExprDA γ e
-   for_ e' (checkExprDA γ)
+wellFormed γ (S.Assert e e') = do
+   wellFormedExpr γ e
+   for_ e' (wellFormedExpr γ)
    pure (assignsEmpty × S.Assert (assignsEmpty <$ e) ((assignsEmpty <$ _) <$> e'))
-checkDA γ (S.Def (S.VarDef p e)) = do
+wellFormed γ (S.Def (S.VarDef p e)) = do
    let xs = bv p
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throw $ "Variable captured by its own definition: " <> x
-   checkExprDA γ e
+   wellFormedExpr γ e
    pure (Assigns (fromSet true xs) × S.Def (S.VarDef p (assignsEmpty <$ e)))
-checkDA γ (S.DefRec ds) = do
+wellFormed γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
    let γ' = γ `overrideCtx` fromSet true fs
    ds' <- traverse
@@ -120,45 +120,45 @@ checkDA γ (S.DefRec ds) = do
            let xs = unions (bv <$> ps)
            let ys = assigns s \\ xs
            let γ'' = γ' `overrideCtx` fromSet true xs `overrideCtx` fromSet false ys
-           r × s' <- checkDA γ'' s
+           r × s' <- wellFormed γ'' s
            pure (x × S.Clause r (ps × s'))
       )
       ds
    pure (Assigns (fromSet true fs) × S.DefRec ds')
-checkDA γ (S.Seq s1 s2) = do
-   r1 × s1' <- checkDA γ s1
+wellFormed γ (S.Seq s1 s2) = do
+   r1 × s1' <- wellFormed γ s1
    case r1 of
       Returns -> throw "Unreachable statement"
       Assigns δ -> do
          for_ (Set.toUnfoldable (captures s1 `Set.intersection` assigns s2) :: Array Var) \x ->
             throw $ "Captured variable reassigned: " <> x
-         r2 × s2' <- checkDA (γ `overrideCtx` δ) s2
+         r2 × s2' <- wellFormed (γ `overrideCtx` δ) s2
          pure (overrideRes r1 r2 × S.Seq s1' s2')
-checkDA γ (S.If es s) = do
+wellFormed γ (S.If es s) = do
    es' <- traverse
       ( \(e × s') -> do
-           checkExprDA γ e
-           r × s'' <- checkDA γ s'
+           wellFormedExpr γ e
+           r × s'' <- wellFormed γ s'
            pure (r × ((assignsEmpty <$ e) × s''))
       )
       es
    r × s' <- case s of
-      Just s'' -> map Just <$> checkDA γ s''
+      Just s'' -> map Just <$> wellFormed γ s''
       Nothing -> pure (assignsEmpty × Nothing)
    pure (foldl1 mergeRes (NEL.cons r (fst <$> es')) × S.If (snd <$> es') s')
-checkDA γ (S.Match e ps) = do
-   checkExprDA γ e
+wellFormed γ (S.Match e ps) = do
+   wellFormedExpr γ e
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
-           r × s' <- checkDA (γ `overrideCtx` fromSet true xs) s
+           r × s' <- wellFormed (γ `overrideCtx` fromSet true xs) s
            pure (stripVars xs r × (p × s'))
       )
       ps
    pure (mergeRes (foldl1 mergeRes (fst <$> ps')) assignsEmpty × S.Match (assignsEmpty <$ e) (snd <$> ps'))
 
-checkExprDA :: forall m a. MonadError Error m => Ctx -> S.Expr a -> m Unit
-checkExprDA γ e =
+wellFormedExpr :: forall m a. MonadError Error m => Ctx -> S.Expr a -> m Unit
+wellFormedExpr γ e =
    for_ (fv e) \x -> case Map.lookup x γ of
       Just true -> pure unit
       Just false -> throw $ "Not definitely assigned: " <> x
