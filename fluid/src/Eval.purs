@@ -198,9 +198,7 @@ evalStmt doc_opt γ s αs = case s of
             pure (Assigns empty empty)
          _, _ -> do
             γ' × κ × αs' <- match v σ
-            case κ of
-               ContStmt s' -> evalStmt doc_opt (γ <+> γ') s' (αs ∪ αs')
-               _ -> error "Stmt continuation expected as match branch"
+            evalStmt doc_opt (γ <+> γ') (asStmt κ) (αs ∪ αs')
    Def (VarDef σ e) -> do
       v <- eval Nothing γ e αs
       γ' × _ × αs' <- withMsg "In assignment" $ match v σ
