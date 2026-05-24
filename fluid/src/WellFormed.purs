@@ -4,7 +4,7 @@ import Prelude
 
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Foldable (foldl, for_)
+import Data.Foldable (for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.List.NonEmpty as NEL
@@ -13,11 +13,12 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (Ctx, TyResult(..), fromSet, mergeRes, overrideCtx, overrideRes)
+import DefiniteAssignment (Ctx, TyResult(..), mergeRes, overrideCtx, overrideRes)
+import Util.Map (fromSet)
 import Effect.Exception (Error)
 import Expr (bv, fv)
 import Lattice (Raw)
-import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module, ParagraphElem(..), Stmt(..), VarDef(..)) as S
+import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module, ParagraphElem(..), Pattern(..), Stmt(..), VarDef(..)) as S
 import Util (type (×), throw, (×))
 import Util.Set ((\\), (∪))
 
@@ -130,28 +131,32 @@ wellFormed γ (S.Seq s1 s2) = do
             throw $ "Captured variable reassigned: " <> x
          r2 × s2' <- wellFormed (γ `overrideCtx` δ) s2
          pure (overrideRes r1 r2 × S.Seq s1' s2')
-wellFormed γ (S.If es s) = do
+wellFormed γ (S.If es elseBranch) = do
    es' <- traverse
-      ( \(e × s') -> do
+      ( \(e × s) -> do
            wellFormedExpr γ e
-           r × s'' <- wellFormed γ s'
-           pure (r × ((Assigns Map.empty <$ e) × s''))
+           r × s' <- wellFormed γ s
+           pure (r × ((Assigns Map.empty <$ e) × s'))
       )
       es
-   r × s' <- case s of
-      Just s'' -> map Just <$> wellFormed γ s''
+   rElse × elseBranch' <- case elseBranch of
+      Just s -> map Just <$> wellFormed γ s
       Nothing -> pure (Assigns Map.empty × Nothing)
-   pure (foldl1 mergeRes (NEL.cons r (fst <$> es')) × S.If (snd <$> es') s')
+   pure (foldl1 mergeRes (NEL.cons rElse (fst <$> es')) × S.If (snd <$> es') elseBranch')
 wellFormed γ (S.Match e ps) = do
    wellFormedExpr γ e
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
            r × s' <- wellFormed (γ `overrideCtx` fromSet true xs) s
-           pure (stripVars xs r × (p × s'))
+           pure (overrideRes (Assigns (fromSet true xs)) r × (p × s'))
       )
       ps
-   pure (mergeRes (foldl1 mergeRes (fst <$> ps')) (Assigns Map.empty) × S.Match (Assigns Map.empty <$ e) (snd <$> ps'))
+   pure (foldl1 mergeRes ((fst <$> ps') `NEL.snoc` rFall) × S.Match (Assigns Map.empty <$ e) (snd <$> ps'))
+   where
+   rFall = case fst (NEL.last ps) of
+      S.PVar _ -> Returns
+      _ -> Assigns Map.empty
 
 wellFormedExpr :: forall m a. MonadError Error m => Ctx -> S.Expr a -> m Unit
 wellFormedExpr γ e =
@@ -160,5 +165,3 @@ wellFormedExpr γ e =
       Just false -> throw $ "Not definitely assigned: " <> x
       Nothing -> throw $ "Unbound name: " <> x
 
-stripVars :: Set Var -> TyResult Ctx -> TyResult Ctx
-stripVars xs = map (\δ -> foldl (flip Map.delete) δ xs)

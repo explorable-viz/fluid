@@ -19,6 +19,7 @@ purepy_cases =
    , { file: "purepy/duplicate_def_in_region.fld", expected_error: "Shape mismatch" }
    , { file: "purepy/mutual_split_by_assign.fld", expected_error: "Unbound name: g" }
    , { file: "purepy/mutual_def_block_local.fld", expected_error: "Not definitely assigned: g" }
+   , { file: "purepy/match_var_leak.fld", expected_error: "Not definitely assigned: x" }
    ]
 
 -- Fluid-specific ill-formed cases (no PurePy correspondent).
