@@ -25,10 +25,10 @@ import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse (parseModule, parseProgram)
 import DefiniteAssignment (TyResult(..))
 import SExpr (desugarModuleFwd)
-import WellFormed (checkModule, checkProgram, envNames)
+import WellFormed (checkModule, checkProgram)
 import SExpr as S
 import Util (type (×), error, throwLeft, withMsg, (×))
-import Util.Map (restrict)
+import Util.Map (keys, restrict)
 import Util.Set ((∪))
 import Val (Env)
 
@@ -49,7 +49,7 @@ prepConfig primitives fluidSrc = do
       let αs = vertices primitives' ∪ mαs
       _ × γ <- runWithGraphT_spy (eval_primitives primitives' moduleCxt') αs :: AllocT m (GraphImpl × _)
       pure (primitives' × modules' × γ)
-   sty <- checkProgram (envNames topLevelEnv) s
+   sty <- checkProgram (keys topLevelEnv) s
    eTy <- desug sty
    let e = (unit <$ eTy) :: Raw Stmt
    let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv }

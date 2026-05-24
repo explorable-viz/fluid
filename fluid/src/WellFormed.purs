@@ -31,15 +31,6 @@ checkProgram γ0 s = snd <$> checkDA (fromSet true γ0) s
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
 
-moduleExports :: forall a. E.Module a -> Set Var
-moduleExports (E.Module ds) = unions (defNames <$> ds)
-   where
-   defNames (Left d) = bv d
-   defNames (Right (E.RecDefs _ ρ)) = keys ρ
-
-envNames :: forall a. Env a -> Set Var
-envNames = keys
-
 assigns :: forall a. S.Stmt a -> Set Var
 assigns S.Pass = Set.empty
 assigns (S.Def (S.VarDef p _)) = bv p
