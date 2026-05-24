@@ -11,6 +11,10 @@ Working notes for implementing changes to the Fluid language and runtime.
 
 - Minimal. State the thing; stop.
 
+## Committing
+
+- Commit at natural checkpoints — particularly structural/refactoring steps that pass tests without changing behaviour. Don't pile a refactor on top of a feature in one commit.
+
 ## Running a single test (or a focused subset)
 
 The `yarn test` runner always invokes `tests` in `fluid/test/Test.purs`. By

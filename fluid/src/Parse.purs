@@ -21,7 +21,7 @@ import Data.Traversable (foldl, foldr)
 import DataType (cNoArgs, cNone, cPair)
 import Lattice (Raw)
 import Parse.Number (float, integer)
-import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
+import Parse.Parser (Parser, align, block, braces, brackets, close, commas, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, optionMaybe, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..)) as P
@@ -165,7 +165,7 @@ recDefs = many1 recDef
          ps = case ps0 of
             Nil -> NonEmptyList (PConstr cNoArgs Nil :| Nil)
             x : xs -> NonEmptyList (x :| xs)
-      pure $ p × Clause (ps × b)
+      pure $ p × Clause unit (ps × b)
 
 expr :: Parser (Raw Expr)
 expr = context "expr" $ ternary <?> "expression"

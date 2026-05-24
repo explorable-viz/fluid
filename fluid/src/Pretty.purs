@@ -212,7 +212,7 @@ instance Ann a => Pretty (Stmt a) where
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
 
 instance Ann a => Pretty (Clause a) where
-   pretty (Clause (ps × b)) = lambda (toList ps) b
+   pretty (Clause _ (ps × b)) = lambda (toList ps) b
 
 instance Ann a => Pretty (LambdaClause a) where
    pretty (LambdaClause (ps × e)) = text "lambda" <+> prettyList (toList ps) <> text ":" <+> pretty e
@@ -221,9 +221,9 @@ instance Ann a => Pretty (RecDefs a) where
    pretty bs = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> bs))
 
 instance Ann a => Pretty (Branch a) where
-   pretty (v × Clause (NonEmptyList (PConstr "__NoArgs" Nil :| Nil) × b)) =
+   pretty (v × Clause _ (NonEmptyList (PConstr "__NoArgs" Nil :| Nil) × b)) =
       text "def" <+> text v <> text "()" <> block (pretty b)
-   pretty (v × Clause (ps × b)) =
+   pretty (v × Clause _ (ps × b)) =
       text "def"
          <+> text v
          <> parens (prettyList (toList ps))

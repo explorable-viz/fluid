@@ -122,7 +122,7 @@ data Stmt a
    | Assert (Expr a) (Maybe (Expr a))
    | Seq (Stmt a) (Stmt a)
 
-newtype Clause a = Clause (NonEmptyList Pattern × Stmt a)
+data Clause a = Clause a (NonEmptyList Pattern × Stmt a)
 
 type Branch a = Var × Clause a
 newtype Clauses a = Clauses (NonEmptyList (Clause a))
@@ -165,7 +165,7 @@ instance Desugarable Clauses Elim where
 
 instance Desugarable LambdaClause Elim where
    desug :: forall a m. BoundedLattice a => MonadError Error m => LambdaClause a -> m (Elim a)
-   desug (LambdaClause (ps × e)) = desug (Clauses (singleton (Clause (ps × Return e))))
+   desug (LambdaClause (ps × e)) = desug (Clauses (singleton (Clause bot (ps × Return e))))
 
 desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
 desugarModuleFwd = moduleFwd
@@ -197,7 +197,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Return (Dictionary top Nil))))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause bot (singleton p × Return (Dictionary top Nil))))) <*> desug s
 
 -- RecDefs
 -- In the formalism, "group by name" is part of the syntax. Clauses for a given
@@ -306,7 +306,7 @@ stmtFwd :: forall a m. BoundedLattice a => MonadError Error m => Stmt a -> m (E.
 stmtFwd (Def vd) = E.Def <$> varDefFwd vd
 stmtFwd (DefRec xcs) = E.DefRec <$> recDefsFwd xcs
 stmtFwd (Match s μ) = do
-   κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause <$> first singleton <$> μ)))
+   κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause bot <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ
 stmtFwd (If sss s) = ifElseFwd (sss × s)
 stmtFwd (Return e) = E.Return <$> desug e
@@ -348,7 +348,7 @@ toClausesStateFwd :: forall a. Clauses a -> ClausesState' a
 toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
    where
    toClauseStateFwd :: Clause a -> ClauseState' a
-   toClauseStateFwd (Clause (NonEmptyList (p :| π) × b)) = (Left p : Nil) × π × b
+   toClauseStateFwd (Clause _ (NonEmptyList (p :| π) × b)) = (Left p : Nil) × π × b
 
 -- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
 type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Stmt a
@@ -466,7 +466,6 @@ anon (Right _) = Right pListVarAnon
 -- ======================
 -- boilerplate
 -- ======================
-derive instance Newtype (Clause a) _
 derive instance Newtype (Clauses a) _
 derive instance Newtype (LambdaClause a) _
 derive instance Newtype (RecDef a) _
@@ -486,7 +485,7 @@ instance Functor Module where
       where
       mapDefs :: forall a b. (a -> b) -> VarDefs a + RecDefs a -> VarDefs b + RecDefs b
       mapDefs g (Left ds) = Left $ map g <$> ds
-      mapDefs g (Right ds) = Right $ (\(x × Clause (π × b)) -> x × Clause (π × (g <$> b))) <$> ds
+      mapDefs g (Right ds) = Right $ (\(x × Clause α (π × b)) -> x × Clause (g α) (π × (g <$> b))) <$> ds
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join _ = error unimplemented
@@ -610,7 +609,7 @@ instance FV (LambdaClause a) where
    fv (LambdaClause (ps × e)) = fv e \\ Set.unions (bv <$> ps)
 
 instance FV (Clause a) where
-   fv (Clause (ps × b)) = fv b \\ Set.unions (bv <$> ps)
+   fv (Clause _ (ps × b)) = fv b \\ Set.unions (bv <$> ps)
 
 instance FV (DictEntry a) where
    fv (ExprKey e) = fv e

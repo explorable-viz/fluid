@@ -14,6 +14,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Tuple (fst, snd)
+import DefiniteAssignment (Ctx, TyResult(..), mergeRes, overrideCtx, overrideRes)
 import Effect.Exception (Error)
 import Expr (bv, fv)
 import Expr (Module(..), RecDefs(..)) as E
@@ -43,48 +44,6 @@ moduleExports (E.Module ds) = unions (defNames <$> ds)
 
 envNames :: forall a. Env a -> Set Var
 envNames = keys
-
--- ======================
--- Definite-assignment contexts and result types (PurePy spec §2.1)
--- ======================
-
--- Context Γ : Var ⇀ B, where B = {tt, ff}. Absent key = ⊥ (undefined).
--- True = definitely assigned (tt); False = not definitely assigned (ff).
-type Ctx = Map Var Boolean
-
--- Well-formedness result type R ::= Returns | Assigns Δ.
-data Result = Returns | Assigns Ctx
-
-derive instance Eq Result
-
--- Sequential composition Γ · Δ on contexts. Right-biased: Δ overrides Γ.
-overrideCtx :: Ctx -> Ctx -> Ctx
-overrideCtx = flip Map.union
-
--- Parallel composition Γ ⊕ Δ on contexts.
--- Both defined → conjunction of statuses.
--- Only one defined → ff (the var is "lost" in the merge).
--- Both ⊥ → ⊥.
-mergeCtx :: Ctx -> Ctx -> Ctx
-mergeCtx γ1 γ2 =
-   foldl (\acc k -> Map.insert k (mergedAt k) acc) Map.empty allKeys
-   where
-   allKeys :: Set Var
-   allKeys = Set.fromFoldable (Map.keys γ1) `Set.union` Set.fromFoldable (Map.keys γ2)
-   mergedAt k = case Map.lookup k γ1, Map.lookup k γ2 of
-      Just a, Just b -> a && b
-      _, _ -> false
-
--- Lifted to Result. Returns is zero for · and unit for ⊕.
-overrideRes :: Result -> Result -> Result
-overrideRes _ Returns = Returns
-overrideRes Returns _ = Returns
-overrideRes (Assigns a) (Assigns b) = Assigns (overrideCtx a b)
-
-mergeRes :: Result -> Result -> Result
-mergeRes Returns r = r
-mergeRes r Returns = r
-mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
 
 -- ======================
 -- Syntactic helpers (PurePy spec §2.2)
@@ -123,7 +82,7 @@ captures (S.Match scrut branches) =
 captures (S.DefRec rs) =
    (unions (branchCaptures <$> rs)) \\ unions (Set.singleton <<< fst <$> rs)
    where
-   branchCaptures (_ × S.Clause (ps × body)) =
+   branchCaptures (_ × S.Clause _ (ps × body)) =
       (fv body \\ unions (bv <$> ps)) \\ assigns body
 captures (S.Seq s1 s2) = captures s1 ∪ captures s2
 
@@ -168,10 +127,10 @@ capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 -- Well-formedness judgement (PurePy spec §2.3)
 -- ======================
 --
--- checkDA Γ s computes Result for s under context Γ, and verifies every
+-- checkDA Γ s computes TyResult for s under context Γ, and verifies every
 -- variable reference is tt-bound. Returns | Assigns Δ.
 
-checkDA :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m Result
+checkDA :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m TyResult
 checkDA _ S.Pass = pure (Assigns Map.empty)
 checkDA γ (S.Return e) = do
    checkExprDA γ e
@@ -195,7 +154,7 @@ checkDA γ (S.Def (S.VarDef p e)) = do
 checkDA γ (S.DefRec rs) = do
    let regionNames = unions (Set.singleton <<< fst <$> rs)
    let γ' = γ `overrideCtx` mapFromSet true regionNames
-   for_ rs \(_ × S.Clause (ps × body)) -> do
+   for_ rs \(_ × S.Clause _ (ps × body)) -> do
       let params = unions (bv <$> ps)
       let locals_ff = assigns body \\ params
       let γ'' = γ' `overrideCtx` mapFromSet true params `overrideCtx` mapFromSet false locals_ff
@@ -249,6 +208,6 @@ checkExprDA γ e = do
 mapFromSet :: forall k v. Ord k => v -> Set k -> Map k v
 mapFromSet v = foldl (\acc k -> Map.insert k v acc) Map.empty
 
-stripVars :: Set Var -> Result -> Result
+stripVars :: Set Var -> TyResult -> TyResult
 stripVars _ Returns = Returns
 stripVars vars (Assigns δ) = Assigns (foldl (flip Map.delete) δ vars)
