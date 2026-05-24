@@ -7,6 +7,10 @@ description: Conventions for implementing changes to the Fluid language and runt
 
 Working notes for implementing changes to the Fluid language and runtime.
 
+## Style
+
+- Minimal. State the thing; stop.
+
 ## Running a single test (or a focused subset)
 
 The `yarn test` runner always invokes `tests` in `fluid/test/Test.purs`. By
@@ -27,6 +31,22 @@ Do not invent ad hoc CLI invocations of `fluid.mjs` to run individual `.fld`
 files — the test harness is the canonical way to exercise programs end-to-end
 (it sets up paths, prelude, and reports errors in the same form the tests
 assert against).
+
+## Filing issues
+
+Issue titles should be **noun phrases** (or similar) succinctly
+characterising the outcome — not deontic statements.
+
+- Good: "Top-level program returns sysexit status"
+- Bad: "Top-level program should return a sysexit status"
+- Good: "Match exhaustiveness check"
+- Bad: "Add a match exhaustiveness check"
+
+"Fluid" is redundant in titles (the repo is Fluid) — omit it.
+
+When an issue references other issues or external resources, add a **See also** paragraph at the end with a bullet list of links. When linking to another issue, write just the bare `#N` reference — GitHub renders the title inline.
+
+Add new issues to the **Fluid** project (number 1, owner `fluid-org`) and populate **Status** (usually `Proposed`) and **Aspect**. The standard issue fields (Type, labels, milestone) should also be filled when appropriate.
 
 ## Website tests
 
