@@ -2,8 +2,6 @@ def foo(b):
    x = 0
    if b:
       x = 1
-   else:
-      pass
    return x
 
 foo(True)

@@ -18,7 +18,6 @@ misc_cases =
    , { file: "self_capture_def.fld", fwd_expect: "cl" }
    , { file: "piecewise_def.fld", fwd_expect: "3" }
    , { file: "if_no_else.fld", fwd_expect: "1" }
-   , { file: "match_partial.fld", fwd_expect: "0" }
    , { file: "lambda.fld", fwd_expect: "15" }
    , { file: "self.fld", fwd_expect: "120" }
    , { file: "implicit_none.fld", fwd_expect: "None" }

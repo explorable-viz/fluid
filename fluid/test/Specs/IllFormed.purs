@@ -25,4 +25,5 @@ purepy_cases =
 illFormed_cases :: Array IllFormedSpec
 illFormed_cases =
    [ { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }
+   , { file: "match_partial_def.fld", expected_error: "Not definitely assigned: result" }
    ]
