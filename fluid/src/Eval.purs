@@ -193,8 +193,6 @@ evalStmt doc_opt γ s αs = case s of
    Return e -> Returns <$> eval doc_opt γ e αs
    Match e σ -> do
       v <- eval Nothing γ e αs
-      -- At statement level, a value whose top-level constructor isn't covered
-      -- by σ falls through (Pass semantics), instead of throwing.
       case σ, v of
          ElimConstr m, Val _ _ (V.Constr c _) | not (isJust (lookup c m)) ->
             pure (Assigns empty empty)

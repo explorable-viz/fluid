@@ -8,7 +8,7 @@ import Data.Set (Set, empty, insert, member, singleton, unions) as Set
 import Control.Monad.Error.Class (class MonadError)
 import Data.Bitraversable (rtraverse)
 import Data.Either (Either(..))
-import Data.Foldable (length)
+import Data.Foldable (for_, length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, take, unzip, zip, zipWith, (:))
@@ -199,21 +199,16 @@ varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m
 varDefFwd (VarDef p s) =
    E.VarDef <$> desug (Clauses (singleton (Clause bot (singleton p × Return (Dictionary top Nil))))) <*> desug s
 
--- RecDefs
--- In the formalism, "group by name" is part of the syntax. Clauses for a given
--- name must be contiguous; non-contiguous same-name groups would otherwise be
--- silently merged by Map.fromFoldable, dropping the earlier definition.
 recDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
 recDefsFwd xcs = do
    let xcss = map RecDef (groupBy (eq `on` fst) xcs)
    let names = (fst <<< head <<< unwrap) <$> toList xcss
-   case findDuplicate names of
-      Just x -> throw $ "Non-contiguous clauses for: " <> x
-      Nothing -> pure unit
+   for_ (firstDuplicate names) \x ->
+      throw $ "Non-contiguous clauses for: " <> x
    E.RecDefs top <$> D.fromFoldable <$> traverse recDefFwd xcss
    where
-   findDuplicate :: List Var -> Maybe Var
-   findDuplicate = go Set.empty
+   firstDuplicate :: List Var -> Maybe Var
+   firstDuplicate = go Set.empty
       where
       go _ Nil = Nothing
       go seen (x : xs)
@@ -623,9 +618,6 @@ instance FV (ParagraphElem a) where
    fv (Token _) = Set.empty
    fv (Unquote e) = fv e
 
--- RecDefs is a NonEmptyList Branch; the recursive group is mutually-bound, so
--- free vars are the union of each clause body's frees minus all branches' names
--- and each clause's own pattern bindings.
 fvRecDefs :: forall a. RecDefs a -> Set.Set Var
 fvRecDefs rs =
    Set.unions (fv <$> (snd <$> rs)) \\ Set.unions (Set.singleton <<< fst <$> rs)

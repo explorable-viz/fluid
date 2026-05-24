@@ -11,25 +11,18 @@ import Data.Set (Set)
 import Data.Set as Set
 import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class JoinSemilattice, class MeetSemilattice)
 
--- Context Γ : Var ⇀ B, where B = {tt, ff}. Absent key = ⊥ (undefined).
--- True = definitely assigned (tt); False = not definitely assigned (ff).
 type Ctx = Map Var Boolean
 
--- Well-formedness result type R ::= Returns | Assigns Δ.
 data TyResult = Returns | Assigns Ctx
 
 derive instance Eq TyResult
 
--- Unit of overrideRes (sequential composition · ): a "no-op" Assigns whose
--- context contributes nothing. Reading (TyResult, mergeRes, overrideRes) as a
--- near-semiring with Returns as additive unit, this is the multiplicative
--- identity.
 assignsEmpty :: TyResult
 assignsEmpty = Assigns Map.empty
 
--- Trivial Lattice instances so TyResult can sit in the AST's annotation slot
--- (which is constrained to BoundedLattice). The values are not meaningfully
--- consumed; the lattice ops are never called on TyResult in practice.
+fromSet :: forall k v. Ord k => v -> Set k -> Map k v
+fromSet v = foldl (\m k -> Map.insert k v m) Map.empty
+
 instance JoinSemilattice TyResult where
    join _ b = b
 
@@ -42,14 +35,9 @@ instance BoundedJoinSemilattice TyResult where
 instance BoundedMeetSemilattice TyResult where
    top = Returns
 
--- Sequential composition Γ · Δ on contexts. Right-biased: Δ overrides Γ.
 overrideCtx :: Ctx -> Ctx -> Ctx
 overrideCtx = flip Map.union
 
--- Parallel composition Γ ⊕ Δ on contexts.
--- Both defined → conjunction of statuses.
--- Only one defined → ff (the var is "lost" in the merge).
--- Both ⊥ → ⊥.
 mergeCtx :: Ctx -> Ctx -> Ctx
 mergeCtx γ1 γ2 =
    foldl (\acc k -> Map.insert k (mergedAt k) acc) Map.empty allKeys
@@ -60,7 +48,6 @@ mergeCtx γ1 γ2 =
       Just a, Just b -> a && b
       _, _ -> false
 
--- Lifted to TyResult. Returns is zero for · and unit for ⊕.
 overrideRes :: TyResult -> TyResult -> TyResult
 overrideRes _ Returns = Returns
 overrideRes Returns _ = Returns

@@ -7,16 +7,16 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Either (Either(..))
 import Data.Foldable (foldl, for_)
 import Data.List (List(..))
-import Data.List.NonEmpty (head, tail)
-import DataType (cNone)
-import Data.Traversable (traverse)
-import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
+import Data.List.NonEmpty as NEL
+import Data.Semigroup.Foldable (foldl1)
 import Data.Set (Set, unions)
 import Data.Set as Set
+import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (Ctx, TyResult(..), assignsEmpty, mergeRes, overrideCtx, overrideRes)
+import DataType (cNone)
+import DefiniteAssignment (Ctx, TyResult(..), assignsEmpty, fromSet, mergeRes, overrideCtx, overrideRes)
 import Effect.Exception (Error)
 import Expr (bv, fv)
 import Expr (Module(..), RecDefs(..)) as E
@@ -27,95 +27,66 @@ import Util.Map (keys)
 import Util.Set ((\\), (∪))
 import Val (Env)
 
--- ======================
--- Entry points
--- ======================
-
 checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m (S.Stmt TyResult)
-checkProgram initialScope s = do
-   _ × s' <- checkDA (mapFromSet true initialScope) s
+checkProgram γ0 s = do
+   _ × s' <- checkDA (fromSet true γ0) s
    pure (implicitNone s')
 
--- Post-validation normalisation: function bodies whose TyResult is Assigns
--- (fall-through possible) get an implicit `return None` appended.
 implicitNone :: S.Stmt TyResult -> S.Stmt TyResult
 implicitNone S.Pass = S.Pass
 implicitNone (S.Return e) = S.Return e
 implicitNone (S.ExprStmt e) = S.ExprStmt e
-implicitNone (S.Assert cond msg) = S.Assert cond msg
-implicitNone (S.Def vd) = S.Def vd
+implicitNone (S.Assert e e') = S.Assert e e'
+implicitNone (S.Def d) = S.Def d
 implicitNone (S.Seq s1 s2) = S.Seq (implicitNone s1) (implicitNone s2)
-implicitNone (S.If clauses elseBody) =
-   S.If ((\(c × b) -> c × implicitNone b) <$> clauses) (implicitNone elseBody)
-implicitNone (S.Match scrut branches) =
-   S.Match scrut ((\(p × b) -> p × implicitNone b) <$> branches)
-implicitNone (S.DefRec rs) =
-   S.DefRec
-      ( ( \(name × S.Clause r (ps × body)) ->
-             name × S.Clause r (ps × addReturnNone r (implicitNone body))
-        ) <$> rs
-      )
+implicitNone (S.If es s) = S.If ((\(e × s') -> e × implicitNone s') <$> es) (implicitNone s)
+implicitNone (S.Match e ps) = S.Match e ((\(p × s) -> p × implicitNone s) <$> ps)
+implicitNone (S.DefRec ds) =
+   S.DefRec ((\(x × S.Clause r (ps × s)) -> x × S.Clause r (ps × close r (implicitNone s))) <$> ds)
    where
-   addReturnNone :: TyResult -> S.Stmt TyResult -> S.Stmt TyResult
-   addReturnNone Returns body = body
-   addReturnNone (Assigns _) body = S.Seq body (S.Return (S.Constr Returns cNone Nil))
+   close Returns s = s
+   close (Assigns _) s = S.Seq s (S.Return (S.Constr Returns cNone Nil))
 
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
 
--- Names exported by a desugared module.
 moduleExports :: forall a. E.Module a -> Set Var
 moduleExports (E.Module ds) = unions (defNames <$> ds)
    where
-   defNames (Left vd) = bv vd
+   defNames (Left d) = bv d
    defNames (Right (E.RecDefs _ ρ)) = keys ρ
 
 envNames :: forall a. Env a -> Set Var
 envNames = keys
 
--- ======================
--- Syntactic helpers (PurePy spec §2.2)
--- ======================
-
--- assigns(s): over-approximation of variables assigned anywhere in s, without
--- descending into nested function definitions. Each def's NAME is included;
--- its body's assigns are not.
 assigns :: forall a. S.Stmt a -> Set Var
 assigns S.Pass = Set.empty
 assigns (S.Def (S.VarDef p _)) = bv p
 assigns (S.ExprStmt _) = Set.empty
 assigns (S.Assert _ _) = Set.empty
 assigns (S.Return _) = Set.empty
-assigns (S.If clauses elseBody) =
-   unions (assigns <$> (snd <$> clauses)) ∪ assigns elseBody
-assigns (S.Match _ branches) =
-   unions (assigns <$> (snd <$> branches))
-assigns (S.DefRec rs) = unions (Set.singleton <<< fst <$> rs)
+assigns (S.If es s) = unions (assigns <$> (snd <$> es)) ∪ assigns s
+assigns (S.Match _ ps) = unions (assigns <$> (snd <$> ps))
+assigns (S.DefRec ds) = unions (Set.singleton <<< fst <$> ds)
 assigns (S.Seq s1 s2) = assigns s1 ∪ assigns s2
 
--- captures(s): vars from the enclosing scope referenced by closures (lambdas or
--- nested function definitions) within s. The interesting cases are def-regions
--- and lambdas; other forms just recurse.
 captures :: forall a. S.Stmt a -> Set Var
 captures S.Pass = Set.empty
 captures (S.Def (S.VarDef _ e)) = capturesE e
 captures (S.ExprStmt e) = capturesE e
-captures (S.Assert cond msg) = capturesE cond ∪ maybe Set.empty capturesE msg
+captures (S.Assert e e') = capturesE e ∪ maybe Set.empty capturesE e'
 captures (S.Return e) = capturesE e
-captures (S.If clauses elseBody) =
-   unions ((\(cond × body) -> capturesE cond ∪ captures body) <$> clauses)
-      ∪ captures elseBody
-captures (S.Match scrut branches) =
-   capturesE scrut ∪ unions ((\(_ × body) -> captures body) <$> branches)
-captures (S.DefRec rs) =
-   (unions (branchCaptures <$> rs)) \\ unions (Set.singleton <<< fst <$> rs)
+captures (S.If es s) =
+   unions ((\(e × s') -> capturesE e ∪ captures s') <$> es) ∪ captures s
+captures (S.Match e ps) =
+   capturesE e ∪ unions ((\(_ × s) -> captures s) <$> ps)
+captures (S.DefRec ds) =
+   (unions (clauseCaptures <$> ds)) \\ unions (Set.singleton <<< fst <$> ds)
    where
-   branchCaptures (_ × S.Clause _ (ps × body)) =
-      (fv body \\ unions (bv <$> ps)) \\ assigns body
+   clauseCaptures (_ × S.Clause _ (ps × s)) =
+      (fv s \\ unions (bv <$> ps)) \\ assigns s
 captures (S.Seq s1 s2) = captures s1 ∪ captures s2
 
--- captures lifted to expressions. Vars on their own don't capture; only
--- closure-introducing forms do.
 capturesE :: forall a. S.Expr a -> Set Var
 capturesE (S.Var _) = Set.empty
 capturesE (S.Op _) = Set.empty
@@ -123,22 +94,22 @@ capturesE (S.Int _ _) = Set.empty
 capturesE (S.Float _ _) = Set.empty
 capturesE (S.Str _ _) = Set.empty
 capturesE (S.Constr _ _ es) = unions (capturesE <$> es)
-capturesE (S.Dictionary _ entries) =
-   unions ((\(k × v) -> capturesEntry k ∪ capturesE v) <$> entries)
+capturesE (S.Dictionary _ es) =
+   unions ((\(k × v) -> capturesEntry k ∪ capturesE v) <$> es)
    where
    capturesEntry (S.ExprKey e) = capturesE e
    capturesEntry (S.VarKey _ _) = Set.empty
-capturesE (S.Matrix _ body (x × y) source) =
-   (capturesE body \\ (Set.singleton x ∪ Set.singleton y)) ∪ capturesE source
-capturesE (S.Lambda (S.LambdaClause (ps × body))) =
-   fv body \\ unions (bv <$> ps)
+capturesE (S.Matrix _ e (x × y) e') =
+   (capturesE e \\ (Set.singleton x ∪ Set.singleton y)) ∪ capturesE e'
+capturesE (S.Lambda (S.LambdaClause (ps × e))) =
+   fv e \\ unions (bv <$> ps)
 capturesE (S.Project e _) = capturesE e
 capturesE (S.DProject e e') = capturesE e ∪ capturesE e'
 capturesE (S.App e e') = capturesE e ∪ capturesE e'
 capturesE (S.BinaryApp e _ e') = capturesE e ∪ capturesE e'
 capturesE (S.UnaryPrefixApp _ e) = capturesE e
-capturesE (S.Ternary cond e1 e2) = capturesE cond ∪ capturesE e1 ∪ capturesE e2
-capturesE (S.Paragraph elems) = unions (capturesPe <$> elems)
+capturesE (S.Ternary e e1 e2) = capturesE e ∪ capturesE e1 ∪ capturesE e2
+capturesE (S.Paragraph es) = unions (capturesPe <$> es)
    where
    capturesPe (S.Token _) = Set.empty
    capturesPe (S.Unquote e) = capturesE e
@@ -148,104 +119,77 @@ capturesE (S.ListNonEmpty _ e l) = capturesE e ∪ capturesEListRest l
    capturesEListRest (S.End _) = Set.empty
    capturesEListRest (S.Next _ e' l') = capturesE e' ∪ capturesEListRest l'
 capturesE (S.ListEnum e1 e2) = capturesE e1 ∪ capturesE e2
-capturesE (S.ListComp _ e _) = capturesE e -- simplified; full qualifier handling later
+capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
--- ======================
--- Well-formedness judgement (PurePy spec §2.3)
--- ======================
---
--- checkDA Γ s computes TyResult for s under context Γ, and verifies every
--- variable reference is tt-bound. Returns | Assigns Δ.
-
--- checkDA validates and produces an annotated AST. The annotation type
--- TyResult is meaningful at Clause sites (each carries its body's TyResult);
--- elsewhere it's a sentinel.
 checkDA :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m (TyResult × S.Stmt TyResult)
-checkDA _ S.Pass = pure (Assigns Map.empty × S.Pass)
+checkDA _ S.Pass = pure (assignsEmpty × S.Pass)
 checkDA γ (S.Return e) = do
    checkExprDA γ e
    pure (Returns × S.Return (assignsEmpty <$ e))
 checkDA γ (S.ExprStmt e) = do
    checkExprDA γ e
-   pure (Assigns Map.empty × S.ExprStmt (assignsEmpty <$ e))
-checkDA γ (S.Assert cond msg) = do
-   checkExprDA γ cond
-   case msg of
-      Just m -> checkExprDA γ m
-      Nothing -> pure unit
-   pure (Assigns Map.empty × S.Assert (assignsEmpty <$ cond) ((assignsEmpty <$ _) <$> msg))
+   pure (assignsEmpty × S.ExprStmt (assignsEmpty <$ e))
+checkDA γ (S.Assert e e') = do
+   checkExprDA γ e
+   for_ e' (checkExprDA γ)
+   pure (assignsEmpty × S.Assert (assignsEmpty <$ e) ((assignsEmpty <$ _) <$> e'))
 checkDA γ (S.Def (S.VarDef p e)) = do
-   let assigned = bv p
-   let bad = assigned `Set.intersection` capturesE e
-   for_ (Set.toUnfoldable bad :: Array Var) \x ->
+   let xs = bv p
+   for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throw $ "Variable captured by its own definition: " <> x
    checkExprDA γ e
-   pure (Assigns (mapFromSet true assigned) × S.Def (S.VarDef p (assignsEmpty <$ e)))
-checkDA γ (S.DefRec rs) = do
-   let regionNames = unions (Set.singleton <<< fst <$> rs)
-   let γ' = γ `overrideCtx` mapFromSet true regionNames
-   rs' <- traverse
-      ( \(name × S.Clause _ (ps × body)) -> do
-           let params = unions (bv <$> ps)
-           let locals_ff = assigns body \\ params
-           let γ'' = γ' `overrideCtx` mapFromSet true params `overrideCtx` mapFromSet false locals_ff
-           rBody × body' <- checkDA γ'' body
-           pure (name × S.Clause rBody (ps × body'))
+   pure (Assigns (fromSet true xs) × S.Def (S.VarDef p (assignsEmpty <$ e)))
+checkDA γ (S.DefRec ds) = do
+   let fs = unions (Set.singleton <<< fst <$> ds)
+   let γ' = γ `overrideCtx` fromSet true fs
+   ds' <- traverse
+      ( \(x × S.Clause _ (ps × s)) -> do
+           let xs = unions (bv <$> ps)
+           let ys = assigns s \\ xs
+           let γ'' = γ' `overrideCtx` fromSet true xs `overrideCtx` fromSet false ys
+           r × s' <- checkDA γ'' s
+           pure (x × S.Clause r (ps × s'))
       )
-      rs
-   pure (Assigns (mapFromSet true regionNames) × S.DefRec rs')
+      ds
+   pure (Assigns (fromSet true fs) × S.DefRec ds')
 checkDA γ (S.Seq s1 s2) = do
    r1 × s1' <- checkDA γ s1
    case r1 of
       Returns -> throw "Unreachable statement"
       Assigns δ -> do
-         let bad = captures s1 `Set.intersection` assigns s2
-         for_ (Set.toUnfoldable bad :: Array Var) \x ->
+         for_ (Set.toUnfoldable (captures s1 `Set.intersection` assigns s2) :: Array Var) \x ->
             throw $ "Captured variable reassigned: " <> x
          r2 × s2' <- checkDA (γ `overrideCtx` δ) s2
          pure (overrideRes r1 r2 × S.Seq s1' s2')
-checkDA γ (S.If clauses elseBody) = do
-   clauses' <- traverse
-      ( \(cond × body) -> do
-           checkExprDA γ cond
-           r × body' <- checkDA γ body
-           pure (r × ((assignsEmpty <$ cond) × body'))
+checkDA γ (S.If es s) = do
+   es' <- traverse
+      ( \(e × s') -> do
+           checkExprDA γ e
+           r × s'' <- checkDA γ s'
+           pure (r × ((assignsEmpty <$ e) × s''))
       )
-      clauses
-   elseR × elseBody' <- checkDA γ elseBody
-   let merged = foldl mergeRes elseR (fst <$> clauses')
-   pure (merged × S.If (snd <$> clauses') elseBody')
-checkDA γ (S.Match scrut branches) = do
-   checkExprDA γ scrut
-   branches' <- traverse
-      ( \(p × body) -> do
-           let pBindings = bv p
-           let γ' = γ `overrideCtx` mapFromSet true pBindings
-           r × body' <- checkDA γ' body
-           -- pattern bindings are branch-local; strip from result
-           pure (stripVars pBindings r × (p × body'))
+      es
+   r × s' <- checkDA γ s
+   pure (foldl1 mergeRes (NEL.cons r (fst <$> es')) × S.If (snd <$> es') s')
+checkDA γ (S.Match e ps) = do
+   checkExprDA γ e
+   ps' <- traverse
+      ( \(p × s) -> do
+           let xs = bv p
+           r × s' <- checkDA (γ `overrideCtx` fromSet true xs) s
+           pure (stripVars xs r × (p × s'))
       )
-      branches
-   -- Merge with Assigns ∅ representing the implicit no-matching-case fall-
-   -- through, mirroring how if-no-else merges with an implicit Pass else.
-   -- DA does not reason about exhaustiveness; a static totality check belongs
-   -- in PurePy once it gains match.
-   let merged = mergeRes (foldl mergeRes (head (fst <$> branches')) (tail (fst <$> branches'))) (Assigns Map.empty)
-   pure (merged × S.Match (assignsEmpty <$ scrut) (snd <$> branches'))
+      ps
+   pure (mergeRes (foldl1 mergeRes (fst <$> ps')) assignsEmpty × S.Match (assignsEmpty <$ e) (snd <$> ps'))
 
--- Check every variable reference in an expression is tt-bound in Γ.
 checkExprDA :: forall m a. MonadError Error m => Ctx -> S.Expr a -> m Unit
-checkExprDA γ e = do
-   let refs = fv e
-   for_ refs \v -> case Map.lookup v γ of
+checkExprDA γ e =
+   for_ (fv e) \x -> case Map.lookup x γ of
       Just true -> pure unit
-      Just false -> throw $ "Not definitely assigned: " <> v
-      Nothing -> throw $ "Unbound name: " <> v
-
-mapFromSet :: forall k v. Ord k => v -> Set k -> Map k v
-mapFromSet v = foldl (\acc k -> Map.insert k v acc) Map.empty
+      Just false -> throw $ "Not definitely assigned: " <> x
+      Nothing -> throw $ "Unbound name: " <> x
 
 stripVars :: Set Var -> TyResult -> TyResult
 stripVars _ Returns = Returns
-stripVars vars (Assigns δ) = Assigns (foldl (flip Map.delete) δ vars)
+stripVars xs (Assigns δ) = Assigns (foldl (flip Map.delete) δ xs)

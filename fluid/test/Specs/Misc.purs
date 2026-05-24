@@ -6,24 +6,24 @@ misc_cases :: Array TestSpec
 misc_cases =
    [ { file: "arithmetic.fld", fwd_expect: "42" }
    , { file: "array.fld", fwd_expect: "(0, (3, 3))" }
-   , { file: "assert_stmt.fld", fwd_expect: "10" }
+   , { file: "purepy/assert_stmt.fld", fwd_expect: "10" }
    , { file: "assert_implicit.fld", fwd_expect: "10" }
    , { file: "bare_return.fld", fwd_expect: "None" }
    , { file: "zero_arg.fld", fwd_expect: "\"hello\"" }
-   , { file: "early_return.fld", fwd_expect: "\"smaller\"" }
-   , { file: "both_branches.fld", fwd_expect: "\"smaller\"" }
-   , { file: "branch_local.fld", fwd_expect: "6" }
-   , { file: "closure_capture.fld", fwd_expect: "6" }
-   , { file: "param_reassign.fld", fwd_expect: "15" }
-   , { file: "self_capture_def.fld", fwd_expect: "cl" }
+   , { file: "purepy/early_return.fld", fwd_expect: "\"smaller\"" }
+   , { file: "purepy/both_branches.fld", fwd_expect: "\"smaller\"" }
+   , { file: "purepy/branch_local.fld", fwd_expect: "6" }
+   , { file: "purepy/closure_capture.fld", fwd_expect: "6" }
+   , { file: "purepy/param_reassign.fld", fwd_expect: "15" }
+   , { file: "purepy/self_capture_def.fld", fwd_expect: "cl" }
    , { file: "piecewise_def.fld", fwd_expect: "3" }
    , { file: "if_no_else.fld", fwd_expect: "1" }
-   , { file: "lambda.fld", fwd_expect: "15" }
-   , { file: "self.fld", fwd_expect: "120" }
-   , { file: "implicit_none.fld", fwd_expect: "None" }
-   , { file: "implicit_return.fld", fwd_expect: "None" }
-   , { file: "mutual_after_rebind.fld", fwd_expect: "(0, 1)" }
-   , { file: "mutual_def_in_branch.fld", fwd_expect: "(\"via mutual region\", \"via mutual region\")" }
+   , { file: "purepy/lambda.fld", fwd_expect: "15" }
+   , { file: "purepy/self.fld", fwd_expect: "120" }
+   , { file: "purepy/implicit_none.fld", fwd_expect: "None" }
+   , { file: "purepy/implicit_return.fld", fwd_expect: "None" }
+   , { file: "purepy/mutual_after_rebind.fld", fwd_expect: "(0, 1)" }
+   , { file: "purepy/mutual_def_in_branch.fld", fwd_expect: "(\"via mutual region\", \"via mutual region\")" }
    , { file: "boolean_precedence.fld", fwd_expect: "True" }
    , { file: "compose.fld", fwd_expect: "5" }
    , { file: "custom_infix.fld", fwd_expect: "True" }
@@ -38,7 +38,7 @@ misc_cases =
           \(2 :| 2 :| -2 :| -2 :| []) :| []"
      }
    , { file: "elif.fld", fwd_expect: """"much more" :| "more" :| "less" :| "much less" :| []""" }
-   , { file: "expr_stmt.fld", fwd_expect: "6" }
+   , { file: "purepy/expr_stmt.fld", fwd_expect: "6" }
    , { file: "factorial.fld", fwd_expect: "40320" }
    , { file: "filter.fld", fwd_expect: "8 :| 7 :| []" }
    , { file: "first_class_constr.fld", fwd_expect: "(10 :| []) :| (12 :| []) :| (20 :| []) :| []" }
@@ -54,7 +54,7 @@ misc_cases =
    , { file: "lookup.fld", fwd_expect: """Just("sarah")""" }
    , { file: "map.fld", fwd_expect: "5 :| 7 :| 13 :| 15 :| 4 :| 3 :| -3 :| []" }
    , { file: "merge_sort.fld", fwd_expect: "1 :| 2 :| 3 :| []" }
-   , { file: "mutual.fld", fwd_expect: "True" }
+   , { file: "purepy/mutual.fld", fwd_expect: "True" }
    , { file: "normalise.fld", fwd_expect: "(33, 66)" }
    , { file: "not_parens_op.fld", fwd_expect: """@doc("hello") -42""" }
    , { file: "nub.fld", fwd_expect: "1 :| 2 :| 3 :| 4 :| []" }

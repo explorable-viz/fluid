@@ -25,10 +25,13 @@
 
 ## Principles
 
-- Write concisely: omit articles (a, an, the) except when needed for clarity. Applies to documentation, issue titles, commit messages, and comments.
+- Write concisely: omit articles unless needed for clarity. Applies everywhere — docs, issue titles, commit messages, comments, this file.
+- Avoid comments. Add only to justify an unusual implementation. No historical, restatement-of-code, or "what changed" commentary. Same for test fixtures.
+- Comments: single line; wrap at ~110; no mini-paragraphs.
+- Avoid jargon: e.g. "land", "honestly", "honest".
+- Before writing code: scan codebase for naming conventions and existing helpers; build from existing behaviours rather than reinventing.
 - Pause, review, and commit after every non-trivial step.
-- Look for consolidation/refactoring opportunities — build from existing behaviours rather than reinventing.
-- Minor documentation, process changes, and trivial fixes can be committed directly to current milestone branch.
+- Minor docs, process changes, and trivial fixes can be committed directly to current milestone branch.
 
 ## Branching
 

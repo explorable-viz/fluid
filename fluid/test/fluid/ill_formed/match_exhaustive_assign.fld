@@ -1,6 +1,3 @@
-# Even an apparently-exhaustive match doesn't save the assigned variable,
-# because DA does not reason about exhaustiveness. Becomes well-formed once
-# we land a static exhaustiveness check.
 def foo(xs):
    match xs:
       case []:
