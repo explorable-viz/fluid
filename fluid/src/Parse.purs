@@ -133,7 +133,7 @@ ifStmt = defer \_ -> do
    reserved "if"
    c <- ifClause
    cs <- many (align $ reserved "elif" *> ifClause)
-   b <- align $ reserved "else" *> blockBody
+   b <- option Pass (align $ reserved "else" *> blockBody)
    pure $ If (nonEmpty (c : cs)) b
 
 matchStmt :: Parser (Raw Stmt)

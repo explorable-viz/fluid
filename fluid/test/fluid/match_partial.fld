@@ -1,0 +1,6 @@
+xs = [1, 2, 3]
+result = 0
+match xs:
+   case []:
+      result = 99
+result
