@@ -13,26 +13,27 @@ import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, clas
 
 type Ctx = Map Var Boolean
 
-data TyResult = Returns | Assigns Ctx
+data TyResult a = Returns | Assigns a
 
-derive instance Eq TyResult
+derive instance Functor TyResult
+derive instance Eq a => Eq (TyResult a)
 
-assignsEmpty :: TyResult
+assignsEmpty :: TyResult Ctx
 assignsEmpty = Assigns Map.empty
 
 fromSet :: forall k v. Ord k => v -> Set k -> Map k v
 fromSet v = foldl (\m k -> Map.insert k v m) Map.empty
 
-instance JoinSemilattice TyResult where
+instance JoinSemilattice (TyResult Ctx) where
    join _ b = b
 
-instance MeetSemilattice TyResult where
+instance MeetSemilattice (TyResult Ctx) where
    meet a _ = a
 
-instance BoundedJoinSemilattice TyResult where
+instance BoundedJoinSemilattice (TyResult Ctx) where
    bot = assignsEmpty
 
-instance BoundedMeetSemilattice TyResult where
+instance BoundedMeetSemilattice (TyResult Ctx) where
    top = Returns
 
 overrideCtx :: Ctx -> Ctx -> Ctx
@@ -48,12 +49,12 @@ mergeCtx γ1 γ2 =
       Just a, Just b -> a && b
       _, _ -> false
 
-overrideRes :: TyResult -> TyResult -> TyResult
+overrideRes :: TyResult Ctx -> TyResult Ctx -> TyResult Ctx
 overrideRes _ Returns = Returns
 overrideRes Returns _ = Returns
 overrideRes (Assigns a) (Assigns b) = Assigns (overrideCtx a b)
 
-mergeRes :: TyResult -> TyResult -> TyResult
+mergeRes :: TyResult Ctx -> TyResult Ctx -> TyResult Ctx
 mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)

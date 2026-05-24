@@ -25,7 +25,7 @@ import Util.Map (keys)
 import Util.Set ((\\), (∪))
 import Val (Env)
 
-checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m (S.Stmt TyResult)
+checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
 checkProgram γ0 s = snd <$> checkDA (fromSet true γ0) s
 
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
@@ -94,7 +94,7 @@ capturesE (S.ListEnum e1 e2) = capturesE e1 ∪ capturesE e2
 capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
-checkDA :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m (TyResult × S.Stmt TyResult)
+checkDA :: forall m a. MonadError Error m => Ctx -> S.Stmt a -> m (TyResult Ctx × S.Stmt (TyResult Ctx))
 checkDA _ S.Pass = pure (assignsEmpty × S.Pass)
 checkDA γ (S.Return e) = do
    checkExprDA γ e
@@ -164,6 +164,5 @@ checkExprDA γ e =
       Just false -> throw $ "Not definitely assigned: " <> x
       Nothing -> throw $ "Unbound name: " <> x
 
-stripVars :: Set Var -> TyResult -> TyResult
-stripVars _ Returns = Returns
-stripVars xs (Assigns δ) = Assigns (foldl (flip Map.delete) δ xs)
+stripVars :: Set Var -> TyResult Ctx -> TyResult Ctx
+stripVars xs = map (\δ -> foldl (flip Map.delete) δ xs)
