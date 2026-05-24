@@ -24,14 +24,14 @@ import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
-import DefiniteAssignment (Ctx, TyResult(..))
+import DefiniteAssignment (Ctx, TyResult(..), assignsEmpty)
+import Lattice (class JoinSemilattice)
 import Desugarable (class Desugarable, desug)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (class BV, class FV, Cont(..), Elim(..), asElim, bv, fv)
 import Expr (Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
 import Util.Set ((\\), (∪))
-import Lattice (class JoinSemilattice, bot, top)
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Pair (Pair(..))
@@ -163,7 +163,7 @@ instance Desugarable Clauses Elim where
    desug μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
 
 instance Desugarable LambdaClause Elim where
-   desug (LambdaClause (ps × e)) = desug (Clauses (singleton (Clause bot (ps × Return e))))
+   desug (LambdaClause (ps × e)) = desug (Clauses (singleton (Clause assignsEmpty (ps × Return e))))
 
 desugarModuleFwd :: forall m. MonadError Error m => Module (TyResult Ctx) -> m (E.Module (TyResult Ctx))
 desugarModuleFwd = moduleFwd
@@ -195,7 +195,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- in evaluation.
 varDefFwd :: forall m. MonadError Error m => VarDef (TyResult Ctx) -> m (E.VarDef (TyResult Ctx))
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause bot (singleton p × Return (Dictionary top Nil))))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause assignsEmpty (singleton p × Return (Dictionary Returns Nil))))) <*> desug s
 
 recDefsFwd :: forall m. MonadError Error m => RecDefs (TyResult Ctx) -> m (E.RecDefs (TyResult Ctx))
 recDefsFwd xcs = do
@@ -203,7 +203,7 @@ recDefsFwd xcs = do
    let names = (fst <<< head <<< unwrap) <$> toList xcss
    for_ (firstDuplicate names) \x ->
       throw $ "Non-contiguous clauses for: " <> x
-   E.RecDefs top <$> D.fromFoldable <$> traverse recDefFwd xcss
+   E.RecDefs Returns <$> D.fromFoldable <$> traverse recDefFwd xcss
    where
    firstDuplicate :: List Var -> Maybe Var
    firstDuplicate = go Set.empty
@@ -222,21 +222,21 @@ recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (close <<< sn
 paragraphFwd :: forall m. MonadError Error m => List (ParagraphElem (TyResult Ctx)) -> m (E.Expr (TyResult Ctx))
 paragraphFwd elems = do
    es <- paragraphElemsFwd elems
-   pure (E.Constr bot cParagraph (es : Nil))
+   pure (E.Constr assignsEmpty cParagraph (es : Nil))
 
 paragraphElemsFwd
    :: forall m
     . MonadError Error m
    => List (ParagraphElem (TyResult Ctx))
    -> m (E.Expr (TyResult Ctx))
-paragraphElemsFwd Nil = pure (enil bot)
+paragraphElemsFwd Nil = pure (enil assignsEmpty)
 paragraphElemsFwd (Token s : elems) = do
    e' <- paragraphElemsFwd elems
-   pure (econs bot (E.Str bot s) e')
+   pure (econs assignsEmpty (E.Str assignsEmpty s) e')
 paragraphElemsFwd (Unquote s : elems) = do
    e <- desug s
    e' <- paragraphElemsFwd elems
-   pure (econs bot e e')
+   pure (econs assignsEmpty e e')
 
 -- Expr
 exprFwd :: forall m. MonadError Error m => Expr (TyResult Ctx) -> m (E.Expr (TyResult Ctx))
@@ -260,9 +260,9 @@ exprFwd (Dictionary α sss) = do
 exprFwd (Matrix α s (x × y) s') =
    E.Matrix α <$> desug s <@> x × y <*> desug s'
 exprFwd (Lambda μ) =
-   E.Lambda top <$> desug μ
+   E.Lambda Returns <$> desug μ
 exprFwd (Project s x) =
-   E.DProject <$> desug s <@> E.Str top x
+   E.DProject <$> desug s <@> E.Str Returns x
 exprFwd (DProject s x) =
    E.DProject <$> desug s <*> desug x
 exprFwd (App s1 s2) =
@@ -273,7 +273,7 @@ exprFwd (UnaryPrefixApp op s) =
    E.App (E.Op op) <$> desug s
 exprFwd (Ternary cond e1 e2) =
    E.App
-      <$> (E.Lambda top <$> (elimBool <$> (ContStmt <$> E.Return <$> desug e1) <*> (ContStmt <$> E.Return <$> desug e2)))
+      <$> (E.Lambda Returns <$> (elimBool <$> (ContStmt <$> E.Return <$> desug e1) <*> (ContStmt <$> E.Return <$> desug e2)))
       <*> desug cond
 exprFwd (Paragraph elems) =
    paragraphFwd elems
@@ -284,7 +284,7 @@ exprFwd (ListNonEmpty α s l) =
 exprFwd (ListEnum s1 s2) =
    E.App
       <$> (E.App (E.Var "range") <$> desug s1)
-      <*> (E.App <$> (E.App (E.Op "+") <$> desug s2) <@> (E.Int top 1))
+      <*> (E.App <$> (E.App (E.Op "+") <$> desug s2) <@> (E.Int Returns 1))
 exprFwd (ListComp α s (ListCompGen p s' : qs)) = unsafePartial $
    listCompFwd (α × (ListCompGen p s' : qs) × s)
 exprFwd (ListComp α s qs) =
@@ -300,7 +300,7 @@ stmtFwd :: forall m. MonadError Error m => Stmt (TyResult Ctx) -> m (E.Stmt (TyR
 stmtFwd (Def vd) = E.Def <$> varDefFwd vd
 stmtFwd (DefRec xcs) = E.DefRec <$> recDefsFwd xcs
 stmtFwd (Match s μ) = do
-   κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause bot <$> first singleton <$> μ)))
+   κ <- clausesStateFwd (toClausesStateFwd (Clauses (Clause assignsEmpty <$> first singleton <$> μ)))
    E.Match <$> desug s <@> asElim κ
 stmtFwd (If sss s) = ifElseFwd (sss × fromMaybe Pass s)
 stmtFwd (Return e) = E.Return <$> desug e
@@ -309,7 +309,7 @@ stmtFwd (ExprStmt e) = E.ExprStmt <$> desug e
 stmtFwd (Assert cond msg_opt) =
    stmtFwd (If (singleton (App (Var "not") cond × ExprStmt (App (Var "error") msg))) Nothing)
    where
-   msg = fromMaybe (Str top "AssertionError") msg_opt
+   msg = fromMaybe (Str Returns "AssertionError") msg_opt
 stmtFwd (Seq s1 s2) = E.Seq <$> stmtFwd s1 <*> stmtFwd s2
 
 ifElseFwd :: forall m. MonadError Error m => IfElseClauses (TyResult Ctx) -> m (E.Stmt (TyResult Ctx))
@@ -392,7 +392,7 @@ clausesStateFwd ks = case ks of
    (Nil × Nil × b) : Nil ->
       ContStmt <$> stmtFwd b
    (Nil × _) : _ ->
-      ContStmt <$> E.Return <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
+      ContStmt <$> E.Return <$> E.Lambda Returns <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
    ((Left (PVar x) : _) × _) : _ ->
       ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
    ((Left (PRecord xps) : _) × _) : _ ->

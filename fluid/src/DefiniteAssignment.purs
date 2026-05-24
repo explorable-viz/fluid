@@ -9,7 +9,6 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
-import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class JoinSemilattice, class MeetSemilattice)
 
 type Ctx = Map Var Boolean
 
@@ -23,18 +22,6 @@ assignsEmpty = Assigns Map.empty
 
 fromSet :: forall k v. Ord k => v -> Set k -> Map k v
 fromSet v = foldl (\m k -> Map.insert k v m) Map.empty
-
-instance JoinSemilattice (TyResult Ctx) where
-   join _ b = b
-
-instance MeetSemilattice (TyResult Ctx) where
-   meet a _ = a
-
-instance BoundedJoinSemilattice (TyResult Ctx) where
-   bot = assignsEmpty
-
-instance BoundedMeetSemilattice (TyResult Ctx) where
-   top = Returns
 
 overrideCtx :: Ctx -> Ctx -> Ctx
 overrideCtx = flip Map.union

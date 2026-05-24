@@ -4,7 +4,6 @@ import Prelude
 
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Either (Either(..))
 import Data.Foldable (foldl, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
@@ -17,13 +16,10 @@ import Data.Tuple (fst, snd)
 import DefiniteAssignment (Ctx, TyResult(..), assignsEmpty, fromSet, mergeRes, overrideCtx, overrideRes)
 import Effect.Exception (Error)
 import Expr (bv, fv)
-import Expr (Module(..), RecDefs(..)) as E
 import Lattice (Raw)
 import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module, ParagraphElem(..), Stmt(..), VarDef(..)) as S
 import Util (type (×), throw, (×))
-import Util.Map (keys)
 import Util.Set ((\\), (∪))
-import Val (Env)
 
 checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
 checkProgram γ0 s = snd <$> wellFormed (fromSet true γ0) s
