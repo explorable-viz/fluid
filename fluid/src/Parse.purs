@@ -258,9 +258,13 @@ expr = context "expr" $ ternary <?> "expression"
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
             reserved "lambda"
-            ps <- commas1 pattern
+            ps0 <- commas pattern
             delim ':'
             e <- ternary
+            let
+               ps = case ps0 of
+                  Nil -> NonEmptyList (PConstr cNoArgs Nil :| Nil)
+                  x : xs -> NonEmptyList (x :| xs)
             pure $ Lambda (LambdaClause (ps × e))
 
          var :: Parser (Raw Expr)

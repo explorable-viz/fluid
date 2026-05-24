@@ -1,6 +1,6 @@
 def f():
    x = 5
-   x = lambda dummy: x
-   return x(0)
+   x = lambda: x
+   return x()
 
 f()
