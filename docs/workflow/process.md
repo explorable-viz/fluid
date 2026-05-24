@@ -28,7 +28,7 @@
 - Write concisely: omit articles unless needed for clarity. Applies everywhere — docs, issue titles, commit messages, comments, this file.
 - Avoid comments. Add only to justify an unusual implementation. No historical, restatement-of-code, or "what changed" commentary. Same for test fixtures.
 - Comments: single line; wrap at ~110; no mini-paragraphs.
-- Avoid jargon: e.g. "land", "honestly", "honest".
+- Avoid weasel-words and jargon: e.g. "land", "honest"/"honestly", "ceremony".
 - Before writing code: scan codebase for naming conventions and existing helpers; build from existing behaviours rather than reinventing.
 - Pause, review, and commit after every non-trivial step.
 - Minor docs, process changes, and trivial fixes can be committed directly to current milestone branch.

@@ -15,9 +15,9 @@ import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Eval (GraphConfig, eval_primitives)
-import Expr (class FV, Module, Stmt, fv)
+import Expr (Module, Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
-import Graph (vertices)
+import Graph (Vertex, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
@@ -25,25 +25,29 @@ import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse (parseModule, parseProgram)
 import DefiniteAssignment (TyResult(..))
 import SExpr (desugarModuleFwd)
-import WellFormed (checkModule, checkProgram, envNames, moduleExports)
+import WellFormed (checkModule, checkProgram, envNames)
 import SExpr as S
 import Util (type (×), error, throwLeft, withMsg, (×))
 import Util.Map (restrict)
 import Util.Set ((∪))
 import Val (Env)
 
-initialConfig
-   :: forall m a
+type TopLevelEnv =
+   { n :: Int
+   , primitives :: Env Vertex
+   , γ :: Env Vertex
+   }
+
+buildTopLevelEnv
+   :: forall m
     . MonadAff m
    => MonadError Error m
    => MonadReader FileCxt m
    => LoadFile m
-   => FV a
-   => a
-   -> Raw Env
+   => Raw Env
    -> Raw ModuleCxt
-   -> m GraphConfig
-initialConfig e primitives moduleCxt = do
+   -> m TopLevelEnv
+buildTopLevelEnv primitives moduleCxt = do
    n × _ × primitives' × _ × γ <- flip runAllocT 0 do
       primitives' <- alloc primitives
       modules' <- traverse alloc (moduleCxt.modules)
@@ -51,7 +55,7 @@ initialConfig e primitives moduleCxt = do
       let mαs = Set.unions (vertices <$> Map.values modules')
       let αs = vertices primitives' ∪ mαs
       _ × γ <- runWithGraphT_spy (eval_primitives primitives' moduleCxt') αs :: AllocT m (GraphImpl × _)
-      pure (primitives' × modules' × restrict (fv e) γ)
+      pure (primitives' × modules' × γ)
    pure { n, primitives: primitives', γ }
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
@@ -63,11 +67,11 @@ prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt 
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    moduleCxt <- loadModuleGraph (prelude : imports)
-   let scope = envNames primitives ∪ Set.unions (moduleExports <$> Map.values moduleCxt.modules)
-   sty <- checkProgram scope s
+   topLevelEnv <- buildTopLevelEnv primitives moduleCxt
+   sty <- checkProgram (envNames topLevelEnv.γ) s
    eTy <- desug sty
    let e = (unit <$ eTy) :: Raw Stmt
-   gconfig <- initialConfig e primitives moduleCxt
+   let gconfig = { n: topLevelEnv.n, primitives: topLevelEnv.primitives, γ: restrict (fv e) topLevelEnv.γ }
    pure { s, e, gconfig }
 
 loadModuleGraph
