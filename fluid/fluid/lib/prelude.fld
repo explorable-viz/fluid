@@ -27,11 +27,9 @@ def not(False):
 def compare(x, y):
   if x > y:
     return GT
-  else:
-    if x < y:
-      return LT
-    else:
-      return EQ
+  if x < y:
+    return LT
+  return EQ
 
 # (b -> b -> c) -> (a -> b) -> a -> a -> c
 def on(bin_op, prop, x, y):
@@ -123,8 +121,7 @@ def find(p, []):
 def find(p, x :| xs):
   if p(x):
     return Just(x)
-  else:
-    return find(p, xs)
+  return find(p, xs)
 
 # String -> String -> List Dict -> Option Dict
 def find_with_key(k, v, rs):
@@ -168,8 +165,7 @@ def count_if(p):
   def f(n, x):
     if p(x):
       return n + 1
-    else:
-      return n
+    return n
   return foldl(f, 0)
 
 # Split list into longest initial segment whose elements satisfy a predicate, and the rest.
@@ -177,11 +173,10 @@ def count_if(p):
 def span(p, Nil):
   return { init: Nil, rest: Nil }
 def span(p, x :| xs_):
-  if p(x):
-    { init: ys, rest: zs } = span(p, xs_)
-    return { init: x :| ys, rest: zs }
-  else:
+  if not p(x):
     return { init: Nil, rest: x :| xs_ }
+  { init: ys, rest: zs } = span(p, xs_)
+  return { init: x :| ys, rest: zs }
 
 # Each returned list is non-empty.
 # (a -> a -> Bool) -> List a -> List (List a)
@@ -265,8 +260,7 @@ def intersperse(x :| y :| ys, sep):
 def iterate(n, f, z):
   if n == 0:
     return []
-  else:
-    return z :| map(f, iterate(n - 1, f, z))
+  return z :| map(f, iterate(n - 1, f, z))
 
 # List Num -> Num
 sum = foldr((+), 0)
@@ -301,23 +295,21 @@ repeat = flip(iterate, id)
 def take(n, xs):
   if n <= 0:
     return []
-  else:
-    match xs:
-      case []:
-        return []
-      case x :| xs:
-        return x :| take(n - 1, xs)
+  match xs:
+    case []:
+      return []
+    case x :| xs:
+      return x :| take(n - 1, xs)
 
 # Int -> List a -> List a
 def drop(n, xs):
   if n <= 0:
     return xs
-  else:
-    match xs:
-      case []:
-        return []
-      case _ :| xs:
-        return drop(n - 1, xs)
+  match xs:
+    case []:
+      return []
+    case _ :| xs:
+      return drop(n - 1, xs)
 
 # Int -> List a -> List a
 def last_n(n, xs):
@@ -328,8 +320,7 @@ def last_n(n, xs):
 def nth(n, x :| xs):
   if n == 0:
     return x
-  else:
-    return nth(n - 1, xs)
+  return nth(n - 1, xs)
 
 # Int -> Int -> List (List Int) -> Int
 def nth2(i, j, xss):
@@ -342,22 +333,15 @@ def lookup(k, []):
 def lookup(k, (k_, v) :| kvs):
   if k == k_:
     return v
-  else:
-    return lookup(k, kvs)
+  return lookup(k, kvs)
 
 # Int -> Int -> Int
 def max(n, m):
-  if n > m:
-    return n
-  else:
-    return m
+  return n if n > m else m
 
 # Int -> Int -> Int
 def min(n, m):
-  if n < m:
-    return n
-  else:
-    return m
+  return n if n < m else m
 
 # List Int -> Int
 maximum = foldr1(max)
@@ -387,8 +371,7 @@ zip = zip_with(curry(id))
 def range(n, m):
   if n < m:
     return n :| range(n + 1, m)
-  else:
-    return []
+  return []
 
 # (Int, Int) -> (Int, Int) -> List (Int, Int)
 def range2d((m1, n1), (m2, n2)):
@@ -396,10 +379,7 @@ def range2d((m1, n1), (m2, n2)):
 
 # Int -> Int -> Int
 def abs(x, y):
-  if x - y < 0:
-    return negate(x - y)
-  else:
-    return x - y
+  return negate(x - y) if x - y < 0 else x - y
 
 # Eq a => [a] -> [a]
 def nub(xs):
@@ -408,8 +388,7 @@ def nub(xs):
   def nub_(x :| xs, ys):
     if x |elem| ys:
       return nub_(xs, ys)
-    else:
-      return x :| nub_(xs, x :| ys)
+    return x :| nub_(xs, x :| ys)
 
   return nub_(xs, [])
 
@@ -424,7 +403,6 @@ def split_on(p, data):
   def go(fls, trs, x :| xs):
     if p(x):
       return go(fls, x :| trs, xs)
-    else:
-      return go(x :| fls, trs, xs)
+    return go(x :| fls, trs, xs)
 
   return go([], [], data)
