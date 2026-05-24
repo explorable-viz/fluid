@@ -1,0 +1,8 @@
+def foo(xs):
+   result = 0
+   match xs:
+      case []:
+         result = 99
+   return result
+
+foo([1, 2, 3])

@@ -1,0 +1,8 @@
+def f([]):
+   return 0
+def g():
+   return 1
+def f([x]):
+   return x
+
+f([])

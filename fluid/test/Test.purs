@@ -12,7 +12,7 @@ import Effect.Exception (Error)
 import File (class LoadFile, FileCxt(..))
 import Module.Web (runWebT)
 import Test.Specs.Bwd (bwd_cases)
-import Test.Specs.IllFormed (illFormed_cases)
+import Test.Specs.IllFormed (illFormed_cases, purepy_cases)
 import Test.Specs.Comments (comments_cases)
 import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.Graphics (graphics_cases)
@@ -45,7 +45,7 @@ linkingTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCx
 linkingTests = linkedOutputsSuite linkedOutputs_cases <> linkedInputsSuite linkedInputs_cases
 
 illFormedTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
-illFormedTests = illFormedSuite illFormed_cases
+illFormedTests = illFormedSuite (purepy_cases <> illFormed_cases)
 
 asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
 asTestSuite suite = second void <$> suite (1 × false)

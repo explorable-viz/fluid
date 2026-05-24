@@ -15,6 +15,8 @@ import Foreign.Object (Object)
 import Foreign.Object as Object
 import Util (type (×), Endo, assert, definitely, error, orElse, (×))
 import Util.Set (class Set, (∈), size)
+import Data.Map (Map) as M
+import Data.Set as DSet
 
 -- Generalises Map but also supports a fixed key type, like Dict. Doesn't support transforming element type.
 class Set a k <= Map a k b | a -> k, a -> b where
@@ -54,6 +56,9 @@ infixr 7 intersection as ∩
 infix 5 difference as \\
 
 foreign import intersectionWith_Object :: forall a b c. (a -> b -> c) -> Object a -> Object b -> Object c
+
+fromSet :: forall k v. v -> Set k -> M.Map k v
+fromSet v ks = v <$ DSet.toMap ks
 
 restrict :: forall a k b. Ord k => Map a k b => Set k -> Endo a
 restrict xs = filterKeys (_ ∈ xs)

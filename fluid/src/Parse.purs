@@ -21,7 +21,7 @@ import Data.Traversable (foldl, foldr)
 import DataType (cNoArgs, cNone, cPair)
 import Lattice (Raw)
 import Parse.Number (float, integer)
-import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
+import Parse.Parser (Parser, align, block, braces, brackets, close, commas, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, option, optionMaybe, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..)) as P
@@ -133,7 +133,7 @@ ifStmt = defer \_ -> do
    reserved "if"
    c <- ifClause
    cs <- many (align $ reserved "elif" *> ifClause)
-   b <- align $ reserved "else" *> blockBody
+   b <- optionMaybe (align $ reserved "else" *> blockBody)
    pure $ If (nonEmpty (c : cs)) b
 
 matchStmt :: Parser (Raw Stmt)
@@ -165,7 +165,7 @@ recDefs = many1 recDef
          ps = case ps0 of
             Nil -> NonEmptyList (PConstr cNoArgs Nil :| Nil)
             x : xs -> NonEmptyList (x :| xs)
-      pure $ p × Clause (ps × b)
+      pure $ p × Clause unit (ps × b)
 
 expr :: Parser (Raw Expr)
 expr = context "expr" $ ternary <?> "expression"
@@ -258,9 +258,13 @@ expr = context "expr" $ ternary <?> "expression"
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
             reserved "lambda"
-            ps <- commas1 pattern
+            ps0 <- commas pattern
             delim ':'
             e <- ternary
+            let
+               ps = case ps0 of
+                  Nil -> NonEmptyList (PConstr cNoArgs Nil :| Nil)
+                  x : xs -> NonEmptyList (x :| xs)
             pure $ Lambda (LambdaClause (ps × e))
 
          var :: Parser (Raw Expr)

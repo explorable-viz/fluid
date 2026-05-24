@@ -5,7 +5,7 @@ import Prelude
 import Bind (Bind, Var, (↦))
 import Data.List (List(..), fromFoldable, singleton, (:))
 import Data.List.NonEmpty (NonEmptyList(..), toList)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Data.NonEmpty ((:|))
 import Data.Traversable (class Foldable)
@@ -199,7 +199,7 @@ instance Ann a => Pretty (Stmt a) where
    pretty (Return e) = text "return" <+> pretty e
    pretty (If (NonEmptyList (ss :| sss)) e) =
       vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))
-         <++> text "else" <> block (pretty e)
+         <++> maybe mempty (\b -> text "else" <> block (pretty b)) e
       where
       prettyClause w (s × b) = text w <+> expr (pretty s) <> block (pretty b)
    pretty (Match s cs) = text "match" <+> pretty s <> block (pretty cs)
@@ -212,7 +212,7 @@ instance Ann a => Pretty (Stmt a) where
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
 
 instance Ann a => Pretty (Clause a) where
-   pretty (Clause (ps × b)) = lambda (toList ps) b
+   pretty (Clause _ (ps × b)) = lambda (toList ps) b
 
 instance Ann a => Pretty (LambdaClause a) where
    pretty (LambdaClause (ps × e)) = text "lambda" <+> prettyList (toList ps) <> text ":" <+> pretty e
@@ -221,9 +221,9 @@ instance Ann a => Pretty (RecDefs a) where
    pretty bs = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> bs))
 
 instance Ann a => Pretty (Branch a) where
-   pretty (v × Clause (NonEmptyList (PConstr "__NoArgs" Nil :| Nil) × b)) =
+   pretty (v × Clause _ (NonEmptyList (PConstr "__NoArgs" Nil :| Nil) × b)) =
       text "def" <+> text v <> text "()" <> block (pretty b)
-   pretty (v × Clause (ps × b)) =
+   pretty (v × Clause _ (ps × b)) =
       text "def"
          <+> text v
          <> parens (prettyList (toList ps))
@@ -261,8 +261,13 @@ prettyConsArg e lhs = case rootOp e of
    Just op -> if (if lhs then (<=) else (<)) (getPrec op) (getPrec ":") then parens (pretty e) else pretty e
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
+prettyAppChain (App f (Constr _ "__NoArgs" Nil)) as =
+   prettyAppChain f Nil <> text "()" <> renderArgs as
+   where
+   renderArgs Nil = mempty
+   renderArgs xs = parens (prettyList xs)
 prettyAppChain (App f a) as = prettyAppChain f (a : as)
-prettyAppChain f (Constr _ "__NoArgs" Nil : Nil) = prettySimple f <> text "()"
+prettyAppChain f Nil = prettySimple f
 prettyAppChain f as = prettySimple f <> parens (prettyList as)
 
 commas :: List Doc -> Doc
