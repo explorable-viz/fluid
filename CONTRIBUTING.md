@@ -80,7 +80,17 @@ From the monorepo root:
 yarn workspace @fluid-org/fluid build-publish
 ```
 
-This bumps the patch version (via `npm version patch`), builds in production mode, stages the `article` website, publishes to npm, and pushes the version tag. Version tracks milestone (e.g. `0.12.x` for milestone `fluid 0.12`).
+Bumps the patch version, commits, tags `vX.Y.Z`, builds in production mode, stages the `article` website, and publishes to npm. Version tracks milestone (e.g. `0.12.x` for milestone `fluid 0.12`). After it succeeds, push manually:
+
+```bash
+git push && git push --tags
+```
+
+Requires an npm automation token in `~/.npmrc` (bypasses 2FA):
+
+```
+//registry.npmjs.org/:_authToken=npm_...
+```
 
 ## VS Code
 
