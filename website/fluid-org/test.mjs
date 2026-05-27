@@ -1,7 +1,7 @@
 import {
    checkAlignment, checkWidthApprox, getBoundingBox,
    testMobile, testURL, waitFor
-} from "@explorable-viz/fluid/script/webtest-lib.mjs"
+} from "@fluid-org/fluid/script/webtest-lib.mjs"
 
 function testOutcome(pass, msg) {
    const sym = pass ? "\x1b[32m ✔\x1b[0m" : "\x1b[31m ✖\x1b[0m"

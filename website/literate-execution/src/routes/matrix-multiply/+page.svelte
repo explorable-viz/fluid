@@ -1,5 +1,5 @@
 <script>
-	import { DataPane, FigureSrc, Grid } from '@explorable-viz/fluid';
+	import { DataPane, FigureSrc, Grid } from '@fluid-org/fluid';
 
 	let showDataPane = false;
 

@@ -355,7 +355,7 @@ divide :: Int + Number -> Endo (Int + Number)
 divide = (\x y -> toNumber x / toNumber y) `union` (/)
 
 -- See T-, F- and E-definitions discussed at https://github.com/purescript/purescript-prelude/issues/161
--- and https://github.com/explorable-viz/fluid/issues/1450
+-- and https://github.com/fluid-org/fluid/issues/1450
 div :: Int -> Endo Int
 div = (\x y -> floor (toNumber x / toNumber y))
 

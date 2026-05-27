@@ -2,7 +2,7 @@
 # https://stackoverflow.com/questions/57927115
 set -xe
 
-export OWNER="explorable-viz"
+export OWNER="fluid-org"
 export REPOSITORY="fluid"
 export WORKFLOW="purescript"
 

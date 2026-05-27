@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { supporters } from '$lib/config/supporters';
-   import { Grid } from '@explorable-viz/fluid';
+   import { Grid } from '@fluid-org/fluid';
 </script>
 
 <Grid showDataPane="false">

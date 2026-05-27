@@ -1,5 +1,5 @@
 <script>
-   import { Grid } from '@explorable-viz/fluid';
+   import { Grid } from '@fluid-org/fluid';
 </script>
 
 <Grid showDataPane="false">
