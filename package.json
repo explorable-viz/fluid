@@ -9,6 +9,5 @@
   "scripts": {
     "test-website": "./script/test-website.sh",
     "test-website-all": "./script/test-website-all.sh"
-  },
-  "version": "0.0.1"
+  }
 }
