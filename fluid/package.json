@@ -1,6 +1,6 @@
 {
   "name": "@fluid-org/fluid",
-  "version": "0.12.19",
+  "version": "0.12.20",
   "description": "A pure functional dialect of Python, based on PurePy, with a dependency-tracking runtime for creating interactive outputs linked to data.",
   "repository": {
     "type": "git",
