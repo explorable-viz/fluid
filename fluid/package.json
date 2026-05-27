@@ -1,6 +1,6 @@
 {
   "name": "@fluid-org/fluid",
-  "version": "0.12.14",
+  "version": "0.12.16",
   "description": "A pure functional dialect of Python, based on PurePy, with a dependency-tracking runtime for creating interactive outputs linked to data.",
   "repository": {
     "type": "git",
@@ -29,7 +29,7 @@
   "scripts": {
     "build": "./script/build.sh",
     "build-prod": "BUILD_ENV=prod ./script/build.sh",
-    "build-publish": "npm version patch && yarn build-prod && ./script/stage-website.sh article && yarn pack -o /tmp/fluid-pkg.tgz && npm publish /tmp/fluid-pkg.tgz --access public && git push && git push --tags",
+    "build-publish": "npm version patch --workspaces-update=false && yarn build-prod && ./script/stage-website.sh article && yarn pack -o /tmp/fluid-pkg.tgz && npm publish /tmp/fluid-pkg.tgz --access public && git push && git push --tags",
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
     "fluid": "node ./dist/fluid/shared/fluid.mjs",
