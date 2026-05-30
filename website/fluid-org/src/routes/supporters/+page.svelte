@@ -33,12 +33,13 @@
 		</p>
 
 		<p>
-			Since September 2022 the project has been based in the <a
+			Since September 2022 the project has been a collaboration between the <a
 				href="https://plrg-bristol.github.io/">Programming Languages Research Group</a
-			>, School of Computer Science, University of Bristol, and since September 2023 has been a
-			collaboration with the
+			>, School of Computer Science, University of Bristol, the
 			<a href="https://iccs.cam.ac.uk/">Institute of Computing for Climate Science</a>, University
-			of Cambridge. ICCS is funded by a grant from Schmidt Sciences.
+			of Cambridge, and the
+			<a href="https://www.kent.ac.uk/school-of-computing">School of Computing</a>, University of
+			Kent. ICCS is funded by a grant from Schmidt Sciences.
 		</p>
 	</div>
 </Grid>
