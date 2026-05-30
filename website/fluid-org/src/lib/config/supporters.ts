@@ -1,5 +1,6 @@
 import BristolLogo from '$lib/assets/image/bristol.png';
 import ICCSLogo from '$lib/assets/image/iccs.png';
+import KentLogo from '$lib/assets/image/kent.jpg';
 import SchmidtLogo from '$lib/assets/image/schmidt.png';
 import TuringLogo from '$lib/assets/image/turing.jpg';
 
@@ -23,5 +24,10 @@ export const supporters = [
 		url: 'https://www.schmidtsciences.org/',
 		name: 'Schmidt Sciences',
 		logo: SchmidtLogo
+	},
+	{
+		url: 'https://www.kent.ac.uk/school-of-computing',
+		name: 'University of Kent',
+		logo: KentLogo
 	}
 ] as const;
