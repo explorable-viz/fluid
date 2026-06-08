@@ -1,6 +1,6 @@
 import BristolLogo from '$lib/assets/image/bristol.png';
 import ICCSLogo from '$lib/assets/image/iccs.png';
-import KentLogo from '$lib/assets/image/Kent-cropped.jpg';
+import KentLogo from '$lib/assets/image/kent.png';
 import SchmidtLogo from '$lib/assets/image/schmidt.png';
 import TuringLogo from '$lib/assets/image/turing.jpg';
 
