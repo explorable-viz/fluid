@@ -58,4 +58,8 @@
 	.data-pane > :not(:first-child) {
 		padding-top: 2px;
 	}
+
+	.data-pane img {
+		display: block;
+	}
 </style>
