@@ -2,7 +2,7 @@ import puppeteer from "puppeteer"
 
 const TIMEOUT = 60000
 const LOGGING = true
-const HEADLESS = true
+const HEADLESS = process.env.HEADLESS !== "false"
 const DESKTOP = { width: 1200, height: 800, deviceScaleFactor: 1.0 }
 const MOBILE = { width: 390, height: 844, deviceScaleFactor: 2.0, isMobile: true }
 const VIEWPORT = process.env.MOBILE ? MOBILE : DESKTOP
@@ -25,10 +25,10 @@ async function launchBrowser(browserName) {
    })
 }
 
-export async function waitFor(page, selector) {
-   log(`Waiting for ${selector}`)
+export async function waitFor(page, selector, { visible = true } = {}) {
+   log(`Waiting for ${selector}${visible ? "" : " (any)"}`)
    try {
-      await page.waitForSelector(selector, { timeout: TIMEOUT, visible: true })
+      await page.waitForSelector(selector, { timeout: TIMEOUT, visible })
       log("-> found")
       testOutcome(true, `${selector}: exists`)
    } catch (e) {
@@ -45,6 +45,13 @@ export async function waitForHidden(page, selector) {
 export async function click(page, selector) {
    await page.click(selector)
    testOutcome(true, `${selector}: click`)
+}
+
+export async function dispatchMouseDown(page, selector, button = 0) {
+   await page.evaluate((sel, btn) => {
+      document.querySelector(sel).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: btn }))
+   }, selector, button)
+   testOutcome(true, `${selector}: mousedown (button=${button})`)
 }
 
 export async function checkAttribute(page, selector, attr, expected) {
@@ -73,6 +80,18 @@ export async function checkComputedStyle(page, selector, property, expected) {
    const value = await page.$eval(selector, (el, prop) => getComputedStyle(el)[prop], property)
    const pass = value === expected
    testOutcome(pass, `${selector}: ${property} == "${expected}"${pass ? "" : ` (got "${value}")`}`)
+}
+
+export async function checkCount(page, selector, expected) {
+   const count = await page.$$eval(selector, els => els.length)
+   const pass = count === expected
+   testOutcome(pass, `${selector}: count == ${expected}${pass ? "" : ` (got ${count})`}`)
+}
+
+export async function checkCountAtLeast(page, selector, minimum) {
+   const count = await page.$$eval(selector, els => els.length)
+   const pass = count >= minimum
+   testOutcome(pass, `${selector}: count >= ${minimum}${pass ? ` (got ${count})` : ` (got ${count})`}`)
 }
 
 export async function getBoundingBox(page, selector) {

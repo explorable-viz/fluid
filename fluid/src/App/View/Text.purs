@@ -11,7 +11,6 @@ import Bind ((↦))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Web.Event.EventTarget (eventListener)
 
 class Textual a where
    getText :: a -> Selectable String
@@ -28,8 +27,7 @@ instance Viewable Text Unit where
 
    setSelection :: Unit -> Text -> Select -> D3.Selection -> Effect Unit
    setSelection _ text redraw rootElement = do
-      listener <- eventListener (redraw <<< uncurry textSelector <<< selectionEventData')
-      rootElement # setStyles (textAttrs text) >>= registerMouseListeners listener
+      rootElement # setStyles (textAttrs text) >>= registerMouseListeners (redraw <<< uncurry textSelector <<< selectionEventData')
       where
       textSelector :: ViewSelSetter Text
       textSelector _ = identity

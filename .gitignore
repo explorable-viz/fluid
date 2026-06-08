@@ -1,5 +1,8 @@
-node_modules/
 .DS_Store
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.gh-token
+.psc-ide-port
 .vscode/
 dist/
-.gh-token
+node_modules/

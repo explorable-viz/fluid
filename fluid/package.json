@@ -29,12 +29,11 @@
   "scripts": {
     "build": "./script/build.sh",
     "build-prod": "BUILD_ENV=prod ./script/build.sh",
-    "build-publish": "yarn build-prod && ./script/stage-website.sh article && npm publish --access public",
+    "build-publish": "npm version patch && yarn build-prod && ./script/stage-website.sh article && npm publish --access public && git push && git push --tags",
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
     "fluid": "node ./dist/fluid/shared/fluid.mjs",
     "test": "./script/test.sh",
-    "test-all": "./script/test-all.sh",
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
     "tidy": "./script/tidy.sh"
   },
