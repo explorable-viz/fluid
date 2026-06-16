@@ -1,39 +1,42 @@
-def insert(lt, x, []): [x]
+def insert(lt, x, []):
+  return [x]
 def insert(lt, x, y :| ys):
-  if x |lt| y: x :| y :| ys
-  else:
-    y :| insert(lt, x, ys)
+  if x |lt| y:
+    return x :| y :| ys
+  return y :| insert(lt, x, ys)
 
 def insertionSort(lt, lst):
-  def helper([], sorted): sorted
+  def helper([], sorted):
+    return sorted
   def helper(x :| xs, sorted):
-    helper(xs, insert(lt, x, sorted))
+    return helper(xs, insert(lt, x, sorted))
 
-  helper(lst, [])
+  return helper(lst, [])
 
-def findIndex(fName, x, []): -1
+def findIndex(fName, x, []):
+  return -1
 def findIndex(fName, x, y :| ys):
-  if y[fName] == x: 1
-  else:
-    findIndex(fName, x, ys) + 1
+  if y[fName] == x:
+    return 1
+  return findIndex(fName, x, ys) + 1
 
 def find_with_key_(fName, x, table):
-  from_some(find_with_key(fName, x, table))
+  return from_just(find_with_key(fName, x, table))
 
 def findWhere(pred, table):
-  from_some(find(pred, table))
+  return from_just(find(pred, table))
 
 def model(m, t):
-  find_with_key_("model", m, t)
+  return find_with_key_("model", m, t)
 
 def maximumBy(f, []):
-  error("Empty list!")
+  return error("Empty list!")
 def maximumBy(f, x :| xs):
-  def helper([], current): current
+  def helper([], current):
+    return current
   def helper(y :| ys, current):
     if f(y) > f(current):
-      helper(ys, y)
-    else:
-      helper(ys, current)
+      return helper(ys, y)
+    return helper(ys, current)
 
-  helper(xs, x)
+  return helper(xs, x)

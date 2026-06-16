@@ -1,6 +1,10 @@
-def intersperse([], _): []
-def intersperse([x], _): [x]
-def intersperse(x :| y :| ys, sep):
-  x :| sep :| intersperse(y :| ys, sep)
+import slicing.intersperse_inputs
 
-intersperse([1, 2, 3], 0)
+def intersperse([], _):
+  return []
+def intersperse([x], _):
+  return [x]
+def intersperse(x :| y :| ys, sep):
+  return x :| sep :| intersperse(y :| ys, sep)
+
+intersperse(xs, sep)

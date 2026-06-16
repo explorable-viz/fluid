@@ -1,0 +1,2 @@
+# Nested ternary in the condition requires parentheses (Python's or_test rule).
+10 if (2 if True else 3) > 1 else 20

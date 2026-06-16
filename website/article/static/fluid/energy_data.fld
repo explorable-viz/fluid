@@ -1,0 +1,2 @@
+nonRenewables = load_json("../dataset/non_renewables.json")
+renewables = load_json("../dataset/renewable.json")

@@ -1,0 +1,3 @@
+# This dataset contains methane emissions for the region of Africa and the Middle East.
+# Model: REMIND; Scenario: MAGPIE-SSP5-8.5
+methane = load_json("dataset/methane_emissions.json")

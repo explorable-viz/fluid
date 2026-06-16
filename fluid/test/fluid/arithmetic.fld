@@ -1,1 +1,1 @@
-(1 + 5) * ((def x: 2; def y: 8; x * y) - (def y: 3; y * y))
+(1 + 5) * ((lambda x, y: x * y)(2, 8) - (lambda y: y * y)(3))

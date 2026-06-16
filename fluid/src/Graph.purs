@@ -4,6 +4,7 @@ import Prelude hiding (add)
 
 import Control.Monad.Rec.Class (Step(..), tailRec)
 import Data.Array (fromFoldable) as A
+import Data.Array as Array
 import Data.Foldable (class Foldable)
 import Data.List (List(..), reverse, uncons, (:))
 import Data.List (fromFoldable) as L
@@ -129,14 +130,14 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 
 type Query a = VertexData -> Maybe (DVertex' a)
 
-runQuery :: forall a. Ord a => Query a -> Set DVertex -> Dict a
+runQuery :: forall a. Query a -> Set DVertex -> Dict a
 runQuery query αs =
-   D.fromFoldable $ Set.mapMaybe
+   D.fromFoldable $ Array.mapMaybe
       ( \(DVertex (Vertex α × vd)) -> do
            DVertex (Vertex _ × result) <- query vd
            pure (α × result)
       )
-      αs
+      (Set.toUnfoldable αs)
 
 -- ======================
 -- Packed data associated with Vertex

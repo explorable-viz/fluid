@@ -3,37 +3,39 @@ module Test.Util where
 import Prelude hiding (absurd, compare)
 
 import App.Util (Selector, getPersistent, unselected)
+import App.Util.Selector (sel𝔹)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Reader (class MonadReader)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.String (null, trim)
 import Data.Tuple (fst)
-import Desug (desugGC)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (GraphConfig, graphEval, graphGC, toGC, withOp)
 import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), dual)
-import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹, (≽))
 import Module (prepConfig)
 import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
-import SExpr (Expr) as SE
+import Expr (Stmt) as Expr
+import SExpr (Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, throwLeft, withMsg, (×))
-import Val (class Ann, Env, EnvExpr(..), Val)
+import Val (class Ann, Env, EnvStmt(..), Val)
 
 type TestSuite m = Array (String × m Unit)
 
 type SelectionSpec =
    { δv :: Selector Val
    , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
-   , bwd_expect :: String
+   , bwd_expect :: Maybe (Selector Env) -- Nothing for tests that don't perturb output
    }
 
 fluidSrcPaths :: Array Folder
@@ -43,9 +45,9 @@ test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw Env -> Sel
 test file primitives spec (n × _) = do
    fluidSrc <- loadFile fluidSrcPaths file
    log' ("**** prepConfig")
-   { s, gconfig } <- prepConfig primitives fluidSrc
+   { s, e, gconfig } <- prepConfig primitives fluidSrc
    testPretty s
-   _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
+   _ × res <- runWriterT (replicateM n (testProperties s e gconfig spec))
    pure $ res `divRow` n
 
 graphBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
@@ -74,36 +76,34 @@ testProperties
     . MonadReader FileCxt m
    => LoadFile m
    => MonadWriter BenchRow m
-   => Raw SE.Expr
+   => Raw SE.Stmt
+   -> Raw Expr.Stmt
    -> GraphConfig
    -> SelectionSpec
    -> AffError m Unit
-testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
-   { gc: GC desug, e } <- desugGC s
+testProperties _ s' gconfig { δv, bwd_expect, fwd_expect } = do
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
-      graphEval gconfig e
+      graphEval gconfig s'
    let GC evalG = graphGC graphed # toGC
 
    let v = map (const top) outα :: Val 𝔹
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
 
-   in0@(EnvExpr in_γ in_e) <- do
+   in0@(EnvStmt in_γ in_s) <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
-   let in_s = desug.bwd in_e
-   out1 <- do
-      let in_e' = desug.fwd in_s
-      unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in_e')
-      graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvExpr in_γ in_e'))
-   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out1)
+   out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvStmt in_γ in_s))
 
-   let in_top = EnvExpr (topOf in_γ) (topOf in_e)
+   let in_top = EnvStmt (topOf in_γ) (topOf in_s)
 
-   -- empty string somewhat hacky encoding for "don't care"
-   unless (null bwd_expect) $ do
-      withMsg "bwd_expect" $ checkPretty bwd_expect in_s
+   case bwd_expect of
+      Nothing -> pure unit
+      Just sel -> do
+         let expected = sel𝔹 sel in_γ
+         unless (in_γ ≽ expected) $
+            throw ("bwd_expect mismatch:\nactual in_γ\n" <> prettyP in_γ <> "\nexpected (sel𝔹)\n" <> prettyP expected)
    unless (null fwd_expect) do
       let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
       withMsg "fwd_expect" $ checkPretty fwd_expect (report out1)
@@ -140,7 +140,7 @@ checkEq op1 op2 x y = do
    check (left == "") left
    check (right == "") right
 
-testPretty :: forall m a. Ann a => Show a => SE.Expr a -> AffError m Unit
+testPretty :: forall m a. Ann a => Show a => SE.Stmt a -> AffError m Unit
 testPretty s = do
    log' ("**** prettyP")
    log' (prettyP s)

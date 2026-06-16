@@ -1,5 +1,5 @@
 <script>
-	import { DataPane, Figure, Grid } from '@explorable-viz/fluid';
+	import { DataPane, Figure, Grid } from '@fluid-org/fluid';
 
 	let showDataPane = false;
 
@@ -29,6 +29,6 @@
 	</DataPane>
 
 	<div class="flex-left-align">
-		<Figure {spec} fld="../fluid/bar-chart-line-chart.fld" />
+		<Figure {spec} fld="../fluid/bar_chart_line_chart.fld" />
 	</div>
 </Grid>

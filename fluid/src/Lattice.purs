@@ -45,6 +45,13 @@ class TopOf t u | t -> u where
 relativeComplement :: forall a. Neg a => MeetSemilattice a => a -> a -> a
 relativeComplement a = neg >>> (_ ∧ a)
 
+-- (Ord describes a total order.)
+leq :: forall a. JoinSemilattice a => Eq a => a -> a -> Boolean
+leq a b = (a ∨ b) == b
+
+geq :: forall a. JoinSemilattice a => Eq a => a -> a -> Boolean
+geq = flip leq
+
 instance JoinSemilattice Boolean where
    join = (||)
 
@@ -103,6 +110,8 @@ erase = (<$>) (const unit)
 infixl 7 meet as ∧
 infixl 6 join as ∨
 infixl 6 relativeComplement as -
+infix 4 leq as ≼
+infix 4 geq as ≽
 
 symmetricDiff :: forall a. Neg a => MeetSemilattice a => a -> a -> a × a
 symmetricDiff x y = (x - y) × (y - x)

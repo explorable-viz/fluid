@@ -1,4 +1,5 @@
 .DS_Store
+.claude/scheduled_tasks.lock
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 .gh-token

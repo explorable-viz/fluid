@@ -1,1 +1,3 @@
-nth(1, [3, 4, 5])
+import slicing.nth_inputs
+
+nth(1, xs)

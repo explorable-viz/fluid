@@ -1,4 +1,4 @@
-def ssp126Source: load_json("../../dataset/SPM/ssp126.json")
-def ssp126preds: load_json("../../dataset/SPM/ssp126preds.json")
-def ssp245Source: load_json("../../dataset/SPM/ssp245.json")
-def ssp245preds: load_json("../../dataset/SPM/ssp245preds.json")
+ssp126Source = load_json("../../dataset/SPM/ssp126.json")
+ssp126preds = load_json("../../dataset/SPM/ssp126preds.json")
+ssp245Source = load_json("../../dataset/SPM/ssp245.json")
+ssp245preds = load_json("../../dataset/SPM/ssp245preds.json")

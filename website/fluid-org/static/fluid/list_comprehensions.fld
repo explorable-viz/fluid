@@ -1,0 +1,2 @@
+squares = [x * x for x in range(1, 6)]
+evens = filter(lambda x: x % 2 == 0, squares)

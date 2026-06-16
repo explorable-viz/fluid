@@ -17,6 +17,12 @@ mkdir -p "$DEST"
 
 rsync -a --exclude=node_modules --exclude=.svelte-kit --exclude=build "$SRC/" "$DEST/"
 
+# Rewrite workspace:* dependency on @fluid-org/fluid to the published version
+# (npm publish on the wrapping tarball doesn't tolerate workspace: in nested package.json).
+FLUID_VERSION=$(node -p "require('./package.json').version")
+sed -i.bak "s|\"@fluid-org/fluid\": \"workspace:\\*\"|\"@fluid-org/fluid\": \"^$FLUID_VERSION\"|g" "$DEST/package.json"
+rm -f "$DEST/package.json.bak"
+
 # Replace symlinks with copies from the source tree
 # static/fluid/lib → fluid standard library
 rm -f "$DEST/static/fluid/lib"

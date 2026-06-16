@@ -1,5 +1,5 @@
 <script>
-	import { DataPane, Figure, Grid } from '@explorable-viz/fluid';
+	import { DataPane, Figure, Grid } from '@fluid-org/fluid';
    import { text } from 'stream/consumers';
 
 	let showDataPane = false;
@@ -46,7 +46,7 @@
 	</DataPane>
 
 	<div class="flex-left-align">
-		<Figure {spec} fld="../fluid/moving-average.fld" />
+		<Figure {spec} fld="../fluid/moving_average.fld" />
 	</div>
 </Grid>
 

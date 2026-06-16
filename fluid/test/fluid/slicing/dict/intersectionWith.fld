@@ -1,3 +1,0 @@
-dict_intersectionWith(def x: 2;
-
-(lambda n, m: (n + m) * x), { a: 5, b: 6, c: 3 }, { b: -6, c: 7 })

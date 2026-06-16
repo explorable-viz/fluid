@@ -1,0 +1,2 @@
+# https://github.com/fluid-org/fluid/issues/1455
+(@doc("hello") (-42))

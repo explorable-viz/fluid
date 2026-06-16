@@ -1,5 +1,5 @@
 <script>
-   import { CodeMirror, Grid } from '@explorable-viz/fluid';
+   import { CodeMirror, Grid } from '@fluid-org/fluid';
 </script>
 
 <Grid>
@@ -13,7 +13,7 @@
 		which are automatically linked to the underlying data.</p>
 
 		<p>For some examples, see the <a
-		href="https://github.com/explorable-viz/fluid-article">fluid-article</a> template repository.</p>
+		href="https://github.com/fluid-org/fluid-article">fluid-article</a> template repository.</p>
 
 		<h3 class="title">Pure functional programming, Pythonic syntax</h3>
 		<p>Fluid is based on <a href="https://github.com/pure-py/pure-py-spec">PurePy</a>,
@@ -22,19 +22,19 @@
 
 		<div class="code-examples">
 			<h4>Variable definitions</h4>
-			<CodeMirror name="variable-definitions" src="fluid/variable-definitions.fld" details={false} />
+			<CodeMirror name="variable-definitions" src="fluid/variable_definitions.fld" details={false} />
 
 			<h4>Pattern matching and destructuring</h4>
-			<CodeMirror name="pattern-matching" src="fluid/pattern-matching.fld" details={false} />
+			<CodeMirror name="pattern-matching" src="fluid/pattern_matching.fld" details={false} />
 
 			<h4>List comprehensions and lambdas</h4>
-			<CodeMirror name="list-comprehensions" src="fluid/list-comprehensions.fld" details={false} />
+			<CodeMirror name="list-comprehensions" src="fluid/list_comprehensions.fld" details={false} />
 
 			<h4>Partial application</h4>
-			<CodeMirror name="partial-application" src="fluid/partial-application.fld" details={false} />
+			<CodeMirror name="partial-application" src="fluid/partial_application.fld" details={false} />
 
 			<h4>Match expressions</h4>
-			<CodeMirror name="match-expressions" src="fluid/match-expressions.fld" details={false} />
+			<CodeMirror name="match-expressions" src="fluid/match_expressions.fld" details={false} />
 		</div>
 	</div>
 	<div></div>

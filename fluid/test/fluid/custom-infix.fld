@@ -1,7 +1,0 @@
-def mult(x,y): x * y
-
-# `|x|` binds tighter than `and` and `==`, but less than `+`, so the
-# following is equivalent to `True and (((1 + 2) |mult| 3) == 9)` (`True`).
-# If it bound less tightly than `and`, this would be a type error.
-# If it bound tighter than `+` then this would be `False`.
-True and 1 + 2 |mult| 3 == 9

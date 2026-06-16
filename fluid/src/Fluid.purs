@@ -91,7 +91,7 @@ callback = case _ of
    Right _ -> pure unit
 
 fluidLibraryPath :: String
-fluidLibraryPath = "node_modules/@explorable-viz/fluid"
+fluidLibraryPath = "node_modules/@fluid-org/fluid"
 
 evaluate :: EvalArgs -> Aff (Val Unit)
 evaluate (EvalArgs { local, fileName, fluidSrcPath }) = do

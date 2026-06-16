@@ -2,14 +2,14 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel)
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, getPersistent, selStates)
 import Bind (Var)
 import Data.List (List(..), updateAt, (!!), (:))
 import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cSome, f_points, f_segments, f_stackedBars, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cJust, f_points, f_segments, f_stackedBars, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely, error, (×))
@@ -18,6 +18,12 @@ import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Env, Val(..), matrixGet, matrixPut)
 
 type SelSetter f g = Setter (f (SelStates 𝔹)) (g (SelStates 𝔹))
+
+sel𝔹 :: forall f a. Functor f => SetSel (f (SelStates 𝔹)) -> f a -> f 𝔹
+sel𝔹 sel template = getPersistent <$> γ'
+   where
+   γ' × _ = sel (const (selStates false false false) <$> template)
+
 type Setter b a = SetSel a -> SetSel b
 
 type ViewSetter f g = Endo g -> Endo f -- Only used in unexercised view setters
@@ -46,8 +52,8 @@ fst = constrArg cPair 0
 snd :: SelSetter Val Val
 snd = constrArg cPair 1
 
-some :: Setter (Val (SelStates 𝔹)) 𝔹
-some = constr cSome
+just :: Setter (Val (SelStates 𝔹)) 𝔹
+just = constr cJust
 
 multiView :: SelSetter Val Val
 multiView = constrArg cMultiView 0
@@ -106,6 +112,14 @@ constr c' δα = unsafePartial $ case _ of
 dict :: Setter (Val (SelStates 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of
    Val α doc (Dictionary d) -> first (\α' -> Val α' doc (Dictionary d)) (persist δα α)
+
+matrix :: Setter (Val (SelStates 𝔹)) 𝔹
+matrix δα = unsafePartial $ case _ of
+   Val α doc (Matrix r) -> first (\α' -> Val α' doc (Matrix r)) (persist δα α)
+
+-- Flip only the outer Val annotation, regardless of payload (closure, etc.).
+topα :: Setter (Val (SelStates 𝔹)) 𝔹
+topα δα (Val α doc baseVal) = first (\α' -> Val α' doc baseVal) (persist δα α)
 
 dictKey :: String -> Setter (Val (SelStates 𝔹)) 𝔹
 dictKey s δα = unsafePartial $ case _ of

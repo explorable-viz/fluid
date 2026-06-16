@@ -1,0 +1,6 @@
+def f():
+   x = 5
+   x = lambda: x
+   return x()
+
+f()

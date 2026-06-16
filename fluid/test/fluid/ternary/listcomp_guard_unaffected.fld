@@ -1,0 +1,3 @@
+# The 'if' in a list comprehension's qualifier chain must not be parsed as a
+# ternary.
+[x for x in [1, 2, 3] if x > 1]

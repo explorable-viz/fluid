@@ -11,23 +11,25 @@ import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either, choose)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (toList)
+import Data.List.NonEmpty (NonEmptyList(..), toList)
+import Data.Maybe (fromMaybe)
+import Data.NonEmpty ((:|))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import Data.String.Common (joinWith)
 import Data.Traversable (foldl, foldr)
-import DataType (cPair)
+import DataType (cNoArgs, cNone, cPair)
 import Lattice (Raw)
 import Parse.Number (float, integer)
-import Parse.Parser (Parser, align, block, braces, brackets, close, commas, commas1, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
+import Parse.Parser (Parser, align, block, braces, brackets, close, commas, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
-import Parsing.Combinators (choice, many, many1, option, sepBy1, try, (<?>))
+import Parsing.Combinators (choice, many, many1, option, optionMaybe, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..)) as P
 import Parsing.Expr (Assoc(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import Primitive.Parse (OpDef(..), OpType(..), Fixity(..), opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
 import Util (type (+), type (×), error, nonEmpty, (×))
 
 pattern :: Parser Pattern
@@ -73,14 +75,82 @@ pConsOp = do
    reservedOperator ":|"
    pure \e e' -> PConstr ":" (e : e' : Nil)
 
+varDef :: Parser (Raw VarDef)
+varDef = do
+   p <- try (pattern <* reservedOperator "=")
+   e <- sameOrIndented *> withPos expr
+   pure $ VarDef p e
+
 varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
+
+stmt :: Parser (Raw Stmt)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (expr <#> ExprStmt)
+
+returnStmt :: Parser (Raw Stmt)
+returnStmt = do
+   reserved "return"
+   e <- optionMaybe (sameOrIndented *> expr)
+   pure $ Return $ fromMaybe (Constr unit cNone Nil) e
+
+assertStmt :: Parser (Raw Stmt)
+assertStmt = do
+   reserved "assert"
+   cond <- expr
+   msg <- optionMaybe (delim ',' *> expr)
+   pure $ Assert cond msg
+
+stmts :: Parser (Raw Stmt)
+stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
+
+-- Top-level programs may omit 'return' on the trailing expression that gives
+-- the program its value. Inside functions and other block bodies, 'return'
+-- is required.
+programStmt :: Parser (Raw Stmt)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (Return <$> expr)
+
+programStmts :: Parser (Raw Stmt)
+programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
+
+foldr1Seq :: forall a. NonEmptyList (Stmt a) -> Stmt a
+foldr1Seq (NonEmptyList (s :| ss)) = case ss of
+   Nil -> s
+   s' : rest -> Seq s (foldr1Seq (NonEmptyList (s' :| rest)))
+
+defStmt :: Parser (Raw Stmt)
+defStmt = defer \_ -> defRecStmt <|> defValStmt
    where
-   varDef :: Parser (Raw VarDef)
-   varDef = do
-      p <- try (reserved "def" *> pattern <* delim ':')
-      e <- sameOrIndented *> withPos expr
-      pure $ VarDef p e
+   defRecStmt = defer \_ -> DefRec <$> recDefs
+   defValStmt = defer \_ -> Def <$> varDef
+
+ifStmt :: Parser (Raw Stmt)
+ifStmt = defer \_ -> do
+   let
+      ifClause = do
+         c <- expr
+         b <- blockBody
+         pure (c × b)
+   reserved "if"
+   c <- ifClause
+   cs <- many (align $ reserved "elif" *> ifClause)
+   b <- optionMaybe (align $ reserved "else" *> blockBody)
+   pure $ If (nonEmpty (c : cs)) b
+
+matchStmt :: Parser (Raw Stmt)
+matchStmt = defer \_ -> do
+   let
+      branch = do
+         reserved "case"
+         p <- pattern
+         b <- blockBody
+         pure (p × b)
+   reserved "match"
+   e <- expr
+   bs <- block (many1 (align branch))
+   pure $ Match e bs
+
+blockBody :: Parser (Raw Stmt)
+blockBody = defer \_ -> block stmts
 
 recDefs :: Parser (Raw RecDefs)
 recDefs = many1 recDef
@@ -88,58 +158,27 @@ recDefs = many1 recDef
    recDef :: Parser (Raw Branch)
    recDef = do
       p <- try (reserved "def" *> variable <* delim '(')
-      ps <- commas1 pattern
+      ps0 <- commas pattern
       delim ')'
-      e <- block expr
-      pure $ p × Clause (ps × e)
+      b <- blockBody
+      let
+         ps = case ps0 of
+            Nil -> NonEmptyList (PConstr cNoArgs Nil :| Nil)
+            x : xs -> NonEmptyList (x :| xs)
+      pure $ p × Clause unit (ps × b)
 
 expr :: Parser (Raw Expr)
-expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
+expr = context "expr" $ ternary <?> "expression"
    where
-   matchAs :: Parser (Raw Expr)
-   matchAs = do
-      reserved "match"
-      e <- opTree
-      bs <- block (many1 (align branch))
-      pure $ MatchAs e bs
-
-      where
-      branch :: Parser (Pattern × Raw Expr)
-      branch = do
-         reserved "case"
-         p <- pattern
-         e <- block expr
-         pure (p × e)
-
-   -- TODO: consider capturing 'def' parse for better error handling
-   def :: Parser (Raw Expr)
-   def = context "def" do
-      funDef <|> valDef
-      where
-      funDef :: Parser (Raw Expr)
-      funDef = context "funDef" $ withPos do
-         ds <- recDefs
-         e <- align expr
-         pure $ LetRec ds e
-
-      valDef :: Parser (Raw Expr)
-      valDef = context "valDef" $ withPos do
-         ds <- varDefs
-         e <- align expr
-         pure $ Let ds e
-
-   ifElse :: Parser (Raw Expr)
-   ifElse = do
-      reserved "if"
-      c <- clause
-      cs <- many (align $ reserved "elif" *> clause)
-      e <- align $ reserved "else" *> block expr
-      pure $ IfElse (nonEmpty (c : cs)) e
-      where
-      clause = do
-         c <- opTree
-         e <- block expr
-         pure (c × e)
+   ternary :: Parser (Raw Expr)
+   ternary = defer \_ -> do
+      e1 <- opTree
+      option e1 $ try do
+         reserved "if"
+         cond <- opTree
+         reserved "else"
+         e2 <- expr
+         pure $ Ternary cond e1 e2
 
    opTree :: Parser (Raw Expr)
    opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
@@ -185,24 +224,24 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             dproject :: Parser (Raw Expr)
             dproject = do
                delim '['
-               k <- opTree
+               k <- ternary
                close ']'
                chain (DProject e k)
 
             app :: Parser (Raw Expr)
             app = do
                delim '('
-               ps <- commas opTree
+               ps <- commas ternary
                close ')'
                case e of
                   (Constr a c es) -> chain (Constr a c (es <> ps <> Nil))
-                  _ -> chain (foldl App e ps)
+                  _ -> case ps of
+                     Nil -> chain (App e (Constr unit cNoArgs Nil))
+                     x : xs -> chain (foldl App e (x : xs))
 
       simple :: Parser (Raw Expr)
       simple = context "simple" $
-         letExpr
-            <|> letRecExpr
-            <|> matrix
+         matrix
             <|> bracketsExpr
             <|> lambda
             <|> dict
@@ -216,42 +255,17 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                <?> "simple expression"
          where
 
-         letExpr :: Parser (Raw Expr)
-         letExpr = context "letExpr" do
-            ds <- many1 varDef
-            e <- opTree
-            pure $ Let ds e
-            where
-            varDef :: Parser (Raw VarDef)
-            varDef = do
-               p <- try (reserved "def" *> pattern <* delim ':')
-               e <- opTree
-               delim ';'
-               pure $ VarDef p e
-
-         letRecExpr :: Parser (Raw Expr)
-         letRecExpr = context "letRecExpr" do
-            ds <- many1 recDef
-            e <- opTree
-            pure $ LetRec ds e
-            where
-            recDef :: Parser (Raw Branch)
-            recDef = do
-               p <- try (reserved "def" *> variable <* delim '(')
-               ps <- commas1 pattern
-               delim ')'
-               delim ':'
-               e <- opTree
-               delim ';'
-               pure $ p × Clause (ps × e)
-
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
             reserved "lambda"
-            ps <- commas1 pattern
+            ps0 <- commas pattern
             delim ':'
-            e <- opTree
-            pure $ Lambda (Clauses (nonEmpty (Clause (ps × e) : Nil)))
+            e <- ternary
+            let
+               ps = case ps0 of
+                  Nil -> NonEmptyList (PConstr cNoArgs Nil :| Nil)
+                  x : xs -> NonEmptyList (x :| xs)
+            pure $ Lambda (LambdaClause (ps × e))
 
          var :: Parser (Raw Expr)
          var = variable <#> Var
@@ -299,7 +313,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
             where
             exprKey :: Parser (Raw DictEntry)
-            exprKey = defer \_ -> brackets opTree <#> ExprKey
+            exprKey = defer \_ -> brackets ternary <#> ExprKey
 
             varKey :: Parser (Raw DictEntry)
             varKey = variable <#> VarKey unit
@@ -307,7 +321,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          matrix :: Parser (Raw Expr)
          matrix = context "matrix" do
             delim "[|"
-            e <- opTree
+            e <- ternary
             reserved "for"
             delim '('
             x <- variable
@@ -315,7 +329,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             y <- variable
             delim ')'
             reserved "in"
-            e' <- opTree
+            e' <- ternary
             delim "|]"
             pure $ Matrix unit e (x × y) e'
 
@@ -327,11 +341,11 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                     close ']'
                     pure $ ListEmpty unit
                , do
-                    e <- opTree
+                    e <- ternary
                     choice
                        [ context "listNonEmpty" do
                             delim ','
-                            rest <- trailingCommas opTree
+                            rest <- trailingCommas ternary
                             close ']'
                             pure $ ListNonEmpty unit e (foldr (Next unit) (End unit) rest)
                        , do
@@ -339,7 +353,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                             pure $ ListNonEmpty unit e (End unit)
                        , context "listEnum" do
                             delim ".."
-                            e' <- opTree
+                            e' <- ternary
                             close ']'
                             pure $ ListEnum e e'
 
@@ -377,14 +391,14 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                     op <- try (operator <* close ')')
                     pure $ Op op
                , do
-                    e <- opTree
+                    e <- ternary
                     choice
                        [ do
                             close ')'
                             pure e
                        , do
                             delim ','
-                            e' <- opTree
+                            e' <- ternary
                             close ')'
                             pure $ Constr unit cPair (e : e' : Nil)
                        , fail "Expected `)` or `,` after `(expr`"
@@ -430,8 +444,8 @@ parse parser input =
    printError (ParseError msg (Position { line, column })) =
       "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
 
-parseProgram :: String -> Either String (Raw Expr × List String)
-parseProgram = parse (withImports expr)
+parseProgram :: String -> Either String (Raw Stmt × List String)
+parseProgram = parse (withImports programStmts)
 
 parseModule :: String -> Either String (Raw Module × List String)
 parseModule = parse (withImports module_)

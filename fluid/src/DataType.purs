@@ -26,7 +26,7 @@ type Ctr = String -- newtype would require more general Dict keys
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
 isCtrName ∷ Var → Boolean
-isCtrName str = isUpper $ codePointFromChar $ definitely' $ charAt 0 str
+isCtrName str = let c = definitely' $ charAt 0 str in isUpper (codePointFromChar c) || c == '_'
 
 isCtrOp :: String -> Boolean
 isCtrOp str = ':' == (definitely' $ charAt 0 str)
@@ -98,8 +98,10 @@ cTrue = "True" :: Ctr
 cNil = "Nil" :: Ctr -- List
 cCons = ":" :: Ctr
 cPair = "Pair" :: Ctr -- Pair
-cNone = "None" :: Ctr -- Option
-cSome = "Some" :: Ctr
+cNothing = "Nothing" :: Ctr -- Maybe
+cJust = "Just" :: Ctr
+cNone = "None" :: Ctr -- NoneType
+cNoArgs = "__NoArgs" :: Ctr -- internal: zero-arg fn signature/call
 cText = "Text" :: Ctr
 cLink = "Link" :: Ctr
 -- Field names used internally by rendering layer.
@@ -136,9 +138,15 @@ dataTypes = L.fromFoldable
         [ cNil × 0
         , cCons × 2 -- any × List any
         ]
-   , dataType "Option"
+   , dataType "Maybe"
+        [ cNothing × 0
+        , cJust × 1 -- any
+        ]
+   , dataType "NoneType"
         [ cNone × 0
-        , cSome × 1 -- any
+        ]
+   , dataType "__NoArgs"
+        [ cNoArgs × 0
         ]
    , dataType "Ordering"
         [ "GT" × 0

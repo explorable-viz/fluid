@@ -1,5 +1,5 @@
 -- Better name and more consistent interface to Foreign.Object, plus some additional functions.
--- Newtype wrapper so we can fix Ord instance be consistent with Eq (i.e. to use isSubmap vs. toAscArray).
+-- Newtype wrapper for consistent interface to Foreign.Object plus some additional functions.
 module Dict
    ( fromFoldable
    , toArrayWithKey
@@ -13,7 +13,7 @@ import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultL
 import Data.Newtype (class Newtype)
 import Data.Traversable (class Foldable, class Traversable, foldl)
 import Foreign.Object (Object, fromFoldable, toArrayWithKey, union) as O
-import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, isSubmap, lookup, mapWithKey, unionWith)
+import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, lookup, mapWithKey, unionWith)
 import Util (class IsEmpty, type (×))
 import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, toUnfoldable, values)
 import Util.Map as Map
@@ -24,14 +24,6 @@ newtype Dict a = Dict (O.Object a)
 
 derive instance Newtype (Dict a) _
 derive newtype instance Eq a => Eq (Dict a)
-
--- More sensible than Foreign.Object Ord instance.
-instance Ord a => Ord (Dict a) where
-   compare (Dict d) (Dict d') =
-      if isSubmap d d' then
-         if isSubmap d' d then EQ
-         else LT
-      else GT
 
 instance Apply Dict where
    apply (Dict f) (Dict x) = Dict (intersectionWith ($) f x)

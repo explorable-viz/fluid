@@ -1,0 +1,5 @@
+import slicing.list_comp_inputs
+
+[ row.output for type in types
+  for row in data if row.energyType == type
+]

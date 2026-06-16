@@ -1,0 +1,10 @@
+def lookup(k, Empty):
+  return Nothing
+def lookup(k, NonEmpty(left, (key, val), right)):
+  match compare(k, key):
+    case LT:
+      return lookup(k, left)
+    case EQ:
+      return Just(val)
+    case GT:
+      return lookup(k, right)
