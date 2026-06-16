@@ -1,5 +1,4 @@
 import slicing.array.dims_inputs
 
 yss = [| 0 for (i, j) in (x, y) |]
-
 dims(yss)

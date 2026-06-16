@@ -9,5 +9,4 @@ image_ = [
 ]
 image = [| nth2(i, j, image_) for (i, j) in (5, 5) |]
 index = (1, 1)
-
 matrixUpdate(image, index, pair)

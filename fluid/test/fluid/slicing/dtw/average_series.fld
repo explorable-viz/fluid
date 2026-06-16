@@ -12,5 +12,4 @@ def avgSeq(seq1, seq2, f):
   return map(lambda (i, j): f(nth(i, seq1), nth(j, seq2)))
 
 (costs, matched) = computeDTW(seq1, seq2, d, window)
-
 avgSeq(seq1, seq2, avg, matched)
