@@ -2,7 +2,7 @@
 set -e
 
 WEBSITE="${1:-article}"
-NPM_ROOT="node_modules/@explorable-viz/fluid"
+NPM_ROOT="node_modules/@fluid-org/fluid"
 SRC="$NPM_ROOT/website/$WEBSITE"
 DEST="website/$WEBSITE"
 
@@ -18,10 +18,10 @@ if [ -e "$DEST" ]; then
    exit 1
 fi
 
-# Get the installed version of @explorable-viz/fluid
+# Get the installed version of @fluid-org/fluid
 VERSION=$(node -e "console.log(require('./$NPM_ROOT/package.json').version)")
 
-echo "Installing $WEBSITE from @explorable-viz/fluid@$VERSION..."
+echo "Installing $WEBSITE from @fluid-org/fluid@$VERSION..."
 mkdir -p "$(dirname "$DEST")"
 cp -r "$SRC" "$DEST"
 

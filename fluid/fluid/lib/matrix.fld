@@ -1,9 +1,6 @@
 def zero(m, n, image):
   (m_size, n_size) = dims(image)
-  if m >= 0 and m < m_size and n >= 0 and n < n_size:
-    return image ! (m, n)
-  else:
-    return 0
+  return image ! (m, n) if m >= 0 and m < m_size and n >= 0 and n < n_size else 0
 
 def wrap(m, n, image):
   (m_size, n_size) = dims(image)

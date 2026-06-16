@@ -121,8 +121,7 @@ def tick_every(n):
 
   if n <= 2 * 10 ** m:
     return 2 * 10 ** (m - 1)
-  else:
-    return 10 ** m
+  return 10 ** m
 
 axis_stroke_width = 0.5
 axis_colour = "black"
@@ -216,8 +215,7 @@ def line_chart(with_axes, colours, x_start, data):
     (x_axis, x_finish) = axis(Horiz, 0, x_start, x_finish)
     (y_axis, y_finish_) = axis(Vert, x_start, 0, y_finish)
     return viewport(x_start, x_finish, y_finish_, default_margin, x_axis :| y_axis :| lines)
-  else:
-    return viewport(x_start, x_finish, y_finish, 0, lines)
+  return viewport(x_start, x_finish, y_finish, 0, lines)
 
 # Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
 # (Colours -> List a -> GraphicsElement) -> Bool -> Colours -> Float -> List (Cat, a) -> GraphicsElement
@@ -230,8 +228,7 @@ def categorical_chart(plot_value, with_axes, colours, sep, data):
     x_axis = cat_axis(Horiz, 0, map(fst, data))
     (y_axis, h_) = axis(Vert, 0, 0, h)
     return viewport(0, w, h_, default_margin, concat2(gs, [x_axis, y_axis]))
-  else:
-    return viewport(0, w, h, 0, gs)
+  return viewport(0, w, h, 0, gs)
 
 # Colours -> List a -> GraphicsElement
 def rects(colours, ns):

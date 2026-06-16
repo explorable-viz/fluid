@@ -580,9 +580,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@explorable-viz/fluid@workspace:*, @explorable-viz/fluid@workspace:fluid":
+"@fluid-org/fluid@workspace:*, @fluid-org/fluid@workspace:fluid":
   version: 0.0.0-use.local
-  resolution: "@explorable-viz/fluid@workspace:fluid"
+  resolution: "@fluid-org/fluid@workspace:fluid"
   dependencies:
     "@codemirror/commands": "npm:^6.8.1"
     "@codemirror/lang-python": "npm:^6.2.1"
@@ -618,9 +618,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@explorable-viz/monorepo@workspace:.":
+"@fluid-org/monorepo@workspace:.":
   version: 0.0.0-use.local
-  resolution: "@explorable-viz/monorepo@workspace:."
+  resolution: "@fluid-org/monorepo@workspace:."
   languageName: unknown
   linkType: soft
 
@@ -1579,7 +1579,7 @@ __metadata:
     "@codemirror/view": "npm:^6.38.3"
     "@eslint/compat": "npm:^1.4.0"
     "@eslint/js": "npm:^9.39.1"
-    "@explorable-viz/fluid": "workspace:*"
+    "@fluid-org/fluid": "workspace:*"
     "@fontsource/fira-code": "npm:^5.2.7"
     "@fontsource/roboto": "npm:^5.2.9"
     "@sveltejs/adapter-static": "npm:^3.0.10"
@@ -3695,7 +3695,7 @@ __metadata:
     "@codemirror/view": "npm:^6.38.3"
     "@eslint/compat": "npm:^1.4.0"
     "@eslint/js": "npm:^9.39.1"
-    "@explorable-viz/fluid": "workspace:*"
+    "@fluid-org/fluid": "workspace:*"
     "@fontsource/fira-code": "npm:^5.2.7"
     "@fontsource/roboto": "npm:^5.2.9"
     "@sveltejs/adapter-static": "npm:^3.0.10"
@@ -4672,7 +4672,7 @@ __metadata:
     "@codemirror/view": "npm:^6.38.3"
     "@eslint/compat": "npm:^1.4.0"
     "@eslint/js": "npm:^9.39.1"
-    "@explorable-viz/fluid": "workspace:*"
+    "@fluid-org/fluid": "workspace:*"
     "@fontsource/roboto": "npm:^5.2.9"
     "@sveltejs/adapter-static": "npm:^3.0.10"
     "@sveltejs/kit": "npm:^2.49.1"

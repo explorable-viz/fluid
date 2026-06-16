@@ -16,12 +16,11 @@
 - [ ] Run `./script/check-project-integrity.sh` to verify invariants
 
 ### After any change to project board state
-- [ ] Verify project view at https://github.com/orgs/explorable-viz/projects/1
+- [ ] Verify project view at https://github.com/orgs/fluid-org/projects/1
 
 ### Before npm publish
-- [ ] Bump version in `fluid/package.json`
-- [ ] Run `./script/stage-website.sh article`
 - [ ] Run full test suite: `./script/test-website-all.sh`
+- [ ] Working tree clean (publish script commits the version bump)
 
 ## Principles
 
@@ -60,7 +59,9 @@ Managed manually by developer:
 
 ## NPM publishing
 
-Package version tracks milestone (e.g. `fluid 0.12` → `0.12.x`). Publish from `fluid/` via `yarn workspace @explorable-viz/fluid build-publish`.
+Package version tracks milestone (e.g. `fluid 0.12` → `0.12.x`). Publish via `yarn workspace @fluid-org/fluid build-publish` (from any directory). Script bumps patch version, commits, tags `vX.Y.Z`, builds, stages website, and publishes to npm. After it succeeds, push manually: `git push && git push --tags`.
+
+Auth: needs an npm automation token in `~/.npmrc` (`//registry.npmjs.org/:_authToken=...`) — bypasses 2FA.
 
 ## Issue lifecycle
 
@@ -113,16 +114,18 @@ No undo for GitHub Projects v2 field mutations.
 
 ## Testing
 
-`yarn test` runs the unit test suite via `fluid/test/Test.purs`'s `tests`, which defaults to `allTests`. To run a focused subset:
+Repo is a Yarn monorepo.
+
+`yarn workspace @fluid-org/fluid test` runs the unit test suite via `fluid/test/Test.purs`'s `tests`, which defaults to `allTests`. To run a focused subset:
 
 1. Edit `fluid/test/Test.purs`: change `tests = allTests` to `tests = scratchpad`.
 2. Edit `scratchpad` to select cases. Whole suite: `scratchpad = second void <$> suite misc_cases (1 × false)`. Specific files: `scratchpad = filterSuite [ "lambda.fld", "self.fld" ] misc_cases suite` (use `illFormed_cases` and `illFormedSuite` for ill-formed).
-3. `yarn build && yarn test`.
+3. `yarn workspace @fluid-org/fluid build && yarn workspace @fluid-org/fluid test`.
 4. When done, revert `tests = allTests`. Leave `scratchpad` as-is; it's a working area.
 
 Do not invent ad hoc CLI invocations of `fluid.mjs` to run individual `.fld` files — the test harness sets up paths, prelude, and reports errors in the same form tests assert against.
 
-`yarn test` doesn't exercise website fixtures. Run `./script/test-website-all.sh` from the repo root after changes that touch parsing, desugaring, evaluation, or well-formedness; before pushing a commit that completes a meaningful chunk of work; or whenever in doubt about wider impact. Don't run it on every change — it's slow (a few minutes per website).
+`yarn workspace @fluid-org/fluid test` doesn't exercise website fixtures. Run `./script/test-website-all.sh` from the repo root after changes that touch parsing, desugaring, evaluation, or well-formedness; before pushing a commit that completes a meaningful chunk of work; or whenever in doubt about wider impact. Don't run it on every change — it's slow (a few minutes per website).
 
 ## Token setup
 

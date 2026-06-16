@@ -1,10 +1,10 @@
 {
-  "name": "@explorable-viz/fluid",
-  "version": "0.12.11",
+  "name": "@fluid-org/fluid",
+  "version": "0.12.21",
   "description": "A pure functional dialect of Python, based on PurePy, with a dependency-tracking runtime for creating interactive outputs linked to data.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/explorable-viz/fluid.git#release"
+    "url": "git+https://github.com/fluid-org/fluid.git#release"
   },
   "keywords": [
     "PureScript",
@@ -13,7 +13,7 @@
   "author": "Fluid Contributors",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/explorable-viz/fluid/issues"
+    "url": "https://github.com/fluid-org/fluid/issues"
   },
   "homepage": "https://f.luid.org",
   "files": [
@@ -29,7 +29,7 @@
   "scripts": {
     "build": "./script/build.sh",
     "build-prod": "BUILD_ENV=prod ./script/build.sh",
-    "build-publish": "npm version patch && yarn build-prod && ./script/stage-website.sh article && npm publish --access public && git push && git push --tags",
+    "build-publish": "./script/build-publish.sh",
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
     "fluid": "node ./dist/fluid/shared/fluid.mjs",

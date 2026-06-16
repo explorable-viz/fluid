@@ -12,7 +12,7 @@
 ### Initial configuration
 
 ```bash
-git clone git@github.com:explorable-viz/fluid.git
+git clone git@github.com:fluid-org/fluid.git
 cd fluid
 ./script/setup/dev-setup.sh
 yarn install
@@ -21,7 +21,7 @@ yarn install
 ## Building
 
 ```bash
-yarn workspace @explorable-viz/fluid build
+yarn workspace @fluid-org/fluid build
 ```
 
 This compiles PureScript, bundles the Fluid runtime, and produces `output-es/` (ES module output).
@@ -46,7 +46,7 @@ yarn build && yarn preview
 ### PureScript unit tests
 
 ```bash
-yarn workspace @explorable-viz/fluid test
+yarn workspace @fluid-org/fluid test
 ```
 
 ### Website tests (Puppeteer)
@@ -67,7 +67,7 @@ yarn test
 ### Browser tests
 
 ```bash
-yarn workspace @explorable-viz/fluid test-browser
+yarn workspace @fluid-org/fluid test-browser
 ```
 
 Opens a browser window; check the JavaScript console for test results.
@@ -77,10 +77,20 @@ Opens a browser window; check the JavaScript console for test results.
 From the monorepo root:
 
 ```bash
-yarn workspace @explorable-viz/fluid build-publish
+yarn workspace @fluid-org/fluid build-publish
 ```
 
-This bumps the patch version (via `npm version patch`), builds in production mode, stages the `article` website, publishes to npm, and pushes the version tag. Version tracks milestone (e.g. `0.12.x` for milestone `fluid 0.12`).
+Bumps the patch version, commits, tags `vX.Y.Z`, builds in production mode, stages the `article` website, and publishes to npm. Version tracks milestone (e.g. `0.12.x` for milestone `fluid 0.12`). After it succeeds, push manually:
+
+```bash
+git push && git push --tags
+```
+
+Requires an npm automation token in `~/.npmrc` (bypasses 2FA):
+
+```
+//registry.npmjs.org/:_authToken=npm_...
+```
 
 ## VS Code
 

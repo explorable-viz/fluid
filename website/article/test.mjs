@@ -1,7 +1,7 @@
 import {
    checkAttribute, checkAttributeContains, checkComputedStyle, checkCount, checkCountAtLeast,
    checkTextContent, click, clickToggle, dispatchMouseDown, testURL, waitFor
-} from "@explorable-viz/fluid/script/webtest-lib.mjs"
+} from "@fluid-org/fluid/script/webtest-lib.mjs"
 
 export const main = async () => {
    // Convolution: 5×5 output matrix

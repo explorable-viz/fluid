@@ -1,5 +1,5 @@
 <script>
-   import { CodeMirror, Grid } from '@explorable-viz/fluid';
+   import { CodeMirror, Grid } from '@fluid-org/fluid';
 </script>
 
 <Grid>
@@ -13,7 +13,7 @@
 		which are automatically linked to the underlying data.</p>
 
 		<p>For some examples, see the <a
-		href="https://github.com/explorable-viz/fluid-article">fluid-article</a> template repository.</p>
+		href="https://github.com/fluid-org/fluid-article">fluid-article</a> template repository.</p>
 
 		<h3 class="title">Pure functional programming, Pythonic syntax</h3>
 		<p>Fluid is based on <a href="https://github.com/pure-py/pure-py-spec">PurePy</a>,

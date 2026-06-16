@@ -2,5 +2,5 @@ cff-version: 1.2.0
 authors:
   - name: "Fluid contributors"
 title: "Fluid programming language"
-url: "https://github.com/explorable-viz/fluid"
+url: "https://github.com/fluid-org/fluid"
 date-released: 2025

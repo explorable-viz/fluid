@@ -32,7 +32,7 @@ echo "Using yarn $(yarn -v)"
 if [ ! -f package.json ]; then
    yarn init -y
 fi
-yarn add @explorable-viz/fluid
+yarn add @fluid-org/fluid
 
 echo ""
 echo "Fluid installed successfully."

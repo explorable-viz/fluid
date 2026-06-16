@@ -1,4 +1,4 @@
-import { testURL, waitFor } from "@explorable-viz/fluid/script/webtest-lib.mjs"
+import { testURL, waitFor } from "@fluid-org/fluid/script/webtest-lib.mjs"
 
 export const main = async () => {
    await testURL("ar6-wg1/spm/figure4b", [

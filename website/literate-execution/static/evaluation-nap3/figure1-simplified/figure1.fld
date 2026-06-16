@@ -18,10 +18,7 @@ def actions_by(key, keys):
 risks_ = dict([ (risk[ "ID#" ], risk) for risk in ccra3_risks ])
 
 def percent(x, y):
-  if y == 0:
-    return 0
-  else:
-    return x / y * 100
+  return 0 if y == 0 else x / y * 100
 
 def actions_by_chapter(owner):
   return [ { x: chapter,

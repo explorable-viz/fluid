@@ -3,5 +3,5 @@ export const headerLinks = [
 	{ url: '/faq', title: 'FAQ' },
 	{ url: '/supporters', title: 'Supporters' },
 	{ url: '/research', title: 'Research' },
-	{ url: 'https://github.com/explorable-viz/fluid', title: 'GitHub' }
+	{ url: 'https://github.com/fluid-org/fluid', title: 'GitHub' }
 ];

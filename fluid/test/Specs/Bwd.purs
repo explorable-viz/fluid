@@ -270,16 +270,15 @@ bwd_cases =
      }
    , { file: "lookup.fld"
      , bwd_expect:
-          envVal "k" select
-             >.> envVal "tree"
-                ( constrArg "NonEmpty" 2
-                     ( constrArg "NonEmpty" 0
-                          ( constr "NonEmpty" select'
-                               >.> constrArg "NonEmpty" 1
-                                  (constr "Pair" select' >.> fst select)
-                          )
-                     )
-                )
+          envVal "tree"
+             ( constrArg "NonEmpty" 2
+                  ( constrArg "NonEmpty" 0
+                       ( constr "NonEmpty" select'
+                            >.> constrArg "NonEmpty" 1
+                               (constr "Pair" select')
+                       )
+                  )
+             )
      , δv: just select'
      , fwd_expect: "⸨Just(\"Germany\")⸩"
      }
