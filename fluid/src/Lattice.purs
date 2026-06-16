@@ -45,8 +45,7 @@ class TopOf t u | t -> u where
 relativeComplement :: forall a. Neg a => MeetSemilattice a => a -> a -> a
 relativeComplement a = neg >>> (_ ∧ a)
 
--- Lattice partial order: a ≼ b iff (a ∨ b) == b. Not encoded via Ord because Ord
--- demands a total order; lattice values can be genuinely incomparable.
+-- (Ord describes a total order.)
 leq :: forall a. JoinSemilattice a => Eq a => a -> a -> Boolean
 leq a b = (a ∨ b) == b
 

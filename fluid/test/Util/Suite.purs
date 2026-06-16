@@ -111,10 +111,7 @@ illFormedSuite specs = specs <#> (_.file &&& asTest)
       result <- catchError (prepConfig primitives fluidSrc *> pure (Left unit)) (pure <<< Right)
       case result of
          Right err ->
-            let
-               msg = message err
-            in
-               when (msg /= expected_error)
-                  $ throw
-                  $ "Expected error: " <> expected_error <> "; got: " <> msg
+            when (message err /= expected_error)
+               $ throw
+               $ "Expected error: " <> expected_error <> "; got: " <> message err
          Left _ -> throw $ "Expected ill-formed: " <> file

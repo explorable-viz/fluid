@@ -35,7 +35,7 @@ type TestSuite m = Array (String × m Unit)
 type SelectionSpec =
    { δv :: Selector Val
    , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
-   , bwd_expect :: Maybe (Selector Env) -- env-selector check; Nothing for tests that don't perturb output
+   , bwd_expect :: Maybe (Selector Env) -- Nothing for tests that don't perturb output
    }
 
 fluidSrcPaths :: Array Folder
