@@ -97,8 +97,8 @@ No undo for GitHub Projects v2 field mutations.
 
 ## Tracking
 
-- Commits by Claude include `Co-Authored-By: Claude <noreply@anthropic.com>` trailer.
-- Searchable via `git log --grep="Co-Authored-By: Claude"`.
+- Commits by Claude are authored by the `rolyp-claude-bot` GitHub account; no `Co-Authored-By` trailer is added (it would produce a duplicate avatar on GitHub).
+- Searchable via `git log --author=rolyp-claude-bot`.
 - Issue comments record design decisions.
 - PRs link to issues and summarise what was done.
 
