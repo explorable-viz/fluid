@@ -4,10 +4,8 @@ def filter(p, []):
   return []
 def filter(p, x :| xs):
   ys = filter(p, xs)
-
   if p(x):
     return x :| ys
-  else:
-    return ys
+  return ys
 
 filter((<)(n), xs)
