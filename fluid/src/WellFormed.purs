@@ -14,7 +14,7 @@ import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
 import DefiniteAssignment (Ctx, TyResult(..), mergeRes, overrideCtx, overrideRes)
-import Util.Map (fromSet)
+import Util.Map (constMap)
 import Effect.Exception (Error)
 import Expr (bv, fv)
 import Lattice (Raw)
@@ -23,7 +23,7 @@ import Util (type (×), throw, (×))
 import Util.Set ((\\), (∪))
 
 checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
-checkProgram γ0 s = snd <$> wellFormed (fromSet true γ0) s
+checkProgram γ0 s = snd <$> wellFormed (constMap true γ0) s
 
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
@@ -108,20 +108,20 @@ wellFormed γ (S.Def (S.VarDef p e)) = do
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throw $ "Variable captured by its own definition: " <> x
    wellFormedExpr γ e
-   pure (Assigns (fromSet true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e)))
+   pure (Assigns (constMap true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e)))
 wellFormed γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
-   let γ' = γ `overrideCtx` fromSet true fs
+   let γ' = γ `overrideCtx` constMap true fs
    ds' <- traverse
       ( \(x × S.Clause _ (ps × s)) -> do
            let xs = unions (bv <$> ps)
            let ys = assigns s \\ xs
-           let γ'' = γ' `overrideCtx` fromSet true xs `overrideCtx` fromSet false ys
+           let γ'' = γ' `overrideCtx` constMap true xs `overrideCtx` constMap false ys
            r × s' <- wellFormed γ'' s
            pure (x × S.Clause r (ps × s'))
       )
       ds
-   pure (Assigns (fromSet true fs) × S.DefRec ds')
+   pure (Assigns (constMap true fs) × S.DefRec ds')
 wellFormed γ (S.Seq s1 s2) = do
    r1 × s1' <- wellFormed γ s1
    case r1 of
@@ -148,8 +148,8 @@ wellFormed γ (S.Match e ps) = do
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
-           r × s' <- wellFormed (γ `overrideCtx` fromSet true xs) s
-           pure (overrideRes (Assigns (fromSet true xs)) r × (p × s'))
+           r × s' <- wellFormed (γ `overrideCtx` constMap true xs) s
+           pure (overrideRes (Assigns (constMap true xs)) r × (p × s'))
       )
       ps
    pure (foldl1 mergeRes ((fst <$> ps') `NEL.snoc` rFall) × S.Match (Assigns Map.empty <$ e) (snd <$> ps'))

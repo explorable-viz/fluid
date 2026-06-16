@@ -57,8 +57,8 @@ infix 5 difference as \\
 
 foreign import intersectionWith_Object :: forall a b c. (a -> b -> c) -> Object a -> Object b -> Object c
 
-fromSet :: forall k v. v -> Set k -> M.Map k v
-fromSet v ks = v <$ DSet.toMap ks
+constMap :: forall k v. v -> Set k -> M.Map k v
+constMap v ks = v <$ DSet.toMap ks
 
 restrict :: forall a k b. Ord k => Map a k b => Set k -> Endo a
 restrict xs = filterKeys (_ ∈ xs)
