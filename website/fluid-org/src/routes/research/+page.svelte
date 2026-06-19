@@ -20,6 +20,7 @@
 		<p>
     <a href="https://arxiv.org/abs/2511.09203">Galois Slicing as Automatic Differentiation</a> (preprint)<br>
     <a href="https://arxiv.org/abs/2601.06027">AI-Assisted Authoring for Transparent, Data-Driven Documents</a> (preprint)<br>
+    <a href="https://arxiv.org/pdf/2604.26967">Literate Execution</a> (PLATEAU 2026)<br />
     <a href="https://dl.acm.org/doi/10.1145/3498668">Cognacy Queries over Dependence Graphs for Transparent Visualisations</a> (ESOP 2025)<br>
 		<a href="https://dl.acm.org/doi/10.1145/3498668">Linked Visualisations via Galois Dependencies</a> (POPL 2022)
     </p>
