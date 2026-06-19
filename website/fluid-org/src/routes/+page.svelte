@@ -12,8 +12,9 @@
 		that tracks how data flows through a computation, making it possible to create computational outputs
 		which are automatically linked to the underlying data.</p>
 
-		<p>For some examples, see the <a
-		href="https://github.com/fluid-org/fluid-article">fluid-article</a> template repository.</p>
+		<p>For some running examples, see this <a
+		href="https://fluid-org.github.io/fluid-article/">GitHub Pages site</a>, built from the
+		<a href="https://github.com/fluid-org/fluid-article">fluid-article</a> template repository.</p>
 
 		<h3 class="title">Pure functional programming, Pythonic syntax</h3>
 		<p>Fluid is based on <a href="https://github.com/pure-py/pure-py-spec">PurePy</a>,
