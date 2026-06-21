@@ -152,9 +152,12 @@ matchStmt = defer \_ -> do
 blockBody :: Parser (Raw Stmt)
 blockBody = defer \_ -> block stmts
 
+decorator :: String -> Parser Unit
+decorator name = try (delim '@' *> reserved name)
+
 dataclassStmt :: Parser (Raw Stmt)
 dataclassStmt = do
-   try (delim '@' *> reserved "dataclass")
+   decorator "dataclass"
    reserved "class"
    c <- constructor
    b <- optionMaybe (parens constructor)
@@ -424,7 +427,7 @@ expr = context "expr" $ ternary <?> "expression"
 
          docExpr :: Parser (Raw Expr)
          docExpr = context "doc expr" do
-            delim "@doc"
+            decorator "doc"
             e <- parens opTree
             e' <- opTree
             pure $ DocExpr e e'
