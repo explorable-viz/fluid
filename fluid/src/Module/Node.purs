@@ -4,13 +4,14 @@ import Prelude
 
 import Control.Monad.Error.Class (class MonadThrow, try)
 import Control.Monad.Except (class MonadError, class MonadTrans, lift)
-import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, runReaderT)
+import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, ask, runReaderT)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
+import DefiniteAssignment (class HasClassCtx)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
-import File (class LoadFile, File(..), FileCxt)
+import File (class LoadFile, File(..), FileCxt(..))
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
@@ -46,3 +47,6 @@ derive newtype instance MonadEffect m => MonadEffect (NodeT m)
 derive newtype instance MonadAff m => MonadAff (NodeT m)
 derive newtype instance MonadAsk FileCxt m => MonadAsk FileCxt (NodeT m)
 derive newtype instance Monad m => MonadReader FileCxt (NodeT m)
+
+instance Monad m => HasClassCtx (NodeT m) where
+   askClassCtx = NodeT (ask <#> \(FileCxt { classCtx }) -> classCtx)

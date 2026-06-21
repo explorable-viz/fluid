@@ -3,7 +3,7 @@ module Module where
 import Prelude
 
 import Control.Monad.Except (class MonadError)
-import Control.Monad.Reader (class MonadReader, ask)
+import Control.Monad.Reader (class MonadReader, ask, local)
 import Data.List (List(..), reverse, (:))
 import Data.List as List
 import Data.Map as Map
@@ -17,6 +17,7 @@ import Effect.Exception (Error)
 import Eval (GraphConfig, eval_primitives)
 import Expr (Module, Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
+
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
@@ -44,19 +45,21 @@ prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt 
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    moduleCxt <- loadModuleGraph (builtins : prelude : imports)
-   n × _ × primitives' × _ × topLevelEnv <- flip runAllocT 0 do
-      primitives' <- alloc primitives
-      modules' <- traverse alloc (moduleCxt.modules)
-      let moduleCxt' = moduleCxt { modules = modules' }
-      let mαs = Set.unions (vertices <$> Map.values modules')
-      let αs = vertices primitives' ∪ mαs
-      _ × γ <- runWithGraphT_spy (eval_primitives primitives' moduleCxt') αs :: AllocT m (GraphImpl × _)
-      pure (primitives' × modules' × γ)
-   sty <- checkProgram moduleCxt.classCtx (keys topLevelEnv) s
-   eTy <- desug sty
-   let e = (unit <$ eTy) :: Raw Stmt
-   let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv }
-   pure { s, e, gconfig }
+   -- Inject loaded Λ so downstream code can resolve ctrs via HasClassCtx.
+   local (\(FileCxt r) -> FileCxt (r { classCtx = moduleCxt.classCtx })) do
+      n × _ × primitives' × _ × topLevelEnv <- flip runAllocT 0 do
+         primitives' <- alloc primitives
+         modules' <- traverse alloc (moduleCxt.modules)
+         let moduleCxt' = moduleCxt { modules = modules' }
+         let mαs = Set.unions (vertices <$> Map.values modules')
+         let αs = vertices primitives' ∪ mαs
+         _ × γ <- runWithGraphT_spy (eval_primitives primitives' moduleCxt') αs :: AllocT m (GraphImpl × _)
+         pure (primitives' × modules' × γ)
+      sty <- checkProgram moduleCxt.classCtx (keys topLevelEnv) s
+      eTy <- desug sty
+      let e = (unit <$ eTy) :: Raw Stmt
+      let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv }
+      pure { s, e, gconfig }
 
 loadModuleGraph
    :: forall m

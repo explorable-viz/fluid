@@ -19,6 +19,10 @@ type Ctx = Map Var Boolean
 -- Class context: class name ↦ (optional base class, own field names in declaration order).
 type ClassCtx = Map Var (Maybe Var × List Var)
 
+-- Non-fundep ask for ClassCtx so it coexists with MonadReader FileCxt.
+class HasClassCtx m where
+   askClassCtx :: m ClassCtx
+
 data TyResult a = Returns | Assigns a
 
 derive instance Functor TyResult

@@ -10,6 +10,7 @@ import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Decode.Error (JsonDecodeError)
 import Data.Array (head, last)
 import Data.Either (Either(..))
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String (split, Pattern(..))
 import Data.Tuple (uncurry)
@@ -57,7 +58,7 @@ loadFigureSrc options divId fluidSrc = runAffs_ (uncurry drawFig)
         Left err -> error ("JSON decoding failed with " <> show err)
         Right spec -> do
            let figSpec@{ fluidSrcPaths } = optionsFromJson spec
-           (divId × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec fluidSrc)
+           (divId × _) <$> runWebT (FileCxt { fluidSrcPaths, classCtx: Map.empty }) (loadFig figSpec fluidSrc)
    ]
 
 loadCode :: String -> Effect Unit

@@ -5,6 +5,7 @@ import Prelude
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Array (concat, filter, elem)
+import Data.Map as Map
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
@@ -26,7 +27,7 @@ import Test.Util.Suite (BenchSuite, SuiteFactory, bwdSuite, illFormedSuite, link
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> tests)
+main = run (second (runWebT (FileCxt { fluidSrcPaths, classCtx: Map.empty })) <$> tests)
 
 tests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 tests = allTests

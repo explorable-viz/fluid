@@ -4,11 +4,12 @@ import Prelude
 
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (class MonadError, class MonadTrans, lift)
-import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, runReaderT)
+import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, ask, runReaderT)
+import DefiniteAssignment (class HasClassCtx)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
-import File (class LoadFile, FileCxt, loadFileFromPath)
+import File (class LoadFile, FileCxt(..), loadFileFromPath)
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (WebT m) where
    loadFileFromPath = lift <<< loadFileFromPath
@@ -34,6 +35,9 @@ derive newtype instance MonadEffect m => MonadEffect (WebT m)
 derive newtype instance MonadAff m => MonadAff (WebT m)
 derive newtype instance MonadAsk FileCxt m => MonadAsk FileCxt (WebT m)
 derive newtype instance Monad m => MonadReader FileCxt (WebT m)
+
+instance Monad m => HasClassCtx (WebT m) where
+   askClassCtx = WebT (ask <#> \(FileCxt { classCtx }) -> classCtx)
 
 instance MonadTrans WebT where
    lift m = WebT (lift m)
