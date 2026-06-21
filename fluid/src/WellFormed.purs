@@ -38,6 +38,7 @@ assigns (S.If es s) = unions (assigns <$> (snd <$> es)) ∪ maybe Set.empty assi
 assigns (S.Match _ ps) = unions (assigns <$> (snd <$> ps))
 assigns (S.DefRec ds) = unions (Set.singleton <<< fst <$> ds)
 assigns (S.Seq s1 s2) = assigns s1 ∪ assigns s2
+assigns (S.Dataclass _ _ _) = Set.empty
 
 captures :: forall a. S.Stmt a -> Set Var
 captures S.Pass = Set.empty
@@ -55,6 +56,7 @@ captures (S.DefRec ds) =
    clauseCaptures (_ × S.Clause _ (ps × s)) =
       (fv s \\ unions (bv <$> ps)) \\ assigns s
 captures (S.Seq s1 s2) = captures s1 ∪ captures s2
+captures (S.Dataclass _ _ _) = Set.empty
 
 capturesE :: forall a. S.Expr a -> Set Var
 capturesE (S.Var _) = Set.empty
@@ -157,6 +159,7 @@ wellFormed γ (S.Match e ps) = do
    rFall = case fst (NEL.last ps) of
       S.PVar _ -> Returns
       _ -> Assigns Map.empty
+wellFormed _ (S.Dataclass c b xs) = pure (Assigns Map.empty × S.Dataclass c b xs)
 
 wellFormedExpr :: forall m a. MonadError Error m => Ctx -> S.Expr a -> m Unit
 wellFormedExpr γ e =

@@ -1,0 +1,14 @@
+@dataclass
+class Empty:
+  pass
+
+@dataclass
+class Point:
+  x: Any
+  y: Any
+
+@dataclass
+class ColouredPoint(Point):
+  c: Any
+
+return 42

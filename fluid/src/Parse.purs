@@ -85,7 +85,7 @@ varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (expr <#> ExprStmt)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (expr <#> ExprStmt)
 
 returnStmt :: Parser (Raw Stmt)
 returnStmt = do
@@ -107,7 +107,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser (Raw Stmt)
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (Return <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (Return <$> expr)
 
 programStmts :: Parser (Raw Stmt)
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
@@ -151,6 +151,22 @@ matchStmt = defer \_ -> do
 
 blockBody :: Parser (Raw Stmt)
 blockBody = defer \_ -> block stmts
+
+dataclassStmt :: Parser (Raw Stmt)
+dataclassStmt = do
+   try (delim '@' *> reserved "dataclass")
+   reserved "class"
+   c <- constructor
+   b <- optionMaybe (parens constructor)
+   let
+      fieldDecl = do
+         x <- variable
+         delim ':'
+         t <- constructor
+         unless (t == "Any") $ fail $ "Field type must be Any, got: " <> t
+         pure x
+   xs <- block ((reserved "pass" $> Nil) <|> (toList <$> many1 (align fieldDecl)))
+   pure $ Dataclass c b xs
 
 recDefs :: Parser (Raw RecDefs)
 recDefs = many1 recDef

@@ -210,6 +210,15 @@ instance Ann a => Pretty (Stmt a) where
    pretty (Assert cond Nothing) = text "assert" <+> pretty cond
    pretty (Assert cond (Just msg)) = text "assert" <+> pretty cond <> text "," <+> pretty msg
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
+   pretty (Dataclass c b xs) =
+      text "@dataclass" <> line
+         <> text "class" <+> text c
+         <> maybe mempty (\b' -> text "(" <> text b' <> text ")") b
+         <> block body
+      where
+      body = case xs of
+         Nil -> text "pass"
+         _ -> vsep ((\x -> text x <> text ": Any") <$> xs)
 
 instance Ann a => Pretty (Clause a) where
    pretty (Clause _ (ps × b)) = lambda (toList ps) b
