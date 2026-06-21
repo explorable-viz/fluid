@@ -68,7 +68,7 @@ data Stmt a
    | ExprStmt (Expr a)
    | Seq (Stmt a) (Stmt a)
 
-newtype Module a = Module (List (VarDef a + RecDefs a))
+newtype Module a = Module (List (Stmt a))
 
 class FV a where
    fv :: a -> Set Var
@@ -270,10 +270,7 @@ instance Vertices (Stmt Vertex) where
    vertices (Seq s1 s2) = vertices s1 ∪ vertices s2
 
 instance Vertices (Module Vertex) where
-   vertices (Module defs) = unions (go <$> defs)
-      where
-      go (Left vardef) = vertices vardef
-      go (Right recdefs) = vertices recdefs
+   vertices (Module ss) = unions (vertices <$> ss)
 
 -- ======================
 -- boilerplate
@@ -343,37 +340,19 @@ instance Apply Stmt where
    apply (Seq fs1 fs2) (Seq s1 s2) = Seq (fs1 <*> s1) (fs2 <*> s2)
    apply _ _ = shapeMismatch unit
 
--- Apply instance for Either no good here as doesn't assume fixed shape.
 instance Apply Module where
    apply (Module Nil) (Module Nil) = Module Nil
-   apply (Module (Left fdef : fdefs)) (Module (Left def : defs)) =
-      Module (Left (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
-   apply (Module (Right fdef : fdefs)) (Module (Right def : defs)) =
-      Module (Right (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
+   apply (Module (fs : fss)) (Module (s : ss)) =
+      Module ((fs <*> s) : unwrap (apply (Module fss) (Module ss)))
    apply _ _ = shapeMismatch unit
 
--- Foldable instance for Either only considers Right case.
-foldlModuleDef :: forall a b. (b -> a -> b) -> b -> VarDef a + RecDefs a -> b
-foldlModuleDef f acc (Left def) = foldl f acc def
-foldlModuleDef f acc (Right def) = foldl f acc def
-
 instance Foldable Module where
-   foldl _ acc (Module Nil) = acc
-   foldl f acc (Module (Left def : defs)) =
-      foldl (foldlModuleDef f) (foldl f acc def) defs
-   foldl f acc (Module (Right def : defs)) =
-      foldl (foldlModuleDef f) (foldl f acc def) defs
-
+   foldl f acc (Module ss) = foldl (foldl f) acc ss
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
 instance Traversable Module where
-   traverse _ (Module Nil) = pure (Module Nil)
-   traverse f (Module (Left def : ds)) =
-      Module <$> ((Left <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
-   traverse f (Module (Right def : ds)) =
-      Module <$> ((Right <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
-
+   traverse f (Module ss) = Module <$> traverse (traverse f) ss
    sequence = sequenceDefault
 
 derive instance Eq a => Eq (Expr a)

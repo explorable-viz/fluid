@@ -28,6 +28,8 @@ checkProgram γ0 s = do
    λ <- classes s
    snd <$> wellFormed λ (constMap true γ0) s
 
+-- TODO: actual module-level WF requires a cross-module Γ (primitives + Λ from
+-- builtins). Until that's wired up, accept modules unchecked and annotate trivially.
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
 

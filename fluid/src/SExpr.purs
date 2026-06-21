@@ -145,7 +145,7 @@ data Qualifier a
    | ListCompGen Pattern (Expr a)
    | ListCompDecl (VarDef a) -- could allow VarDefs instead
 
-data Module a = Module (List (VarDefs a + RecDefs a))
+data Module a = Module (List (Stmt a))
 
 instance Desugarable DictEntry E.Expr where
    desug (ExprKey e) = desug e
@@ -180,17 +180,8 @@ econs α e e' = E.Constr α cCons (e : e' : Nil)
 elimBool :: forall a. Cont a -> Cont a -> Elim a
 elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
--- Module. Surface language supports "blocks" of variable declarations; core does not. Currently no backward.
 moduleFwd :: forall m. MonadError Error m => Module (TyResult Ctx) -> m (E.Module (TyResult Ctx))
-moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten <$> ds))
-   where
-   varDefOrRecDefsFwd :: VarDef (TyResult Ctx) + RecDefs (TyResult Ctx) -> m (E.VarDef (TyResult Ctx) + E.RecDefs (TyResult Ctx))
-   varDefOrRecDefsFwd (Left d) = Left <$> varDefFwd d
-   varDefOrRecDefsFwd (Right xcs) = Right <$> recDefsFwd xcs
-
-   flatten :: VarDefs (TyResult Ctx) + RecDefs (TyResult Ctx) -> List (VarDef (TyResult Ctx) + RecDefs (TyResult Ctx))
-   flatten (Left ds') = Left <$> toList ds'
-   flatten (Right δ) = pure (Right δ)
+moduleFwd (Module ss) = E.Module <$> traverse stmtFwd ss
 
 -- Use of eliminators to establish module bindings is a bit naff, because we don't really have a notion of
 -- "rest of module" to use as continuation. So use empty dictionary (unit tuple) as continuation, and disregard
@@ -478,11 +469,7 @@ derive instance Functor ParagraphElem
 derive instance Functor Expr
 
 instance Functor Module where
-   map f (Module defs) = Module (mapDefs f <$> defs)
-      where
-      mapDefs :: forall a b. (a -> b) -> VarDefs a + RecDefs a -> VarDefs b + RecDefs b
-      mapDefs g (Left ds) = Left $ map g <$> ds
-      mapDefs g (Right ds) = Right $ (\(x × Clause α (π × b)) -> x × Clause (g α) (π × (g <$> b))) <$> ds
+   map f (Module ss) = Module (map f <$> ss)
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join _ = error unimplemented

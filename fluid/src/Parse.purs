@@ -432,13 +432,8 @@ expr = context "expr" $ ternary <?> "expression"
             e' <- opTree
             pure $ DocExpr e e'
 
-defs :: Parser ((Raw VarDefs + Raw RecDefs))
-defs = choose varDefs recDefs
-
 module_ :: Parser (Raw Module)
-module_ = do
-   defs' <- many (defs)
-   pure $ Module defs'
+module_ = Module <<< toList <$> many1 (align programStmt)
 
 imports_ :: Parser (List String)
 imports_ = many (reserved "import" *> modPath <* whitespace)

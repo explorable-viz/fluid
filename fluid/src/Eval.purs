@@ -264,13 +264,19 @@ eval_module γ = go empty
    where
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
    go γ' (Module Nil) _ = pure γ'
-   go y' (Module (Left (VarDef σ e) : ds)) αs = do
-      v <- eval Nothing (γ <+> y') e αs
+   go γ' (Module (s : ss)) αs = do
+      γ'' × αs' <- step γ' s αs
+      go (γ' <+> γ'') (Module ss) αs'
+
+   -- Module-level statements: defs extend env; others contribute nothing.
+   step γ' (Def (VarDef σ e)) αs = do
+      v <- eval Nothing (γ <+> γ') e αs
       γ'' × _ × αs' <- match v σ
-      go (y' <+> γ'') (Module ds) αs'
-   go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
+      pure (γ'' × αs')
+   step γ' (DefRec (RecDefs α ρ)) αs = do
       γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
-      go (γ' <+> γ'') (Module ds) αs
+      pure (γ'' × αs)
+   step _ _ αs = pure (empty × αs)
 
 eval_primitives
    :: forall m
