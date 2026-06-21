@@ -6,7 +6,6 @@ import Bind (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Array ((..))
-import Data.Either (Either(..))
 import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map

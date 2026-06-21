@@ -19,14 +19,19 @@ import Util.Map (constMap)
 import Effect.Exception (Error)
 import Expr (bv, fv)
 import Lattice (Raw)
-import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module, ParagraphElem(..), Pattern(..), Stmt(..), VarDef(..)) as S
+import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module(..), ParagraphElem(..), Pattern(..), Stmt(..), VarDef(..)) as S
 import Util (type (×), throw, (×))
 import Util.Set ((\\), (∪))
 
-checkProgram :: forall m. MonadError Error m => Set Var -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
-checkProgram γ0 s = do
-   λ <- classes s
+checkProgram :: forall m. MonadError Error m => ClassCtx -> Set Var -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
+checkProgram λ_external γ0 s = do
+   λ_program <- classes s
+   λ <- unionDisjoint λ_external λ_program
    snd <$> wellFormed λ (constMap true γ0) s
+
+-- Λ over a module body (each top-level statement contributes).
+classesOfModule :: forall m a. MonadError Error m => S.Module a -> m ClassCtx
+classesOfModule (S.Module ss) = foldM unionDisjoint Map.empty =<< traverse classes ss
 
 -- TODO: actual module-level WF requires a cross-module Γ (primitives + Λ from
 -- builtins). Until that's wired up, accept modules unchecked and annotate trivially.

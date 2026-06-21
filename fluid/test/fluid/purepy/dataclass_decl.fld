@@ -1,14 +1,14 @@
 @dataclass
-class Empty:
+class Singleton:
   pass
 
 @dataclass
-class Point:
+class Coord:
   x: Any
   y: Any
 
 @dataclass
-class ColouredPoint(Point):
+class ColouredCoord(Coord):
   c: Any
 
 return 42

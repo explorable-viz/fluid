@@ -23,9 +23,9 @@ import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse (parseModule, parseProgram)
-import DefiniteAssignment (TyResult(..))
 import SExpr (desugarModuleFwd)
-import WellFormed (checkModule, checkProgram)
+import DefiniteAssignment (ClassCtx, TyResult(..))
+import WellFormed (checkModule, checkProgram, classesOfModule, unionDisjoint)
 import SExpr as S
 import Util (type (×), error, throwLeft, withMsg, (×))
 import Util.Map (keys, restrict)
@@ -34,13 +34,16 @@ import Val (Env)
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
+builtins :: ModuleName
+builtins = "lib/builtins"
+
 prelude :: ModuleName
 prelude = "lib/prelude"
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   moduleCxt <- loadModuleGraph (prelude : imports)
+   moduleCxt <- loadModuleGraph (builtins : prelude : imports)
    n × _ × primitives' × _ × topLevelEnv <- flip runAllocT 0 do
       primitives' <- alloc primitives
       modules' <- traverse alloc (moduleCxt.modules)
@@ -49,7 +52,7 @@ prepConfig primitives fluidSrc = do
       let αs = vertices primitives' ∪ mαs
       _ × γ <- runWithGraphT_spy (eval_primitives primitives' moduleCxt') αs :: AllocT m (GraphImpl × _)
       pure (primitives' × modules' × γ)
-   sty <- checkProgram (keys topLevelEnv) s
+   sty <- checkProgram moduleCxt.classCtx (keys topLevelEnv) s
    eTy <- desug sty
    let e = (unit <$ eTy) :: Raw Stmt
    let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv }
@@ -64,35 +67,48 @@ loadModuleGraph
    => List ModuleName
    -> m (Raw ModuleCxt)
 loadModuleGraph roots = do
-   graph × modules <- collectModules Set.empty Map.empty Map.empty roots
-   pure $ { roots, topsorted: topsort graph, graph, modules }
+   graph × modules × classCtx <- collectModules Set.empty Map.empty Map.empty Map.empty roots
+   pure $ { roots, topsorted: topsort graph, graph, modules, classCtx }
 
    where
 
-   collectModules :: Set ModuleName -> DependencyGraph -> Raw Modules -> List ModuleName -> m (DependencyGraph × Raw Modules)
-   collectModules visited graph modules imports = case imports of
-      Nil -> pure $ (graph × modules)
+   collectModules
+      :: Set ModuleName
+      -> DependencyGraph
+      -> Raw Modules
+      -> ClassCtx
+      -> List ModuleName
+      -> m (DependencyGraph × Raw Modules × ClassCtx)
+   collectModules visited graph modules classCtx imports = case imports of
+      Nil -> pure $ (graph × modules × classCtx)
       mod : rest ->
          if Set.member mod visited then
-            collectModules visited graph modules rest
+            collectModules visited graph modules classCtx rest
          else do
-            mod' × imports' <- loadModule mod
+            mod' × λ × imports' <- loadModule mod
+            classCtx' <- unionDisjoint classCtx λ
             collectModules
                (Set.insert mod visited)
                (Map.insert mod imports' graph)
                (Map.insert mod mod' modules)
+               classCtx'
                (imports' <> rest)
 
-   loadModule :: ModuleName -> m (Raw Module × List ModuleName)
+   loadModule :: ModuleName -> m (Raw Module × ClassCtx × List ModuleName)
    loadModule path = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
       mod × imports <- throwLeft <#> withMsg ("Loading module " <> path) $ parseModule src
       checkModule mod
+      λ <- classesOfModule mod
       modTy <- desugarModuleFwd (Returns <$ mod)
       let mod' = (unit <$ modTy) :: Raw Module
-      let imports' = if path == prelude then imports else prelude : imports
-      pure $ mod' × imports'
+      let
+         imports' =
+            if path == builtins then imports
+            else if path == prelude then builtins : imports
+            else builtins : prelude : imports
+      pure $ mod' × λ × imports'
 
    topsort :: DependencyGraph -> List ModuleName
    topsort graph = go (List.fromFoldable $ Map.keys graph) Nil
