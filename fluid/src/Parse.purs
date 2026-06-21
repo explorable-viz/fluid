@@ -433,7 +433,7 @@ expr = context "expr" $ ternary <?> "expression"
             pure $ DocExpr e e'
 
 module_ :: Parser (Raw Module)
-module_ = Module <<< toList <$> many1 (align programStmt)
+module_ = Module <<< toList <$> many1 (align stmt)
 
 imports_ :: Parser (List String)
 imports_ = many (reserved "import" *> modPath <* whitespace)
