@@ -3,14 +3,21 @@ module DefiniteAssignment where
 import Prelude
 
 import Bind (Var)
+import Control.Monad.Error.Class (class MonadError)
 import Data.Foldable (foldl)
+import Data.List (List(..), (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
+import Effect.Exception (Error)
+import Util (type (×), throw, (×))
 
 type Ctx = Map Var Boolean
+
+-- Class context: class name ↦ (optional base class, own field names in declaration order).
+type ClassCtx = Map Var (Maybe Var × List Var)
 
 data TyResult a = Returns | Assigns a
 
@@ -39,3 +46,14 @@ mergeRes :: TyResult Ctx -> TyResult Ctx -> TyResult Ctx
 mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
+
+-- Inherited then own fields, mirroring spec's fields(M.C). Throws on undefined base or cycle.
+fields :: forall m. MonadError Error m => ClassCtx -> Var -> m (List Var)
+fields λ = go Set.empty
+   where
+   go seen c
+      | c `Set.member` seen = throw $ "Cyclic class hierarchy at: " <> c
+      | otherwise = case Map.lookup c λ of
+           Nothing -> throw $ "Unknown class: " <> c
+           Just (Nothing × xs) -> pure xs
+           Just (Just b × xs) -> (_ <> xs) <$> go (Set.insert c seen) b

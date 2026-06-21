@@ -20,6 +20,10 @@ purepy_cases =
    , { file: "purepy/mutual_split_by_assign.fld", expected_error: "Unbound name: g" }
    , { file: "purepy/mutual_def_block_local.fld", expected_error: "Not definitely assigned: g" }
    , { file: "purepy/match_var_leak.fld", expected_error: "Not definitely assigned: x" }
+   , { file: "purepy/dataclass_dup_field.fld", expected_error: "Duplicate field names in class: Point" }
+   , { file: "purepy/dataclass_unknown_base.fld", expected_error: "Unknown class: Unknown" }
+   , { file: "purepy/dataclass_field_clash.fld", expected_error: "Class Sub redeclares inherited field(s): (\"x\" : Nil)" }
+   , { file: "purepy/dataclass_duplicate.fld", expected_error: "Conflicting class declarations: Point" }
    ]
 
 -- Fluid-specific ill-formed cases (no PurePy correspondent).
