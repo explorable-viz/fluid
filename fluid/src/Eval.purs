@@ -5,7 +5,7 @@ import Prelude hiding (absurd, apply)
 import Bind (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
-import DefiniteAssignment (class HasClassCtx)
+import DefiniteAssignment (class HasClassCtx, askClassCtx)
 import Data.Array ((..))
 import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
@@ -17,7 +17,7 @@ import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, fst, snd)
-import DataType (arity, checkArity, consistentWith, dataTypeFor, showCtr)
+import DataType (arity, arityFromClassCtx, checkArity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -118,15 +118,18 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
+   λ <- askClassCtx
+   n <- case arityFromClassCtx λ c of
+      Just n' -> pure n'
+      Nothing -> arity c -- bootstrap fallback while migration is in progress
    check (length vs < n) ("Too many arguments to " <> showCtr c)
+   let
+      v' =
+         if length vs < n - 1 then
+            V.Fun (V.PartialConstr c (snoc vs v))
+         else
+            V.Constr c (snoc vs v)
    val doc_opt (singleton α) v'
-   where
-   v' =
-      if length vs < n - 1 then
-         V.Fun (V.PartialConstr c (snoc vs v))
-      else
-         V.Constr c (snoc vs v)
-   n = defined (arity c)
 apply _ _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
 eval
