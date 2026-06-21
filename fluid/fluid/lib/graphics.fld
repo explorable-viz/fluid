@@ -2,6 +2,106 @@
 # type Colours = List Colour
 # type Cat = Str
 
+@dataclass
+class Point:
+  x: Any
+  y: Any
+
+@dataclass
+class Orient:
+  pass
+
+@dataclass
+class Horiz(Orient):
+  pass
+
+@dataclass
+class Vert(Orient):
+  pass
+
+@dataclass
+class GraphicsElement:
+  pass
+
+@dataclass
+class Circle(GraphicsElement):
+  x: Any
+  y: Any
+  radius: Any
+  fill: Any
+
+@dataclass
+class Group(GraphicsElement):
+  children: Any
+
+@dataclass
+class Line(GraphicsElement):
+  p1: Any
+  p2: Any
+  stroke: Any
+  strokeWidth: Any
+
+@dataclass
+class Polyline(GraphicsElement):
+  points: Any
+  stroke: Any
+  strokeWidth: Any
+
+@dataclass
+class Polymarkers(GraphicsElement):
+  points: Any
+  markers: Any
+
+@dataclass
+class Rect(GraphicsElement):
+  x: Any
+  y: Any
+  width: Any
+  height: Any
+  fill: Any
+
+@dataclass
+class String(GraphicsElement):
+  x: Any
+  y: Any
+  str: Any
+  anchor: Any
+  baseline: Any
+
+@dataclass
+class Viewport(GraphicsElement):
+  x: Any
+  y: Any
+  width: Any
+  height: Any
+  fill: Any
+  margin: Any
+  scale: Any
+  translate: Any
+  g: Any
+
+@dataclass
+class Transform:
+  pass
+
+@dataclass
+class Scale(Transform):
+  x: Any
+  y: Any
+
+@dataclass
+class Translate(Transform):
+  x: Any
+  y: Any
+
+@dataclass
+class Marker:
+  pass
+
+@dataclass
+class Arrowhead(Marker):
+  pass
+
 # Group has location (0, 0) because it doesn't interfere with positioning of its children.
 # GraphicsElement -> Point
 def coords(Group(gs)):
