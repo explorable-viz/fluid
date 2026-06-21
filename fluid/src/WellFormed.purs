@@ -14,7 +14,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (ClassCtx, Ctx, TyResult(..), fields, mergeRes, overrideCtx, overrideRes)
+import DefiniteAssignment (ClassCtx, Ctx, TyResult(..), fields, mergeRes, overrideCtx, overrideRes, unionDisjoint)
 import Util.Map (constMap)
 import Effect.Exception (Error)
 import Expr (bv, fv)
@@ -54,17 +54,7 @@ classes (S.If es elseBranch) = do
 classes (S.Match _ ps) = do
    λs <- traverse (classes <<< snd) (NEL.toList ps)
    foldM unionDisjoint Map.empty λs
-classes (S.DefRec _) = pure Map.empty
-classes (S.Def _) = pure Map.empty
 classes _ = pure Map.empty
-
-unionDisjoint :: forall m v. MonadError Error m => Eq v => Map.Map Var v -> Map.Map Var v -> m (Map.Map Var v)
-unionDisjoint a b = do
-   let dups = Set.toUnfoldable (Set.intersection (Map.keys a # Set.fromFoldable) (Map.keys b # Set.fromFoldable)) :: List Var
-   for_ dups \k -> case Map.lookup k a, Map.lookup k b of
-      Just va, Just vb | va /= vb -> throw $ "Conflicting class declarations: " <> k
-      _, _ -> pure unit
-   pure (Map.union a b)
 
 assigns :: forall a. S.Stmt a -> Set Var
 assigns S.Pass = Set.empty

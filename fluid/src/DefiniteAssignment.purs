@@ -4,7 +4,7 @@ import Prelude
 
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Foldable (foldl)
+import Data.Foldable (foldl, for_)
 import Data.List (List(..), (:))
 import Data.Map (Map)
 import Data.Map as Map
@@ -57,3 +57,12 @@ fields λ = go Set.empty
            Nothing -> throw $ "Unknown class: " <> c
            Just (Nothing × xs) -> pure xs
            Just (Just b × xs) -> (_ <> xs) <$> go (Set.insert c seen) b
+
+-- Union of two class contexts; fails on a shared key with disagreeing values.
+unionDisjoint :: forall m. MonadError Error m => ClassCtx -> ClassCtx -> m ClassCtx
+unionDisjoint a b = do
+   let dups = Set.toUnfoldable (Set.intersection (Map.keys a # Set.fromFoldable) (Map.keys b # Set.fromFoldable)) :: List Var
+   for_ dups \k -> case Map.lookup k a, Map.lookup k b of
+      Just va, Just vb | va /= vb -> throw $ "Conflicting class declarations: " <> k
+      _, _ -> pure unit
+   pure (Map.union a b)
