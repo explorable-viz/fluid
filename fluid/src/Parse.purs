@@ -18,7 +18,7 @@ import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import Data.String.Common (joinWith)
 import Data.Traversable (foldl, foldr)
-import DataType (cNoArgs, cNone, cPair)
+import DataType (cCons, cNoArgs, cNone, cPair)
 import Lattice (Raw)
 import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, constructor, context, delim, fields, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
@@ -73,7 +73,7 @@ simplePattern = pVar <|> pConstr <|> pRecord <|> pList <|> parensPattern
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = do
    reservedOperator ":|"
-   pure \e e' -> PConstr ":" (e : e' : Nil)
+   pure \e e' -> PConstr cCons (e : e' : Nil)
 
 varDef :: Parser (Raw VarDef)
 varDef = do
@@ -224,7 +224,7 @@ expr = context "expr" $ ternary <?> "expression"
          consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
          consOp = do
             reservedOperator ":|"
-            pure \e e' -> Constr unit ":" (e : e' : Nil)
+            pure \e e' -> Constr unit cCons (e : e' : Nil)
 
       simpleChain :: Parser (Raw Expr)
       simpleChain = withPos (simple >>= chain)

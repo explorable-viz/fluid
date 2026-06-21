@@ -260,7 +260,7 @@ instance Ann a => Pretty (ParagraphElem a) where
 prettyConstr :: forall a. RootOp a => IsSimple a => Pretty a => Ctr -> List a -> Doc
 prettyConstr "Nil" Nil = text "[]"
 prettyConstr "Pair" (x : y : Nil) = pair pretty x y
-prettyConstr ":" (x : y : Nil) = prettyConsArg x true <+> text ":|" <+> prettyConsArg y false
+prettyConstr "Cons" (x : y : Nil) = prettyConsArg x true <+> text ":|" <+> prettyConsArg y false
 prettyConstr c Nil = text c
 prettyConstr c ps = text c <> parens (prettyList ps)
 
