@@ -38,13 +38,16 @@ type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 builtins :: ModuleName
 builtins = "lib/builtins"
 
+viewLib :: ModuleName
+viewLib = "lib/view"
+
 prelude :: ModuleName
 prelude = "lib/prelude"
 
 prepConfig :: forall m. HasClassCtx m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   moduleCxt <- loadModuleGraph (builtins : prelude : imports)
+   moduleCxt <- loadModuleGraph (builtins : viewLib : prelude : imports)
    -- Inject loaded Λ so downstream code can resolve ctrs via HasClassCtx.
    local (\(FileCxt r) -> FileCxt (r { classCtx = moduleCxt.classCtx })) do
       n × _ × primitives' × _ × topLevelEnv <- flip runAllocT 0 do
@@ -110,8 +113,9 @@ loadModuleGraph roots = do
       let
          imports' =
             if path == builtins then imports
-            else if path == prelude then builtins : imports
-            else builtins : prelude : imports
+            else if path == viewLib then builtins : imports
+            else if path == prelude then builtins : viewLib : imports
+            else builtins : viewLib : prelude : imports
       pure $ mod' × λ × imports'
 
    topsort :: DependencyGraph -> List ModuleName
