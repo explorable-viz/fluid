@@ -25,7 +25,7 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (ClassCtx, TyResult(..), unionDisjoint)
+import DefiniteAssignment (class HasClassCtx, ClassCtx, TyResult(..), unionDisjoint)
 import WellFormed (checkModule, checkProgram, classesOfModule)
 import SExpr as S
 import Util (type (×), error, throwLeft, withMsg, (×))
@@ -41,7 +41,7 @@ builtins = "lib/builtins"
 prelude :: ModuleName
 prelude = "lib/prelude"
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
+prepConfig :: forall m. HasClassCtx m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    moduleCxt <- loadModuleGraph (builtins : prelude : imports)

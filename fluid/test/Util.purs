@@ -24,6 +24,7 @@ import Module (prepConfig)
 import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import Expr (Stmt) as Expr
+import DefiniteAssignment (class HasClassCtx)
 import SExpr (Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
@@ -41,7 +42,7 @@ type SelectionSpec =
 fluidSrcPaths :: Array Folder
 fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
-test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw Env -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test ∷ forall m. HasClassCtx m => MonadReader FileCxt m => LoadFile m => File -> Raw Env -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file primitives spec (n × _) = do
    fluidSrc <- loadFile fluidSrcPaths file
    log' ("**** prepConfig")
@@ -73,7 +74,8 @@ benchNames =
 
 testProperties
    :: forall m
-    . MonadReader FileCxt m
+    . HasClassCtx m
+   => MonadReader FileCxt m
    => LoadFile m
    => MonadWriter BenchRow m
    => Raw SE.Stmt

@@ -6,6 +6,7 @@ import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
+import DefiniteAssignment (class HasClassCtx)
 import Data.Array (concat, fromFoldable, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
@@ -79,7 +80,8 @@ instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 type Op =
    forall m
-    . MonadWithGraphAlloc m
+    . HasClassCtx m
+   => MonadWithGraphAlloc m
    => MonadError Error m
    => MonadAff m
    => MonadReader FileCxt m

@@ -5,6 +5,7 @@ import Prelude hiding (absurd, apply)
 import Bind (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
+import DefiniteAssignment (class HasClassCtx)
 import Data.Array ((..))
 import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
@@ -50,7 +51,7 @@ type GraphConfig =
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall m. MonadWithGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
+match :: forall m. HasClassCtx m => MonadWithGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × empty)
    | otherwise = pure (maplet x v × κ × empty)
@@ -71,7 +72,7 @@ match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    pure $ γ × κ' × (insert α αs)
 match v (ElimDict xs _) = throw (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
+matchMany :: forall m. HasClassCtx m => MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 matchMany Nil κ = pure (empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
@@ -80,7 +81,7 @@ matchMany (v : vs) (ContElim σ) = do
 matchMany (_ : vs) (ContStmt _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/dictionary; did you forget parentheses in lambda pattern?"
 
-closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
+closeDefs :: forall m. HasClassCtx m => MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    Env <$> for ρ \σ ->
       let
@@ -90,7 +91,8 @@ closeDefs γ ρ αs =
 
 apply
    :: forall m
-    . MonadWithGraphAlloc m
+    . HasClassCtx m
+   => MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
    => LoadFile m
@@ -129,7 +131,8 @@ apply _ _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
 eval
    :: forall m
-    . MonadWithGraphAlloc m
+    . HasClassCtx m
+   => MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
    => LoadFile m
@@ -179,7 +182,8 @@ eval doc_opt γ e0 αs = do
 
 evalStmt
    :: forall m
-    . MonadWithGraphAlloc m
+    . HasClassCtx m
+   => MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
    => LoadFile m
@@ -217,7 +221,8 @@ evalStmt doc_opt γ s αs = case s of
 
 evalVal
    :: forall m
-    . MonadWithGraphAlloc m
+    . HasClassCtx m
+   => MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
    => LoadFile m
@@ -258,7 +263,7 @@ evalVal γ (Lambda α σ) _ =
    pure $ Just (α × V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
 evalVal _ _ _ = pure Nothing
 
-eval_module :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. HasClassCtx m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
    where
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
@@ -279,7 +284,8 @@ eval_module γ = go empty
 
 eval_primitives
    :: forall m
-    . MonadWithGraphAlloc m
+    . HasClassCtx m
+   => MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
    => LoadFile m
@@ -357,7 +363,7 @@ toGC
    -> GaloisConnection (s 𝔹) (t 𝔹)
 toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
-graphEval :: forall m. MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
+graphEval :: forall m. HasClassCtx m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ } stmt = do
    _ × _ × g × inα × outα <- flip runAllocT n do
       sα <- alloc stmt

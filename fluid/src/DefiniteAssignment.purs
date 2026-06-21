@@ -4,6 +4,11 @@ import Prelude
 
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Except.Trans (ExceptT)
+import Control.Monad.Reader.Trans (ReaderT)
+import Control.Monad.State.Trans (StateT)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Writer.Trans (WriterT)
 import Data.Foldable (foldl, for_)
 import Data.List (List(..), (:))
 import Data.Map (Map)
@@ -22,6 +27,19 @@ type ClassCtx = Map Var (Maybe Var × List Var)
 -- Non-fundep ask for ClassCtx so it coexists with MonadReader FileCxt.
 class HasClassCtx m where
    askClassCtx :: m ClassCtx
+
+-- Lift HasClassCtx through standard transformers; concrete instances live on the runtime stacks (NodeT, WebT).
+instance (Monad m, HasClassCtx m) => HasClassCtx (StateT s m) where
+   askClassCtx = lift askClassCtx
+
+instance (Monad m, HasClassCtx m) => HasClassCtx (ReaderT r m) where
+   askClassCtx = lift askClassCtx
+
+instance (Monad m, HasClassCtx m) => HasClassCtx (ExceptT e m) where
+   askClassCtx = lift askClassCtx
+
+instance (Monad m, HasClassCtx m, Monoid w) => HasClassCtx (WriterT w m) where
+   askClassCtx = lift askClassCtx
 
 data TyResult a = Returns | Assigns a
 
