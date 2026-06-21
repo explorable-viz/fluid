@@ -63,7 +63,8 @@ prepConfig primitives fluidSrc = do
 
 loadModuleGraph
    :: forall m
-    . MonadAff m
+    . HasClassCtx m
+   => MonadAff m
    => MonadError Error m
    => MonadReader FileCxt m
    => LoadFile m
