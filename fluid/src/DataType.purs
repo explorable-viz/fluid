@@ -5,15 +5,22 @@ import Prelude hiding (absurd)
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.CodePoint.Unicode (isUpper)
+import Data.Foldable (any)
 import Data.Function (on)
 import Data.List (List, concat, (:))
-import Data.List (fromFoldable) as L
+import Data.List as List
+import Data.List (filter, fromFoldable) as L
+import Data.Map as Map
+import Data.Maybe (Maybe(..), maybe)
+import Data.Tuple (snd)
 import Data.Set (Set)
 import Data.Set (map, fromFoldable, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
+import DefiniteAssignment (ClassCtx)
 import Dict (Dict, fromFoldable)
+import Dict as M
 import Effect.Exception (Error)
 import Partial.Unsafe (unsafePartial)
 import Util (type (×), absurd, definitely', error, orElse, withMsg, (=<<<), (×), (≞))
@@ -83,6 +90,47 @@ arity c = do
 checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
 checkArity c n = void $
    withMsg ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
+
+-- ====================================================================
+-- Parallel Λ-derived implementations (work in progress migration off
+-- the static bootstrap above). Each function takes a ClassCtx and
+-- returns Nothing on miss so callers can decide how to fail.
+-- ====================================================================
+
+-- Walk up the base chain to find the topmost ancestor (self if no base).
+rootClass :: ClassCtx -> Ctr -> Ctr
+rootClass λ c = case Map.lookup c λ of
+   Just (Just b × _) -> rootClass λ b
+   _ -> c
+
+-- A class is a concrete ctr iff it has a base, or it has no base and no children.
+isCtr :: ClassCtx -> Ctr -> Boolean
+isCtr λ c = case Map.lookup c λ of
+   Nothing -> false
+   Just (Just _ × _) -> true
+   Just (Nothing × _) -> not (any (\(_ × (mb × _)) -> mb == Just c) (Map.toUnfoldable λ :: List _))
+
+dataTypeFromClassCtx :: ClassCtx -> Ctr -> Maybe DataType
+dataTypeFromClassCtx λ c
+   | not (isCtr λ c) = Nothing
+   | otherwise =
+        let
+           r = rootClass λ c
+           siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isCtr λ c' && rootClass λ c' == r)
+        in
+           Just (DataType r (fromFoldable (sigOf <$> siblings)))
+        where
+        sigOf (c' × (mb × xs)) =
+           -- Arity = inherited + own (one level of inheritance suffices for current bootstrap).
+           let
+              inherited = maybe 0 (\b -> maybe 0 (List.length <<< snd) (Map.lookup b λ)) mb
+           in
+              c' × (inherited + List.length xs)
+
+arityFromClassCtx :: ClassCtx -> Ctr -> Maybe Int
+arityFromClassCtx λ c = do
+   DataType _ sigs <- dataTypeFromClassCtx λ c
+   lookup c sigs
 
 -- Used internally by primitives, desugaring or rendering layer.
 cDefault = "Default" :: Ctr -- Orientation
