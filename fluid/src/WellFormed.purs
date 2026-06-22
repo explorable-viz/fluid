@@ -29,18 +29,14 @@ checkProgram λ_external γ0 s = do
    λ <- unionDisjoint λ_external λ_program
    snd <$> wellFormed λ (constMap true γ0) s
 
--- Λ over a module body (each top-level statement contributes).
 classesOfModule :: forall m a. MonadError Error m => S.Module a -> m ClassCtx
 classesOfModule (S.Module ss) = foldM unionDisjoint Map.empty =<< traverse classes ss
 
--- TODO: actual module-level WF requires a cross-module Γ (primitives + Λ from
--- builtins). Until that's wired up, accept modules unchecked and annotate trivially.
+-- TODO: module-level WF needs a cross-module Γ (primitives + Λ from builtins).
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
 
--- Spec metafunction classes(s). Lifted to sequences via Seq; descends into compound
--- statements so any dataclass anywhere in the program participates. Duplicate class
--- names are rejected.
+-- Spec metafunction classes(s), descending into compound statements; rejects duplicates.
 classes :: forall m a. MonadError Error m => S.Stmt a -> m ClassCtx
 classes (S.Dataclass c b xs) = pure (Map.singleton c (b × xs))
 classes (S.Seq s1 s2) = do

@@ -14,7 +14,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (snd)
 import Data.Set (Set)
-import Data.Set (map, fromFoldable, toUnfoldable) as S
+import Data.Set (empty, insert, map, member, fromFoldable, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import DefiniteAssignment (ClassCtx)
@@ -56,7 +56,6 @@ instance Show DataType where
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
--- Check that ctrs in cs all belong to the same DataType as ctrs in cs'.
 consistentWith :: forall m. MonadError Error m => ClassCtx -> Set Ctr -> Set Ctr -> m Unit
 consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
    Nil -> pure unit
@@ -67,24 +66,21 @@ consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
               Just d'' | d'' == d -> pure unit
               _ -> throw "mismatch"
 
--- Check ctr c has arity n.
 checkArity :: forall m. MonadError Error m => ClassCtx -> Ctr -> Int -> m Unit
 checkArity λ c n = case arityFromClassCtx λ c of
    Just n' | n' == n -> pure unit
    Just n' -> throw $ showCtr c <> " arity " <> show n' <> "; got " <> show n
    Nothing -> throw $ "Unknown constructor: " <> showCtr c
 
--- ====================================================================
--- Parallel Λ-derived implementations (work in progress migration off
--- the static bootstrap above). Each function takes a ClassCtx and
--- returns Nothing on miss so callers can decide how to fail.
--- ====================================================================
-
--- Walk up the base chain to find the topmost ancestor (self if no base).
+-- Topmost ancestor (self if no base). Cycle-safe: stops if it sees c again.
 rootClass :: ClassCtx -> Ctr -> Ctr
-rootClass λ c = case Map.lookup c λ of
-   Just (Just b × _) -> rootClass λ b
-   _ -> c
+rootClass λ = go S.empty
+   where
+   go seen c
+      | c `S.member` seen = c
+      | otherwise = case Map.lookup c λ of
+           Just (Just b × _) -> go (S.insert c seen) b
+           _ -> c
 
 -- A class is a concrete ctr iff it has a base, or it has no base and no children.
 isCtr :: ClassCtx -> Ctr -> Boolean

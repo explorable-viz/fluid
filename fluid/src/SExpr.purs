@@ -409,7 +409,6 @@ clausesStateFwd ks = case ks of
 -- initially containing only p and empty when the recursion terminates.
 type ClauseState a = List (Pattern + ListRestPattern) × Stmt a
 
--- Pattern complement; Λ supplies ctr arities/siblings. Falls back to bootstrap if missing.
 unless :: ClassCtx -> Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 unless _ (Left (PVar _)) = Nil
 unless _ (Left (PRecord _)) = Nil

@@ -22,8 +22,12 @@ purepy_cases =
    , { file: "purepy/match_var_leak.fld", expected_error: "Not definitely assigned: x" }
    , { file: "purepy/dataclass_dup_field.fld", expected_error: "Duplicate field names in class: Point" }
    , { file: "purepy/dataclass_unknown_base.fld", expected_error: "Unknown class: Unknown" }
-   , { file: "purepy/dataclass_field_clash.fld", expected_error: "Class Sub redeclares inherited field(s): (\"x\" : Nil)" }
-   , { file: "purepy/dataclass_duplicate.fld", expected_error: "Conflicting class declarations: Point" }
+   , { file: "purepy/dataclass_inherited_field_clash.fld", expected_error: "Class Sub redeclares inherited field(s): (\"x\" : Nil)" }
+   , { file: "purepy/dataclass_dup_class.fld", expected_error: "Conflicting class declarations: Point" }
+   , { file: "purepy/cyclic_inheritance.fld", expected_error: "Cyclic class hierarchy at: B" }
+   , { file: "purepy/dataclass_field_default.fld", expected_error: "\"ParseError on line 3, column 10:\\nExpected EOF\"" }
+   , { file: "purepy/dataclass_int_field.fld", expected_error: "\"ParseError on line 3, column 6:\\nExpected uppercase letter\"" }
+   , { file: "purepy/dataclass_two_bases.fld", expected_error: "\"ParseError on line 10, column 10:\\nExpected ')'\"" }
    ]
 
 -- Fluid-specific ill-formed cases (no PurePy correspondent).

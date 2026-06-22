@@ -372,7 +372,6 @@ toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
 graphEval :: forall m. HasClassCtx m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classCtx } stmt =
-   -- Inject Λ into FileCxt so HasClassCtx instances downstream see it.
    local (\(FileCxt r) -> FileCxt (r { classCtx = classCtx })) do
       _ × _ × g × inα × outα <- flip runAllocT n do
          sα <- alloc stmt

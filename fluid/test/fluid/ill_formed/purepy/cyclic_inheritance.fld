@@ -1,0 +1,9 @@
+@dataclass
+class A(B):
+  x: Any
+
+@dataclass
+class B(A):
+  y: Any
+
+return 0

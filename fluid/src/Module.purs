@@ -27,7 +27,7 @@ import ModuleGraph (DependencyGraph, ModuleName)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasClassCtx, ClassCtx, TyResult(..), unionDisjoint)
-import WellFormed (checkModule, checkProgram, classesOfModule)
+import WellFormed (checkModule, checkProgram, classes, classesOfModule)
 import SExpr as S
 import Util (type (×), error, throwLeft, withMsg, (×))
 import Util.Map (keys, restrict)
@@ -49,20 +49,20 @@ prepConfig :: forall m. HasClassCtx m => MonadAff m => MonadError Error m => Mon
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    sCxt <- parseModuleGraph (builtins : viewLib : prelude : imports)
-   -- Augment Λ with compiler-internal ctrs the parser can't name (parser requires
-   -- uppercase-starting class names; __NoArgs starts with underscore).
-   let classCtx = Map.insert "__NoArgs" (Nothing × Nil) sCxt.classCtx
-   -- Inject Λ before any desugaring (list-comp etc.) consults it via askClassCtx.
-   local (\(FileCxt r) -> FileCxt (r { classCtx = classCtx })) do
-      -- Desugar each parsed module now that Λ is in scope.
-      modules <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) sCxt.modules
+   -- __NoArgs is compiler-internal; parser can't name it (uppercase-start required).
+   let moduleClassCtx = Map.insert "__NoArgs" (Nothing × Nil) sCxt.classCtx
+   programClasses <- classes s
+   fullClassCtx <- unionDisjoint moduleClassCtx programClasses
+   local (\(FileCxt r) -> FileCxt (r { classCtx = fullClassCtx })) do
+      modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = moduleClassCtx }))
+         $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) sCxt.modules
       let
          moduleCxt =
             { roots: sCxt.roots
             , topsorted: sCxt.topsorted
             , graph: sCxt.graph
             , modules
-            , classCtx: classCtx
+            , classCtx: moduleClassCtx
             }
       n × _ × primitives' × _ × topLevelEnv <- flip runAllocT 0 do
          primitives' <- alloc primitives
@@ -72,15 +72,14 @@ prepConfig primitives fluidSrc = do
          let αs = vertices primitives' ∪ mαs
          _ × γ <- runWithGraphT_spy (eval_primitives primitives' moduleCxt') αs :: AllocT m (GraphImpl × _)
          pure (primitives' × modules' × γ)
-      sty <- checkProgram classCtx (keys topLevelEnv) s
+      sty <- checkProgram moduleClassCtx (keys topLevelEnv) s
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
-      let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: classCtx }
+      let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fullClassCtx }
       pure { s, e, gconfig }
 
--- SModuleCxt: like ModuleCxt but holds parsed SExpr modules, not desugared core.
--- Desugaring is deferred to prepConfig (after Λ is local'd) so list-comp etc.
--- desugarings see the populated ClassCtx.
+-- Desugaring is deferred to prepConfig so list-comp etc. desugarings can see
+-- the populated ClassCtx via askClassCtx.
 type SModuleCxt =
    { roots :: List ModuleName
    , topsorted :: List ModuleName

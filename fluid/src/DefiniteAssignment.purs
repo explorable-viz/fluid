@@ -21,14 +21,12 @@ import Util (type (×), throw, (×))
 
 type Ctx = Map Var Boolean
 
--- Class context: class name ↦ (optional base class, own field names in declaration order).
 type ClassCtx = Map Var (Maybe Var × List Var)
 
--- Non-fundep ask for ClassCtx so it coexists with MonadReader FileCxt.
+-- Non-fundep so it coexists with MonadReader FileCxt.
 class HasClassCtx m where
    askClassCtx :: m ClassCtx
 
--- Lift HasClassCtx through standard transformers; concrete instances live on the runtime stacks (NodeT, WebT).
 instance (Monad m, HasClassCtx m) => HasClassCtx (StateT s m) where
    askClassCtx = lift askClassCtx
 
@@ -69,7 +67,7 @@ mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
 
--- Inherited then own fields, mirroring spec's fields(M.C). Throws on undefined base or cycle.
+-- Mirrors PurePy spec's fields(M.C): inherited then own fields.
 fields :: forall m. MonadError Error m => ClassCtx -> Var -> m (List Var)
 fields λ = go Set.empty
    where
@@ -80,7 +78,6 @@ fields λ = go Set.empty
            Just (Nothing × xs) -> pure xs
            Just (Just b × xs) -> (_ <> xs) <$> go (Set.insert c seen) b
 
--- Union of two class contexts; fails on a shared key with disagreeing values.
 unionDisjoint :: forall m. MonadError Error m => ClassCtx -> ClassCtx -> m ClassCtx
 unionDisjoint a b = do
    let dups = Set.toUnfoldable (Set.intersection (Map.keys a # Set.fromFoldable) (Map.keys b # Set.fromFoldable)) :: List Var
