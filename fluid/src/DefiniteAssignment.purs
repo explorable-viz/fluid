@@ -51,7 +51,7 @@ mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
 
--- Mirrors PurePy spec's fields(M.C): inherited then own fields.
+-- Inherited then own.
 fields :: forall m. MonadError Error m => ClassCtx -> Var -> m (List Var)
 fields λ = go Set.empty
    where

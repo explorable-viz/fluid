@@ -512,8 +512,7 @@ orElseFwd λ α = case _ of
       pushPatt (Right (PListNext p o)) k
    pushPattFor (Right PListEnd) = \(_ × k) ->
       pushPatt (Right PListEnd) k
-   -- PConstrKw is desugared to PConstr by the time clausesStateFwd processes patterns.
-   pushPattFor (Left (PConstrKw _ _ _)) = \_ -> error absurd
+   pushPattFor (Left (PConstrKw _ _ _)) = \_ -> error absurd -- expanded upstream
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left pVarAnon

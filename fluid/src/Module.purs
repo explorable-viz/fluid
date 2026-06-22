@@ -46,7 +46,6 @@ prepConfig :: forall m. HasClassCtx m => MonadAff m => MonadError Error m => Mon
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    sCxt <- parseModuleGraph (builtins : prelude : imports)
-   -- __NoArgs is compiler-internal; parser can't name it (uppercase-start required).
    let moduleClassCtx = Map.insert "__NoArgs" (Nothing × Nil) sCxt.classCtx
    programClasses <- classes s
    fullClassCtx <- unionDisjoint moduleClassCtx programClasses
@@ -75,8 +74,7 @@ prepConfig primitives fluidSrc = do
       let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fullClassCtx }
       pure { s, e, gconfig }
 
--- Desugaring is deferred to prepConfig so list-comp etc. desugarings can see
--- the populated ClassCtx via askClassCtx.
+-- Desugaring deferred to prepConfig so it runs under a populated ClassCtx.
 type SModuleCxt =
    { roots :: List ModuleName
    , topsorted :: List ModuleName
