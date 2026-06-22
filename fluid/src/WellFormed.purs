@@ -37,7 +37,6 @@ classesOfModule (S.Module ss) = foldM unionDisjoint Map.empty =<< traverse class
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
 
--- Spec metafunction classes(s), descending into compound statements; rejects duplicates.
 classes :: forall m a. MonadError Error m => S.Stmt a -> m ClassCtx
 classes (S.Dataclass c b xs) = pure (Map.singleton c (b × xs))
 classes (S.Seq s1 s2) = do
@@ -205,7 +204,6 @@ wellFormedExpr λ γ e = do
       Nothing -> throw $ "Unbound name: " <> x
    constrArities λ e
 
--- Walk expr tree; check arity of every constructor application against Λ.
 constrArities :: forall m a. MonadError Error m => ClassCtx -> S.Expr a -> m Unit
 constrArities λ = go
    where

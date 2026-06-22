@@ -278,7 +278,6 @@ eval_module γ = go empty
       γ'' × αs' <- step γ' s αs
       go (γ' <+> γ'') (Module ss) αs'
 
-   -- Module-level statements: defs extend env; others contribute nothing.
    step γ' (Def (VarDef σ e)) αs = do
       v <- eval Nothing (γ <+> γ') e αs
       γ'' × _ × αs' <- match v σ

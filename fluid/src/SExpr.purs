@@ -388,8 +388,6 @@ popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
 popRecordFwd _ Nil = pure Nil
 popRecordFwd _ _ = throw (shapeMismatch unit)
 
--- Expand PConstrKw to plain PConstr by reordering keyword sub-patterns into
--- positional form via Λ. Recurses through nested patterns.
 expandKw :: forall m. HasClassCtx m => MonadError Error m => Pattern -> m Pattern
 expandKw p = do
    λ <- askClassCtx

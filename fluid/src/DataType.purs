@@ -92,19 +92,13 @@ isCtr λ c = case Map.lookup c λ of
 dataTypeFromClassCtx :: ClassCtx -> Ctr -> Maybe DataType
 dataTypeFromClassCtx λ c
    | not (isCtr λ c) = Nothing
-   | otherwise =
-        let
-           r = rootClass λ c
-           siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isCtr λ c' && rootClass λ c' == r)
-        in
-           Just (DataType r (fromFoldable (sigOf <$> siblings)))
+   | otherwise = Just (DataType r (fromFoldable (sigOf <$> siblings)))
         where
-        sigOf (c' × (mb × xs)) =
-           -- Arity = inherited + own (one level of inheritance suffices for current bootstrap).
-           let
-              inherited = maybe 0 (\b -> maybe 0 (List.length <<< snd) (Map.lookup b λ)) mb
-           in
-              c' × (inherited + List.length xs)
+        r = rootClass λ c
+        siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isCtr λ c' && rootClass λ c' == r)
+        sigOf (c' × (mb × xs)) = c' × (inherited + List.length xs)
+           where
+           inherited = maybe 0 (\b -> maybe 0 (List.length <<< snd) (Map.lookup b λ)) mb
 
 arityFromClassCtx :: ClassCtx -> Ctr -> Maybe Int
 arityFromClassCtx λ c = do
