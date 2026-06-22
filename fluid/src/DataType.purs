@@ -3,13 +3,13 @@ module DataType where
 import Prelude hiding (absurd)
 
 import Bind (Var)
-import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Control.Monad.Error.Class (class MonadError)
 import Data.CodePoint.Unicode (isUpper)
-import Data.Foldable (any)
+import Data.Foldable (any, for_)
 import Data.Function (on)
-import Data.List (List, concat, (:))
+import Data.List (List(..), (:))
 import Data.List as List
-import Data.List (filter, fromFoldable) as L
+import Data.List (filter) as L
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (snd)
@@ -17,13 +17,10 @@ import Data.Set (Set)
 import Data.Set (map, fromFoldable, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
-import Data.Tuple (uncurry)
 import DefiniteAssignment (ClassCtx)
 import Dict (Dict, fromFoldable)
-import Dict as M
 import Effect.Exception (Error)
-import Partial.Unsafe (unsafePartial)
-import Util (type (×), absurd, definitely', error, orElse, withMsg, (=<<<), (×), (≞))
+import Util (type (×), absurd, definitely', error, throw, withMsg, (×))
 import Util.Map (keys, lookup)
 
 type TypeName = String
@@ -56,40 +53,26 @@ instance Eq DataType where
 instance Show DataType where
    show = typeName
 
-dataType :: TypeName -> Array (Ctr × CtrSig) -> DataType
-dataType name = map (uncurry (×)) >>> fromFoldable >>> DataType name
-
-ctrToDataType :: Dict DataType
-ctrToDataType =
-   dataTypes <#> (\d -> ctrs d # S.toUnfoldable <#> (_ × d)) # concat # fromFoldable
-
-class DataTypeFor a where
-   dataTypeFor :: forall m. MonadThrow Error m => a -> m DataType
-
-instance DataTypeFor Ctr where
-   dataTypeFor c = lookup c ctrToDataType # orElse ("Unknown constructor " <> showCtr c)
-
-instance DataTypeFor (Set Ctr) where
-   dataTypeFor cs = unsafePartial $ case S.toUnfoldable cs of c : _ -> dataTypeFor c
-
--- Sets must be non-empty, but this is a more convenient signature.
-consistentWith :: forall m. MonadError Error m => Set Ctr -> Set Ctr -> m Unit
-consistentWith cs cs' = void do
-   d <- dataTypeFor cs'
-   d' <- dataTypeFor cs'
-   withMsg ("constructors of " <> show d' <> " do not include " <> (show (S.map showCtr cs))) (d ≞ d')
-
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
-arity :: forall m. MonadThrow Error m => Ctr -> m Int
-arity c = do
-   DataType _ sigs <- dataTypeFor c
-   lookup c sigs # orElse absurd
+-- Check that ctrs in cs all belong to the same DataType as ctrs in cs'.
+consistentWith :: forall m. MonadError Error m => ClassCtx -> Set Ctr -> Set Ctr -> m Unit
+consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
+   Nil -> pure unit
+   c : _ -> case dataTypeFromClassCtx λ c of
+      Nothing -> throw $ "Unknown constructor: " <> showCtr c
+      Just d -> withMsg ("constructors of " <> show d <> " do not include " <> show (S.map showCtr cs))
+         $ for_ (S.toUnfoldable cs :: List Ctr) \c'' -> case dataTypeFromClassCtx λ c'' of
+              Just d'' | d'' == d -> pure unit
+              _ -> throw "mismatch"
 
-checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
-checkArity c n = void $
-   withMsg ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
+-- Check ctr c has arity n.
+checkArity :: forall m. MonadError Error m => ClassCtx -> Ctr -> Int -> m Unit
+checkArity λ c n = case arityFromClassCtx λ c of
+   Just n' | n' == n -> pure unit
+   Just n' -> throw $ showCtr c <> " arity " <> show n' <> "; got " <> show n
+   Nothing -> throw $ "Unknown constructor: " <> showCtr c
 
 -- ====================================================================
 -- Parallel Λ-derived implementations (work in progress migration off
@@ -170,91 +153,3 @@ f_x = "x" :: FieldName
 f_y = "y" :: FieldName
 f_z = "z" :: FieldName
 
-dataTypes :: List DataType
-dataTypes = L.fromFoldable
-   [
-     -- Core
-     dataType "Bool"
-        [ cTrue × 0
-        , cFalse × 0
-        ]
-   , dataType "InfNum"
-        [ "FNum" × 1
-        , "Infty" × 0
-        ]
-   , dataType "List"
-        [ cNil × 0
-        , cCons × 2 -- any × List any
-        ]
-   , dataType "Maybe"
-        [ cNothing × 0
-        , cJust × 1 -- any
-        ]
-   , dataType "NoneType"
-        [ cNone × 0
-        ]
-   , dataType "__NoArgs"
-        [ cNoArgs × 0
-        ]
-   , dataType "Ordering"
-        [ "GT" × 0
-        , "LT" × 0
-        , "EQ" × 0
-        ]
-   , dataType "Pair"
-        [ "Pair" × 2 -- any × any
-        ]
-   , dataType "Tree"
-        [ "Empty" × 0
-        , "NonEmpty" × 3 -- Tree any × any × Tree any
-        ]
-   -- View stuff
-   , dataType "LinePlot"
-        [ cLinePlot × 1
-        ]
-   , dataType "Orientation"
-        [ cDefault × 0
-        , cRotated × 0
-        ]
-   , dataType "View"
-        [ cBarChart × 1
-        , cLineChart × 1
-        , cMultiView × 1
-        , cParagraph × 1
-        , cScatterPlot × 1
-        ]
-   ,
-     -- Legacy graphics stuff
-     dataType "Point"
-        [ "Point" × 2 -- Float × Float
-        ]
-   , dataType "Orient"
-        [ -- iso to Bool
-          "Horiz" × 0
-        , "Vert" × 0
-        ]
-   , dataType "GraphicsElement"
-        [ "Circle" × 4 -- Float (x), Float (y), Float (radius), Str (fill)
-        , "Group" × 1 -- List GraphicsElement
-        , "Line" × 4 -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth)
-        , "Polyline" × 3 -- List Point (points), Str (stroke), Float (strokeWidth)
-        , "Polymarkers" × 2 -- List Point (points), List GraphicsElement (markers)
-        , "Rect" × 5 -- Float (x), Float (y), Float (width), Float (height), Str (fill)
-        -- SVG text-anchor and alignment-baseline properties
-        , "String" × 5 -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
-        -- margin is in *parent* reference frame; scaling applies to translated coordinates
-        , "Viewport" × 9 -- Float (x), Float (y), Float (width), Float (height), Str (fill),
-        -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
-        ]
-   , dataType "Transform"
-        [ "Scale" × 2 -- Float (x), Float (y)
-        , "Translate" × 2 -- Float (x), Float (y)
-        ]
-   , dataType "Marker"
-        [ "Arrowhead" × 0
-        ]
-   , dataType "ParaFragment"
-        [ cText × 1 -- Str (str)
-        , cLink × 2 --  Val v, Str (str)
-        ]
-   ]

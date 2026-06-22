@@ -17,7 +17,7 @@ import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, fst, snd)
-import DataType (arity, arityFromClassCtx, checkArity, consistentWith, dataTypeFor, dataTypeFromClassCtx, showCtr)
+import DataType (arityFromClassCtx, checkArity, consistentWith, dataTypeFromClassCtx, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -57,7 +57,8 @@ match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × empty)
    | otherwise = pure (maplet x v × κ × empty)
 match (Val α _ (V.Constr c vs)) (ElimConstr m) = do
-   withMsg "Pattern mismatch" $ Set.singleton c `consistentWith` keys m
+   λ <- askClassCtx
+   withMsg "Pattern mismatch" $ consistentWith λ (Set.singleton c) (keys m)
    κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
@@ -248,7 +249,8 @@ evalVal γ (Dictionary α ees) αs = do
       d = D.fromFoldable $ zip ss (zip βs us)
    pure $ Just (α × V.Dictionary (DictRep d))
 evalVal γ (Constr α c es) αs = do
-   checkArity c (length es)
+   λ <- askClassCtx
+   checkArity λ c (length es)
    vs <- traverse (flip (eval Nothing γ) αs) es
    pure $ Just (α × V.Constr c vs)
 evalVal γ (Matrix α e (x × y) e') αs = do
