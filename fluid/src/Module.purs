@@ -26,7 +26,7 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (class HasClassCtx, ClassCtx, TyResult(..), unionDisjoint)
+import DefiniteAssignment (class HasClassCtx, ClassCtx, TyResult(..), unionWithMergeEq)
 import WellFormed (checkModule, checkProgram, classes, classesOfModule)
 import SExpr as S
 import Util (type (×), error, throwLeft, withMsg, (×))
@@ -48,7 +48,7 @@ prepConfig primitives fluidSrc = do
    sCxt <- parseModuleGraph (builtins : prelude : imports)
    let moduleClassCtx = Map.insert "__NoArgs" (Nothing × Nil) sCxt.classCtx
    programClasses <- classes s
-   fullClassCtx <- unionDisjoint moduleClassCtx programClasses
+   fullClassCtx <- unionWithMergeEq moduleClassCtx programClasses
    local (\(FileCxt r) -> FileCxt (r { classCtx = fullClassCtx })) do
       modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = moduleClassCtx }))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) sCxt.modules
@@ -111,7 +111,7 @@ parseModuleGraph roots = do
             collectModules visited graph modules classCtx rest
          else do
             mod' × λ × imports' <- parseAndCollect mod
-            classCtx' <- unionDisjoint classCtx λ
+            classCtx' <- unionWithMergeEq classCtx λ
             collectModules
                (Set.insert mod visited)
                (Map.insert mod imports' graph)

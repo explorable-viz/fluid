@@ -39,7 +39,7 @@ import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Util (type (+), type (×), Endo, definitely, definitely', error, singleton, throw, (×))
-import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
+import Util.Map (unionWith_never, intersectionWith, lookup, (\\))
 import Util.Map as Dict
 import Util.Map as Map
 import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), matrixGet, matrixPut, val)
@@ -253,7 +253,7 @@ dict_disjointUnion =
    where
    op :: Op
    op doc_opt (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) = do
-      val doc_opt (singleton α # Set.insert β) (Dictionary (DictRep (disjointUnion d d')))
+      val doc_opt (singleton α # Set.insert β) (Dictionary (DictRep (unionWith_never d d')))
    op _ _ = throw "Dictionaries expected"
 
 foldl_with_index :: ForeignOp

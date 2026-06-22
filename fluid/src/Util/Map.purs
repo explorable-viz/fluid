@@ -66,8 +66,8 @@ restrict xs = filterKeys (_ ∈ xs)
 intersection :: forall f a k b. MapF f k => f a -> f b -> f a
 intersection = intersectionWith const
 
-disjointUnion :: forall a k b. Map a k b => a -> Endo a
-disjointUnion = unionWith (\_ _ -> error "not disjoint")
+unionWith_never :: forall a k b. Map a k b => a -> Endo a
+unionWith_never = unionWith (\_ _ -> error "not disjoint")
 
 disjointUnion_inv :: forall a k b. Ord k => Map a k b => Set k -> a -> a × a
 disjointUnion_inv ks m = filterKeys (_ ∈ ks) m × filterKeys (_ `not <<< (∈)` ks) m

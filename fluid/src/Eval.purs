@@ -35,7 +35,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, absurd, check, defined, definitely, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
-import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
+import Util.Map (unionWith_never, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
@@ -82,7 +82,7 @@ matchMany Nil κ = pure (empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
    γ' × κ' × βs <- matchMany vs κ
-   pure $ γ `disjointUnion` γ' × κ' × (αs ∪ βs)
+   pure $ γ `unionWith_never` γ' × κ' × (αs ∪ βs)
 matchMany (_ : vs) (ContStmt _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/dictionary; did you forget parentheses in lambda pattern?"
 
@@ -262,7 +262,7 @@ evalVal γ (Matrix α e (x × y) e') αs = do
       i <- 0 .. (i' - 1)
       singleton $ sequence do
          j <- 0 .. (j' - 1)
-         let γ' = maplet x (Val β Nothing (V.Int i)) `disjointUnion` (maplet y (Val β' Nothing (V.Int j)))
+         let γ' = maplet x (Val β Nothing (V.Int i)) `unionWith_never` (maplet y (Val β' Nothing (V.Int j)))
          singleton (eval Nothing (γ <+> γ') e αs)
    pure $ Just (α × V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 evalVal γ (Lambda α σ) _ =
