@@ -25,6 +25,8 @@ purepy_cases =
    , { file: "purepy/dataclass_inherited_field_clash.fld", expected_error: "Class Sub redeclares inherited field(s): (\"x\" : Nil)" }
    , { file: "purepy/dataclass_dup_class.fld", expected_error: "Conflicting class declarations: Point" }
    , { file: "purepy/cyclic_inheritance.fld", expected_error: "Cyclic class hierarchy at: B" }
+   , { file: "purepy/construct_arity.fld", expected_error: "Point expects 2 argument(s); got 3" }
+   , { file: "purepy/pat_class_arity.fld", expected_error: "Assertion failure: " }
    , { file: "purepy/dataclass_field_default.fld", expected_error: "\"ParseError on line 3, column 10:\\nExpected EOF\"" }
    , { file: "purepy/dataclass_int_field.fld", expected_error: "\"ParseError on line 3, column 6:\\nExpected uppercase letter\"" }
    , { file: "purepy/dataclass_two_bases.fld", expected_error: "\"ParseError on line 10, column 10:\\nExpected ')'\"" }

@@ -14,6 +14,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
+import DataType (arityFromClassCtx)
 import DefiniteAssignment (ClassCtx, Ctx, TyResult(..), fields, mergeRes, overrideCtx, overrideRes, unionDisjoint)
 import Util.Map (constMap)
 import Effect.Exception (Error)
@@ -119,21 +120,21 @@ capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
 wellFormed :: forall m a. MonadError Error m => ClassCtx -> Ctx -> S.Stmt a -> m (TyResult Ctx × S.Stmt (TyResult Ctx))
 wellFormed _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
-wellFormed _ γ (S.Return e) = do
-   wellFormedExpr γ e
+wellFormed λ γ (S.Return e) = do
+   wellFormedExpr λ γ e
    pure (Returns × S.Return (Assigns Map.empty <$ e))
-wellFormed _ γ (S.ExprStmt e) = do
-   wellFormedExpr γ e
+wellFormed λ γ (S.ExprStmt e) = do
+   wellFormedExpr λ γ e
    pure (Assigns Map.empty × S.ExprStmt (Assigns Map.empty <$ e))
-wellFormed _ γ (S.Assert e e') = do
-   wellFormedExpr γ e
-   for_ e' (wellFormedExpr γ)
+wellFormed λ γ (S.Assert e e') = do
+   wellFormedExpr λ γ e
+   for_ e' (wellFormedExpr λ γ)
    pure (Assigns Map.empty × S.Assert (Assigns Map.empty <$ e) ((Assigns Map.empty <$ _) <$> e'))
-wellFormed _ γ (S.Def (S.VarDef p e)) = do
+wellFormed λ γ (S.Def (S.VarDef p e)) = do
    let xs = bv p
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throw $ "Variable captured by its own definition: " <> x
-   wellFormedExpr γ e
+   wellFormedExpr λ γ e
    pure (Assigns (constMap true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e)))
 wellFormed λ γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
@@ -160,7 +161,7 @@ wellFormed λ γ (S.Seq s1 s2) = do
 wellFormed λ γ (S.If es elseBranch) = do
    es' <- traverse
       ( \(e × s) -> do
-           wellFormedExpr γ e
+           wellFormedExpr λ γ e
            r × s' <- wellFormed λ γ s
            pure (r × ((Assigns Map.empty <$ e) × s'))
       )
@@ -170,7 +171,7 @@ wellFormed λ γ (S.If es elseBranch) = do
       Nothing -> pure (Assigns Map.empty × Nothing)
    pure (foldl1 mergeRes (NEL.cons rElse (fst <$> es')) × S.If (snd <$> es') elseBranch')
 wellFormed λ γ (S.Match e ps) = do
-   wellFormedExpr γ e
+   wellFormedExpr λ γ e
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
@@ -196,10 +197,47 @@ wellFormed λ _ (S.Dataclass c b xs) = do
                  <> show (Set.toUnfoldable clash :: List Var)
    pure (Assigns Map.empty × S.Dataclass c b xs)
 
-wellFormedExpr :: forall m a. MonadError Error m => Ctx -> S.Expr a -> m Unit
-wellFormedExpr γ e =
+wellFormedExpr :: forall m a. MonadError Error m => ClassCtx -> Ctx -> S.Expr a -> m Unit
+wellFormedExpr λ γ e = do
    for_ (fv e) \x -> case Map.lookup x γ of
       Just true -> pure unit
       Just false -> throw $ "Not definitely assigned: " <> x
       Nothing -> throw $ "Unbound name: " <> x
+   constrArities λ e
+
+-- Walk expr tree; check arity of every constructor application against Λ.
+constrArities :: forall m a. MonadError Error m => ClassCtx -> S.Expr a -> m Unit
+constrArities λ = go
+   where
+   go :: S.Expr a -> m Unit
+   go (S.Constr _ c es) = do
+      n <- maybe (throw $ "Unknown constructor: " <> c) pure (arityFromClassCtx λ c)
+      when (length es /= n)
+         $ throw
+         $ c <> " expects " <> show n <> " argument(s); got " <> show (length es)
+      for_ es go
+   go (S.App e e') = go e *> go e'
+   go (S.BinaryApp e _ e') = go e *> go e'
+   go (S.UnaryPrefixApp _ e) = go e
+   go (S.Ternary c e e') = go c *> go e *> go e'
+   go (S.Project e _) = go e
+   go (S.DProject e e') = go e *> go e'
+   go (S.Matrix _ e _ e') = go e *> go e'
+   go (S.Lambda (S.LambdaClause (_ × e))) = go e
+   go (S.Dictionary _ kvs) = for_ kvs \(k × v) -> goKey k *> go v
+      where
+      goKey (S.ExprKey e) = go e
+      goKey (S.VarKey _ _) = pure unit
+   go (S.Paragraph elems) = for_ elems \el -> case el of
+      S.Unquote e -> go e
+      S.Token _ -> pure unit
+   go (S.ListEmpty _) = pure unit
+   go (S.ListNonEmpty _ e l) = go e *> goRest l
+      where
+      goRest (S.End _) = pure unit
+      goRest (S.Next _ e' l') = go e' *> goRest l'
+   go (S.ListEnum e e') = go e *> go e'
+   go (S.ListComp _ e _) = go e
+   go (S.DocExpr e e') = go e *> go e'
+   go _ = pure unit
 
