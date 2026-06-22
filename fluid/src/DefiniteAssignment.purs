@@ -62,8 +62,8 @@ fields λ = go Set.empty
            Just (Nothing × xs) -> pure xs
            Just (Just b × xs) -> (_ <> xs) <$> go (Set.insert c seen) b
 
-unionWithMergeEq :: forall m. MonadError Error m => ClassCtx -> ClassCtx -> m ClassCtx
-unionWithMergeEq a b = do
+unionWith_mergeEq :: forall m. MonadError Error m => ClassCtx -> ClassCtx -> m ClassCtx
+unionWith_mergeEq a b = do
    let dups = Set.toUnfoldable (Set.intersection (Map.keys a # Set.fromFoldable) (Map.keys b # Set.fromFoldable)) :: List Var
    for_ dups \k -> case Map.lookup k a, Map.lookup k b of
       Just va, Just vb | va /= vb -> throw $ "Conflicting class declarations: " <> k

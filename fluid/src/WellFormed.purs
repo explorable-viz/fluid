@@ -15,7 +15,7 @@ import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
 import DataType (arity)
-import DefiniteAssignment (ClassCtx, Ctx, TyResult(..), fields, mergeRes, overrideCtx, overrideRes, unionWithMergeEq)
+import DefiniteAssignment (ClassCtx, Ctx, TyResult(..), fields, mergeRes, overrideCtx, overrideRes, unionWith_mergeEq)
 import Util.Map (constMap)
 import Effect.Exception (Error)
 import Expr (bv, fv)
@@ -27,12 +27,12 @@ import Util.Set ((\\), (∪))
 checkProgram :: forall m. MonadError Error m => ClassCtx -> Set Var -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
 checkProgram λ_external γ0 s = do
    λ_program <- classes s
-   λ <- unionWithMergeEq λ_external λ_program
+   λ <- unionWith_mergeEq λ_external λ_program
    for_ (Map.keys λ) (void <<< fields λ)
    snd <$> wellFormed λ (constMap true γ0) s
 
 classesOfModule :: forall m a. MonadError Error m => S.Module a -> m ClassCtx
-classesOfModule (S.Module ss) = foldM unionWithMergeEq Map.empty =<< traverse classes ss
+classesOfModule (S.Module ss) = foldM unionWith_mergeEq Map.empty =<< traverse classes ss
 
 -- TODO: module-level WF needs a cross-module Γ (primitives + Λ from builtins).
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
@@ -43,14 +43,14 @@ classes (S.Dataclass c b xs) = pure (Map.singleton c (b × xs))
 classes (S.Seq s1 s2) = do
    λ1 <- classes s1
    λ2 <- classes s2
-   unionWithMergeEq λ1 λ2
+   unionWith_mergeEq λ1 λ2
 classes (S.If es elseBranch) = do
    λs <- traverse (classes <<< snd) (NEL.toList es)
    λElse <- maybe (pure Map.empty) classes elseBranch
-   foldM unionWithMergeEq λElse λs
+   foldM unionWith_mergeEq λElse λs
 classes (S.Match _ ps) = do
    λs <- traverse (classes <<< snd) (NEL.toList ps)
-   foldM unionWithMergeEq Map.empty λs
+   foldM unionWith_mergeEq Map.empty λs
 classes _ = pure Map.empty
 
 assigns :: forall a. S.Stmt a -> Set Var
