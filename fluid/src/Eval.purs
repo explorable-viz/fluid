@@ -64,8 +64,8 @@ match (Val α _ (V.Constr c vs)) (ElimConstr m) = do
 match v (ElimConstr m) = do
    λ <- askClassCtx
    d <- case Set.toUnfoldable (keys m) :: List _ of
-      c : _ | Just d <- dataTypeFromClassCtx λ c -> pure d
-      _ -> dataTypeFor $ keys m -- bootstrap fallback
+      c : _ -> maybe (throw $ "Unknown constructor: " <> showCtr c) pure (dataTypeFromClassCtx λ c)
+      Nil -> throw "Pattern matched empty ElimConstr"
    throw $ patternMismatch (prettyP v) (show d)
 match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    check (Set.subset xs (Set.fromFoldable $ keys xvs))

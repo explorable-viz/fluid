@@ -4,7 +4,7 @@ import Prelude hiding (absurd, top, unless)
 
 import Bind (Bind, Var, varAnon, (↦))
 import Bind (keys) as B
-import Data.Set (Set, empty, insert, member, singleton, unions) as Set
+import Data.Set (Set, empty, fromFoldable, insert, member, singleton, unions) as Set
 import Control.Monad.Error.Class (class MonadError)
 import Data.Bitraversable (rtraverse)
 import Data.Either (Either(..))
@@ -23,7 +23,7 @@ import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (replicate)
-import DataType (Ctr, DataType, arity, arityFromClassCtx, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor, dataTypeFromClassCtx)
+import DataType (Ctr, DataType, arityFromClassCtx, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFromClassCtx)
 import Data.Map as Map
 import DefiniteAssignment (class HasClassCtx, ClassCtx, Ctx, TyResult(..), askClassCtx)
 import Lattice (class JoinSemilattice)
@@ -363,14 +363,8 @@ popConstrFwd :: forall m. HasClassCtx m => MonadError Error m => DataType -> Cla
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
 popConstrFwd d (((p : π') × π'' × s) : ks) = do
    λ <- askClassCtx
-   let
-      n = case arityFromClassCtx λ c of
-         Just n' -> n'
-         Nothing -> defined (arity c)
-   let
-      dt = case dataTypeFromClassCtx λ c of
-         Just d' -> d'
-         Nothing -> defined (dataTypeFor c)
+   n <- maybe (throw $ "Unknown constructor: " <> c) pure (arityFromClassCtx λ c)
+   dt <- maybe (throw $ "Unknown constructor: " <> c) pure (dataTypeFromClassCtx λ c)
    assert (length π == n && dt == d) $
       forConstrFwd c ((π <> π') × π'' × s) <$> popConstrFwd d ks
    where
@@ -407,10 +401,7 @@ clausesStateFwd ks = case ks of
    ((p : _) × _) : _ -> do
       λ <- askClassCtx
       let c = definitely ("clausesStateFwd ctrFor failed for: " <> showPattern p) (ctrFor p)
-      let
-         dt = case dataTypeFromClassCtx λ c of
-            Just d -> d
-            Nothing -> defined (dataTypeFor c)
+      dt <- maybe (throw $ "Unknown constructor: " <> c) pure (dataTypeFromClassCtx λ c)
       kss <- popConstrFwd dt ks
       ContElim <$> ElimConstr <$> D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
 
@@ -426,10 +417,10 @@ unless λ (Left (PConstr c _)) =
    let
       dt = case dataTypeFromClassCtx λ c of
          Just d -> d
-         Nothing -> defined (dataTypeFor c)
+         Nothing -> error $ "Unknown constructor: " <> c
       arityOf c' = case arityFromClassCtx λ c' of
          Just n -> n
-         Nothing -> defined (arity c')
+         Nothing -> error $ "Unknown constructor: " <> c'
    in
       (S.toUnfoldable (ctrs dt) `L.difference` singleton c)
          <#> \c' -> Left (PConstr c' (replicate (arityOf c') pVarAnon))
