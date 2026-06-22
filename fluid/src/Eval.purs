@@ -4,13 +4,13 @@ import Prelude hiding (absurd, apply)
 
 import Bind (varAnon)
 import Control.Monad.Error.Class (class MonadError)
-import Control.Monad.Reader (class MonadReader)
-import DefiniteAssignment (class HasClassCtx, askClassCtx)
+import Control.Monad.Reader (class MonadReader, local)
+import DefiniteAssignment (class HasClassCtx, ClassCtx, askClassCtx)
 import Data.Array ((..))
 import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
@@ -23,7 +23,7 @@ import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asStmt, fv)
-import File (class LoadFile, FileCxt)
+import File (class LoadFile, FileCxt(..))
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -46,6 +46,7 @@ type GraphConfig =
    { primitives :: Env Vertex
    , n :: Int
    , γ :: Env Vertex
+   , classCtx :: ClassCtx
    }
 
 patternMismatch :: String -> String -> String
@@ -122,9 +123,7 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    λ <- askClassCtx
-   n <- case arityFromClassCtx λ c of
-      Just n' -> pure n'
-      Nothing -> arity c -- bootstrap fallback while migration is in progress
+   n <- maybe (throw $ "Unknown constructor: " <> showCtr c) pure (arityFromClassCtx λ c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    let
       v' =
@@ -370,14 +369,16 @@ toGC
 toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
 graphEval :: forall m. HasClassCtx m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
-graphEval { n, γ } stmt = do
-   _ × _ × g × inα × outα <- flip runAllocT n do
-      sα <- alloc stmt
-      let inα = EnvStmt γ sα
-      g × outα <- runWithGraphT_spy (asReturns <$> evalStmt Nothing γ sα mempty) (vertices inα)
-      when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
-      pure (g × inα × outα)
-   pure { g, graph_fwd, graph_bwd, inα, outα }
+graphEval { n, γ, classCtx } stmt =
+   -- Inject Λ into FileCxt so HasClassCtx instances downstream see it.
+   local (\(FileCxt r) -> FileCxt (r { classCtx = classCtx })) do
+      _ × _ × g × inα × outα <- flip runAllocT n do
+         sα <- alloc stmt
+         let inα = EnvStmt γ sα
+         g × outα <- runWithGraphT_spy (asReturns <$> evalStmt Nothing γ sα mempty) (vertices inα)
+         when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
+         pure (g × inα × outα)
+      pure { g, graph_fwd, graph_bwd, inα, outα }
    where
    graph_fwd = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
    graph_bwd = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")

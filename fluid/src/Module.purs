@@ -61,7 +61,7 @@ prepConfig primitives fluidSrc = do
       sty <- checkProgram moduleCxt.classCtx (keys topLevelEnv) s
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
-      let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv }
+      let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: moduleCxt.classCtx }
       pure { s, e, gconfig }
 
 loadModuleGraph
