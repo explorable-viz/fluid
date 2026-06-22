@@ -4,8 +4,8 @@
 
 @dataclass
 class Point:
-  x: Any
-  y: Any
+  x: Any  # Float
+  y: Any  # Float
 
 @dataclass
 class Orient:
@@ -25,60 +25,62 @@ class GraphicsElement:
 
 @dataclass
 class Circle(GraphicsElement):
-  x: Any
-  y: Any
-  radius: Any
-  fill: Any
+  x: Any  # Float
+  y: Any  # Float
+  radius: Any  # Float
+  fill: Any  # Colour
 
 @dataclass
 class Group(GraphicsElement):
-  children: Any
+  children: Any  # List GraphicsElement
 
 @dataclass
 class Line(GraphicsElement):
-  p1: Any
-  p2: Any
-  stroke: Any
-  strokeWidth: Any
+  p1: Any  # Point
+  p2: Any  # Point
+  stroke: Any  # Colour
+  strokeWidth: Any  # Float
 
 @dataclass
 class Polyline(GraphicsElement):
-  points: Any
-  stroke: Any
-  strokeWidth: Any
+  points: Any  # List Point
+  stroke: Any  # Colour
+  strokeWidth: Any  # Float
 
 @dataclass
 class Polymarkers(GraphicsElement):
-  points: Any
-  markers: Any
+  points: Any  # List Point
+  markers: Any  # List GraphicsElement
 
 @dataclass
 class Rect(GraphicsElement):
-  x: Any
-  y: Any
-  width: Any
-  height: Any
-  fill: Any
+  x: Any  # Float
+  y: Any  # Float
+  width: Any  # Float
+  height: Any  # Float
+  fill: Any  # Colour
 
+# SVG text-anchor and alignment-baseline properties
 @dataclass
 class String(GraphicsElement):
-  x: Any
-  y: Any
-  str: Any
-  anchor: Any
-  baseline: Any
+  x: Any  # Float
+  y: Any  # Float
+  str: Any  # Str
+  anchor: Any  # Str
+  baseline: Any  # Str
 
+# Margin is in parent reference frame; scaling applies to translated coordinates.
 @dataclass
 class Viewport(GraphicsElement):
-  x: Any
-  y: Any
-  width: Any
-  height: Any
-  fill: Any
-  margin: Any
-  scale: Any
-  translate: Any
-  g: Any
+  x: Any  # Float
+  y: Any  # Float
+  width: Any  # Float
+  height: Any  # Float
+  fill: Any  # Colour
+  margin: Any  # Float
+  scale: Any  # Transform
+  translate: Any  # Transform
+  g: Any  # GraphicsElement
 
 @dataclass
 class Transform:
@@ -86,13 +88,13 @@ class Transform:
 
 @dataclass
 class Scale(Transform):
-  x: Any
-  y: Any
+  x: Any  # Float
+  y: Any  # Float
 
 @dataclass
 class Translate(Transform):
-  x: Any
-  y: Any
+  x: Any  # Float
+  y: Any  # Float
 
 @dataclass
 class Marker:
