@@ -23,26 +23,10 @@ type Ctx = Map Var Boolean
 
 type ClassCtx = Map Var (Maybe Var × List Var)
 
--- Non-fundep so it coexists with MonadReader FileCxt.
 class HasClassCtx m where
    askClassCtx :: m ClassCtx
 
-instance (Monad m, HasClassCtx m) => HasClassCtx (StateT s m) where
-   askClassCtx = lift askClassCtx
-
-instance (Monad m, HasClassCtx m) => HasClassCtx (ReaderT r m) where
-   askClassCtx = lift askClassCtx
-
-instance (Monad m, HasClassCtx m) => HasClassCtx (ExceptT e m) where
-   askClassCtx = lift askClassCtx
-
-instance (Monad m, HasClassCtx m, Monoid w) => HasClassCtx (WriterT w m) where
-   askClassCtx = lift askClassCtx
-
 data TyResult a = Returns | Assigns a
-
-derive instance Functor TyResult
-derive instance Eq a => Eq (TyResult a)
 
 overrideCtx :: Ctx -> Ctx -> Ctx
 overrideCtx = flip Map.union
@@ -85,3 +69,21 @@ unionDisjoint a b = do
       Just va, Just vb | va /= vb -> throw $ "Conflicting class declarations: " <> k
       _, _ -> pure unit
    pure (Map.union a b)
+
+-- ======================
+-- boilerplate
+-- ======================
+derive instance Functor TyResult
+derive instance Eq a => Eq (TyResult a)
+
+instance (Monad m, HasClassCtx m) => HasClassCtx (StateT s m) where
+   askClassCtx = lift askClassCtx
+
+instance (Monad m, HasClassCtx m) => HasClassCtx (ReaderT r m) where
+   askClassCtx = lift askClassCtx
+
+instance (Monad m, HasClassCtx m) => HasClassCtx (ExceptT e m) where
+   askClassCtx = lift askClassCtx
+
+instance (Monad m, HasClassCtx m, Monoid w) => HasClassCtx (WriterT w m) where
+   askClassCtx = lift askClassCtx
