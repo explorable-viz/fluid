@@ -44,13 +44,6 @@ classes (S.Seq s1 s2) = do
    λ1 <- classes s1
    λ2 <- classes s2
    unionWith_mergeEq λ1 λ2
-classes (S.If es elseBranch) = do
-   λs <- traverse (classes <<< snd) (NEL.toList es)
-   λElse <- maybe (pure Map.empty) classes elseBranch
-   foldM unionWith_mergeEq λElse λs
-classes (S.Match _ ps) = do
-   λs <- traverse (classes <<< snd) (NEL.toList ps)
-   foldM unionWith_mergeEq Map.empty λs
 classes _ = pure Map.empty
 
 assigns :: forall a. S.Stmt a -> Set Var
