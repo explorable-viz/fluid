@@ -2,26 +2,32 @@
 class View:
   pass
 
+# { caption: Str, size: { width: Int, height: Int }, tickLabels: { x: Orientation, y: Orientation },
+#   stackedBars: List StackedBar, legend: Bool }
 @dataclass
 class BarChart(View):
   config: Any
 
+# { size: { width: Int, height: Int }, tickLabels: { x: Orientation, y: Orientation },
+#   caption: Str, plots: List LinePlot }
 @dataclass
 class LineChart(View):
   config: Any
 
 @dataclass
 class MultiView(View):
-  views: Any
+  views: Any  # List View
 
 @dataclass
 class Paragraph(View):
-  fragments: Any
+  fragments: Any  # List View
 
+# { caption: Str, points: List { x: Float, y: Float }, labels: { x: Str, y: Str } }
 @dataclass
 class ScatterPlot(View):
   config: Any
 
+# { name: Str, points: List { x: Float, y: Float } }
 @dataclass
 class LinePlot:
   config: Any
@@ -44,9 +50,9 @@ class ParaFragment:
 
 @dataclass
 class Text(ParaFragment):
-  text: Any
+  text: Any  # Str
 
 @dataclass
 class Link(ParaFragment):
-  value: Any
-  label: Any
+  value: Any  # Val
+  label: Any  # Str
