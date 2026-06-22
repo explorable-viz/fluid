@@ -4,17 +4,15 @@ class View:
 
 @dataclass
 class BarChart(View):
-  # { caption: Str, size: { width: Int, height: Int },
-  #   tickLabels: { x: Orientation, y: Orientation },
-  #   stackedBars: List StackedBar, legend: Bool }
-  config: Any
+  config: Any  # { caption: Str, size: { width: Int, height: Int },
+               #   tickLabels: { x: Orientation, y: Orientation },
+               #   stackedBars: List StackedBar, legend: Bool }
 
 @dataclass
 class LineChart(View):
-  # { size: { width: Int, height: Int },
-  #   tickLabels: { x: Orientation, y: Orientation },
-  #   caption: Str, plots: List LinePlot }
-  config: Any
+  config: Any  # { size: { width: Int, height: Int },
+               #   tickLabels: { x: Orientation, y: Orientation },
+               #   caption: Str, plots: List LinePlot }
 
 @dataclass
 class MultiView(View):
@@ -26,13 +24,12 @@ class Paragraph(View):
 
 @dataclass
 class ScatterPlot(View):
-  # { caption: Str, points: List { x: Float, y: Float }, labels: { x: Str, y: Str } }
-  config: Any
+  config: Any  # { caption: Str, points: List { x: Float, y: Float },
+               #   labels: { x: Str, y: Str } }
 
 @dataclass
 class LinePlot:
-  # { name: Str, points: List { x: Float, y: Float } }
-  config: Any
+  config: Any  # { name: Str, points: List { x: Float, y: Float } }
 
 @dataclass
 class Orientation:
