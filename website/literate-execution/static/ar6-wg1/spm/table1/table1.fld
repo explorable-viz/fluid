@@ -1,6 +1,8 @@
 import lib.stats
 import table1_data
 
+import lib.view
+
 def newDataTable(offset):
   return map(lambda s: {
     scenario: s.scenario,

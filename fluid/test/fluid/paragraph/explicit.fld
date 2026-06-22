@@ -1,3 +1,5 @@
+import lib.view
+
 name = "Alice"
 
 # Mix of implicit and explicit coercions

@@ -1,5 +1,7 @@
 import renewables
 
+import lib.view
+
 def totalFor(c, rows):
   return sum([row.output for row in rows if row.country == c])
 

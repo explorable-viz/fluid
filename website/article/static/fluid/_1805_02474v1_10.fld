@@ -2,6 +2,8 @@ import scigen
 import util
 import dataset.scigen._1805_02474v1_10
 
+import lib.view
+
 model_BiLSTM = model("BiLSTM", tableData)
 model_LSTM = model("LSTM", tableData)
 model_2_stacked_BiLSTM = model("2 stacked BiLSTM", tableData)

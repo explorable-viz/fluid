@@ -1,5 +1,7 @@
 import dataset.energy_data
 
+import lib.view
+
 def sumNonRenewables(x):
   return ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
 

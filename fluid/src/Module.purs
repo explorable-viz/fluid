@@ -39,16 +39,13 @@ type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 builtins :: ModuleName
 builtins = "lib/builtins"
 
-viewLib :: ModuleName
-viewLib = "lib/view"
-
 prelude :: ModuleName
 prelude = "lib/prelude"
 
 prepConfig :: forall m. HasClassCtx m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   sCxt <- parseModuleGraph (builtins : viewLib : prelude : imports)
+   sCxt <- parseModuleGraph (builtins : prelude : imports)
    -- __NoArgs is compiler-internal; parser can't name it (uppercase-start required).
    let moduleClassCtx = Map.insert "__NoArgs" (Nothing × Nil) sCxt.classCtx
    programClasses <- classes s
@@ -134,9 +131,8 @@ parseModuleGraph roots = do
       let
          imports' =
             if path == builtins then imports
-            else if path == viewLib then builtins : imports
-            else if path == prelude then builtins : viewLib : imports
-            else builtins : viewLib : prelude : imports
+            else if path == prelude then builtins : imports
+            else builtins : prelude : imports
       pure $ mod × λ × imports'
 
    topsort :: DependencyGraph -> List ModuleName

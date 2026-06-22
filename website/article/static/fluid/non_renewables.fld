@@ -1,5 +1,7 @@
 import energy_data
 
+import lib.view
+
 countries = ["BRA", "EGY", "IND", "JPN"]
 
 def totalFor(year, country):

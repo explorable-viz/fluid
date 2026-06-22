@@ -1,6 +1,8 @@
 import lib.stats
 import figure4b_data
 
+import lib.view
+
 def stackedBarHeight(stackedBar):
   return sum([segment.z for segment in stackedBar.segments])
 

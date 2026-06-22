@@ -1,5 +1,7 @@
 import nap3_ccra3_data
 
+import lib.view
+
 eval_scores = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 

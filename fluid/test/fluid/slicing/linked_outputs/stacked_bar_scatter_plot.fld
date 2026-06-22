@@ -1,5 +1,7 @@
 import dataset.energy_data
 
+import lib.view
+
 def totalFor(year, country, rows):
   [row] = [row for row in rows if row.year == year if row.country == country]
 

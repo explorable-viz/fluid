@@ -1,5 +1,7 @@
 import dataset.methane_emissions
 
+import lib.view
+
 def nthPad(n, xs):
   return nth(min(max(n, 0), length(xs) - 1), xs)
 def movingAvg(ys, window):

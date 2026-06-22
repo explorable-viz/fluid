@@ -1,5 +1,7 @@
 import energy_data
 
+import lib.view
+
 def isCountry(name, x):
   return name == x.country
 def isYear(year, x):

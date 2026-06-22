@@ -1,5 +1,7 @@
 import methane_data
 
+import lib.view
+
 def nthPad(n, xs):
   nth(min(max(n, 0), length(xs) - 1), xs)
 def movingAvg(ys, window):
