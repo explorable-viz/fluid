@@ -23,7 +23,7 @@ import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (replicate)
-import DataType (Ctr, DataType, arityFromClassCtx, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFromClassCtx)
+import DataType (Ctr, DataType, arity, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataType)
 import Data.Map as Map
 import DefiniteAssignment (class HasClassCtx, ClassCtx, Ctx, TyResult(..), askClassCtx)
 import DefiniteAssignment as DA
@@ -367,8 +367,8 @@ popConstrFwd :: forall m. HasClassCtx m => MonadError Error m => DataType -> Cla
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
 popConstrFwd d (((p : π') × π'' × s) : ks) = do
    λ <- askClassCtx
-   n <- maybe (throw $ "Unknown constructor: " <> c) pure (arityFromClassCtx λ c)
-   dt <- maybe (throw $ "Unknown constructor: " <> c) pure (dataTypeFromClassCtx λ c)
+   n <- maybe (throw $ "Unknown constructor: " <> c) pure (arity λ c)
+   dt <- maybe (throw $ "Unknown constructor: " <> c) pure (dataType λ c)
    assert (length π == n && dt == d) $
       forConstrFwd c ((π <> π') × π'' × s) <$> popConstrFwd d ks
    where
@@ -450,7 +450,7 @@ clausesStateFwd' ks = case ks of
    ((p : _) × _) : _ -> do
       λ <- askClassCtx
       let c = definitely ("clausesStateFwd ctrFor failed for: " <> showPattern p) (ctrFor p)
-      dt <- maybe (throw $ "Unknown constructor: " <> c) pure (dataTypeFromClassCtx λ c)
+      dt <- maybe (throw $ "Unknown constructor: " <> c) pure (dataType λ c)
       kss <- popConstrFwd dt ks
       ContElim <$> ElimConstr <$> D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
 
@@ -463,10 +463,10 @@ unless _ (Left (PVar _)) = Nil
 unless _ (Left (PRecord _)) = Nil
 unless λ (Left (PConstr c _)) =
    let
-      dt = case dataTypeFromClassCtx λ c of
+      dt = case dataType λ c of
          Just d -> d
          Nothing -> error $ "Unknown constructor: " <> c
-      arityOf c' = case arityFromClassCtx λ c' of
+      arityOf c' = case arity λ c' of
          Just n -> n
          Nothing -> error $ "Unknown constructor: " <> c'
    in

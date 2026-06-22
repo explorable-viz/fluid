@@ -59,50 +59,43 @@ ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 consistentWith :: forall m. MonadError Error m => ClassCtx -> Set Ctr -> Set Ctr -> m Unit
 consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
    Nil -> pure unit
-   c : _ -> case dataTypeFromClassCtx λ c of
+   c : _ -> case dataType λ c of
       Nothing -> throw $ "Unknown constructor: " <> showCtr c
       Just d -> withMsg ("constructors of " <> show d <> " do not include " <> show (S.map showCtr cs))
-         $ for_ (S.toUnfoldable cs :: List Ctr) \c'' -> case dataTypeFromClassCtx λ c'' of
+         $ for_ (S.toUnfoldable cs :: List Ctr) \c'' -> case dataType λ c'' of
               Just d'' | d'' == d -> pure unit
               _ -> throw "mismatch"
 
 checkArity :: forall m. MonadError Error m => ClassCtx -> Ctr -> Int -> m Unit
-checkArity λ c n = case arityFromClassCtx λ c of
+checkArity λ c n = case arity λ c of
    Just n' | n' == n -> pure unit
    Just n' -> throw $ showCtr c <> " arity " <> show n' <> "; got " <> show n
    Nothing -> throw $ "Unknown constructor: " <> showCtr c
 
--- Topmost ancestor (self if no base). Cycle-safe: stops if it sees c again.
+-- Assumes Λ acyclic.
 rootClass :: ClassCtx -> Ctr -> Ctr
-rootClass λ = go S.empty
-   where
-   go seen c
-      | c `S.member` seen = c
-      | otherwise = case Map.lookup c λ of
-           Just (Just b × _) -> go (S.insert c seen) b
-           _ -> c
+rootClass λ c = case Map.lookup c λ of
+   Just (Just b × _) -> rootClass λ b
+   _ -> c
 
--- A class is a concrete ctr iff it has a base, or it has no base and no children.
+-- Concrete iff a leaf.
 isCtr :: ClassCtx -> Ctr -> Boolean
-isCtr λ c = case Map.lookup c λ of
-   Nothing -> false
-   Just (Just _ × _) -> true
-   Just (Nothing × _) -> not (any (\(_ × (mb × _)) -> mb == Just c) (Map.toUnfoldable λ :: List _))
+isCtr λ c = Map.member c λ && not (any (\(_ × (mb × _)) -> mb == Just c) (Map.toUnfoldable λ :: List _))
 
-dataTypeFromClassCtx :: ClassCtx -> Ctr -> Maybe DataType
-dataTypeFromClassCtx λ c
-   | not (isCtr λ c) = Nothing
-   | otherwise = Just (DataType r (fromFoldable (sigOf <$> siblings)))
-        where
-        r = rootClass λ c
-        siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isCtr λ c' && rootClass λ c' == r)
-        sigOf (c' × (mb × xs)) = c' × (inherited + List.length xs)
-           where
-           inherited = maybe 0 (\b -> maybe 0 (List.length <<< snd) (Map.lookup b λ)) mb
+dataType :: ClassCtx -> Ctr -> Maybe DataType
+dataType λ c =
+   if isCtr λ c then Just (DataType r (fromFoldable (sigOf <$> siblings)))
+   else Nothing
+   where
+   r = rootClass λ c
+   siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isCtr λ c' && rootClass λ c' == r)
+   sigOf (c' × (mb × xs)) = c' × (inherited + List.length xs)
+      where
+      inherited = maybe 0 (\b -> maybe 0 (List.length <<< snd) (Map.lookup b λ)) mb
 
-arityFromClassCtx :: ClassCtx -> Ctr -> Maybe Int
-arityFromClassCtx λ c = do
-   DataType _ sigs <- dataTypeFromClassCtx λ c
+arity :: ClassCtx -> Ctr -> Maybe Int
+arity λ c = do
+   DataType _ sigs <- dataType λ c
    lookup c sigs
 
 -- Used internally by primitives, desugaring or rendering layer.

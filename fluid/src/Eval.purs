@@ -17,7 +17,7 @@ import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, fst, snd)
-import DataType (arityFromClassCtx, checkArity, consistentWith, dataTypeFromClassCtx, showCtr)
+import DataType (arity, checkArity, consistentWith, dataType, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -65,7 +65,7 @@ match (Val α _ (V.Constr c vs)) (ElimConstr m) = do
 match v (ElimConstr m) = do
    λ <- askClassCtx
    d <- case Set.toUnfoldable (keys m) :: List _ of
-      c : _ -> maybe (throw $ "Unknown constructor: " <> showCtr c) pure (dataTypeFromClassCtx λ c)
+      c : _ -> maybe (throw $ "Unknown constructor: " <> showCtr c) pure (dataType λ c)
       Nil -> throw "Pattern matched empty ElimConstr"
    throw $ patternMismatch (prettyP v) (show d)
 match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
@@ -123,7 +123,7 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
-   n <- askClassCtx >>= \λ -> maybe (throw $ "Unknown constructor: " <> showCtr c) pure (arityFromClassCtx λ c)
+   n <- askClassCtx >>= \λ -> maybe (throw $ "Unknown constructor: " <> showCtr c) pure (arity λ c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    let
       v' =

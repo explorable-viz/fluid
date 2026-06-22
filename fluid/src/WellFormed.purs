@@ -14,7 +14,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DataType (arityFromClassCtx)
+import DataType (arity)
 import DefiniteAssignment (ClassCtx, Ctx, TyResult(..), fields, mergeRes, overrideCtx, overrideRes, unionDisjoint)
 import Util.Map (constMap)
 import Effect.Exception (Error)
@@ -28,6 +28,7 @@ checkProgram :: forall m. MonadError Error m => ClassCtx -> Set Var -> Raw S.Stm
 checkProgram λ_external γ0 s = do
    λ_program <- classes s
    λ <- unionDisjoint λ_external λ_program
+   for_ (Map.keys λ) (void <<< fields λ)
    snd <$> wellFormed λ (constMap true γ0) s
 
 classesOfModule :: forall m a. MonadError Error m => S.Module a -> m ClassCtx
@@ -209,7 +210,7 @@ constrArities λ = go
    where
    go :: S.Expr a -> m Unit
    go (S.Constr _ c es) = do
-      n <- maybe (throw $ "Unknown constructor: " <> c) pure (arityFromClassCtx λ c)
+      n <- maybe (throw $ "Unknown constructor: " <> c) pure (arity λ c)
       when (length es /= n)
          $ throw
          $ c <> " expects " <> show n <> " argument(s); got " <> show (length es)
