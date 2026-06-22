@@ -11,7 +11,7 @@ import Data.Either (Either(..))
 import Data.Foldable (for_, length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, take, unzip, zip, zipWith, (:))
+import Data.List (List(..), drop, find, take, unzip, zip, zipWith, (:))
 import Data.List (difference) as L
 import Data.List.NonEmpty (NonEmptyList(..), foldr, groupBy, head, toList)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -26,6 +26,7 @@ import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arityFromClassCtx, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFromClassCtx)
 import Data.Map as Map
 import DefiniteAssignment (class HasClassCtx, ClassCtx, Ctx, TyResult(..), askClassCtx)
+import DefiniteAssignment as DA
 import Lattice (class JoinSemilattice)
 import Desugarable (class Desugarable, desug)
 import Dict as D
@@ -71,6 +72,7 @@ data ListRest a
 data Pattern
    = PVar Var
    | PConstr Ctr (List Pattern)
+   | PConstrKw Ctr (List Pattern) (List (Bind Pattern)) -- positional then keyword
    | PRecord (List (Bind Pattern))
    | PListEmpty
    | PListNonEmpty Pattern ListRestPattern
@@ -96,6 +98,7 @@ showPattern (Right p') = show p'
 ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
 ctrFor (Left (PVar _)) = Nothing
 ctrFor (Left (PConstr c _)) = pure c
+ctrFor (Left (PConstrKw c _ _)) = pure c
 ctrFor (Left (PRecord _)) = Nothing
 ctrFor (Left PListEmpty) = pure cNil
 ctrFor (Left (PListNonEmpty _ _)) = pure cCons
@@ -106,6 +109,7 @@ ctrFor (Right (PListNext _ _)) = pure cCons
 subpatts :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 subpatts (Left (PVar _)) = Nil
 subpatts (Left (PConstr _ ps)) = Left <$> ps
+subpatts (Left (PConstrKw _ ps xps)) = Left <$> (ps <> (xps <#> snd))
 subpatts (Left (PRecord xps)) = Left <$> (xps <#> snd)
 subpatts (Left PListEmpty) = Nil
 subpatts (Left (PListNonEmpty p o)) = Left p : Right o : Nil
@@ -384,20 +388,67 @@ popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
 popRecordFwd _ Nil = pure Nil
 popRecordFwd _ _ = throw (shapeMismatch unit)
 
+-- Expand PConstrKw to plain PConstr by reordering keyword sub-patterns into
+-- positional form via Λ. Recurses through nested patterns.
+expandKw :: forall m. HasClassCtx m => MonadError Error m => Pattern -> m Pattern
+expandKw p = do
+   λ <- askClassCtx
+   go λ p
+   where
+   go λ (PConstrKw c ps xps) = do
+      fs <- DA.fields λ c
+      let n = length ps
+      let expected = Set.fromFoldable (drop n fs)
+      let provided = Set.fromFoldable (xps <#> fst)
+      when (expected /= provided) $ throw $
+         "Class " <> c <> " keyword fields mismatch: expected " <> show (S.toUnfoldable expected :: List Var)
+            <> ", got "
+            <> show (S.toUnfoldable provided :: List Var)
+      ps' <- traverse (go λ) ps
+      let
+         reordered = drop n fs <#> \f ->
+            unsafePartial $ case find (\(k ↦ _) -> k == f) xps of
+               Just (_ ↦ pat) -> pat
+      reordered' <- traverse (go λ) reordered
+      pure (PConstr c (ps' <> reordered'))
+   go λ (PConstr c ps) = PConstr c <$> traverse (go λ) ps
+   go λ (PRecord xps) = PRecord <$> traverse (traverse (go λ)) xps
+   go λ (PListNonEmpty p' l) = PListNonEmpty <$> go λ p' <*> goRest λ l
+   go _ p' = pure p'
+
+   goRest :: ClassCtx -> ListRestPattern -> m ListRestPattern
+   goRest λ (PListNext p' l) = PListNext <$> go λ p' <*> goRest λ l
+   goRest _ p' = pure p'
+
+expandClause :: forall m a. HasClassCtx m => MonadError Error m => ClauseState' a -> m (ClauseState' a)
+expandClause (π × π' × b) = do
+   π'' <- traverse
+      ( case _ of
+           Left p -> Left <$> expandKw p
+           r -> pure r
+      )
+      π
+   pure (π'' × π' × b)
+
 -- Implementing Desugarable would require another newtype
 clausesStateFwd :: forall m. HasClassCtx m => MonadError Error m => ClausesState' (TyResult Ctx) -> m (Cont (TyResult Ctx))
-clausesStateFwd ks = case ks of
+clausesStateFwd ks0 = do
+   ks <- traverse expandClause ks0
+   clausesStateFwd' ks
+
+clausesStateFwd' :: forall m. HasClassCtx m => MonadError Error m => ClausesState' (TyResult Ctx) -> m (Cont (TyResult Ctx))
+clausesStateFwd' ks = case ks of
    Nil -> error absurd
    (Nil × Nil × b) : Nil ->
       ContStmt <$> stmtFwd b
    (Nil × _) : _ ->
-      ContStmt <$> E.Return <$> E.Lambda Returns <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
+      ContStmt <$> E.Return <$> E.Lambda Returns <$> asElim <$> (clausesStateFwd' =<< popArgFwd ks)
    ((Left (PVar x) : _) × _) : _ ->
-      ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
+      ContElim <$> ElimVar x <$> (clausesStateFwd' =<< popVarFwd x ks)
    ((Left (PRecord xps) : _) × _) : _ ->
-      ContElim <$> ElimDict (B.keys xps) <$> (clausesStateFwd =<< popRecordFwd (xps <#> fst) ks)
+      ContElim <$> ElimDict (B.keys xps) <$> (clausesStateFwd' =<< popRecordFwd (xps <#> fst) ks)
    ((Right (PListVar x) : _) × _) : _ ->
-      ContElim <$> ElimVar x <$> (clausesStateFwd =<< popListVarFwd x ks)
+      ContElim <$> ElimVar x <$> (clausesStateFwd' =<< popListVarFwd x ks)
    ((p : _) × _) : _ -> do
       λ <- askClassCtx
       let c = definitely ("clausesStateFwd ctrFor failed for: " <> showPattern p) (ctrFor p)
@@ -428,6 +479,7 @@ unless _ (Left (PListNonEmpty _ _)) = Left PListEmpty : Nil
 unless _ (Right (PListVar _)) = Nil
 unless _ (Right (PListNext _ _)) = Right PListEnd : Nil
 unless _ (Right PListEnd) = Right (PListNext pVarAnon pListVarAnon) : Nil
+unless λ (Left (PConstrKw c ps xps)) = unless λ (Left (PConstr c (ps <> (xps <#> snd))))
 
 orElseFwd :: forall a. ClassCtx -> a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd λ α = case _ of
@@ -462,6 +514,8 @@ orElseFwd λ α = case _ of
       pushPatt (Right (PListNext p o)) k
    pushPattFor (Right PListEnd) = \(_ × k) ->
       pushPatt (Right PListEnd) k
+   -- PConstrKw is desugared to PConstr by the time clausesStateFwd processes patterns.
+   pushPattFor (Left (PConstrKw _ _ _)) = \_ -> error absurd
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left pVarAnon
@@ -557,6 +611,7 @@ instance Show a => Show (ParagraphElem a) where
 instance BV Pattern where
    bv (PVar x) = Set.singleton x
    bv (PConstr _ ps) = Set.unions (bv <$> ps)
+   bv (PConstrKw _ ps xps) = Set.unions (bv <$> ps) ∪ Set.unions ((bv <<< snd) <$> xps)
    bv (PRecord xps) = Set.unions ((bv <<< snd) <$> xps)
    bv PListEmpty = Set.empty
    bv (PListNonEmpty p lr) = bv p ∪ bv lr

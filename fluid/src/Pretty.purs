@@ -9,6 +9,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Data.NonEmpty ((:|))
 import Data.Traversable (class Foldable)
+import Data.Tuple (snd)
 import DataType (Ctr, cCons)
 import Dict (Dict)
 import Expr (Cont(..), Elim(..))
@@ -178,6 +179,8 @@ instance Pretty Pattern where
    pretty (PConstr "__NoArgs" Nil) = text "()"
    pretty (PConstr c Nil) = text c
    pretty (PConstr c ps) = prettyConstr c ps
+   pretty (PConstrKw c ps xps) =
+      text c <> parens (commas ((pretty <$> ps) <> ((\(x ↦ p) -> text x <> text "=" <> pretty p) <$> xps)))
    pretty (PListEmpty) = text "[]"
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
 

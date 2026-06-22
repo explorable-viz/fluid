@@ -10,6 +10,8 @@ misc_cases =
    , { file: "purepy/dataclass_decl.fld", fwd_expect: "42" }
    , { file: "purepy/dataclass_construct.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "purepy/dataclass_attr.fld", fwd_expect: "7" }
+   , { file: "purepy/pat_class_keyword.fld", fwd_expect: "4" }
+   , { file: "purepy/pat_class_mixed.fld", fwd_expect: "(2, 3)" }
    , { file: "assert_implicit.fld", fwd_expect: "10" }
    , { file: "bare_return.fld", fwd_expect: "None" }
    , { file: "zero_arg.fld", fwd_expect: "\"hello\"" }

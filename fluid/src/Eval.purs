@@ -7,8 +7,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader, local)
 import DefiniteAssignment (class HasClassCtx, ClassCtx, askClassCtx, fields)
 import Data.Array ((..))
-import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (!!), (:))
-import Data.List as List
+import Data.List (List(..), find, foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
@@ -168,9 +167,7 @@ eval doc_opt γ e0 αs = do
                   withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
                Val _ _ (V.Constr c vs), Val _ _ (V.Str x) -> do
                   xs <- askClassCtx >>= flip fields c
-                  case List.elemIndex x xs of
-                     Just i -> orElse ("Index " <> show i <> " out of range") (vs !! i)
-                     Nothing -> throw $ c <> " has no field " <> x
+                  find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (c <> " has no field " <> x)
                Val _ _ (V.Dictionary _), _ -> throw $ "Found " <> prettyP v' <> ", expected string"
                _, _ -> throw $ "Found " <> prettyP v <> ", expected dict or object"
          App e e' -> do

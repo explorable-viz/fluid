@@ -8,7 +8,8 @@ import Control.Monad.State (StateT)
 import Data.Array (fromFoldable, some)
 import Data.Bifunctor (lmap)
 import Data.CodePoint.Unicode (isSpace)
-import Data.Either (Either, choose)
+import Bind (Bind, (↦))
+import Data.Either (Either(..), choose)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList(..), toList)
@@ -42,10 +43,35 @@ simplePattern = pVar <|> pConstr <|> pRecord <|> pList <|> parensPattern
    pVar = PVar <$> variable
 
    pConstr :: Parser Pattern
-   pConstr = do
+   pConstr = defer \_ -> do
       c <- constructor
-      ps <- option Nil (parens (commas simplePattern))
-      pure $ PConstr c ps
+      args <- option Nil (parens (commas constrArg))
+      let
+         positionals = takeLefts args
+         kws = takeRights args
+      pure $ case kws of
+         Nil -> PConstr c positionals
+         _ -> PConstrKw c positionals kws
+      where
+      constrArg :: Parser (Pattern + Bind Pattern)
+      constrArg = defer \_ -> (Right <$> try kwArg) <|> (Left <$> simplePattern)
+
+      kwArg :: Parser (Bind Pattern)
+      kwArg = defer \_ -> do
+         x <- variable
+         delim '='
+         p <- simplePattern
+         pure (x ↦ p)
+
+      takeLefts :: forall a b. List (a + b) -> List a
+      takeLefts Nil = Nil
+      takeLefts (Left x : xs) = x : takeLefts xs
+      takeLefts (Right _ : _) = Nil
+
+      takeRights :: forall a b. List (a + b) -> List b
+      takeRights Nil = Nil
+      takeRights (Right x : xs) = x : takeRights xs
+      takeRights (Left _ : xs) = takeRights xs
 
    pRecord :: Parser Pattern
    pRecord = defer \_ -> braces (fields variable pattern) <#> PRecord
