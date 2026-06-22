@@ -5,9 +5,10 @@ import Prelude hiding (absurd, apply)
 import Bind (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader, local)
-import DefiniteAssignment (class HasClassCtx, ClassCtx, askClassCtx)
+import DefiniteAssignment (class HasClassCtx, ClassCtx, askClassCtx, fields)
 import Data.Array ((..))
-import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
+import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (!!), (:))
+import Data.List as List
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
@@ -123,8 +124,7 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
-   λ <- askClassCtx
-   n <- maybe (throw $ "Unknown constructor: " <> showCtr c) pure (arityFromClassCtx λ c)
+   n <- askClassCtx >>= \λ -> maybe (throw $ "Unknown constructor: " <> showCtr c) pure (arityFromClassCtx λ c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    let
       v' =
@@ -163,13 +163,16 @@ eval doc_opt γ e0 αs = do
             traceWhen (isJust doc_opt) $ "Discarding doc (projection)"
             v <- eval Nothing γ e αs
             v' <- eval Nothing γ e' αs
-            case v of
-               Val _ _ (V.Dictionary (DictRep d)) ->
-                  case v' of
-                     Val _ _ (V.Str s) ->
-                        withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
-                     _ -> throw $ "Found " <> prettyP v' <> ", expected string"
-               _ -> throw $ "Found " <> prettyP v <> ", expected dict"
+            case v, v' of
+               Val _ _ (V.Dictionary (DictRep d)), Val _ _ (V.Str s) ->
+                  withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
+               Val _ _ (V.Constr c vs), Val _ _ (V.Str x) -> do
+                  xs <- askClassCtx >>= flip fields c
+                  case List.elemIndex x xs of
+                     Just i -> orElse ("Index " <> show i <> " out of range") (vs !! i)
+                     Nothing -> throw $ c <> " has no field " <> x
+               Val _ _ (V.Dictionary _), _ -> throw $ "Found " <> prettyP v' <> ", expected string"
+               _, _ -> throw $ "Found " <> prettyP v <> ", expected dict or object"
          App e e' -> do
             v <- eval Nothing γ e αs
             v' <- eval Nothing γ e' αs
@@ -249,8 +252,7 @@ evalVal γ (Dictionary α ees) αs = do
       d = D.fromFoldable $ zip ss (zip βs us)
    pure $ Just (α × V.Dictionary (DictRep d))
 evalVal γ (Constr α c es) αs = do
-   λ <- askClassCtx
-   checkArity λ c (length es)
+   askClassCtx >>= \λ -> checkArity λ c (length es)
    vs <- traverse (flip (eval Nothing γ) αs) es
    pure $ Just (α × V.Constr c vs)
 evalVal γ (Matrix α e (x × y) e') αs = do
