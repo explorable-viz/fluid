@@ -17,11 +17,19 @@ import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
 import Effect.Exception (Error)
-import Util (type (×), throw, (×))
+import Util (throw)
 
 type Ctx = Map Var Boolean
 
-type ClassCtx = Map Var (Maybe Var × List Var)
+-- Class-entry case of the spec context entry θ (Definition 1): ⟨q, x⃗, c⟩.
+-- Declaring-context Γ subscript deferred until the unified context exists.
+type ClassEntry =
+   { mod :: String -- q: defining module (cf. ModuleGraph.ModuleName)
+   , base :: Maybe Var -- c: base class (⊥ = Nothing)
+   , fields :: List Var -- x⃗: own field names (distinct)
+   }
+
+type ClassCtx = Map Var ClassEntry
 
 class HasClassCtx m where
    askClassCtx :: m ClassCtx
@@ -59,8 +67,8 @@ fields λ = go Set.empty
       | c `Set.member` seen = throw $ "Cyclic class hierarchy at: " <> c
       | otherwise = case Map.lookup c λ of
            Nothing -> throw $ "Unknown class: " <> c
-           Just (Nothing × xs) -> pure xs
-           Just (Just b × xs) -> (_ <> xs) <$> go (Set.insert c seen) b
+           Just { base: Nothing, fields: xs } -> pure xs
+           Just { base: Just b, fields: xs } -> (_ <> xs) <$> go (Set.insert c seen) b
 
 unionWith_mergeEq :: forall m. MonadError Error m => ClassCtx -> ClassCtx -> m ClassCtx
 unionWith_mergeEq a b = do

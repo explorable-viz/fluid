@@ -26,25 +26,29 @@ import Util.Set ((\\), (∪))
 
 checkProgram :: forall m. MonadError Error m => ClassCtx -> Set Var -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
 checkProgram λ_external γ0 s = do
-   λ_program <- classes s
+   λ_program <- classes mainModule s
    λ <- unionWith_mergeEq λ_external λ_program
    for_ (Map.keys λ) (void <<< fields λ)
    snd <$> wellFormed λ (constMap true γ0) s
 
-classesOfModule :: forall m a. MonadError Error m => S.Module a -> m ClassCtx
-classesOfModule (S.Module ss) = foldM unionWith_mergeEq Map.empty =<< traverse classes ss
+classesOfModule :: forall m a. MonadError Error m => String -> S.Module a -> m ClassCtx
+classesOfModule q (S.Module ss) = foldM unionWith_mergeEq Map.empty =<< traverse (classes q) ss
 
 -- TODO: module-level WF needs a cross-module Γ (primitives + Λ from builtins).
 checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
 checkModule _ = pure unit
 
-classes :: forall m a. MonadError Error m => S.Stmt a -> m ClassCtx
-classes (S.Dataclass c b xs) = pure (Map.singleton c (b × xs))
-classes (S.Seq s1 s2) = do
-   λ1 <- classes s1
-   λ2 <- classes s2
+-- Entry program's module (spec entry point E; its __name__ is "__main__").
+mainModule :: String
+mainModule = "__main__"
+
+classes :: forall m a. MonadError Error m => String -> S.Stmt a -> m ClassCtx
+classes q (S.Dataclass c b xs) = pure (Map.singleton c { mod: q, base: b, fields: xs })
+classes q (S.Seq s1 s2) = do
+   λ1 <- classes q s1
+   λ2 <- classes q s2
    unionWith_mergeEq λ1 λ2
-classes _ = pure Map.empty
+classes _ _ = pure Map.empty
 
 assigns :: forall a. S.Stmt a -> Set Var
 assigns S.Pass = Set.empty

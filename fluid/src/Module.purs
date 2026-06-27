@@ -27,7 +27,7 @@ import ModuleGraph (DependencyGraph, ModuleName)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasClassCtx, ClassCtx, TyResult(..), unionWith_mergeEq)
-import WellFormed (checkModule, checkProgram, classes, classesOfModule)
+import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), error, throwLeft, withMsg, (×))
 import Util.Map (keys, restrict)
@@ -46,8 +46,8 @@ prepConfig :: forall m. HasClassCtx m => MonadAff m => MonadError Error m => Mon
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    sCxt <- parseModuleGraph (builtins : prelude : imports)
-   let moduleClassCtx = Map.insert "__NoArgs" (Nothing × Nil) sCxt.classCtx
-   programClasses <- classes s
+   let moduleClassCtx = Map.insert "__NoArgs" { mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
+   programClasses <- classes mainModule s
    fullClassCtx <- unionWith_mergeEq moduleClassCtx programClasses
    local (\(FileCxt r) -> FileCxt (r { classCtx = fullClassCtx })) do
       modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = moduleClassCtx }))
@@ -125,7 +125,7 @@ parseModuleGraph roots = do
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
       mod × imports <- throwLeft <#> withMsg ("Loading module " <> path) $ parseModule src
       checkModule mod
-      λ <- classesOfModule mod
+      λ <- classesOfModule path mod
       let
          imports' =
             if path == builtins then imports

@@ -12,7 +12,6 @@ import Data.List as List
 import Data.List (filter) as L
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
-import Data.Tuple (snd)
 import Data.Set (Set)
 import Data.Set (fromFoldable, map, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
@@ -75,12 +74,12 @@ checkArity λ c n = case arity λ c of
 -- Assumes Λ acyclic.
 rootClass :: ClassCtx -> Ctr -> Ctr
 rootClass λ c = case Map.lookup c λ of
-   Just (Just b × _) -> rootClass λ b
+   Just { base: Just b } -> rootClass λ b
    _ -> c
 
 -- Concrete iff a leaf.
 isCtr :: ClassCtx -> Ctr -> Boolean
-isCtr λ c = Map.member c λ && not (any (\(_ × (mb × _)) -> mb == Just c) (Map.toUnfoldable λ :: List _))
+isCtr λ c = Map.member c λ && not (any (\(_ × { base }) -> base == Just c) (Map.toUnfoldable λ :: List _))
 
 dataType :: ClassCtx -> Ctr -> Maybe DataType
 dataType λ c =
@@ -89,9 +88,9 @@ dataType λ c =
    where
    r = rootClass λ c
    siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isCtr λ c' && rootClass λ c' == r)
-   sigOf (c' × (mb × xs)) = c' × (inherited + List.length xs)
+   sigOf (c' × { base: mb, fields: xs }) = c' × (inherited + List.length xs)
       where
-      inherited = maybe 0 (\b -> maybe 0 (List.length <<< snd) (Map.lookup b λ)) mb
+      inherited = maybe 0 (\b -> maybe 0 (List.length <<< _.fields) (Map.lookup b λ)) mb
 
 arity :: ClassCtx -> Ctr -> Maybe Int
 arity λ c = do
