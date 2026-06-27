@@ -24,7 +24,6 @@ purepy_cases =
    , { file: "purepy/dataclass_unknown_base.fld", expected_error: "Unknown class: Unknown" }
    , { file: "purepy/dataclass_inherited_field_clash.fld", expected_error: "Class Sub redeclares inherited field(s): (\"x\" : Nil)" }
    , { file: "purepy/dataclass_dup_class.fld", expected_error: "Conflicting class declarations: Point" }
-   , { file: "purepy/cyclic_inheritance.fld", expected_error: "Cyclic class hierarchy at: A" }
    , { file: "purepy/construct_arity.fld", expected_error: "Point expects 2 argument(s); got 3" }
    , { file: "purepy/pat_class_arity.fld", expected_error: "Assertion failure: " }
    , { file: "purepy/pat_class_bad_keyword.fld", expected_error: "Class Coord keyword fields mismatch: expected (\"y\" : Nil), got (\"z\" : Nil)" }

@@ -26,10 +26,9 @@ import Util.Set ((\\), (∪))
 
 checkProgram :: forall m. MonadError Error m => ClassCtx -> Set Var -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
 checkProgram λ_external γ0 s = do
-   λ_program <- classes mainModule s
-   λ <- unionWith_mergeEq λ_external λ_program
-   for_ (Map.keys λ) (void <<< fields λ)
-   let γ = Map.union (Class <$> λ) (constMap (Status true) γ0)
+   -- Imported/builtin classes are in scope throughout; program classes are
+   -- introduced incrementally by the Seq rule as the body is walked.
+   let γ = Map.union (Class <$> λ_external) (constMap (Status true) γ0)
    snd <$> wellFormed γ s
 
 classesOfModule :: forall m a. MonadError Error m => String -> S.Module a -> m ClassCtx
@@ -154,7 +153,9 @@ wellFormed γ (S.Seq s1 s2) = do
       Assigns δ -> do
          for_ (Set.toUnfoldable (captures s1 `Set.intersection` assigns s2) :: Array Var) \x ->
             throw $ "Captured variable reassigned: " <> x
-         r2 × s2' <- wellFormed (γ `extendStatuses` δ) s2
+         λ1 <- classes mainModule s1
+         let γ' = Map.union (Class <$> λ1) (γ `extendStatuses` δ)
+         r2 × s2' <- wellFormed γ' s2
          pure (overrideRes r1 r2 × S.Seq s1' s2')
 wellFormed γ (S.If es elseBranch) = do
    es' <- traverse
