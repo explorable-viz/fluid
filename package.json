@@ -7,7 +7,7 @@
     "website/*"
   ],
   "scripts": {
-    "prepare": "./script/setup/install-hooks.sh",
+    "prepare": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath script/git/hooks || true",
     "test-website": "./script/test-website.sh",
     "test-website-all": "./script/test-website-all.sh"
   }
