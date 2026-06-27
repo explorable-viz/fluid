@@ -34,7 +34,7 @@ import ModuleGraph (ModuleName, ModuleCxt)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, absurd, check, defined, definitely, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
+import Util (type (×), Endo, absurd, check, definitely, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
 import Util.Map (unionWith_never, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)

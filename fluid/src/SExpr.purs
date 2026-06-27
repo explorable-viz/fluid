@@ -35,7 +35,7 @@ import Expr (class BV, class FV, Cont(..), Elim(..), asElim, bv, fv)
 import Expr (Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
 import Util.Set ((\\), (∪))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, definitely, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Pair (Pair(..))
 
 -- Surface language expressions.

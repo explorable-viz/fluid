@@ -14,13 +14,13 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (snd)
 import Data.Set (Set)
-import Data.Set (empty, insert, map, member, fromFoldable, toUnfoldable) as S
+import Data.Set (fromFoldable, map, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import DefiniteAssignment (ClassCtx)
 import Dict (Dict, fromFoldable)
 import Effect.Exception (Error)
-import Util (type (×), absurd, definitely', error, throw, withMsg, (×))
+import Util (absurd, definitely', error, throw, withMsg, (×))
 import Util.Map (keys, lookup)
 
 type TypeName = String
