@@ -15,7 +15,7 @@ import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
 import DataType (arity)
-import DefiniteAssignment (ClassCtx, Ctx, TyResult(..), fields, mergeRes, overrideCtx, overrideRes, unionWith_mergeEq)
+import DefiniteAssignment (ClassCtx, Ctx, Entry(..), Cxt, TyResult(..), classesOf, extendStatuses, fields, mergeRes, overrideRes, unionWith_mergeEq)
 import Util.Map (constMap)
 import Effect.Exception (Error)
 import Expr (bv, fv)
@@ -29,7 +29,8 @@ checkProgram λ_external γ0 s = do
    λ_program <- classes mainModule s
    λ <- unionWith_mergeEq λ_external λ_program
    for_ (Map.keys λ) (void <<< fields λ)
-   snd <$> wellFormed λ (constMap true γ0) s
+   let γ = Map.union (Class <$> λ) (constMap (Status true) γ0)
+   snd <$> wellFormed γ s
 
 classesOfModule :: forall m a. MonadError Error m => String -> S.Module a -> m ClassCtx
 classesOfModule q (S.Module ss) = foldM unionWith_mergeEq Map.empty =<< traverse (classes q) ss
@@ -115,64 +116,64 @@ capturesE (S.ListEnum e1 e2) = capturesE e1 ∪ capturesE e2
 capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
-wellFormed :: forall m a. MonadError Error m => ClassCtx -> Ctx -> S.Stmt a -> m (TyResult Ctx × S.Stmt (TyResult Ctx))
-wellFormed _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
-wellFormed λ γ (S.Return e) = do
-   wellFormedExpr λ γ e
+wellFormed :: forall m a. MonadError Error m => Cxt -> S.Stmt a -> m (TyResult Ctx × S.Stmt (TyResult Ctx))
+wellFormed _ S.Pass = pure (Assigns Map.empty × S.Pass)
+wellFormed γ (S.Return e) = do
+   wellFormedExpr γ e
    pure (Returns × S.Return (Assigns Map.empty <$ e))
-wellFormed λ γ (S.ExprStmt e) = do
-   wellFormedExpr λ γ e
+wellFormed γ (S.ExprStmt e) = do
+   wellFormedExpr γ e
    pure (Assigns Map.empty × S.ExprStmt (Assigns Map.empty <$ e))
-wellFormed λ γ (S.Assert e e') = do
-   wellFormedExpr λ γ e
-   for_ e' (wellFormedExpr λ γ)
+wellFormed γ (S.Assert e e') = do
+   wellFormedExpr γ e
+   for_ e' (wellFormedExpr γ)
    pure (Assigns Map.empty × S.Assert (Assigns Map.empty <$ e) ((Assigns Map.empty <$ _) <$> e'))
-wellFormed λ γ (S.Def (S.VarDef p e)) = do
+wellFormed γ (S.Def (S.VarDef p e)) = do
    let xs = bv p
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throw $ "Variable captured by its own definition: " <> x
-   wellFormedExpr λ γ e
+   wellFormedExpr γ e
    pure (Assigns (constMap true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e)))
-wellFormed λ γ (S.DefRec ds) = do
+wellFormed γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
-   let γ' = γ `overrideCtx` constMap true fs
+   let γ' = γ `extendStatuses` constMap true fs
    ds' <- traverse
       ( \(x × S.Clause _ (ps × s)) -> do
            let xs = unions (bv <$> ps)
            let ys = assigns s \\ xs
-           let γ'' = γ' `overrideCtx` constMap true xs `overrideCtx` constMap false ys
-           r × s' <- wellFormed λ γ'' s
+           let γ'' = γ' `extendStatuses` constMap true xs `extendStatuses` constMap false ys
+           r × s' <- wellFormed γ'' s
            pure (x × S.Clause r (ps × s'))
       )
       ds
    pure (Assigns (constMap true fs) × S.DefRec ds')
-wellFormed λ γ (S.Seq s1 s2) = do
-   r1 × s1' <- wellFormed λ γ s1
+wellFormed γ (S.Seq s1 s2) = do
+   r1 × s1' <- wellFormed γ s1
    case r1 of
       Returns -> throw "Unreachable statement"
       Assigns δ -> do
          for_ (Set.toUnfoldable (captures s1 `Set.intersection` assigns s2) :: Array Var) \x ->
             throw $ "Captured variable reassigned: " <> x
-         r2 × s2' <- wellFormed λ (γ `overrideCtx` δ) s2
+         r2 × s2' <- wellFormed (γ `extendStatuses` δ) s2
          pure (overrideRes r1 r2 × S.Seq s1' s2')
-wellFormed λ γ (S.If es elseBranch) = do
+wellFormed γ (S.If es elseBranch) = do
    es' <- traverse
       ( \(e × s) -> do
-           wellFormedExpr λ γ e
-           r × s' <- wellFormed λ γ s
+           wellFormedExpr γ e
+           r × s' <- wellFormed γ s
            pure (r × ((Assigns Map.empty <$ e) × s'))
       )
       es
    rElse × elseBranch' <- case elseBranch of
-      Just s -> map Just <$> wellFormed λ γ s
+      Just s -> map Just <$> wellFormed γ s
       Nothing -> pure (Assigns Map.empty × Nothing)
    pure (foldl1 mergeRes (NEL.cons rElse (fst <$> es')) × S.If (snd <$> es') elseBranch')
-wellFormed λ γ (S.Match e ps) = do
-   wellFormedExpr λ γ e
+wellFormed γ (S.Match e ps) = do
+   wellFormedExpr γ e
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
-           r × s' <- wellFormed λ (γ `overrideCtx` constMap true xs) s
+           r × s' <- wellFormed (γ `extendStatuses` constMap true xs) s
            pure (overrideRes (Assigns (constMap true xs)) r × (p × s'))
       )
       ps
@@ -181,12 +182,12 @@ wellFormed λ γ (S.Match e ps) = do
    rFall = case fst (NEL.last ps) of
       S.PVar _ -> Returns
       _ -> Assigns Map.empty
-wellFormed λ _ (S.Dataclass c b xs) = do
+wellFormed γ (S.Dataclass c b xs) = do
    when (length (nub xs) /= length xs) $ throw $ "Duplicate field names in class: " <> c
    case b of
       Nothing -> pure unit
       Just base -> do
-         inherited <- fields λ base
+         inherited <- fields (classesOf γ) base
          let clash = Set.intersection (Set.fromFoldable xs) (Set.fromFoldable inherited)
          when (not Set.isEmpty clash)
             $ throw
@@ -194,13 +195,13 @@ wellFormed λ _ (S.Dataclass c b xs) = do
                  <> show (Set.toUnfoldable clash :: List Var)
    pure (Assigns Map.empty × S.Dataclass c b xs)
 
-wellFormedExpr :: forall m a. MonadError Error m => ClassCtx -> Ctx -> S.Expr a -> m Unit
-wellFormedExpr λ γ e = do
+wellFormedExpr :: forall m a. MonadError Error m => Cxt -> S.Expr a -> m Unit
+wellFormedExpr γ e = do
    for_ (fv e) \x -> case Map.lookup x γ of
-      Just true -> pure unit
-      Just false -> throw $ "Not definitely assigned: " <> x
+      Just (Status false) -> throw $ "Not definitely assigned: " <> x
       Nothing -> throw $ "Unbound name: " <> x
-   constrArities λ e
+      _ -> pure unit -- Status true, or a class/module name (unconditionally in scope)
+   constrArities (classesOf γ) e
 
 constrArities :: forall m a. MonadError Error m => ClassCtx -> S.Expr a -> m Unit
 constrArities λ = go

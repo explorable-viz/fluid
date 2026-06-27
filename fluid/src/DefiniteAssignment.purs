@@ -31,6 +31,16 @@ type ClassEntry =
 
 type ClassCtx = Map Var ClassEntry
 
+-- spec context entry θ (Definition 1).
+data Entry
+   = Status Boolean -- a ∈ 𝔹 (definite-assignment status)
+   | Class ClassEntry -- ⟨q, x⃗, c⟩
+   | Module String -- q (module reference; populated by imports)
+
+-- spec context Γ. (Ctx above is the status-only definite-assignment delta Δ,
+-- carried as the AST annotation; it remains separate from Γ for now.)
+type Cxt = Map Var Entry
+
 class HasClassCtx m where
    askClassCtx :: m ClassCtx
 
@@ -58,6 +68,16 @@ mergeRes :: TyResult Ctx -> TyResult Ctx -> TyResult Ctx
 mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
+
+-- Class entries of Γ, as a ClassCtx (for the DataType-derived lookups).
+classesOf :: Cxt -> ClassCtx
+classesOf = Map.mapMaybe case _ of
+   Class ce -> Just ce
+   _ -> Nothing
+
+-- Override Γ with definite-assignment statuses δ (δ wins).
+extendStatuses :: Cxt -> Ctx -> Cxt
+extendStatuses γ δ = Map.union (Status <$> δ) γ
 
 -- Inherited then own.
 fields :: forall m. MonadError Error m => ClassCtx -> Var -> m (List Var)
