@@ -26,17 +26,17 @@ MultiView([
     stackedBars=countryData,
     legend=True
   ),
-  LineChart({
-    tickLabels: { x: Default, y: Default },
-    size: { width: 330, height: 285 },
-    caption: "Renewables output of USA relative to China",
-    plots: [
-     LinePlot({
-       name: energyType,
-       points: zip_with(lambda p1, p2: { x: p1.x, y: p1.y / p2.y }, usa, china)
-     })
+  LineChart(
+    tickLabels={ x: Default, y: Default },
+    size={ width: 330, height: 285 },
+    caption="Renewables output of USA relative to China",
+    plots=[
+     LinePlot(
+       name=energyType,
+       points=zip_with(lambda p1, p2: { x: p1.x, y: p1.y / p2.y }, usa, china)
+     )
      for energyType in ["Bio", "Hydro", "Solar", "Wind"]
      for (usa, china) in [(series(energyType, "USA"), series(energyType, "China"))]
    ]
- })
+ )
 ])

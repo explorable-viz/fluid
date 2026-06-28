@@ -9,7 +9,7 @@ import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cJust, f_points, f_segments, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cJust, f_segments, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely, error, (×))
@@ -62,10 +62,10 @@ multiViewEntry :: Int -> SelSetter Val Val
 multiViewEntry n = listElement n >>> multiView
 
 lineChart :: SelSetter Val Val
-lineChart = constrArg cLineChart 0
+lineChart = constrArg cLineChart 3
 
 linePoint :: Int -> SelSetter Val Val
-linePoint i = listElement i >>> dictVal f_points >>> constrArg cLinePlot 0
+linePoint i = listElement i >>> constrArg cLinePlot 1
 
 barChart :: SelSetter Val Val
 barChart = constrArg cBarChart 3

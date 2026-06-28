@@ -22,7 +22,7 @@ import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_name, f_plots, f_points, f_segments, f_size, f_tickLabels, f_width, f_x, f_y, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_height, f_segments, f_width, f_x, f_y, f_z)
 import Dict (Dict)
 import Link (Link(..))
 import Primitive (boolean, int, string, typeError)
@@ -48,7 +48,6 @@ view options title v@(Val α _ u') = case u' of
    Str str -> pack (Text (str × α))
    Constr c (u : Nil)
       | c == cText -> pack (from u :: Text)
-      | c == cLineChart -> pack (dict from u :: LineChart)
       | c == cMultiView -> pack (MultiView (view options "" <$> from u))
       | c == cParagraph -> pack (Paragraph (view options "" <$> from u))
    Constr c (_ : _ : Nil)
@@ -57,6 +56,7 @@ view options title v@(Val α _ u') = case u' of
    Constr c _
       | c == cBarChart -> pack (from v :: BarChart)
       | c == cScatterPlot -> pack (from v :: ScatterPlot)
+      | c == cLineChart -> pack (from v :: LineChart)
       | c == cNil || c == cCons ->
            if tableView then
               let
@@ -111,7 +111,7 @@ instance Reflect (Val (SelStates 𝕊)) BarChart where
          , stackedBars: dict from <$> from stackedBars
          , legend: P.unpack boolean legend
          }
-      _ -> typeError u "BarChart: expected caption, size, tickLabels, stackedBars, legend"
+      _ -> typeError u "BarChart"
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
    from r = StackedBar
@@ -126,22 +126,23 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) Segment where
       , z: get_intOrNumber f_z r
       }
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LinePlot where
-   from r = LinePlot
-      { name: P.unpack string (snd (get f_name r))
-      , points: dict from <$> from (snd (get f_points r))
-      }
-
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LineChart where
-   from r = LineChart
-      { size: dict from (snd (get f_size r))
-      , tickLabels: dict from (snd (get f_tickLabels r))
-      , caption: P.unpack string (snd (get f_caption r))
-      , plots: from <$> (from (snd (get f_plots r)) :: Array (Val (SelStates 𝕊))) :: Array LinePlot
-      }
+instance Reflect (Val (SelStates 𝕊)) LineChart where
+   from (Val _ _ u) = case u of
+      Constr c (size : tickLabels : caption : plots : Nil) | c == cLineChart -> LineChart
+         { size: dict from size
+         , tickLabels: dict from tickLabels
+         , caption: P.unpack string caption
+         , plots: from <$> (from plots :: Array (Val (SelStates 𝕊)))
+         }
+      _ -> typeError u "LineChart"
 
 instance Reflect (Val (SelStates 𝕊)) LinePlot where
-   from (Val _ _ (Constr c (u : Nil))) | c == cLinePlot = dict from u
+   from (Val _ _ u) = case u of
+      Constr c (name : points : Nil) | c == cLinePlot -> LinePlot
+         { name: P.unpack string name
+         , points: dict from <$> from points
+         }
+      _ -> typeError u "LinePlot"
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Number) where
    from r = Point
@@ -168,7 +169,7 @@ instance Reflect (Val (SelStates 𝕊)) ScatterPlot where
          , points: dict from <$> from points
          , labels: dict from labels
          }
-      _ -> typeError u "ScatterPlot: expected caption, points, labels"
+      _ -> typeError u "ScatterPlot"
 
 instance Reflect (Val (SelStates 𝕊)) Text where
    from (Val α _ v) = case v of

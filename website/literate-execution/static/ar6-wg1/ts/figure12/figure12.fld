@@ -8,11 +8,11 @@ temps = [ "1.5", "1.75", "2.0", "2.25", "2.5", "2.75", "3.0", "3.25",
 
 points = [ { x: float(temp), y: hydroData_agg.pr.std.extra_annual[ temp ] } for temp in temps ]
 
-LineChart({
-  tickLabels: { x: Default, y: Default },
-  size: { width: 530, height: 285 },
-  caption: "Hydrological change over extratropical land",
-  plots: [
-    LinePlot({ name: "Precipitation annual mean", points: points })
+LineChart(
+  tickLabels={ x: Default, y: Default },
+  size={ width: 530, height: 285 },
+  caption="Hydrological change over extratropical land",
+  plots=[
+    LinePlot(name="Precipitation annual mean", points=points)
   ]
-})
+)

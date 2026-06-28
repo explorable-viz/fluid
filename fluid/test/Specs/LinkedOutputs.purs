@@ -5,7 +5,7 @@ import Prelude
 import App.Util (SelectionType(..))
 import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd, (>.>), select)
 import Data.Maybe (Maybe(..))
-import DataType (f_plots, f_y)
+import DataType (f_y)
 import File (Folder(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
 import Util ((×))
@@ -24,13 +24,10 @@ linkedOutputs_spec1 =
         multiViewEntry 0 (barChart (barSegment 1 0 select))
            >.> multiViewEntry 1
               ( lineChart
-                   ( dictVal f_plots
-                        ( listElement 0 (linePoint 2 (dictVal f_y select))
-                             >.> listElement 1 (linePoint 2 (dictVal f_y select))
-                             >.> listElement 2 (linePoint 2 (dictVal f_y select))
-                             >.> listElement 3 (linePoint 2 (dictVal f_y select))
-
-                        )
+                   ( listElement 0 (linePoint 2 (dictVal f_y select))
+                        >.> listElement 1 (linePoint 2 (dictVal f_y select))
+                        >.> listElement 2 (linePoint 2 (dictVal f_y select))
+                        >.> listElement 3 (linePoint 2 (dictVal f_y select))
                    )
               )
    , file: "slicing/linked_outputs/bar_chart_line_chart.fld"

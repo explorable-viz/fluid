@@ -12,9 +12,10 @@ class BarChart(View):
 
 @dataclass
 class LineChart(View):
-  config: Any  # { size: { width: Int, height: Int },
-               #   tickLabels: { x: Orientation, y: Orientation },
-               #   caption: Str, plots: List LinePlot }
+  size: Any  # { width: Int, height: Int }
+  tickLabels: Any  # { x: Orientation, y: Orientation }
+  caption: Any  # Str
+  plots: Any  # List LinePlot
 
 @dataclass
 class MultiView(View):
@@ -32,7 +33,8 @@ class ScatterPlot(View):
 
 @dataclass
 class LinePlot:
-  config: Any  # { name: Str, points: List { x: Float, y: Float } }
+  name: Any  # Str
+  points: Any  # List { x: Float, y: Float }
 
 @dataclass
 class Orientation:
