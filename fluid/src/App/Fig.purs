@@ -227,7 +227,7 @@ loadFig options@{ inputs, linking } fluidSrc = do
       unselected = { γ: botOf γα, v: botOf outα } :: IO 𝔹
 
       inertBwd = vertices g0 \\ (vertices $ snd $ gcBwd $ topOf outα)
-      inertFwd = vertices $ snd $ graphgc.fwd $ focus.fwd unselected.γ
+      inertFwd = vertices $ snd $ graphgc_op.bwd $ focus.fwd unselected.γ
 
       inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
       inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
