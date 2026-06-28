@@ -47,6 +47,7 @@ data Expr a
    | Float a Number
    | Str a String
    | Constr a Ctr (List (Expr a))
+   | ConstrKw a Ctr (List (Expr a)) (List (Bind (Expr a))) -- positional then keyword
    | Dictionary a (List (DictEntry a × Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (LambdaClause a)
@@ -250,6 +251,10 @@ exprFwd (Str α s) =
    pure $ E.Str α s
 exprFwd (Constr α c ss) =
    E.Constr α c <$> traverse desug ss
+exprFwd (ConstrKw α c es xes) = do
+   λ <- askClassCtx
+   reordered <- reorderKw λ c (length es) xes
+   E.Constr α c <$> traverse desug (es <> reordered)
 exprFwd (Dictionary α sss) = do
    let ks × ss = unzip sss
    ks' <- traverse desug ks
@@ -388,27 +393,27 @@ popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
 popRecordFwd _ Nil = pure Nil
 popRecordFwd _ _ = throw (shapeMismatch unit)
 
+reorderKw :: forall m b. MonadError Error m => ClassCtx -> Ctr -> Int -> List (Bind b) -> m (List b)
+reorderKw λ c n xbs = do
+   fs <- DA.fields λ c
+   let expected = Set.fromFoldable (drop n fs)
+   let provided = Set.fromFoldable (xbs <#> fst)
+   when (expected /= provided) $ throw $
+      "Class " <> c <> " keyword fields mismatch: expected " <> show (S.toUnfoldable expected :: List Var)
+         <> ", got "
+         <> show (S.toUnfoldable provided :: List Var)
+   pure $ drop n fs <#> \f ->
+      unsafePartial $ case find (\(k ↦ _) -> k == f) xbs of
+         Just (_ ↦ b) -> b
+
 expandKw :: forall m. HasClassCtx m => MonadError Error m => Pattern -> m Pattern
 expandKw p = do
    λ <- askClassCtx
    go λ p
    where
    go λ (PConstrKw c ps xps) = do
-      fs <- DA.fields λ c
-      let n = length ps
-      let expected = Set.fromFoldable (drop n fs)
-      let provided = Set.fromFoldable (xps <#> fst)
-      when (expected /= provided) $ throw $
-         "Class " <> c <> " keyword fields mismatch: expected " <> show (S.toUnfoldable expected :: List Var)
-            <> ", got "
-            <> show (S.toUnfoldable provided :: List Var)
-      ps' <- traverse (go λ) ps
-      let
-         reordered = drop n fs <#> \f ->
-            unsafePartial $ case find (\(k ↦ _) -> k == f) xps of
-               Just (_ ↦ pat) -> pat
-      reordered' <- traverse (go λ) reordered
-      pure (PConstr c (ps' <> reordered'))
+      reordered <- reorderKw λ c (length ps) xps
+      PConstr c <$> traverse (go λ) (ps <> reordered)
    go λ (PConstr c ps) = PConstr c <$> traverse (go λ) ps
    go λ (PRecord xps) = PRecord <$> traverse (traverse (go λ)) xps
    go λ (PListNonEmpty p' l) = PListNonEmpty <$> go λ p' <*> goRest λ l
@@ -625,6 +630,7 @@ instance FV (Expr a) where
    fv (Float _ _) = Set.empty
    fv (Str _ _) = Set.empty
    fv (Constr _ _ es) = Set.unions (fv <$> es)
+   fv (ConstrKw _ _ es xes) = Set.unions (fv <$> es) ∪ Set.unions ((fv <<< snd) <$> xes)
    fv (Dictionary _ entries) = Set.unions ((\(k × v) -> fv k ∪ fv v) <$> entries)
    fv (Matrix _ body (x × y) source) = (fv body \\ (Set.singleton x ∪ Set.singleton y)) ∪ fv source
    fv (Lambda lc) = fv lc

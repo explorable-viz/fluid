@@ -276,13 +276,38 @@ expr = context "expr" $ ternary <?> "expression"
             app :: Parser (Raw Expr)
             app = do
                delim '('
-               ps <- commas ternary
+               e' <- case e of
+                  Constr a c es -> do
+                     args <- commas constrArg
+                     pure $ case takeRights args of
+                        Nil -> Constr a c (es <> takeLefts args)
+                        kws -> ConstrKw a c (es <> takeLefts args) kws
+                  _ -> do
+                     ps <- commas ternary
+                     pure $ case ps of
+                        Nil -> App e (Constr unit cNoArgs Nil)
+                        x : xs -> foldl App e (x : xs)
                close ')'
-               case e of
-                  (Constr a c es) -> chain (Constr a c (es <> ps <> Nil))
-                  _ -> case ps of
-                     Nil -> chain (App e (Constr unit cNoArgs Nil))
-                     x : xs -> chain (foldl App e (x : xs))
+               chain e'
+               where
+               constrArg :: Parser (Raw Expr + Bind (Raw Expr))
+               constrArg = defer \_ -> (Right <$> try kwArg) <|> (Left <$> ternary)
+
+               kwArg :: Parser (Bind (Raw Expr))
+               kwArg = defer \_ -> do
+                  x <- variable
+                  delim '='
+                  v <- ternary
+                  pure (x ↦ v)
+
+               takeLefts :: forall p q. List (p + q) -> List p
+               takeLefts (Left x : xs) = x : takeLefts xs
+               takeLefts _ = Nil
+
+               takeRights :: forall p q. List (p + q) -> List q
+               takeRights (Right x : xs) = x : takeRights xs
+               takeRights (Left _ : xs) = takeRights xs
+               takeRights Nil = Nil
 
       simple :: Parser (Raw Expr)
       simple = context "simple" $

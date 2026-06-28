@@ -94,6 +94,7 @@ capturesE (S.Int _ _) = Set.empty
 capturesE (S.Float _ _) = Set.empty
 capturesE (S.Str _ _) = Set.empty
 capturesE (S.Constr _ _ es) = unions (capturesE <$> es)
+capturesE (S.ConstrKw _ _ es xes) = unions (capturesE <$> es) ∪ unions ((capturesE <<< snd) <$> xes)
 capturesE (S.Dictionary _ es) =
    unions ((\(k × v) -> capturesEntry k ∪ capturesE v) <$> es)
    where
@@ -221,6 +222,7 @@ constrArities λ = go
          $ throw
          $ c <> " expects " <> show n <> " argument(s); got " <> show (length es)
       for_ es go
+   go (S.ConstrKw _ _ es xes) = for_ es go *> for_ (xes <#> snd) go
    go (S.App e e') = go e *> go e'
    go (S.BinaryApp e _ e') = go e *> go e'
    go (S.UnaryPrefixApp _ e) = go e

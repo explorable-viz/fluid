@@ -1,0 +1,6 @@
+@dataclass
+class Coord:
+  x: Any
+  y: Any
+
+Coord(1, z=2)
