@@ -305,7 +305,7 @@ def line_chart(with_axes, colours, x_start, data):
 
     return Group([
       Polyline(ps, colour, 1),
-      Polymarkers(ps, repeat(length(ps), Circle(0, 0, marker_radius, colour)))
+      Polymarkers(ps, repeat(length(ps), Circle(x=0, y=0, radius=marker_radius, fill=colour)))
     ])
 
   # List GraphicsElement
