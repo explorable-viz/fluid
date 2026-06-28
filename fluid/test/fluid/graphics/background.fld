@@ -1,7 +1,7 @@
 import lib.graphics
 import dataset.renewables_restricted
 
-rect = Rect(0, 0, 1, 3, "red")
+rect = Rect(x=0, y=0, width=1, height=3, fill="red")
 g = Group([
     Viewport(0, 0, 1, 3, "white", 0, Scale(1, 1), Translate(0, 0), rect)
   ])

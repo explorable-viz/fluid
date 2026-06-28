@@ -130,7 +130,7 @@ def get_y(g):
 def set_x(x, Group(gs)):
   return error("Group has immutable coordinates")
 def set_x(x, Rect(_, y, w, h, fill)):
-  return Rect(x, y, w, h, fill)
+  return Rect(x=x, y=y, width=w, height=h, fill=fill)
 def set_x(x, String(_, y, str, anchor, baseline)):
   return String(x, y, str, anchor, baseline)
 def set_x(x, Viewport(_, y, w, h, fill, margin, scale, translate, g)):
@@ -203,7 +203,7 @@ colours2 = [
 # available area, possibly to zero, at which point nothing will be rendered.
 # Float -> GraphicsElement -> GraphicsElement
 def scale_to_width(w, Rect(x, y, _, h, fill)):
-  return Rect(x, y, w, h, fill)
+  return Rect(x=x, y=y, width=w, height=h, fill=fill)
 def scale_to_width(w, Viewport(x, y, w0, h, fill, margin, Scale(x_scale, y_scale), translate, g)):
   scale = Scale((x_scale * w) / w0, y_scale)
   return Viewport(x, y, w, h, fill, margin, scale, translate, g)
@@ -334,7 +334,7 @@ def categorical_chart(plot_value, with_axes, colours, sep, data):
 
 # Colours -> List a -> GraphicsElement
 def rects(colours, ns):
-  return zip_with(lambda colour, n: Rect(0, 0, 1, n, colour), colours, ns)
+  return zip_with(lambda colour, n: Rect(x=0, y=0, width=1, height=n, fill=colour), colours, ns)
 
 # First component of data (categorical value) currently ignored; values just mapped positionally to colors.
 # Can we use Group instead of Viewport here?
@@ -343,7 +343,7 @@ def stacked_bar(colours, ns):
   heights = map(snd, ns)
   subtotals = scanl1((+), 0, heights)
   dims = zip(0 :| subtotals, heights)
-  rects = map(lambda ((y, height), colour): Rect(0, y, 1, height, colour), zip(dims, colours))
+  rects = map(lambda ((y, height), colour): Rect(x=0, y=y, width=1, height=height, fill=colour), zip(dims, colours))
 
   return Viewport(0, 0, 1, last(subtotals), "none", 0, Scale(1, 1), Translate(0, 0), Group(rects))
 
