@@ -9,7 +9,6 @@ type ModuleName = String
 
 type ModuleCxt a =
    { roots :: List ModuleName
-   , topsorted :: List ModuleName
    , graph :: DependencyGraph
    , modules :: Modules a
    , classCtx :: ClassCtx

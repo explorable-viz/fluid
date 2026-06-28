@@ -5,8 +5,7 @@ import Prelude
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
 import Data.Foldable (foldM)
-import Data.List (List(..), reverse, (:))
-import Data.List as List
+import Data.List (List(..), (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -30,7 +29,7 @@ import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasClassCtx, ClassCtx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
-import Util (type (×), error, throwLeft, withMsg, (×))
+import Util (type (×), throwLeft, withMsg, (×))
 import Util.Map (constMap, keys, restrict)
 import Util.Set ((∪))
 import Val (Env)
@@ -87,7 +86,6 @@ prepConfig primitives fluidSrc = do
       let
          moduleCxt =
             { roots: sCxt.roots
-            , topsorted: sCxt.topsorted
             , graph: sCxt.graph
             , modules
             , classCtx: moduleClassCtx
@@ -110,7 +108,6 @@ prepConfig primitives fluidSrc = do
 -- Desugaring deferred to prepConfig so it runs under a populated ClassCtx.
 type SModuleCxt =
    { roots :: List ModuleName
-   , topsorted :: List ModuleName
    , graph :: DependencyGraph
    , modules :: Map ModuleName (Raw S.Module)
    , classCtx :: ClassCtx
@@ -126,7 +123,7 @@ parseModuleGraph
    -> m SModuleCxt
 parseModuleGraph roots = do
    graph × modules × classCtx <- collectModules Set.empty Map.empty Map.empty Map.empty roots
-   pure $ { roots, topsorted: topsort graph, graph, modules, classCtx }
+   pure $ { roots, graph, modules, classCtx }
 
    where
 
@@ -164,20 +161,3 @@ parseModuleGraph roots = do
             else if path == prelude then builtins : imports
             else builtins : prelude : imports
       pure $ mod × λ × imports'
-
-   topsort :: DependencyGraph -> List ModuleName
-   topsort graph = go (List.fromFoldable $ Map.keys graph) Nil
-      where
-      go :: List ModuleName -> List ModuleName -> List ModuleName
-      go Nil result = reverse result
-      go remaining result =
-         -- should always be resolvable if no cycles
-         case List.find resolved remaining of
-            Nothing -> error "Modules contain circular imports"
-            Just next -> go (List.delete next remaining) (next : result)
-         where
-         -- no dependencies or dependencies all resolved
-         resolved :: ModuleName -> Boolean
-         resolved mod = case Map.lookup mod graph of
-            Nothing -> true
-            Just deps -> List.all (\dep -> not (List.elem dep remaining)) deps

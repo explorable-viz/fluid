@@ -297,27 +297,31 @@ eval_primitives
    => Env Vertex
    -> ModuleCxt Vertex
    -> m (Env Vertex)
-eval_primitives primitives { roots, topsorted, graph, modules } = do
-   γs <- evalAll primitives topsorted
-   let γs' = roots <#> \dep -> definitely ("has env") $ Map.lookup dep γs
+eval_primitives primitives { roots, graph, modules } = do
+   γs <- foldM go Map.empty roots
+   let γs' = roots <#> \dep -> definitely "has env" $ Map.lookup dep γs
    let γ = foldl (<+>) primitives γs'
    pure γ
 
    where
-   evalAll :: Env Vertex -> List ModuleName -> m (Map ModuleName (Env Vertex))
-   evalAll γ mods = foldM evalOne Map.empty mods
+   -- Evaluate each reachable module once, on demand from the roots, under
+   -- `primitives + its imports' exports`. Mirrors `checkModules`; the graph is
+   -- acyclic so this terminates. Memoised on each module's exports.
+   go :: Map ModuleName (Env Vertex) -> ModuleName -> m (Map ModuleName (Env Vertex))
+   go memo q
+      | Map.member q memo = pure memo
+      | otherwise = do
+           memo' × γ <- foldM step (memo × primitives) (fromMaybe Nil (Map.lookup q graph))
+           case Map.lookup q modules of
+              Nothing -> pure (Map.insert q empty memo')
+              Just defs' -> do
+                 γ' <- eval_module γ defs' empty
+                 pure (Map.insert q γ' memo')
 
-      where
-      evalOne :: Map ModuleName (Env Vertex) -> ModuleName -> m (Map ModuleName (Env Vertex))
-      evalOne γs name = do
-         let
-            (defs' × γs') = definitely "deps evaluated" do
-               deps <- Map.lookup name graph
-               γs' <- traverse (\dep -> Map.lookup dep γs) deps
-               defs' <- Map.lookup name modules
-               pure (defs' × γs')
-         γ' <- eval_module (foldl (<+>) γ γs') defs' empty
-         pure $ Map.insert name γ' γs
+   step :: Map ModuleName (Env Vertex) × Env Vertex -> ModuleName -> m (Map ModuleName (Env Vertex) × Env Vertex)
+   step (memo × acc) i = do
+      memo' <- go memo i
+      pure (memo' × (acc <+> definitely "import evaluated" (Map.lookup i memo')))
 
 type GraphEval g s t =
    { g :: g
