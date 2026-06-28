@@ -2,8 +2,11 @@ module Test.Util where
 
 import Prelude hiding (absurd, compare)
 
+import App.Fig (unprojStmt)
 import App.Util (Selector, getPersistent, unselected)
 import App.Util.Selector (sel𝔹)
+import Data.Array (null) as Array
+import Data.Set as Set
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Reader (class MonadReader)
 import Control.Monad.Writer.Class (class MonadWriter)
@@ -18,7 +21,7 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (GraphConfig, graphEval, graphGC, toGC, withOp)
 import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
-import GaloisConnection (GaloisConnection(..), dual)
+import GaloisConnection (GaloisConnection(..), deMorgan, dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹, (≽))
 import Module (prepConfig)
 import Parse (parseProgram)
@@ -29,7 +32,8 @@ import SExpr (Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, throwLeft, withMsg, (×))
-import Val (class HasModuleStore, class Ann, Env, EnvStmt(..), Val)
+import Util.Map (keys)
+import Val (class HasModuleStore, class Ann, Env, EnvStmt(..), Val, unrestrictGC)
 
 type TestSuite m = Array (String × m Unit)
 
@@ -37,6 +41,7 @@ type SelectionSpec =
    { δv :: Selector Val
    , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
    , bwd_expect :: Maybe (Selector Env) -- Nothing for tests that don't perturb output
+   , inputs :: Array String -- data inputs to slice forward through; [] = all (no restriction)
    }
 
 fluidSrcPaths :: Array Folder
@@ -84,11 +89,15 @@ testProperties
    -> GraphConfig
    -> SelectionSpec
    -> AffError m Unit
-testProperties _ s' gconfig { δv, bwd_expect, fwd_expect } = do
+testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig s'
    let GC evalG = graphGC graphed # toGC
+   let GC evalG_op = withOp graphed # graphGC # toGC
+   let inα_raw@(EnvStmt γ_raw _) = erase graphed.inα
+   let inputs' = if Array.null inputs then keys γ_raw else Set.fromFoldable inputs
+   let GC focus = unrestrictGC γ_raw inputs' >>> unprojStmt inα_raw
 
    let v = map (const top) outα :: Val 𝔹
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
@@ -97,7 +106,7 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect } = do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
-   out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvStmt in_γ in_s))
+   out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG_op.bwd (deMorgan focus.fwd (focus.bwd in0)))
 
    let in_top = EnvStmt (topOf in_γ) (topOf in_s)
 
@@ -118,7 +127,6 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect } = do
       unwrap >>> (_ == topOf v) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top)
 
    let GC evalG_dual = dual (GC evalG)
-   let GC evalG_op = withOp graphed # graphGC # toGC
 
    out2 <- graphBenchmark benchNames.demBy_G_direct \_ -> pure (evalG_op.bwd in0)
    out3 <- graphBenchmark benchNames.demBy_G_suff_dual \_ -> pure (evalG_dual.bwd in0)

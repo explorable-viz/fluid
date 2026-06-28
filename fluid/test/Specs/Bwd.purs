@@ -12,146 +12,175 @@ bwd_cases =
    [ { file: "add.fld"
      , bwd_expect: envVal "a" select >.> envVal "b" select >.> envVal "c" select
      , δv: select
+     , inputs: []
      , fwd_expect: "⸨8⸩"
      }
    , { file: "divide.fld"
      , bwd_expect: envVal "a" select >.> envVal "b" select
      , δv: select
+     , inputs: []
      , fwd_expect: "⸨40.22222222222222⸩"
      }
    , { file: "multiply.fld"
      , bwd_expect: envVal "b" select
      , δv: select
+     , inputs: []
      , fwd_expect: "⸨0⸩"
      }
    , { file: "nth.fld"
      , bwd_expect: envVal "xs" (listElement 1 select)
      , δv: select
+     , inputs: []
      , fwd_expect: "⸨4⸩"
      }
    , { file: "length.fld"
      , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select' >.> listCell 2 select' >.> listCell 3 select' >.> listCell 4 select' >.> listCell 5 select')
      , δv: select
+     , inputs: []
      , fwd_expect: "⸨5⸩"
      }
    , { file: "output_not_source.fld"
      , bwd_expect: envVal "x" select >.> envVal "n" select
      , δv: snd select
+     , inputs: []
      , fwd_expect: "(⸨3⸩, ⸨True⸩)"
      }
    , { file: "array/lookup.fld"
      , bwd_expect: envVal "xs" (listElement 2 (listElement 1 select))
      , δv: select
+     , inputs: []
      , fwd_expect: "⸨14⸩"
      }
    , { file: "array/dims.fld"
      , bwd_expect: envVal "x" select >.> envVal "y" select
      , δv: select
-     , fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩"
+     , inputs: [ "x", "y" ]
+     , fwd_expect: "(⸨3⸩, ⸨3⸩)"
      }
    , { file: "filter.fld"
      , bwd_expect: envVal "n" select >.> envVal "xs" (listElement 0 select)
      , δv: listCell 0 select'
-     , fwd_expect: "⸨⸨8⸩ :| 7 :| []⸩"
+     , inputs: [ "n", "xs" ]
+     , fwd_expect: "⸨⸨8⸩ :| ⸨7 :| []⸩⸩"
      }
    , { file: "list_comp.fld"
      , bwd_expect: envVal "data" (listElement 1 (dictVal "energyType" select)) >.> envVal "types" (listElement 1 select)
      , δv: listCell 1 select'
+     , inputs: [ "data", "types" ]
      , fwd_expect: "6.2 :| ⸨260 :| 19.9 :| 91 :| []⸩"
      }
    , { file: "list_comp.fld"
      , bwd_expect: envVal "data" (listElement 2 (dictVal "energyType" select)) >.> envVal "types" (listElement 2 select)
      , δv: listCell 2 select'
+     , inputs: [ "data", "types" ]
      , fwd_expect: "6.2 :| 260 :| ⸨19.9 :| 91 :| []⸩"
      }
    , { file: "map.fld"
      , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select')
      , δv: listCell 0 select' >.> listCell 1 select'
+     , inputs: [ "xs" ]
      , fwd_expect: "⸨5 :| ⸨6 :| []⸩⸩"
      }
    , { file: "intersperse.fld"
      , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select')
      , δv: listCell 1 select'
-     , fwd_expect: "1 :| ⸨0 :| 2 :| 0 :| 3 :| []⸩"
+     , inputs: [ "xs" ]
+     , fwd_expect: "⸨1 :| ⸨0 :| ⸨2 :| ⸨0 :| ⸨3 :| ⸨[]⸩⸩⸩⸩⸩⸩"
      }
    , { file: "intersperse.fld"
      , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 1 select' >.> listCell 2 select')
      , δv: listCell 2 select'
-     , fwd_expect: "⸨1 :| 0 :| ⸨2 :| 0 :| 3 :| []⸩⸩"
+     , inputs: [ "xs" ]
+     , fwd_expect: "⸨1 :| ⸨0 :| ⸨2 :| ⸨0 :| ⸨3 :| ⸨[]⸩⸩⸩⸩⸩⸩"
      }
    , { file: "zeros.fld"
      , bwd_expect: envVal "xs" (listCell 0 select' >.> listCell 2 select')
      , δv: listCell 0 select' >.> listCell 2 select'
-     , fwd_expect: "⸨0 :| 0 :| ⸨[]⸩⸩"
+     , inputs: [ "xs" ]
+     , fwd_expect: "⸨⸨0⸩ :| 0 :| ⸨[]⸩⸩"
      }
    , { file: "zeros.fld"
      , bwd_expect: envVal "xs" (listCell 2 select')
      , δv: listCell 2 select'
+     , inputs: [ "xs" ]
      , fwd_expect: "0 :| 0 :| ⸨[]⸩"
      }
    , { file: "zip_with.fld"
      , bwd_expect: envVal "xs" (listElement 1 select) >.> envVal "ys" (listElement 1 select)
      , δv: listElement 1 select'
+     , inputs: []
      , fwd_expect: "13.0 :| ⸨25.0⸩ :| 41.0 :| []"
      }
    , { file: "section_5_example.fld"
      , bwd_expect: envVal "types" (listElement 0 select) >.> envVal "data" (listElement 1 (dictVal "energyType" select))
      , δv: listCell 0 select'
+     , inputs: [ "types", "data" ]
      , fwd_expect: "⸨88 :| 6 :| 4 :| []⸩"
      }
    , { file: "section_5_example.fld"
      , bwd_expect: envVal "data" (listElement 1 (dictVal "output" select) >.> listElement 2 (dictVal "output" select) >.> listElement 4 (dictVal "output" select))
      , δv: listElement 1 select
+     , inputs: [ "types", "data" ]
      , fwd_expect: "⸨88⸩ :| ⸨6⸩ :| ⸨4⸩ :| []"
      }
    , { file: "section_5_example.fld"
      , bwd_expect: envVal "types" (listElement 2 select) >.> envVal "data" (listElement 4 (dictVal "energyType" select))
      , δv: listCell 2 select'
+     , inputs: [ "types", "data" ]
      , fwd_expect: "88 :| 6 :| ⸨4 :| []⸩"
      }
    , { file: "dict/get.fld"
      , bwd_expect: envVal "d" (dictVal "ab" (dictVal "snd" select))
      , δv: select
+     , inputs: []
      , fwd_expect: "⸨0⸩"
      }
    , { file: "dict/create.fld"
      , bwd_expect: envVal "a_2" select >.> envVal "b" select
      , δv: dictKey "ab" select'
+     , inputs: []
      , fwd_expect: "{ a: 5, ⸨ab⸩: 6 }"
      }
    , { file: "dict/difference.fld"
      , bwd_expect: envVal "e" (dict select') >.> envVal "f" (dict select')
      , δv: dict select'
+     , inputs: []
      , fwd_expect: "⸨{ a: 5 }⸩"
      }
    , { file: "dict/disjoint_union.fld"
      , bwd_expect: envVal "d1" (dictKey "a" select') >.> envVal "d2" (dictVal "c" select)
      , δv: dictKey "a" select' >.> dictVal "c" select
+     , inputs: []
      , fwd_expect: "{ ⸨a⸩: 5, b: 6, c: ⸨7⸩ }"
      }
    , { file: "dict/foldl_with_index.fld"
      , bwd_expect: envVal "d" (dictVal "b" (listElement 0 select))
      , δv: select
+     , inputs: []
      , fwd_expect: "⸨0⸩"
      }
    , { file: "dict/intersection_with.fld"
      , bwd_expect: envVal "d1" (dictVal "b" select >.> dictVal "c" select) >.> envVal "d2" (dictVal "b" select >.> dictVal "c" select)
      , δv: dictVal "b" select >.> dictVal "c" select
+     , inputs: []
      , fwd_expect: "{ b: ⸨0⸩, c: ⸨20⸩ }"
      }
    , { file: "dict/map.fld"
      , bwd_expect: envVal "d" (dictVal "a" (listElement 0 select) >.> dictVal "b" (listElement 0 select))
      , δv: select
+     , inputs: []
      , fwd_expect: "⸨20⸩"
      }
    , { file: "dict/match.fld"
      , bwd_expect: envVal "n" select
      , δv: select
+     , inputs: []
      , fwd_expect: ""
      }
    , { file: "matrix_update.fld"
      , bwd_expect: envVal "pair" select
      , δv: matrixElement 1 1 select
+     , inputs: []
      , fwd_expect:
           """15, 13, 6, 9, 16,
 12, ⸨4000⸩, 15, 4, 13,
@@ -173,10 +202,11 @@ bwd_cases =
              >.> envVal "inputImage"
                 (matrixElement 0 0 select >.> matrixElement 0 1 select >.> matrixElement 1 0 select)
      , δv: matrixElement 0 0 select
+     , inputs: [ "inputImage" ]
      , fwd_expect:
-          """⸨0⸩, -1, 2, 0, -1,
-0, 3, -2, 3, -2,
--1, 1, -5, 0, 4,
+          """⸨0⸩, ⸨-1⸩, ⸨2⸩, 0, -1,
+⸨0⸩, ⸨3⸩, -2, 3, -2,
+⸨-1⸩, 1, -5, 0, 4,
 1, -1, 4, 0, -4,
 1, 0, -3, 2, 0"""
      }
@@ -194,12 +224,13 @@ bwd_cases =
                      >.> matrixElement 1 1 select
                 )
      , δv: matrixElement 0 0 select
+     , inputs: [ "inputImage" ]
      , fwd_expect:
-          """⸨5⸩, 4, 2, 5, 2,
-3, 1, 2, -1, -2,
-3, 0, 1, 0, -1,
-2, 1, -2, 0, 0,
-1, 0, -1, -1, -2"""
+          """⸨5⸩, ⸨4⸩, ⸨2⸩, ⸨5⸩, ⸨2⸩,
+⸨3⸩, ⸨1⸩, ⸨2⸩, -1, ⸨-2⸩,
+⸨3⸩, ⸨0⸩, ⸨1⸩, 0, ⸨-1⸩,
+⸨2⸩, 1, -2, 0, ⸨0⸩,
+⸨1⸩, ⸨0⸩, ⸨-1⸩, ⸨-1⸩, ⸨-2⸩"""
      }
    , { file: "convolution/gaussian.fld"
      , bwd_expect:
@@ -215,12 +246,13 @@ bwd_cases =
                      >.> matrixElement 1 1 select
                 )
      , δv: matrixElement 0 0 select
+     , inputs: [ "inputImage" ]
      , fwd_expect:
-          """⸨38⸩, 37, 28, 30, 38,
-38, 36, 46, 31, 34,
-37, 41, 54, 34, 20,
-21, 35, 31, 31, 42,
-13, 32, 35, 19, 26"""
+          """⸨38⸩, ⸨37⸩, ⸨28⸩, ⸨30⸩, ⸨38⸩,
+⸨38⸩, ⸨36⸩, ⸨46⸩, 31, ⸨34⸩,
+⸨37⸩, ⸨41⸩, ⸨54⸩, 34, ⸨20⸩,
+⸨21⸩, 35, 31, 31, ⸨42⸩,
+⸨13⸩, ⸨32⸩, ⸨35⸩, ⸨19⸩, ⸨26⸩"""
      }
    , { file: "matrix/matmul.fld"
      , bwd_expect:
@@ -229,11 +261,12 @@ bwd_cases =
              >.> envVal "rightMatrix"
                 (matrixElement 0 0 select >.> matrixElement 1 0 select >.> matrixElement 2 0 select)
      , δv: fst $ matrixElement 0 0 select
+     , inputs: [ "leftMatrix", "rightMatrix" ]
      , fwd_expect:
-          """(@doc(Paragraph("Intermediate" :| "matrix" :| [])) ⸨22⸩, 28,
-49, 64, @doc(Paragraph("Intermediate" :| "matrix" :| [])) 9, 12, 15,
-19, 26, 33,
-29, 40, 51)"""
+          """(@doc(Paragraph("Intermediate" :| "matrix" :| [])) ⸨22⸩, ⸨28⸩,
+⸨49⸩, 64, @doc(Paragraph("Intermediate" :| "matrix" :| [])) ⸨9⸩, ⸨12⸩, ⸨15⸩,
+⸨19⸩, ⸨26⸩, ⸨33⸩,
+⸨29⸩, ⸨40⸩, ⸨51⸩)"""
      }
    , { file: "dtw/compute_dtw.fld"
      , bwd_expect:
@@ -259,14 +292,16 @@ bwd_cases =
                 )
              >.> envVal "window" select
      , δv: listElement 1 select
-     , fwd_expect: "(0, 0) :| ⸨(⸨1⸩, ⸨1⸩)⸩ :| (1, 2) :| (2, 3) :| (3, 4) :| (4, 5) :| (4, 6) :| []"
+     , inputs: [ "seq1", "seq2" ]
+     , fwd_expect: "⸨⸨(⸨0⸩, ⸨0⸩)⸩ :| ⸨⸨(⸨1⸩, ⸨1⸩)⸩ :| ⸨⸨(⸨1⸩, ⸨2⸩)⸩ :| ⸨⸨(⸨2⸩, ⸨3⸩)⸩ :| ⸨⸨(⸨3⸩, ⸨4⸩)⸩ :| ⸨⸨(⸨4⸩, ⸨5⸩)⸩ :| ⸨⸨(⸨4⸩, ⸨6⸩)⸩ :| []⸩⸩⸩⸩⸩⸩⸩"
      }
    , { file: "dtw/average_series.fld"
      , bwd_expect:
           envVal "seq1" (listElement 1 select)
              >.> envVal "seq2" (listElement 2 select)
      , δv: listElement 2 select
-     , fwd_expect: "2.5 :| 0.5 :| ⸨0.5⸩ :| 2.5 :| 2.5 :| 1.0 :| 0.5 :| []"
+     , inputs: [ "seq1", "seq2" ]
+     , fwd_expect: "⸨2.5 :| ⸨⸨0.5⸩ :| ⸨⸨0.5⸩ :| ⸨2.5 :| ⸨2.5 :| ⸨1.0 :| 0.5 :| []⸩⸩⸩⸩⸩⸩"
      }
    , { file: "lookup.fld"
      , bwd_expect:
@@ -280,6 +315,7 @@ bwd_cases =
                   )
              )
      , δv: just select'
+     , inputs: []
      , fwd_expect: "⸨Just(\"Germany\")⸩"
      }
    , { file: "linked_outputs/bar_chart_line_chart.fld"
@@ -291,6 +327,7 @@ bwd_cases =
                   >.> listElement 31 (dictVal "output" select)
              )
      , δv: multiViewEntry 0 (barChart (barSegment 1 0 select))
+     , inputs: [ "renewables" ]
      , fwd_expect:
           """MultiView(BarChart("Total output by country", { height: 185, width: 275 }, {
   x: Default,
@@ -304,25 +341,28 @@ bwd_cases =
 }, { x: Default, y: Default }, "Output of USA relative to China", LinePlot("Bio", {
   x: 2013,
   y: 2.5483870967741935
-} :| { x: 2014, y: 1.61 } :| { x: 2015, y: 1.6213592233009706 } :| {
+} :| { x: 2014, y: 1.61 } :| { x: 2015, y: ⸨1.6213592233009706⸩ } :| {
   x: 2016,
   y: 1.4000000000000001
 } :| { x: 2017, y: 1.1208053691275166 } :| { x: 2018, y: 0.9101123595505617 } :| []) :| LinePlot("Hydro", {
   x: 2013,
   y: 0.3
-} :| { x: 2014, y: 0.28214285714285714 } :| { x: 2015, y: 0.8333333333333334 } :| {
-  x: 2016,
-  y: 0.26229508196721313
-} :| { x: 2017, y: 0.25559105431309903 } :| { x: 2018, y: 0.2484472049689441 } :| []) :| LinePlot("Solar", {
-  x: 2013,
-  y: 0.6080402010050252
-} :| { x: 2014, y: 0.6428571428571429 } :| { x: 2015, y: 0.5909090909090909 } :| {
-  x: 2016,
-  y: 0.5324675324675324
-} :| { x: 2017, y: 0.3893129770992366 } :| { x: 2018, y: 0.3522727272727273 } :| []) :| LinePlot("Wind", {
+} :| { x: 2014, y: 0.28214285714285714 } :| {
+  x: 2015,
+  y: ⸨0.8333333333333334⸩
+} :| { x: 2016, y: 0.26229508196721313 } :| { x: 2017, y: 0.25559105431309903 } :| {
+  x: 2018,
+  y: 0.2484472049689441
+} :| []) :| LinePlot("Solar", { x: 2013, y: 0.6080402010050252 } :| {
+  x: 2014,
+  y: 0.6428571428571429
+} :| { x: 2015, y: ⸨0.5909090909090909⸩ } :| { x: 2016, y: 0.5324675324675324 } :| {
+  x: 2017,
+  y: 0.3893129770992366
+} :| { x: 2018, y: 0.3522727272727273 } :| []) :| LinePlot("Wind", {
   x: 2013,
   y: 0.6703296703296703
-} :| { x: 2014, y: 0.5739130434782609 } :| { x: 2015, y: 0.5103448275862069 } :| {
+} :| { x: 2014, y: 0.5739130434782609 } :| { x: 2015, y: ⸨0.5103448275862069⸩ } :| {
   x: 2016,
   y: 0.48520710059171596
 } :| { x: 2017, y: 0.4734042553191489 } :| { x: 2018, y: 0.45714285714285713 } :| []) :| []) :| [])"""
@@ -335,6 +375,7 @@ bwd_cases =
                   >.> listElement 56 (dictVal "nuclearOut" select >.> dictVal "gasOut" select >.> dictVal "coalOut" select >.> dictVal "petrolOut" select)
              )
      , δv: multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+     , inputs: [ "nonRenewables" ]
      , fwd_expect:
           """MultiView(BarChart("Non-renewables by country", { height: 185, width: 275 }, {
   x: Default,
@@ -377,10 +418,10 @@ bwd_cases =
   y: 0.2651713517303818
 } :| { x: 0.39179907463864283, y: 0.5311676111397315 } :| {
   x: 0.0886691179578209,
-  y: 0.4125357483317445
+  y: ⸨0.4125357483317445⸩
 } :| { x: 0.3167847396421975, y: 0.2767379556904734 } :| {
   x: 0.3129857171819161,
-  y: 0.20426921772653447
+  y: ⸨0.20426921772653447⸩
 } :| { x: 0.29687029792356306, y: 0.3462200657379872 } :| {
   x: 0.16239390265026848,
   y: 0.4128
@@ -392,6 +433,7 @@ bwd_cases =
    , { file: "qcut.fld"
      , bwd_expect: (_ × Persistent)
      , δv: (_ × Persistent)
+     , inputs: []
      , fwd_expect: "(1.01 :| 1.05 :| [], 0.051000000000000156) :| (1.07 :| 1.09 :| 1.22 :| 1.23 :| 1.24 :| 1.24 :| 1.25 :| 1.32 :| 1.32 :| 1.35 :| 1.39 :| 1.47 :| 1.57 :| 1.72 :| [], 0.6639999999999999) :| (1.73 :| 1.75 :| 1.76 :| 1.83 :| 1.87 :| 1.94 :| 2.04 :| 2.14 :| 2.18 :| 2.36 :| 2.37 :| 2.38 :| 2.52 :| 2.54 :| [], 0.8464999999999998) :| (2.61 :| 2.67 :| [], 0.09850000000000003) :| []"
      }
    ]
