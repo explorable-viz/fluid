@@ -63,13 +63,13 @@ MultiView([
   this report evaluates extent to which NAP3 commitments actually address them.
   """,
 
-  BarChart({
-    caption: "NAP3 actions assigned to DEFRA, by chapter",
-    size: { width: 275, height: 185 },
-    tickLabels: { x: Default, y: Default },
-    stackedBars: actions_by_chapter("Defra"),
-    legend: False
-  }),
+  BarChart(
+    caption="NAP3 actions assigned to DEFRA, by chapter",
+    size={ width: 275, height: 185 },
+    tickLabels={ x: Default, y: Default },
+    stackedBars=actions_by_chapter("Defra"),
+    legend=False
+  ),
 
   f"""
   Disaggregating by department revealed marked disparities in government response. {

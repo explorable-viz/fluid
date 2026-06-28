@@ -22,7 +22,7 @@ import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_width, f_x, f_y, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_tickLabels, f_width, f_x, f_y, f_z)
 import Dict (Dict)
 import Link (Link(..))
 import Primitive (boolean, int, string, typeError)
@@ -48,7 +48,6 @@ view options title v@(Val α _ u') = case u' of
    Str str -> pack (Text (str × α))
    Constr c (u : Nil)
       | c == cText -> pack (from u :: Text)
-      | c == cBarChart -> pack (dict from u :: BarChart)
       | c == cLineChart -> pack (dict from u :: LineChart)
       | c == cScatterPlot -> pack (dict from u :: ScatterPlot)
       | c == cMultiView -> pack (MultiView (view options "" <$> from u))
@@ -57,6 +56,7 @@ view options title v@(Val α _ u') = case u' of
       -- more consistent with other views for Link to take single argument of record type
       | c == cLink -> pack (from v :: Link)
    Constr c _
+      | c == cBarChart -> pack (from v :: BarChart)
       | c == cNil || c == cCons ->
            if tableView then
               let
@@ -102,14 +102,16 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Se
       , height: P.unpack int (snd (get f_height r))
       }
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
-   from r = BarChart
-      { caption: P.unpack string (snd (get f_caption r))
-      , stackedBars: dict from <$> from (snd (get f_stackedBars r))
-      , size: dict from (snd (get f_size r))
-      , tickLabels: dict from (snd (get f_tickLabels r))
-      , legend: P.unpack boolean (snd (get f_legend r))
-      }
+instance Reflect (Val (SelStates 𝕊)) BarChart where
+   from (Val _ _ u) = case u of
+      Constr c (caption : size : tickLabels : stackedBars : legend : Nil) | c == cBarChart -> BarChart
+         { caption: P.unpack string caption
+         , size: dict from size
+         , tickLabels: dict from tickLabels
+         , stackedBars: dict from <$> from stackedBars
+         , legend: P.unpack boolean legend
+         }
+      _ -> typeError u "BarChart: expected caption, size, tickLabels, stackedBars, legend"
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
    from r = StackedBar

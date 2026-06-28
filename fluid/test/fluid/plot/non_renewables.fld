@@ -14,13 +14,13 @@ def yearData(year):
   return [row for row in nonRenewables if row.year == year if row.country |elem| countries]
 
 MultiView([
-  BarChart({
-    caption: "Non-renewables output",
-    size: { width: 275, height: 185 },
-    tickLabels: { x: Default, y: Default },
-    stackedBars: [{ x: num_to_str(year), segments: stack(year) } for year in [2014 .. 2018]],
-    legend: True
-  }),
+  BarChart(
+    caption="Non-renewables output",
+    size={ width: 275, height: 185 },
+    tickLabels={ x: Default, y: Default },
+    stackedBars=[{ x: num_to_str(year), segments: stack(year) } for year in [2014 .. 2018]],
+    legend=True
+  ),
   ScatterPlot({
     caption: "",
     points: [{

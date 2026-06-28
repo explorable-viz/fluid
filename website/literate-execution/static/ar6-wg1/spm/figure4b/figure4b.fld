@@ -6,36 +6,36 @@ import lib.view
 def stackedBarHeight(stackedBar):
   return sum([segment.z for segment in stackedBar.segments])
 
-def get(x, BarChart(record)):
-  return from_just(find_with_key("x", x, record.stackedBars))
+def get(x, bar):
+  return from_just(find_with_key("x", x, bar.stackedBars))
 
 def mkBarChart(scenName, table):
-  return BarChart({
-    caption: "Scenario " ++ scenName,
-    size: { width: 275, height: 185 },
-    tickLabels: { x: Default, y: Default },
-    stackedBars:
+  return BarChart(
+    caption="Scenario " ++ scenName,
+    size={ width: 275, height: 185 },
+    tickLabels={ x: Default, y: Default },
+    stackedBars=
       map(lambda record: {
         x: record.type,
         segments: [{ y: "emissions", z: record.emissions }]
       }, table),
-    legend: True
-  })
+    legend=True
+  )
 
 def mkHistogram(xs, name, nbins):
   binWidth = (maximum(xs) - minimum(xs)) / nbins
 
-  return BarChart({
-    caption: "Histogram of distribution of " ++ name,
-    size: { width: 275, height: 185 },
-    tickLabels: { x: Default, y: Default },
-    stackedBars:
+  return BarChart(
+    caption="Histogram of distribution of " ++ name,
+    size={ width: 275, height: 185 },
+    tickLabels={ x: Default, y: Default },
+    stackedBars=
       map(lambda (data, edge): {
         x: data,
         segments: [{ y: "density", z: length(data) / binWidth }]
       }, cut(xs, nbins)),
-    legend: True
-  })
+    legend=True
+  )
 
 def getHeight(offset, bar):
   return head(bar.segments).z + offset

@@ -4,9 +4,11 @@ class View:
 
 @dataclass
 class BarChart(View):
-  config: Any  # { caption: Str, size: { width: Int, height: Int },
-               #   tickLabels: { x: Orientation, y: Orientation },
-               #   stackedBars: List StackedBar, legend: Bool }
+  caption: Any  # Str
+  size: Any  # { width: Int, height: Int }
+  tickLabels: Any  # { x: Orientation, y: Orientation }
+  stackedBars: Any  # List StackedBar
+  legend: Any  # Bool
 
 @dataclass
 class LineChart(View):

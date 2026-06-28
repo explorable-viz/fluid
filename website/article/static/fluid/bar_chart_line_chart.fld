@@ -19,13 +19,13 @@ def series(energyType, country):
   ]
 
 MultiView([
-  BarChart({
-    caption: "Total renewables output by country",
-    size: { width: 275, height: 185 },
-    tickLabels: { x: Default, y: Default },
-    stackedBars: countryData,
-    legend: True
-  }),
+  BarChart(
+    caption="Total renewables output by country",
+    size={ width: 275, height: 185 },
+    tickLabels={ x: Default, y: Default },
+    stackedBars=countryData,
+    legend=True
+  ),
   LineChart({
     tickLabels: { x: Default, y: Default },
     size: { width: 330, height: 285 },

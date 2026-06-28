@@ -3,7 +3,7 @@ module App.View.BarChart where
 import Prelude hiding (absurd)
 
 import App.Util (Dimensions(..), Selectable, classes, contents)
-import App.Util.Selector (barChart, dictVal, listElement)
+import App.Util.Selector (barChart, listElement)
 import App.View.Segment (Segment(..), Scales, indexCol)
 import App.View.StackedBar (StackedBar(..), StackedBarContext, barHeight)
 import App.View.Util (class Viewable, Select, createElement, setSelection)
@@ -20,7 +20,6 @@ import Data.Int (toNumber)
 import Data.Newtype (unwrap)
 import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
-import DataType (f_stackedBars)
 import Effect (Effect, foreachE)
 import Util ((!))
 
@@ -42,7 +41,7 @@ instance Viewable BarChart Unit where
       stackedBars' <- barChart' # selectAll ".stack"
       forWithIndex_ stackedBars' \i stack ->
          setSelection props.stackedBarContext (stackedBars ! i)
-            (select <<< barChart <<< dictVal f_stackedBars <<< listElement i)
+            (select <<< barChart <<< listElement i)
             stack
 
    createElement :: Unit -> BarChart -> D3.Selection -> Effect D3.Selection

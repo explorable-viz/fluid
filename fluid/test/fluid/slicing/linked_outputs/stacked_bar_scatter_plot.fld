@@ -38,14 +38,14 @@ def plot(year, countries):
   return map(plotCountry, countries)
 
 MultiView([
-  BarChart({
-    caption: "Non-renewables by country",
-    size: { width: 275, height: 185 },
-    tickLabels: { x: Default, y: Default },
-    stackedBars:
+  BarChart(
+    caption="Non-renewables by country",
+    size={ width: 275, height: 185 },
+    tickLabels={ x: Default, y: Default },
+    stackedBars=
       [{ x: num_to_str(year), segments: stack(year) } for year in [2014 .. 2018]],
-    legend: True
-  }),
+    legend=True
+  ),
   ScatterPlot({
     caption:
       "Clean energy efficiency vs proportion of renewable energy capacity",

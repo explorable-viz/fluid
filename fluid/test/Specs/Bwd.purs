@@ -292,16 +292,13 @@ bwd_cases =
              )
      , δv: multiViewEntry 0 (barChart (barSegment 1 0 select))
      , fwd_expect:
-          """MultiView(BarChart({
-  caption: "Total output by country",
-  legend: True,
-  size: { height: 185, width: 275 },
-  stackedBars: { segments: { y: "output", z: 295.3 } :| [], x: "China" } :| {
-    segments: { y: "output", z: ⸨196.7⸩ } :| [],
-    x: "USA"
-  } :| { segments: { y: "output", z: 97.69999999999999 } :| [], x: "Germany" } :| [],
-  tickLabels: { x: Default, y: Default }
-}) :| LineChart({
+          """MultiView(BarChart("Total output by country", { height: 185, width: 275 }, {
+  x: Default,
+  y: Default
+}, { segments: { y: "output", z: 295.3 } :| [], x: "China" } :| {
+  segments: { y: "output", z: ⸨196.7⸩ } :| [],
+  x: "USA"
+} :| { segments: { y: "output", z: 97.69999999999999 } :| [], x: "Germany" } :| [], True) :| LineChart({
   caption: "Output of USA relative to China",
   plots: LinePlot({
     name: "Bio",
@@ -359,43 +356,40 @@ bwd_cases =
              )
      , δv: multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
      , fwd_expect:
-          """MultiView(BarChart({
-  caption: "Non-renewables by country",
-  legend: True,
-  size: { height: 185, width: 275 },
-  stackedBars: {
-    segments: { y: "BRA", z: 151.05 } :| { y: "EGY", z: 159.93 } :| {
-      y: "IND",
-      z: 1060.1799999999998
-    } :| { y: "JPN", z: 928.82 } :| [],
-    x: "2014"
-  } :| {
-    segments: { y: "BRA", z: 142.76 } :| { y: "EGY", z: 170.68 } :| {
-      y: "IND",
-      z: 1118.8899999999999
-    } :| { y: "JPN", z: 876.0999999999999 } :| [],
-    x: "2015"
-  } :| {
-    segments: { y: "BRA", z: 108.03 } :| { y: "EGY", z: 174.07999999999998 } :| {
-      y: "IND",
-      z: 1193.53
-    } :| { y: "JPN", z: 883.3299999999999 } :| [],
-    x: "2016"
-  } :| {
-    segments: { y: "BRA", z: 116.76 } :| { y: "EGY", z: 181.31 } :| {
-      y: "IND",
-      z: ⸨1236.43⸩
-    } :| { y: "JPN", z: 875.32 } :| [],
-    x: "2017"
-  } :| {
-    segments: { y: "BRA", z: 101.48 } :| { y: "EGY", z: ⸨182.31⸩ } :| {
-      y: "IND",
-      z: 1315.57
-    } :| { y: "JPN", z: ⸨873.39⸩ } :| [],
-    x: "2018"
-  } :| [],
-  tickLabels: { x: Default, y: Default }
-}) :| ScatterPlot({
+          """MultiView(BarChart("Non-renewables by country", { height: 185, width: 275 }, {
+  x: Default,
+  y: Default
+}, {
+  segments: { y: "BRA", z: 151.05 } :| { y: "EGY", z: 159.93 } :| {
+    y: "IND",
+    z: 1060.1799999999998
+  } :| { y: "JPN", z: 928.82 } :| [],
+  x: "2014"
+} :| {
+  segments: { y: "BRA", z: 142.76 } :| { y: "EGY", z: 170.68 } :| {
+    y: "IND",
+    z: 1118.8899999999999
+  } :| { y: "JPN", z: 876.0999999999999 } :| [],
+  x: "2015"
+} :| {
+  segments: { y: "BRA", z: 108.03 } :| { y: "EGY", z: 174.07999999999998 } :| {
+    y: "IND",
+    z: 1193.53
+  } :| { y: "JPN", z: 883.3299999999999 } :| [],
+  x: "2016"
+} :| {
+  segments: { y: "BRA", z: 116.76 } :| { y: "EGY", z: 181.31 } :| {
+    y: "IND",
+    z: ⸨1236.43⸩
+  } :| { y: "JPN", z: 875.32 } :| [],
+  x: "2017"
+} :| {
+  segments: { y: "BRA", z: 101.48 } :| { y: "EGY", z: ⸨182.31⸩ } :| {
+    y: "IND",
+    z: 1315.57
+  } :| { y: "JPN", z: ⸨873.39⸩ } :| [],
+  x: "2018"
+} :| [], True) :| ScatterPlot({
   caption: "Clean energy efficiency vs proportion of renewable energy capacity",
   labels: { x: "Renewables/TotalEnergyCap", y: "Clean Capacity Factor" },
   points: { x: 0.8723185510332055, y: 0.4180741155728385 } :| {
