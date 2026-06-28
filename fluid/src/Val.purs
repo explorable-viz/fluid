@@ -11,7 +11,7 @@ import Control.Monad.State (StateT)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Writer (WriterT)
 import DefiniteAssignment (class HasClassCtx)
-import Data.Array (concat, fromFoldable, (!!))
+import Data.Array (concat, (!!))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Array (zipWith) as A
@@ -22,7 +22,6 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, unions)
 import Data.Set as Set
-import Data.String (joinWith)
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict)
@@ -33,15 +32,14 @@ import Expr (Elim, Module, Stmt, fv)
 import File (class LoadFile, FileCxt)
 import ModuleGraph (DependencyGraph, ModuleName)
 import Foreign.Object (foldMap)
-import GaloisConnection (GaloisConnection(..))
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
 import Graph.WithGraph (class MonadWithGraphAlloc, new)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Pretty.Doc (Doc, text)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, error, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
+import Util (class IsEmpty, type (×), Endo, definitely, error, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
-import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
+import Util.Set (class Set, difference, empty, filter, size, union, (∈), (∪))
 
 data Val a = Val a (Maybe (Val a)) (BaseVal a)
 
@@ -166,19 +164,6 @@ instance Map (Env a) String (Val a) where
    toUnfoldable (Env γ) = toUnfoldable γ
 
 data EnvStmt a = EnvStmt (Env a) (Stmt a)
-
--- Goes from smaller environment to larger (injection into a biproduct).
-unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
-unrestrictGC γ xs =
-   assertWith ("Variable(s) " <> joinWith ", " (fromFoldable unfound <#> show) <> " are in environment ")
-      (isEmpty unfound) $ GC
-      { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ (topOf γ \\ γ')
-      , bwd: \γ' -> assert (keys γ' == keys γ) $ restrict xs γ'
-
-      }
-   where
-   unfound :: Set Var
-   unfound = xs \\ keys γ
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (Set.toUnfoldable xs) empty

@@ -323,7 +323,7 @@ type ConjugatePair g s t =
    , bwd :: t 𝔹 -> s 𝔹 × g
    }
 
-graphGC
+graphCP
    :: forall g s t
     . Graph g
    => Apply s
@@ -332,7 +332,7 @@ graphGC
    => Foldable t
    => GraphEval g s t
    -> ConjugatePair g s t
-graphGC ge = { fwd: sliceBwd (withOp ge), bwd: sliceBwd ge }
+graphCP ge = { fwd: sliceBwd (withOp ge), bwd: sliceBwd ge }
 
 sliceBwd
    :: forall g s t

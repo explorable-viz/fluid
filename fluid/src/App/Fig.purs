@@ -25,13 +25,12 @@ import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import DefiniteAssignment (class HasClassCtx)
-import Eval (graphEval, graphGC, withOp)
+import Eval (ConjugatePair, graphCP, graphEval, withOp)
 import File (class LoadFile, File(..), FileCxt)
-import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex, DVertex', Vertex(..), VertexData, dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
-import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
+import Lattice (𝔹, botOf, erase, topOf)
 import Module (prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -40,7 +39,7 @@ import Test.Util.Debug (tracing)
 import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
-import Val (class HasModuleStore, Env(..), EnvStmt(..), Val(..), asVal, unrestrictGC)
+import Val (class HasModuleStore, Env(..), EnvStmt(..), Val(..), asVal)
 
 str
    :: { output :: String -- pseudo-variable to use as name of output view
@@ -184,12 +183,6 @@ drawFile :: File × String -> Effect Unit
 drawFile (File fileName × src) =
    addEditorView (codeMirrorDiv fileName) >>= loadCode src
 
-unprojStmt :: forall a. BoundedMeetSemilattice a => Raw EnvStmt -> GaloisConnection (Env a) (EnvStmt a)
-unprojStmt (EnvStmt _ s) = GC
-   { fwd: \γ -> EnvStmt γ (topOf s)
-   , bwd: \(EnvStmt γ _) -> γ
-   }
-
 type IO a = { γ :: Env a, v :: Val a }
 
 lift
@@ -209,30 +202,32 @@ loadFig options@{ inputs, linking } fluidSrc = do
    let
       opEval = withOp eval
       inputs' = Set.fromFoldable inputs
-      EnvStmt γ s' = erase eval.inα
-      GC focus = unrestrictGC γ inputs' >>> unprojStmt (EnvStmt γ s')
+      EnvStmt _ s' = erase eval.inα
       Env γ_restricted = restrict inputs' γα
       in_roots = Set.fromFoldable $ (\(Val α _ _) -> α) <$> γ_restricted
 
-      cp = graphGC eval
+      cp = graphCP eval
 
-      gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
-      gcBwd v = first focus.bwd (cp.bwd v)
+      io :: ConjugatePair GraphImpl Env Val
+      io =
+         { fwd: \γ -> cp.fwd (EnvStmt γ (botOf s'))
+         , bwd: \v -> first (\(EnvStmt γ _) -> restrict inputs' γ) (cp.bwd v)
+         }
 
       in_views = const Nothing <$> γ_restricted
       unselected = { γ: botOf γα, v: botOf outα } :: IO 𝔹
 
-      inertBwd = vertices g0 \\ (vertices $ snd $ gcBwd $ topOf outα)
-      inertFwd = vertices $ snd $ cp.fwd $ focus.fwd unselected.γ
+      inertBwd = vertices g0 \\ (vertices $ snd $ io.bwd $ topOf outα)
+      inertFwd = vertices $ snd $ cp.fwd (EnvStmt unselected.γ (topOf s'))
 
       inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
       inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
 
       demands :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      demands = lift inert'.γ gcBwd
+      demands = lift inert'.γ io.bwd
 
       demandedBy :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      demandedBy = lift inert'.v (cp.fwd <<< deMorgan focus.fwd)
+      demandedBy = lift inert'.v io.fwd
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ = γ'' × v × vertices g
