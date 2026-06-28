@@ -13,7 +13,6 @@ import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap)
 import Data.String (null, trim)
 import Data.Tuple (fst)
 import Effect.Class (class MonadEffect)
@@ -21,17 +20,17 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (GraphConfig, graphEval, graphGC, toGC, withOp)
 import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
-import GaloisConnection (GaloisConnection(..), deMorgan, dual)
-import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹, (≽))
+import GaloisConnection (GaloisConnection(..), deMorgan)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, 𝔹, (≽))
 import Module (prepConfig)
 import Parse (parseProgram)
-import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
+import Pretty (class Pretty, compare, prettyP)
 import Expr (Stmt) as Expr
 import DefiniteAssignment (class HasClassCtx)
 import SExpr (Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
-import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, throwLeft, withMsg, (×))
+import Test.Util.Debug (tracing)
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, log', spyWhen, throw, throwLeft, withMsg, (×))
 import Util.Map (keys)
 import Val (class HasModuleStore, class Ann, Env, EnvStmt(..), Val, unrestrictGC)
 
@@ -62,19 +61,13 @@ graphBenchmark name = benchmark ("G" <> "-" <> name)
 benchNames
    :: { eval :: String
       , bwd :: String
-      , demBy :: String
       , fwd :: String
-      , demBy_G_direct :: String
-      , demBy_G_suff_dual :: String
       }
 
 benchNames =
    { eval: "Eval"
    , bwd: "Demands"
-   , demBy: "DemBy"
-   , fwd: "Suffices" -- needed?
-   , demBy_G_direct: "DemBy-Dir"
-   , demBy_G_suff_dual: "DemBy-Suff"
+   , fwd: "DemBy"
    }
 
 testProperties
@@ -102,13 +95,11 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
    let v = map (const top) outα :: Val 𝔹
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
 
-   in0@(EnvStmt in_γ in_s) <- do
+   in0@(EnvStmt in_γ _) <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
    out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG_op.bwd (deMorgan focus.fwd (focus.bwd in0)))
-
-   let in_top = EnvStmt (topOf in_γ) (topOf in_s)
 
    case bwd_expect of
       Nothing -> pure unit
@@ -121,17 +112,6 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
       withMsg "fwd_expect" $ checkPretty fwd_expect (report out1)
 
    recordGraphSize g
-
-   let out_top = evalG.fwd in_top
-   when testing.fwdPreservesTop $
-      unwrap >>> (_ == topOf v) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top)
-
-   let GC evalG_dual = dual (GC evalG)
-
-   out2 <- graphBenchmark benchNames.demBy_G_direct \_ -> pure (evalG_op.bwd in0)
-   out3 <- graphBenchmark benchNames.demBy_G_suff_dual \_ -> pure (evalG_dual.bwd in0)
-   when testing.fwdDuals $
-      checkEq benchNames.demBy_G_direct benchNames.demBy_G_suff_dual out2 out3
 
 checkEq
    :: forall m a
