@@ -111,7 +111,7 @@ varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (expr <#> ExprStmt)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> importStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (expr <#> ExprStmt)
 
 returnStmt :: Parser (Raw Stmt)
 returnStmt = do
@@ -133,7 +133,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser (Raw Stmt)
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (Return <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> importStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (Return <$> expr)
 
 programStmts :: Parser (Raw Stmt)
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
@@ -486,20 +486,22 @@ expr = context "expr" $ ternary <?> "expression"
 module_ :: Parser (Raw Module)
 module_ = Module <<< toList <$> many1 (align stmt)
 
-imports_ :: Parser (List String)
-imports_ = many (reserved "import" *> modPath <* whitespace)
-   where
-   modPath :: Parser String
-   modPath = joinWith "/" <<< fromFoldable <$> sepBy1 variable (delim '.')
+importStmt :: Parser (Raw Stmt)
+importStmt = reserved "import" *> (Import <$> modPath)
+
+modPath :: Parser String
+modPath = joinWith "/" <<< fromFoldable <$> sepBy1 variable (delim '.')
+
+stmtImports :: forall a. Stmt a -> List String
+stmtImports (Import q) = q : Nil
+stmtImports (Seq s1 s2) = stmtImports s1 <> stmtImports s2
+stmtImports _ = Nil
+
+moduleImports :: forall a. Module a -> List String
+moduleImports (Module ss) = ss >>= stmtImports
 
 topLevel :: forall a. Parser a -> Parser a
 topLevel p = whitespace *> withPos p <* whitespace <* eof
-
-withImports :: forall a. Parser a -> Parser (a × List String)
-withImports p = topLevel do
-   imports <- imports_
-   a <- p
-   pure $ a × imports
 
 parse :: forall a. Parser a -> String -> Either String a
 parse parser input =
@@ -510,7 +512,7 @@ parse parser input =
       "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
 
 parseProgram :: String -> Either String (Raw Stmt × List String)
-parseProgram = parse (withImports programStmts)
+parseProgram src = parse (topLevel programStmts) src <#> \s -> s × stmtImports s
 
 parseModule :: String -> Either String (Raw Module × List String)
-parseModule = parse (withImports module_)
+parseModule src = parse (topLevel module_) src <#> \m -> m × moduleImports m

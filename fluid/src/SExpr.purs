@@ -129,6 +129,7 @@ data Stmt a
    | Assert (Expr a) (Maybe (Expr a))
    | Seq (Stmt a) (Stmt a)
    | Dataclass Var (Maybe Var) (List Var)
+   | Import String -- module name
 
 data Clause a = Clause a (NonEmptyList Pattern × Stmt a)
 
@@ -315,6 +316,7 @@ stmtFwd (Assert cond msg_opt) =
    msg = fromMaybe (Str Returns "AssertionError") msg_opt
 stmtFwd (Seq s1 s2) = E.Seq <$> stmtFwd s1 <*> stmtFwd s2
 stmtFwd (Dataclass _ _ _) = pure E.Pass
+stmtFwd (Import q) = pure (E.Import q)
 
 ifElseFwd :: forall m. HasClassCtx m => MonadError Error m => IfElseClauses (TyResult Ctx) -> m (E.Stmt (TyResult Ctx))
 ifElseFwd (sss × s) =
@@ -660,6 +662,7 @@ instance FV (Stmt a) where
    fv (Assert cond msg) = fv cond ∪ maybe Set.empty fv msg
    fv (Seq s1 s2) = fv s1 ∪ fv s2
    fv (Dataclass _ _ _) = Set.empty
+   fv (Import _) = Set.empty
 
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e

@@ -219,6 +219,7 @@ evalStmt doc_opt γ s αs = case s of
    ExprStmt e -> do
       _ <- eval Nothing γ e αs
       pure (Assigns empty empty)
+   Import _ -> pure (Assigns empty empty)
    Seq s1 s2 -> do
       r1 <- evalStmt Nothing γ s1 αs
       case r1 of
@@ -269,9 +270,6 @@ evalVal γ (Lambda α σ) _ =
    pure $ Just (α × V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
 evalVal _ _ _ = pure Nothing
 
--- Module store μ (spec: μ, ρ, m ⇒ μ', ρ'): the cache of evaluated module
--- exports, threaded through module-body evaluation. Currently passed through
--- unchanged; B1 will extend it via demand-driven `load` at import statements.
 type ModuleStore = Map ModuleName (Env Vertex)
 
 eval_module :: forall m. HasClassCtx m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleStore -> Env Vertex -> Module Vertex -> Set Vertex -> m (ModuleStore × Env Vertex)
@@ -309,9 +307,6 @@ eval_primitives primitives { roots, graph, modules } = do
    pure γ
 
    where
-   -- Evaluate each reachable module once, on demand from the roots, under
-   -- `primitives + its imports' exports`. Mirrors `checkModules`; the graph is
-   -- acyclic so this terminates. Memoised on each module's exports.
    go :: Map ModuleName (Env Vertex) -> ModuleName -> m (Map ModuleName (Env Vertex))
    go memo q
       | Map.member q memo = pure memo

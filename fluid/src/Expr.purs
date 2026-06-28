@@ -65,6 +65,7 @@ data Stmt a
    | DefRec (RecDefs a)
    | Pass
    | ExprStmt (Expr a)
+   | Import String -- module name
    | Seq (Stmt a) (Stmt a)
 
 newtype Module a = Module (List (Stmt a))
@@ -108,6 +109,7 @@ instance FV (Stmt a) where
    fv (DefRec ρ) = fv ρ
    fv Pass = empty
    fv (ExprStmt e) = fv e
+   fv (Import _) = empty
    fv (Seq s s') = fv s ∪ fv s'
 
 instance FV a => FV (Dict a) where
@@ -180,6 +182,7 @@ instance JoinSemilattice a => JoinSemilattice (Stmt a) where
    join (DefRec ρ) (DefRec ρ') = DefRec (ρ ∨ ρ')
    join Pass Pass = Pass
    join (ExprStmt e) (ExprStmt e') = ExprStmt (e ∨ e')
+   join (Import q) (Import q') = Import (q ≜ q')
    join (Seq s1 s2) (Seq s1' s2') = Seq (s1 ∨ s1') (s2 ∨ s2')
    join _ _ = shapeMismatch unit
 
@@ -190,6 +193,7 @@ instance BoundedJoinSemilattice a => Expandable (Stmt a) (Raw Stmt) where
    expand (DefRec ρ) (DefRec ρ') = DefRec (expand ρ ρ')
    expand Pass Pass = Pass
    expand (ExprStmt e) (ExprStmt e') = ExprStmt (expand e e')
+   expand (Import q) (Import q') = Import (q ≜ q')
    expand (Seq s1 s2) (Seq s1' s2') = Seq (expand s1 s1') (expand s2 s2')
    expand _ _ = shapeMismatch unit
 
@@ -266,6 +270,7 @@ instance Vertices (Stmt Vertex) where
    vertices (DefRec ρ) = vertices ρ
    vertices Pass = empty
    vertices (ExprStmt e) = vertices e
+   vertices (Import _) = empty
    vertices (Seq s1 s2) = vertices s1 ∪ vertices s2
 
 instance Vertices (Module Vertex) where
@@ -336,6 +341,7 @@ instance Apply Stmt where
    apply (DefRec fρ) (DefRec ρ) = DefRec (fρ <*> ρ)
    apply Pass Pass = Pass
    apply (ExprStmt fe) (ExprStmt e) = ExprStmt (fe <*> e)
+   apply (Import q) (Import q') = Import (q ≜ q')
    apply (Seq fs1 fs2) (Seq s1 s2) = Seq (fs1 <*> s1) (fs2 <*> s2)
    apply _ _ = shapeMismatch unit
 
