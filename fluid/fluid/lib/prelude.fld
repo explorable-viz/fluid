@@ -156,9 +156,9 @@ def filter_map(p, []):
 def filter_map(p, x :| xs):
   match p(x):
     case Nothing:
-      return filter_map(f, xs)
+      return filter_map(p, xs)
     case Just(y):
-      return y :| filter_map(f, xs)
+      return y :| filter_map(p, xs)
 
 # Equivalent to but more efficient than length ∘ filter(p)
 def count_if(p):

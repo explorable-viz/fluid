@@ -4,7 +4,7 @@ import Prelude
 
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Foldable (foldM, for_)
+import Data.Foldable (foldM, foldr, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.List (List, length, nub)
@@ -25,18 +25,25 @@ import Util (type (×), throw, (×))
 import Util.Set ((\\), (∪))
 
 checkProgram :: forall m. MonadError Error m => ClassCtx -> Set Var -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
-checkProgram λ_external γ0 s = do
-   -- Imported/builtin classes are in scope throughout; program classes are
-   -- introduced incrementally by the Seq rule as the body is walked.
-   let γ = Map.union (Class <$> λ_external) (constMap (Status true) γ0)
-   snd <$> wellFormed γ s
+checkProgram λ_external γ0 s = snd <$> wellFormed (initialCxt λ_external γ0) s
+
+-- Imported/builtin classes and primitives are in scope throughout (seeded);
+-- a module's own classes are introduced incrementally by the Seq rule.
+initialCxt :: ClassCtx -> Set Var -> Cxt
+initialCxt λ γ0 = Map.union (Class <$> λ) (constMap (Status true) γ0)
 
 classesOfModule :: forall m a. MonadError Error m => String -> S.Module a -> m ClassCtx
 classesOfModule q (S.Module ss) = foldM unionWith_mergeEq Map.empty =<< traverse (classes q) ss
 
--- TODO: module-level WF needs a cross-module Γ (primitives + Λ from builtins).
-checkModule :: forall m. MonadError Error m => Raw S.Module -> m Unit
-checkModule _ = pure unit
+-- WF a module body under Γ; return its definite-assignment delta (own top-level
+-- vars), from which the caller forms the module's exports.
+checkModule :: forall m. MonadError Error m => Cxt -> Raw S.Module -> m Ctx
+checkModule γ (S.Module ss) =
+   case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
+      Nothing -> pure Map.empty
+      Just s -> wellFormed γ s <#> \(r × _) -> case r of
+         Assigns δ -> δ
+         Returns -> Map.empty
 
 -- Entry program's module (spec entry point E; its __name__ is "__main__").
 mainModule :: String

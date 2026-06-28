@@ -4,11 +4,12 @@ import Prelude
 
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
+import Data.Foldable (foldM)
 import Data.List (List(..), reverse, (:))
 import Data.List as List
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
@@ -26,11 +27,11 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (class HasClassCtx, ClassCtx, TyResult(..), unionWith_mergeEq)
+import DefiniteAssignment (class HasClassCtx, ClassCtx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), error, throwLeft, withMsg, (×))
-import Util.Map (keys, restrict)
+import Util.Map (constMap, keys, restrict)
 import Util.Set ((∪))
 import Val (Env)
 
@@ -41,6 +42,37 @@ builtins = "lib/builtins"
 
 prelude :: ModuleName
 prelude = "lib/prelude"
+
+-- Demand-driven well-formedness: from the entry's imports, follow the graph and
+-- check each reachable module once, under `primitives + its imports' exports`
+-- (graph is acyclic, so this terminates). Memoised on each module's exports
+-- (own classes + own definitions), which are what importers see.
+checkModules
+   :: forall m
+    . MonadError Error m
+   => DependencyGraph
+   -> Map ModuleName (Raw S.Module)
+   -> Cxt
+   -> List ModuleName
+   -> m Unit
+checkModules graph modules baseCxt roots = void (foldM go Map.empty roots)
+   where
+   go :: Map ModuleName Cxt -> ModuleName -> m (Map ModuleName Cxt)
+   go memo q
+      | Map.member q memo = pure memo
+      | otherwise = do
+           memo' × γ <- foldM step (memo × baseCxt) (fromMaybe Nil (Map.lookup q graph))
+           case Map.lookup q modules of
+              Nothing -> pure (Map.insert q Map.empty memo')
+              Just mod -> do
+                 δ <- withMsg ("Checking module " <> q) (checkModule γ mod)
+                 λ <- classesOfModule q mod
+                 pure (Map.insert q ((Class <$> λ) `Map.union` (Status true <$ δ)) memo')
+
+   step :: Map ModuleName Cxt × Cxt -> ModuleName -> m (Map ModuleName Cxt × Cxt)
+   step (memo × acc) i = do
+      memo' <- go memo i
+      pure (memo' × (acc `Map.union` fromMaybe Map.empty (Map.lookup i memo')))
 
 prepConfig :: forall m. HasClassCtx m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
@@ -68,6 +100,7 @@ prepConfig primitives fluidSrc = do
          let αs = vertices primitives' ∪ mαs
          _ × γ <- runWithGraphT_spy (eval_primitives primitives' moduleCxt') αs :: AllocT m (GraphImpl × _)
          pure (primitives' × modules' × γ)
+      checkModules sCxt.graph sCxt.modules (constMap (Status true) (keys primitives)) (builtins : prelude : imports)
       sty <- checkProgram moduleClassCtx (keys topLevelEnv) s
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
@@ -124,7 +157,6 @@ parseModuleGraph roots = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
       mod × imports <- throwLeft <#> withMsg ("Loading module " <> path) $ parseModule src
-      checkModule mod
       λ <- classesOfModule path mod
       let
          imports' =
