@@ -129,12 +129,19 @@ async function browserTests(url, browserName, viewport, tests) {
    log(`browserTests: ${browserName} (${label})`)
    const browser = await launchBrowser(browserName)
    const page = await browser.newPage()
+   const browserErrors = []
+   const noteError = e => { log(`[browser error] ${e}`); browserErrors.push(e) }
+   // Fluid surfaces uncaught errors via console.log ("Error: ..."), so match on
+   // text, not level (this also skips the benign 404 resource-load console.errors).
+   page.on("console", msg => { const t = msg.text(); if (t.startsWith("Error:")) noteError(t) })
+   page.on("pageerror", err => { if (!/Permission denied to access property/.test(err.message)) noteError(err.message) })
    await page.setViewport(viewport)
    for (const test of tests) {
       await page.goto(url)
       await test(page)
    }
    await browser.close()
+   if (browserErrors.length) testOutcome(false, `browser error(s): ${browserErrors.join("; ")}`)
 }
 
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:8080"
