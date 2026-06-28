@@ -21,6 +21,7 @@ import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹, (≽))
 import Module (prepConfig)
+import ModuleStore (class HasModuleStore)
 import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import Expr (Stmt) as Expr
@@ -42,7 +43,7 @@ type SelectionSpec =
 fluidSrcPaths :: Array Folder
 fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
-test ∷ forall m. HasClassCtx m => MonadReader FileCxt m => LoadFile m => File -> Raw Env -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test ∷ forall m. HasClassCtx m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => File -> Raw Env -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file primitives spec (n × _) = do
    fluidSrc <- loadFile fluidSrcPaths file
    log' ("**** prepConfig")

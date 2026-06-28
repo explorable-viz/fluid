@@ -33,6 +33,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module (prepConfig)
+import ModuleStore (class HasModuleStore)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive.Defs (primitives)
@@ -202,7 +203,7 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. HasClassCtx m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
+loadFig :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
 loadFig options@{ inputs, linking } fluidSrc = do
    { s, e, gconfig } <- prepConfig primitives fluidSrc
    eval@({ inα: EnvStmt γα _, outα, g: g0 }) <- graphEval gconfig e

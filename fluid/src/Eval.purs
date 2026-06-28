@@ -31,6 +31,7 @@ import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
 import ModuleGraph (ModuleName, ModuleCxt)
+import ModuleStore (class HasModuleStore, getStore, modifyStore)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
@@ -291,6 +292,7 @@ eval_module γ = go empty
 eval_primitives
    :: forall m
     . HasClassCtx m
+   => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
@@ -298,28 +300,21 @@ eval_primitives
    => Env Vertex
    -> ModuleCxt Vertex
    -> m (Env Vertex)
-eval_primitives primitives { roots, graph, modules } = do
-   γs <- foldM go Map.empty roots
-   let γs' = roots <#> \dep -> definitely "has env" $ Map.lookup dep γs
-   let γ = foldl (<+>) primitives γs'
-   pure γ
-
+eval_primitives primitives { roots, graph, modules } = foldM importInto primitives roots
    where
-   go :: Map ModuleName (Env Vertex) -> ModuleName -> m (Map ModuleName (Env Vertex))
-   go memo q
-      | Map.member q memo = pure memo
-      | otherwise = do
-           memo' × γ <- foldM step (memo × primitives) (fromMaybe Nil (Map.lookup q graph))
-           case Map.lookup q modules of
-              Nothing -> pure (Map.insert q empty memo')
-              Just defs' -> do
-                 γ' <- eval_module γ defs' empty
-                 pure (Map.insert q γ' memo')
+   importInto :: Env Vertex -> ModuleName -> m (Env Vertex)
+   importInto γ q = do
+      load q
+      cache <- getStore
+      pure (γ <+> definitely "module loaded" (Map.lookup q cache))
 
-   step :: Map ModuleName (Env Vertex) × Env Vertex -> ModuleName -> m (Map ModuleName (Env Vertex) × Env Vertex)
-   step (memo × acc) i = do
-      memo' <- go memo i
-      pure (memo' × (acc <+> definitely "import evaluated" (Map.lookup i memo')))
+   load :: ModuleName -> m Unit
+   load q = do
+      cache <- getStore
+      unless (Map.member q cache) do
+         γ_q <- foldM importInto primitives (fromMaybe Nil (Map.lookup q graph))
+         γ' <- maybe (pure empty) (\defs' -> eval_module γ_q defs' empty) (Map.lookup q modules)
+         modifyStore (Map.insert q γ')
 
 type GraphEval g s t =
    { g :: g

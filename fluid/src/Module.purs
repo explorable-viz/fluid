@@ -24,6 +24,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName)
+import ModuleStore (class HasModuleStore)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasClassCtx, ClassCtx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
@@ -73,7 +74,7 @@ checkModules graph modules baseCxt roots = void (foldM go Map.empty roots)
       memo' <- go memo i
       pure (memo' × (acc `Map.union` fromMaybe Map.empty (Map.lookup i memo')))
 
-prepConfig :: forall m. HasClassCtx m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
+prepConfig :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    sCxt <- parseModuleGraph (builtins : prelude : imports)
