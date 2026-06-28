@@ -269,23 +269,28 @@ evalVal γ (Lambda α σ) _ =
    pure $ Just (α × V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
 evalVal _ _ _ = pure Nothing
 
-eval_module :: forall m. HasClassCtx m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
-eval_module γ = go empty
-   where
-   go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
-   go γ' (Module Nil) _ = pure γ'
-   go γ' (Module (s : ss)) αs = do
-      γ'' × αs' <- step γ' s αs
-      go (γ' <+> γ'') (Module ss) αs'
+-- Module store μ (spec: μ, ρ, m ⇒ μ', ρ'): the cache of evaluated module
+-- exports, threaded through module-body evaluation. Currently passed through
+-- unchanged; B1 will extend it via demand-driven `load` at import statements.
+type ModuleStore = Map ModuleName (Env Vertex)
 
-   step γ' (Def (VarDef σ e)) αs = do
+eval_module :: forall m. HasClassCtx m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleStore -> Env Vertex -> Module Vertex -> Set Vertex -> m (ModuleStore × Env Vertex)
+eval_module μ0 γ = go μ0 empty
+   where
+   go :: ModuleStore -> Env Vertex -> Module Vertex -> Set Vertex -> m (ModuleStore × Env Vertex)
+   go μ γ' (Module Nil) _ = pure (μ × γ')
+   go μ γ' (Module (s : ss)) αs = do
+      μ' × γ'' × αs' <- step μ γ' s αs
+      go μ' (γ' <+> γ'') (Module ss) αs'
+
+   step μ γ' (Def (VarDef σ e)) αs = do
       v <- eval Nothing (γ <+> γ') e αs
       γ'' × _ × αs' <- match v σ
-      pure (γ'' × αs')
-   step γ' (DefRec (RecDefs α ρ)) αs = do
+      pure (μ × γ'' × αs')
+   step μ γ' (DefRec (RecDefs α ρ)) αs = do
       γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
-      pure (γ'' × αs)
-   step _ _ αs = pure (empty × αs)
+      pure (μ × γ'' × αs)
+   step μ _ _ αs = pure (μ × empty × αs)
 
 eval_primitives
    :: forall m
@@ -315,8 +320,8 @@ eval_primitives primitives { roots, graph, modules } = do
            case Map.lookup q modules of
               Nothing -> pure (Map.insert q empty memo')
               Just defs' -> do
-                 γ' <- eval_module γ defs' empty
-                 pure (Map.insert q γ' memo')
+                 μ' × γ' <- eval_module memo' γ defs' empty
+                 pure (Map.insert q γ' μ')
 
    step :: Map ModuleName (Env Vertex) × Env Vertex -> ModuleName -> m (Map ModuleName (Env Vertex) × Env Vertex)
    step (memo × acc) i = do
