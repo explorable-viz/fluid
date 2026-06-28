@@ -318,6 +318,11 @@ withOp :: forall g s t. Graph g => GraphEval g s t -> GraphEval g t s
 withOp { g, graph_bwd, inα, outα } =
    { g: op g, graph_bwd, inα: outα, outα: inα }
 
+type ConjugatePair g s t =
+   { fwd :: s 𝔹 -> t 𝔹 × g
+   , bwd :: t 𝔹 -> s 𝔹 × g
+   }
+
 graphGC
    :: forall g s t
     . Graph g
@@ -326,14 +331,24 @@ graphGC
    => Foldable s
    => Foldable t
    => GraphEval g s t
-   -> { bwd :: t 𝔹 -> s 𝔹 × g }
-graphGC { g, graph_bwd, inα, outα } =
-   { bwd: \out𝔹 ->
-        let
-           g' = graph_bwd (selectαs out𝔹 outα) g
-        in
-           select𝔹s inα (vertices g') × g'
-   }
+   -> ConjugatePair g s t
+graphGC ge = { fwd: sliceBwd (withOp ge), bwd: sliceBwd ge }
+
+sliceBwd
+   :: forall g s t
+    . Graph g
+   => Apply s
+   => Apply t
+   => Foldable s
+   => Foldable t
+   => GraphEval g s t
+   -> t 𝔹
+   -> s 𝔹 × g
+sliceBwd { g, graph_bwd, inα, outα } out𝔹 =
+   let
+      g' = graph_bwd (selectαs out𝔹 outα) g
+   in
+      select𝔹s inα (vertices g') × g'
 
 graphEval :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classCtx } stmt =

@@ -214,17 +214,16 @@ loadFig options@{ inputs, linking } fluidSrc = do
       Env γ_restricted = restrict inputs' γα
       in_roots = Set.fromFoldable $ (\(Val α _ _) -> α) <$> γ_restricted
 
-      graphgc = graphGC eval
-      graphgc_op = graphGC opEval
+      cp = graphGC eval
 
       gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
-      gcBwd v = first focus.bwd (graphgc.bwd v)
+      gcBwd v = first focus.bwd (cp.bwd v)
 
       in_views = const Nothing <$> γ_restricted
       unselected = { γ: botOf γα, v: botOf outα } :: IO 𝔹
 
       inertBwd = vertices g0 \\ (vertices $ snd $ gcBwd $ topOf outα)
-      inertFwd = vertices $ snd $ graphgc_op.bwd $ focus.fwd unselected.γ
+      inertFwd = vertices $ snd $ cp.fwd $ focus.fwd unselected.γ
 
       inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
       inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
@@ -233,7 +232,7 @@ loadFig options@{ inputs, linking } fluidSrc = do
       demands = lift inert'.γ gcBwd
 
       demandedBy :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      demandedBy = lift inert'.v (graphgc_op.bwd <<< deMorgan focus.fwd)
+      demandedBy = lift inert'.v (cp.fwd <<< deMorgan focus.fwd)
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ = γ'' × v × vertices g

@@ -18,7 +18,7 @@ import Data.Tuple (fst)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import Eval (GraphConfig, graphEval, graphGC, withOp)
+import Eval (GraphConfig, graphEval, graphGC)
 import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, 𝔹, (≽))
@@ -87,7 +87,7 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig s'
    let evalG_bwd = fst <<< (graphGC graphed).bwd
-   let evalG_op_bwd = fst <<< (graphGC (withOp graphed)).bwd
+   let evalG_op_bwd = fst <<< (graphGC graphed).fwd
    let inα_raw@(EnvStmt γ_raw _) = erase graphed.inα
    let inputs' = if Array.null inputs then keys γ_raw else Set.fromFoldable inputs
    let GC focus = unrestrictGC γ_raw inputs' >>> unprojStmt inα_raw
