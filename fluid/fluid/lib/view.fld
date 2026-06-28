@@ -26,8 +26,9 @@ class Paragraph(View):
 
 @dataclass
 class ScatterPlot(View):
-  config: Any  # { caption: Str, points: List { x: Float, y: Float },
-               #   labels: { x: Str, y: Str } }
+  caption: Any  # Str
+  points: Any  # List { x: Float, y: Float }
+  labels: Any  # { x: Str, y: Str }
 
 @dataclass
 class LinePlot:

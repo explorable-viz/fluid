@@ -22,7 +22,7 @@ import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_tickLabels, f_width, f_x, f_y, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_name, f_plots, f_points, f_segments, f_size, f_tickLabels, f_width, f_x, f_y, f_z)
 import Dict (Dict)
 import Link (Link(..))
 import Primitive (boolean, int, string, typeError)
@@ -49,7 +49,6 @@ view options title v@(Val α _ u') = case u' of
    Constr c (u : Nil)
       | c == cText -> pack (from u :: Text)
       | c == cLineChart -> pack (dict from u :: LineChart)
-      | c == cScatterPlot -> pack (dict from u :: ScatterPlot)
       | c == cMultiView -> pack (MultiView (view options "" <$> from u))
       | c == cParagraph -> pack (Paragraph (view options "" <$> from u))
    Constr c (_ : _ : Nil)
@@ -57,6 +56,7 @@ view options title v@(Val α _ u') = case u' of
       | c == cLink -> pack (from v :: Link)
    Constr c _
       | c == cBarChart -> pack (from v :: BarChart)
+      | c == cScatterPlot -> pack (from v :: ScatterPlot)
       | c == cNil || c == cCons ->
            if tableView then
               let
@@ -161,12 +161,14 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Orientat
       , y: P.unpack orientation (snd (get f_y r))
       }
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot where
-   from r = ScatterPlot
-      { caption: P.unpack string (snd (get f_caption r))
-      , points: dict from <$> from (snd (get f_points r))
-      , labels: dict from (snd (get f_labels r))
-      }
+instance Reflect (Val (SelStates 𝕊)) ScatterPlot where
+   from (Val _ _ u) = case u of
+      Constr c (caption : points : labels : Nil) | c == cScatterPlot -> ScatterPlot
+         { caption: P.unpack string caption
+         , points: dict from <$> from points
+         , labels: dict from labels
+         }
+      _ -> typeError u "ScatterPlot: expected caption, points, labels"
 
 instance Reflect (Val (SelStates 𝕊)) Text where
    from (Val α _ v) = case v of

@@ -30,14 +30,14 @@ def energy(year, c_names):
 
   return map(energy_per_country, c_names)
 
-ScatterPlot({
-  caption: "Clean energy efficiency against proportion of renewable energy cap",
-  points: [{
+ScatterPlot(
+  caption="Clean energy efficiency against proportion of renewable energy cap",
+  points=[{
     x: country.nonRenewables / country.totalCap,
     y: country.renCapFactor
   } for country in energy(2018, ["USA"])],
-  labels: {
+  labels={
     x: "Renewables/TotalEnergyCap",
     y: "Clean Capacity Factor"
   }
-})
+)

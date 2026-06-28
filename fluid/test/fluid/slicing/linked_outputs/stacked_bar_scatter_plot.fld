@@ -46,11 +46,11 @@ MultiView([
       [{ x: num_to_str(year), segments: stack(year) } for year in [2014 .. 2018]],
     legend=True
   ),
-  ScatterPlot({
-    caption:
+  ScatterPlot(
+    caption=
       "Clean energy efficiency vs proportion of renewable energy capacity",
-    points:
+    points=
       plot(2018, [ "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA" ]),
-    labels: { x: "Renewables/TotalEnergyCap", y: "Clean Capacity Factor" }
-  })
+    labels={ x: "Renewables/TotalEnergyCap", y: "Clean Capacity Factor" }
+  )
 ])

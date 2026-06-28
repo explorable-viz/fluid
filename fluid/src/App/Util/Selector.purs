@@ -71,10 +71,10 @@ barChart :: SelSetter Val Val
 barChart = constrArg cBarChart 3
 
 scatterPlot :: SelSetter Val Val
-scatterPlot = constrArg cScatterPlot 0
+scatterPlot = constrArg cScatterPlot 1
 
 scatterPoint :: Int -> Setter (Val (SelStates 𝔹)) (Val (SelStates 𝔹))
-scatterPoint i = listElement i >>> dictVal f_points
+scatterPoint i = listElement i
 
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =
