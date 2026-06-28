@@ -134,7 +134,7 @@ def set_x(x, Rect(_, y, w, h, fill)):
 def set_x(x, String(_, y, str, anchor, baseline)):
   return String(x, y, str, anchor, baseline)
 def set_x(x, Viewport(_, y, w, h, fill, margin, scale, translate, g)):
-  return Viewport(x, y, w, h, fill, margin, scale, translate, g)
+  return Viewport(x=x, y=y, width=w, height=h, fill=fill, margin=margin, scale=scale, translate=translate, g=g)
 
 # (Point, Point) -> Point
 def dimensions2((Point(x1, y1), Point(x2, y2))):
@@ -206,7 +206,7 @@ def scale_to_width(w, Rect(x, y, _, h, fill)):
   return Rect(x=x, y=y, width=w, height=h, fill=fill)
 def scale_to_width(w, Viewport(x, y, w0, h, fill, margin, Scale(x_scale, y_scale), translate, g)):
   scale = Scale((x_scale * w) / w0, y_scale)
-  return Viewport(x, y, w, h, fill, margin, scale, translate, g)
+  return Viewport(x=x, y=y, width=w, height=h, fill=fill, margin=margin, scale=scale, translate=translate, g=g)
 
 # Float -> List GraphicsElement -> List GraphicsElement
 def stack_right(sep, gs):
@@ -214,7 +214,7 @@ def stack_right(sep, gs):
 
 # Float -> List GraphicsElement -> GraphicsElement
 def group_right(sep, gs):
-  return Viewport(0, 0, length(gs), maximum(map(height, gs)), "none", 0, Scale(1, 1), Translate(0, 0), Group(stack_right(sep, gs)))
+  return Viewport(x=0, y=0, width=length(gs), height=maximum(map(height, gs)), fill="none", margin=0, scale=Scale(1, 1), translate=Translate(0, 0), g=Group(stack_right(sep, gs)))
 
 # Heuristic saying how often to place a tick on an axis of length n.
 # Float -> Float
@@ -290,7 +290,7 @@ def cat_axis(orient, x, cat_values):
 
 # Float -> Float -> Float -> Float -> List GraphicsElement -> GraphicsElement
 def viewport(x_start, x_finish, y_finish, margin, gs):
-  return Viewport(0, 0, x_finish - x_start, y_finish, background_colour, margin, Scale(1, 1), Translate(0 - x_start, 0), Group(gs))
+  return Viewport(x=0, y=0, width=x_finish - x_start, height=y_finish, fill=background_colour, margin=margin, scale=Scale(1, 1), translate=Translate(0 - x_start, 0), g=Group(gs))
 
 # Plot a map of x values to lists of (categorical value, y value) pairs. Importantly, assume all data is uniform
 # (categorical keys are the same for each x value and are ordered the same each time).
@@ -345,7 +345,7 @@ def stacked_bar(colours, ns):
   dims = zip(0 :| subtotals, heights)
   rects = map(lambda ((y, height), colour): Rect(x=0, y=y, width=1, height=height, fill=colour), zip(dims, colours))
 
-  return Viewport(0, 0, 1, last(subtotals), "none", 0, Scale(1, 1), Translate(0, 0), Group(rects))
+  return Viewport(x=0, y=0, width=1, height=last(subtotals), fill="none", margin=0, scale=Scale(1, 1), translate=Translate(0, 0), g=Group(rects))
 
 # Bool -> Colours -> Float -> List (a, Float) -> GraphicsElement
 bar_chart = categorical_chart(rects)
@@ -363,7 +363,7 @@ stacked_bar_chart = categorical_chart(compose(map, stacked_bar))
 def caption(str, Viewport(x, y, w, h, fill, margin, scale, translate, g)):
   g_ = Group([
       String(x + w / 2, -2, str, "middle", "hanging"),
-      Viewport(0, 0, w, h, fill, margin, scale, translate, g)
+      Viewport(x=0, y=0, width=w, height=h, fill=fill, margin=margin, scale=scale, translate=translate, g=g)
     ])
 
-  return Viewport(x, y, w, h, background_colour, default_margin / 2 + 4, Scale(1, 1), Translate(0, 0), g_)
+  return Viewport(x=x, y=y, width=w, height=h, fill=background_colour, margin=default_margin / 2 + 4, scale=Scale(1, 1), translate=Translate(0, 0), g=g_)
