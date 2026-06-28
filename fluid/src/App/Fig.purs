@@ -220,9 +220,6 @@ loadFig options@{ inputs, linking } fluidSrc = do
       gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
       gcBwd v = first focus.bwd (graphgc.bwd v)
 
-      gcFwd :: Env 𝔹 -> Val 𝔹 × GraphImpl
-      gcFwd γ = graphgc_op.bwd (deMorgan focus.fwd γ)
-
       in_views = const Nothing <$> γ_restricted
       unselected = { γ: botOf γα, v: botOf outα } :: IO 𝔹
 
@@ -236,7 +233,7 @@ loadFig options@{ inputs, linking } fluidSrc = do
       demands = lift inert'.γ gcBwd
 
       demandedBy :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      demandedBy = lift inert'.v gcFwd
+      demandedBy = lift inert'.v (graphgc_op.bwd <<< deMorgan focus.fwd)
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ = γ'' × v × vertices g
