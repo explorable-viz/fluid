@@ -15,7 +15,7 @@ import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
-import Data.Tuple (curry, fst, snd)
+import Data.Tuple (curry, snd)
 import DataType (arity, checkArity, consistentWith, dataType, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
@@ -23,10 +23,9 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asStmt, fv)
 import File (class LoadFile, FileCxt(..))
-import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSlice, fwdSlice)
+import Graph.Slice (bwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
 import ModuleGraph (ModuleName)
@@ -310,15 +309,14 @@ load q = do
 
 type GraphEval g s t =
    { g :: g
-   , graph_fwd :: Set Vertex -> Endo g
    , graph_bwd :: Set Vertex -> Endo g
    , inα :: s Vertex
    , outα :: t Vertex
    }
 
 withOp :: forall g s t. Graph g => GraphEval g s t -> GraphEval g t s
-withOp { g, graph_fwd, graph_bwd, inα, outα } =
-   { g: op g, graph_fwd, graph_bwd, inα: outα, outα: inα }
+withOp { g, graph_bwd, inα, outα } =
+   { g: op g, graph_bwd, inα: outα, outα: inα }
 
 graphGC
    :: forall g s t
@@ -328,34 +326,14 @@ graphGC
    => Foldable s
    => Foldable t
    => GraphEval g s t
-   -> { fwd :: s 𝔹 -> t 𝔹 × g
-      , bwd :: t 𝔹 -> s 𝔹 × g
-      }
-graphGC { g, graph_fwd, graph_bwd, inα, outα } =
-   { fwd: \in𝔹 ->
-        let
-           g' = graph_fwd (selectαs in𝔹 inα) g
-        in
-           select𝔹s outα (vertices g') × g'
-   , bwd: \out𝔹 ->
+   -> { bwd :: t 𝔹 -> s 𝔹 × g }
+graphGC { g, graph_bwd, inα, outα } =
+   { bwd: \out𝔹 ->
         let
            g' = graph_bwd (selectαs out𝔹 outα) g
         in
            select𝔹s inα (vertices g') × g'
    }
-
-toGC
-   :: forall g s t
-    . Graph g
-   => Apply s
-   => Apply t
-   => Foldable s
-   => Foldable t
-   => { fwd :: s 𝔹 -> t 𝔹 × g
-      , bwd :: t 𝔹 -> s 𝔹 × g
-      }
-   -> GaloisConnection (s 𝔹) (t 𝔹)
-toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
 graphEval :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classCtx } stmt =
@@ -366,8 +344,7 @@ graphEval { n, γ, classCtx } stmt =
          g × outα <- runWithGraphT_spy (asReturns <$> evalStmt Nothing γ sα mempty) (vertices inα)
          when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
          pure (g × inα × outα)
-      pure { g, graph_fwd, graph_bwd, inα, outα }
+      pure { g, graph_bwd, inα, outα }
    where
-   graph_fwd = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
    graph_bwd = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
    spyFun' b msg = spyFunWhen b msg (showVertices *** showGraph) showGraph
