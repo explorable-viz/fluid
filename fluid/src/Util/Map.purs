@@ -15,7 +15,7 @@ import Foreign.Object (Object)
 import Foreign.Object as Object
 import Util (type (×), Endo, assert, definitely, error, orElse, (×))
 import Util.Set (class Set, (∈), size)
-import Data.Map (Map) as M
+import Data.Map (Map, lookup) as M
 import Data.Set as DSet
 
 -- Generalises Map but also supports a fixed key type, like Dict. Doesn't support transforming element type.
@@ -80,6 +80,9 @@ keyExists k = "Key " <> show k <> " exists in map"
 
 get :: forall a k b. Show k => Map a k b => k -> a -> b
 get k = lookup k >>> definitely (keyExists k)
+
+findWithDefault :: forall k v. Ord k => v -> k -> M.Map k v -> v
+findWithDefault d k = maybe d identity <<< M.lookup k
 
 -- Maybe push a semigroup requirement onto Map
 append :: forall a k b. Map a k b => a -> Endo a

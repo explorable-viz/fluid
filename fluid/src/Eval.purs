@@ -34,7 +34,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, absurd, check, definitely, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
-import Util.Map (unionWith_never, get, keys, lookup, lookup', maplet, restrict, (<+>))
+import Util.Map (unionWith_never, get, keys, lookup, lookup', findWithDefault, maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
@@ -304,7 +304,7 @@ load :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => 
 load q = do
    { primitives, modules, graph, cache } <- getStore
    unless (Map.member q cache) do
-      γ_q <- foldM importInto primitives (fromMaybe Nil (Map.lookup q graph))
+      γ_q <- foldM importInto primitives (findWithDefault Nil q graph)
       γ' <- maybe (pure empty) (\defs' -> eval_module γ_q defs' empty) (Map.lookup q modules)
       modifyStore (\s -> s { cache = Map.insert q γ' s.cache })
 

@@ -8,7 +8,7 @@ import Data.Foldable (foldM)
 import Data.List (List(..), (:))
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
@@ -30,7 +30,7 @@ import DefiniteAssignment (class HasClassCtx, ClassCtx, Cxt, Entry(..), TyResult
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), throwLeft, withMsg, (×))
-import Util.Map (constMap, keys, restrict)
+import Util.Map (constMap, keys, findWithDefault, restrict)
 import Util.Set ((∪))
 import Val (class HasModuleStore, modifyStore, Env)
 
@@ -53,25 +53,25 @@ checkModules
    -> Map ModuleName (Raw S.Module)
    -> Cxt
    -> List ModuleName
-   -> m Unit
-checkModules graph modules baseCxt roots = void (foldM go Map.empty roots)
+   -> m (Map ModuleName Cxt)
+checkModules graph modules baseCxt roots = foldM go Map.empty roots
    where
    go :: Map ModuleName Cxt -> ModuleName -> m (Map ModuleName Cxt)
    go memo q
       | Map.member q memo = pure memo
       | otherwise = do
-           memo' × γ <- foldM step (memo × baseCxt) (fromMaybe Nil (Map.lookup q graph))
+           memo' × γ <- foldM step (memo × baseCxt) (findWithDefault Nil q graph)
            case Map.lookup q modules of
               Nothing -> pure (Map.insert q Map.empty memo')
               Just mod -> do
-                 δ <- withMsg ("Checking module " <> q) (checkModule γ mod)
+                 δ <- withMsg ("Checking module " <> q) (checkModule Map.empty γ mod)
                  λ <- classesOfModule q mod
                  pure (Map.insert q ((Class <$> λ) `Map.union` (Status true <$ δ)) memo')
 
    step :: Map ModuleName Cxt × Cxt -> ModuleName -> m (Map ModuleName Cxt × Cxt)
    step (memo × acc) i = do
       memo' <- go memo i
-      pure (memo' × (acc `Map.union` fromMaybe Map.empty (Map.lookup i memo')))
+      pure (memo' × (acc `Map.union` findWithDefault Map.empty i memo'))
 
 prepConfig :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
@@ -90,21 +90,26 @@ prepConfig primitives fluidSrc = do
             , modules
             , classCtx: moduleClassCtx
             }
-      n × _ × primitives' × _ × topLevelEnv <- flip runAllocT 0 do
+      n × _ × primitives' × topLevelEnv <- flip runAllocT 0 do
          primitives' <- alloc primitives
          modules' <- traverse alloc moduleCxt.modules
          let mαs = Set.unions (vertices <$> Map.values modules')
-         let αs = vertices primitives' ∪ mαs
          _ × γ <-
             runWithGraphT_spy
                ( do
                     modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
                     foldM importInto primitives' (builtins : prelude : leadingImports s)
                )
-               αs :: AllocT m (GraphImpl × _)
-         pure (primitives' × modules' × γ)
-      checkModules sCxt.graph sCxt.modules (constMap (Status true) (keys primitives)) (builtins : prelude : imports)
-      sty <- checkProgram moduleClassCtx (keys topLevelEnv) s
+               (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
+         pure (primitives' × γ)
+      memo <- checkModules sCxt.graph sCxt.modules (constMap (Status true) (keys primitives)) (builtins : prelude : imports)
+      let
+         baseCxt =
+            constMap (Status true) (keys primitives)
+               `Map.union` findWithDefault Map.empty builtins memo
+               `Map.union` findWithDefault Map.empty prelude memo
+               `Map.union` Map.singleton "__NoArgs" (Class { mod: builtins, base: Nothing, fields: Nil })
+      sty <- checkProgram memo baseCxt s
       eTy <- desug sty
       let e = dropLeadingImports ((unit <$ eTy) :: Raw Stmt)
       let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fullClassCtx }
