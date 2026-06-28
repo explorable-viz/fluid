@@ -7,8 +7,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader, local)
 import DefiniteAssignment (class HasClassCtx, ClassCtx, askClassCtx, fields)
 import Data.Array ((..))
-import Data.List (List(..), find, foldM, foldl, length, snoc, unzip, zip, (:))
-import Data.Map (Map)
+import Data.List (List(..), find, foldM, length, snoc, unzip, zip, (:))
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (unwrap)
@@ -30,8 +29,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
-import ModuleGraph (ModuleName, ModuleCxt)
-import ModuleStore (class HasModuleStore, getStore, modifyStore)
+import ModuleGraph (ModuleName)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
@@ -40,7 +38,7 @@ import Util.Map (unionWith_never, get, keys, lookup, lookup', maplet, restrict, 
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, forDefs, val)
+import Val (class HasModuleStore, getStore, modifyStore, BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, forDefs, val)
 
 -- Needs a better name.
 type GraphConfig =
@@ -98,6 +96,7 @@ closeDefs γ ρ αs =
 apply
    :: forall m
     . HasClassCtx m
+   => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
@@ -138,6 +137,7 @@ apply _ _ v = throw $ "Found " <> prettyP v <> ", expected function"
 eval
    :: forall m
     . HasClassCtx m
+   => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
@@ -190,6 +190,7 @@ eval doc_opt γ e0 αs = do
 evalStmt
    :: forall m
     . HasClassCtx m
+   => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
@@ -220,7 +221,10 @@ evalStmt doc_opt γ s αs = case s of
    ExprStmt e -> do
       _ <- eval Nothing γ e αs
       pure (Assigns empty empty)
-   Import _ -> pure (Assigns empty empty)
+   Import q -> do
+      load q
+      { cache } <- getStore
+      pure (Assigns (definitely "import loaded" (Map.lookup q cache)) empty)
    Seq s1 s2 -> do
       r1 <- evalStmt Nothing γ s1 αs
       case r1 of
@@ -230,6 +234,7 @@ evalStmt doc_opt γ s αs = case s of
 evalVal
    :: forall m
     . HasClassCtx m
+   => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
@@ -271,7 +276,7 @@ evalVal γ (Lambda α σ) _ =
    pure $ Just (α × V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
 evalVal _ _ _ = pure Nothing
 
-eval_module :: forall m. HasClassCtx m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
    where
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
@@ -289,32 +294,19 @@ eval_module γ = go empty
       pure (γ'' × αs)
    step _ _ αs = pure (empty × αs)
 
-eval_primitives
-   :: forall m
-    . HasClassCtx m
-   => HasModuleStore m
-   => MonadWithGraphAlloc m
-   => MonadReader FileCxt m
-   => MonadAff m
-   => LoadFile m
-   => Env Vertex
-   -> ModuleCxt Vertex
-   -> m (Env Vertex)
-eval_primitives primitives { roots, graph, modules } = foldM importInto primitives roots
-   where
-   importInto :: Env Vertex -> ModuleName -> m (Env Vertex)
-   importInto γ q = do
-      load q
-      cache <- getStore
-      pure (γ <+> definitely "module loaded" (Map.lookup q cache))
+importInto :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
+importInto γ q = do
+   load q
+   { cache } <- getStore
+   pure (γ <+> definitely "module loaded" (Map.lookup q cache))
 
-   load :: ModuleName -> m Unit
-   load q = do
-      cache <- getStore
-      unless (Map.member q cache) do
-         γ_q <- foldM importInto primitives (fromMaybe Nil (Map.lookup q graph))
-         γ' <- maybe (pure empty) (\defs' -> eval_module γ_q defs' empty) (Map.lookup q modules)
-         modifyStore (Map.insert q γ')
+load :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m Unit
+load q = do
+   { primitives, modules, graph, cache } <- getStore
+   unless (Map.member q cache) do
+      γ_q <- foldM importInto primitives (fromMaybe Nil (Map.lookup q graph))
+      γ' <- maybe (pure empty) (\defs' -> eval_module γ_q defs' empty) (Map.lookup q modules)
+      modifyStore (\s -> s { cache = Map.insert q γ' s.cache })
 
 type GraphEval g s t =
    { g :: g
@@ -365,7 +357,7 @@ toGC
    -> GaloisConnection (s 𝔹) (t 𝔹)
 toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
-graphEval :: forall m. HasClassCtx m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
+graphEval :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classCtx } stmt =
    local (\(FileCxt r) -> FileCxt (r { classCtx = classCtx })) do
       _ × _ × g × inα × outα <- flip runAllocT n do

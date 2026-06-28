@@ -500,6 +500,12 @@ stmtImports _ = Nil
 moduleImports :: forall a. Module a -> List String
 moduleImports (Module ss) = ss >>= stmtImports
 
+-- Leading imports form the slicing input boundary; later imports are computed in-graph.
+leadingImports :: forall a. Stmt a -> List String
+leadingImports (Import q) = q : Nil
+leadingImports (Seq (Import q) rest) = q : leadingImports rest
+leadingImports _ = Nil
+
 topLevel :: forall a. Parser a -> Parser a
 topLevel p = whitespace *> withPos p <* whitespace <* eof
 

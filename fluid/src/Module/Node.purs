@@ -7,10 +7,9 @@ import Control.Monad.Except (class MonadError, class MonadTrans, lift)
 import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, ask, runReaderT)
 import Control.Monad.State (StateT, evalStateT, get, modify_)
 import Data.Either (Either(..))
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import DefiniteAssignment (class HasClassCtx)
-import ModuleStore (class HasModuleStore, ModuleStore)
+import Val (class HasModuleStore, ModuleStore, emptyStore)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
@@ -29,7 +28,7 @@ instance Monad m => LoadFile (NodeT m) where
 newtype NodeT m a = NodeT (ReaderT FileCxt (StateT ModuleStore m) a)
 
 runNodeT :: forall m a. Monad m => FileCxt -> NodeT m a -> m a
-runNodeT fileCxt (NodeT x) = evalStateT (runReaderT x fileCxt) Map.empty
+runNodeT fileCxt (NodeT x) = evalStateT (runReaderT x fileCxt) emptyStore
 
 -- ======================
 -- boilerplate

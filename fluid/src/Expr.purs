@@ -70,6 +70,10 @@ data Stmt a
 
 newtype Module a = Module (List (Stmt a))
 
+dropLeadingImports :: forall a. Stmt a -> Stmt a
+dropLeadingImports (Seq (Import _) rest) = dropLeadingImports rest
+dropLeadingImports s = s
+
 class FV a where
    fv :: a -> Set Var
 

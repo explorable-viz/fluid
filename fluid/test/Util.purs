@@ -21,7 +21,6 @@ import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹, (≽))
 import Module (prepConfig)
-import ModuleStore (class HasModuleStore)
 import Parse (parseProgram)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import Expr (Stmt) as Expr
@@ -30,7 +29,7 @@ import SExpr (Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, throwLeft, withMsg, (×))
-import Val (class Ann, Env, EnvStmt(..), Val)
+import Val (class HasModuleStore, class Ann, Env, EnvStmt(..), Val)
 
 type TestSuite m = Array (String × m Unit)
 
@@ -76,6 +75,7 @@ benchNames =
 testProperties
    :: forall m
     . HasClassCtx m
+   => HasModuleStore m
    => MonadReader FileCxt m
    => LoadFile m
    => MonadWriter BenchRow m

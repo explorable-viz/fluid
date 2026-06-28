@@ -5,9 +5,15 @@ import Prelude hiding (absurd, append)
 import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
-import Control.Monad.Reader (class MonadReader)
+import Control.Monad.Except (ExceptT)
+import Control.Monad.Reader (class MonadReader, ReaderT)
+import Control.Monad.State (StateT)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Writer (WriterT)
 import DefiniteAssignment (class HasClassCtx)
 import Data.Array (concat, fromFoldable, (!!))
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
@@ -23,8 +29,9 @@ import Dict (Dict)
 import Dict as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Expr (Elim, Stmt, fv)
+import Expr (Elim, Module, Stmt, fv)
 import File (class LoadFile, FileCxt)
+import ModuleGraph (DependencyGraph, ModuleName)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
@@ -78,9 +85,40 @@ instance Highlightable a => Highlightable (a × b) where
 
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
+type ModuleStore =
+   { primitives :: Env Vertex
+   , modules :: Map ModuleName (Module Vertex)
+   , graph :: DependencyGraph
+   , cache :: Map ModuleName (Env Vertex)
+   }
+
+emptyStore :: ModuleStore
+emptyStore = { primitives: empty, modules: Map.empty, graph: Map.empty, cache: Map.empty }
+
+class Monad m <= HasModuleStore m where
+   getStore :: m ModuleStore
+   modifyStore :: (ModuleStore -> ModuleStore) -> m Unit
+
+instance (Monad m, HasModuleStore m) => HasModuleStore (StateT s m) where
+   getStore = lift getStore
+   modifyStore = lift <<< modifyStore
+
+instance (Monad m, HasModuleStore m) => HasModuleStore (ReaderT r m) where
+   getStore = lift getStore
+   modifyStore = lift <<< modifyStore
+
+instance (Monad m, HasModuleStore m) => HasModuleStore (ExceptT e m) where
+   getStore = lift getStore
+   modifyStore = lift <<< modifyStore
+
+instance (Monad m, HasModuleStore m, Monoid w) => HasModuleStore (WriterT w m) where
+   getStore = lift getStore
+   modifyStore = lift <<< modifyStore
+
 type Op =
    forall m
     . HasClassCtx m
+   => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadError Error m
    => MonadAff m

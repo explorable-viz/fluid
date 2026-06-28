@@ -33,7 +33,6 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module (prepConfig)
-import ModuleStore (class HasModuleStore)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive.Defs (primitives)
@@ -41,7 +40,7 @@ import Test.Util.Debug (tracing)
 import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
-import Val (Env(..), EnvStmt(..), Val(..), asVal, unrestrictGC)
+import Val (class HasModuleStore, Env(..), EnvStmt(..), Val(..), asVal, unrestrictGC)
 
 str
    :: { output :: String -- pseudo-variable to use as name of output view

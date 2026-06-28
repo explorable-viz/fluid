@@ -15,8 +15,8 @@ import Data.Traversable (traverse)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Eval (GraphConfig, eval_primitives)
-import Expr (Stmt, fv)
+import Eval (GraphConfig, importInto)
+import Expr (Stmt, dropLeadingImports, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
 
 import Graph (vertices)
@@ -24,8 +24,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName)
-import ModuleStore (class HasModuleStore)
-import Parse (parseModule, parseProgram)
+import Parse (leadingImports, parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasClassCtx, ClassCtx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
@@ -33,7 +32,7 @@ import SExpr as S
 import Util (type (×), throwLeft, withMsg, (×))
 import Util.Map (constMap, keys, restrict)
 import Util.Set ((∪))
-import Val (Env)
+import Val (class HasModuleStore, modifyStore, Env)
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
@@ -94,15 +93,20 @@ prepConfig primitives fluidSrc = do
       n × _ × primitives' × _ × topLevelEnv <- flip runAllocT 0 do
          primitives' <- alloc primitives
          modules' <- traverse alloc moduleCxt.modules
-         let moduleCxt' = moduleCxt { modules = modules' }
          let mαs = Set.unions (vertices <$> Map.values modules')
          let αs = vertices primitives' ∪ mαs
-         _ × γ <- runWithGraphT_spy (eval_primitives primitives' moduleCxt') αs :: AllocT m (GraphImpl × _)
+         _ × γ <-
+            runWithGraphT_spy
+               ( do
+                    modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
+                    foldM importInto primitives' (builtins : prelude : leadingImports s)
+               )
+               αs :: AllocT m (GraphImpl × _)
          pure (primitives' × modules' × γ)
       checkModules sCxt.graph sCxt.modules (constMap (Status true) (keys primitives)) (builtins : prelude : imports)
       sty <- checkProgram moduleClassCtx (keys topLevelEnv) s
       eTy <- desug sty
-      let e = (unit <$ eTy) :: Raw Stmt
+      let e = dropLeadingImports ((unit <$ eTy) :: Raw Stmt)
       let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fullClassCtx }
       pure { s, e, gconfig }
 

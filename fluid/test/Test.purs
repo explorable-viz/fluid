@@ -5,7 +5,7 @@ import Prelude
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import DefiniteAssignment (class HasClassCtx)
-import ModuleStore (class HasModuleStore)
+import Val (class HasModuleStore)
 import Data.Array (concat, filter, elem)
 import Data.Map as Map
 import Data.Profunctor.Strong (second)
