@@ -42,8 +42,8 @@ builtins = "lib/builtins"
 prelude :: ModuleName
 prelude = "lib/prelude"
 
--- Unlike the spec's `⊢_M`, memoised on each module's exports so each reachable
--- module is checked at most once (the graph is acyclic, so this terminates).
+-- Memoised (unlike the spec) on each module's exports so each reachable module
+-- is checked at most once; the graph is acyclic, so this terminates.
 checkModules
    :: forall m
     . MonadError Error m
