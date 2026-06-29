@@ -4,10 +4,10 @@ import Prelude
 
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Foldable (foldM, foldr, for_)
+import Data.Foldable (foldM, foldMap, foldr, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
-import Data.List (List, length, nub)
+import Data.List (List(..), length, nub, (:))
 import ModuleGraph (ModuleName)
 import Data.List.NonEmpty as NEL
 import Data.Semigroup.Foldable (foldl1)
@@ -26,7 +26,24 @@ import Util (type (×), throw, (×))
 import Util.Set ((\\), (∪))
 
 checkProgram :: forall m. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
-checkProgram memo baseCxt s = snd <$> wellFormed memo baseCxt s
+checkProgram memo baseCxt s = checkTopLevelImports s *> (snd <$> wellFormed memo baseCxt s)
+
+-- Imports may appear only on the top-level statement spine, not nested in
+-- if/match/def blocks.
+checkTopLevelImports :: forall m a. MonadError Error m => S.Stmt a -> m Unit
+checkTopLevelImports = spine
+   where
+   spine (S.Seq s1 s2) = spine s1 *> spine s2
+   spine (S.Import _) = pure unit
+   spine s = for_ (nestedImports s) \q -> throw $ "Import not at top level: " <> q
+
+nestedImports :: forall a. S.Stmt a -> List ModuleName
+nestedImports (S.Import q) = q : Nil
+nestedImports (S.Seq s1 s2) = nestedImports s1 <> nestedImports s2
+nestedImports (S.If es elseBranch) = foldMap (nestedImports <<< snd) es <> maybe Nil nestedImports elseBranch
+nestedImports (S.Match _ ps) = foldMap (nestedImports <<< snd) ps
+nestedImports (S.DefRec ds) = foldMap (\(_ × S.Clause _ (_ × s)) -> nestedImports s) ds
+nestedImports _ = Nil
 
 classesOfModule :: forall m a. MonadError Error m => String -> S.Module a -> m ClassCtx
 classesOfModule q (S.Module ss) = foldM unionWith_mergeEq Map.empty =<< traverse (classes q) ss
@@ -35,7 +52,7 @@ checkModule :: forall m. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> 
 checkModule memo γ (S.Module ss) =
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure Map.empty
-      Just s -> wellFormed memo γ s <#> \(r × _) -> case r of
+      Just s -> checkTopLevelImports s *> wellFormed memo γ s <#> \(r × _) -> case r of
          Assigns δ -> δ
          Returns -> Map.empty
 

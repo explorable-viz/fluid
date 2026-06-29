@@ -10,6 +10,9 @@ purepy_cases =
    , { file: "purepy/forward_class_top.fld", expected_error: "Unknown constructor: Point" }
    , { file: "purepy/forward_class_in_def.fld", expected_error: "Unknown constructor: Point" }
    , { file: "purepy/pat_class_unknown.fld", expected_error: "Unknown constructor: NotAClass" }
+   , { file: "purepy/import_in_def.fld", expected_error: "Import not at top level: module/foo" }
+   , { file: "purepy/import_in_if.fld", expected_error: "Import not at top level: module/foo" }
+   , { file: "purepy/import_in_match_case.fld", expected_error: "Import not at top level: module/foo" }
    , { file: "purepy/mutual_split.fld", expected_error: "Unbound name: odd" }
    , { file: "purepy/cond_partial_def.fld", expected_error: "Not definitely assigned: x" }
    , { file: "purepy/no_else.fld", expected_error: "Not definitely assigned: x" }
