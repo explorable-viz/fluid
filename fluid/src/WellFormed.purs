@@ -245,9 +245,11 @@ namesModule _ _ = Nothing
 wellFormedExpr :: forall m a. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> m Unit
 wellFormedExpr memo γ e = do
    for_ (fv e) \x -> case Map.lookup x γ of
-      Just (VarStatus false) -> throw $ "Not definitely assigned: " <> x
       Nothing -> throw $ "Unbound name: " <> x
-      _ -> pure unit -- VarStatus true, or a class/module name (unconditionally in scope)
+      Just (VarStatus true) -> pure unit
+      Just (VarStatus false) -> throw $ "Not definitely assigned: " <> x
+      Just (Class _) -> pure unit
+      Just (Module _) -> pure unit
    checkExpr memo γ e
 
 checkExpr :: forall m a. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> m Unit
