@@ -3,7 +3,7 @@ module Test.Specs.LinkedOutputs where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd, (>.>), select)
+import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixDims, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd, topα, (>.>), select, select')
 import Data.Maybe (Maybe(..))
 import DataType (f_y)
 import File (Folder(..))
@@ -113,7 +113,7 @@ linkedOutputs_cases =
                      >.> matrixElement 2 1 select
                      >.> matrixElement 2 2 select
                 )
-     , inert_expect: Nothing
+     , inert_expect: Just (topα select' >.> fst (matrixDims select') >.> snd (matrixDims select'))
      , file: "linked_outputs/convolution.fld"
      }
    , linkedOutputs_spec1
