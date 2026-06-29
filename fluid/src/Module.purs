@@ -5,7 +5,7 @@ import Prelude
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
 import Data.Foldable (foldM, foldl)
-import Data.List (List(..), (:))
+import Data.List (List(..), takeWhile, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -42,6 +42,14 @@ builtins = "lib/builtins"
 prelude :: ModuleName
 prelude = "lib/prelude"
 
+-- Predefined modules, in dependency order: every module implicitly depends on
+-- those that precede it (builtins, then prelude, then the rest).
+predefined :: List ModuleName
+predefined = builtins : prelude : Nil
+
+predefinedDeps :: ModuleName -> List ModuleName
+predefinedDeps q = takeWhile (_ /= q) predefined
+
 -- Memoised (unlike the spec) by fully-qualified module name, caching each
 -- module's exports so each reachable module is checked at most once; the
 -- dependency graph is acyclic, so this terminates.
@@ -63,21 +71,15 @@ checkModules graph modules baseCxt roots = foldM go Map.empty roots
            case Map.lookup q modules of
               Nothing -> pure (Map.insert q Map.empty memo')
               Just mod -> do
-                 let γ = foldl (\acc i -> acc `Map.union` findWithDefault Map.empty i memo') baseCxt (predefinedImports q)
+                 let γ = foldl (\acc i -> acc `Map.union` findWithDefault Map.empty i memo') baseCxt (predefinedDeps q)
                  δ <- withMsg ("Checking module " <> q) (checkModule memo' γ mod)
                  λ <- classesOfModule q mod
                  pure (Map.insert q ((Class <$> λ) `Map.union` (VarStatus true <$ δ)) memo')
 
-   predefinedImports :: ModuleName -> List ModuleName
-   predefinedImports q
-      | q == builtins = Nil
-      | q == prelude = builtins : Nil
-      | otherwise = builtins : prelude : Nil
-
 prepConfig :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   sCxt <- parseModuleGraph (builtins : prelude : imports)
+   sCxt <- parseModuleGraph (predefined <> imports)
    let moduleClassCtx = Map.insert "__NoArgs" { mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
    programClasses <- classes mainModule s
    fullClassCtx <- unionWith_mergeEq moduleClassCtx programClasses
@@ -99,16 +101,16 @@ prepConfig primitives fluidSrc = do
             runWithGraphT_spy
                ( do
                     modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
-                    foldM importInto primitives' (builtins : prelude : leadingImports s)
+                    foldM importInto primitives' (predefined <> leadingImports s)
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure (primitives' × γ)
-      memo <- checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (builtins : prelude : imports)
+      memo <- checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> imports)
       let
          baseCxt =
-            constMap (VarStatus true) (keys primitives)
-               `Map.union` findWithDefault Map.empty builtins memo
-               `Map.union` findWithDefault Map.empty prelude memo
+            foldl (\acc q -> acc `Map.union` findWithDefault Map.empty q memo)
+               (constMap (VarStatus true) (keys primitives))
+               predefined
                `Map.union` Map.singleton "__NoArgs" (Class { mod: builtins, base: Nothing, fields: Nil })
       sty <- checkProgram memo baseCxt s
       eTy <- desug sty
@@ -166,9 +168,4 @@ parseModuleGraph roots = do
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
       mod × imports <- throwLeft <#> withMsg ("Loading module " <> path) $ parseModule src
       λ <- classesOfModule path mod
-      let
-         imports' =
-            if path == builtins then imports
-            else if path == prelude then builtins : imports
-            else builtins : prelude : imports
-      pure $ mod × λ × imports'
+      pure $ mod × λ × (predefinedDeps path <> imports)
