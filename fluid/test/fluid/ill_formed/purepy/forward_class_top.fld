@@ -1,0 +1,8 @@
+p = Point(1, 2)
+
+@dataclass
+class Point:
+  x: Any
+  y: Any
+
+p
