@@ -21,7 +21,7 @@ import DefiniteAssignment (ClassCtx, Ctx, Entry(..), Cxt, TyResult(..), classesO
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
-import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..)) as S
+import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..), ctrName) as S
 import Util (type (×), (×))
 import Util.Set ((\\), (∪))
 
@@ -254,10 +254,10 @@ wellFormedExpr memo = wf
    wf _ (S.Float _ _) = pure unit
    wf _ (S.Str _ _) = pure unit
    wf γ (S.Constr _ c es) = do
-      n <- maybe (throwError $ "Unknown constructor: " <> c) pure (arity (classesOf γ) c)
+      n <- maybe (throwError $ "Unknown constructor: " <> dottedName c) pure (arity (classesOf γ) (S.ctrName c))
       when (length es /= n)
          $ throwError
-         $ c <> " expects " <> show n <> " argument(s); got " <> show (length es)
+         $ dottedName c <> " expects " <> show n <> " argument(s); got " <> show (length es)
       for_ es (wf γ)
    wf γ (S.ConstrKw _ _ es xes) = for_ es (wf γ) *> for_ (xes <#> snd) (wf γ)
    wf γ (S.App e e') = wf γ e *> wf γ e'

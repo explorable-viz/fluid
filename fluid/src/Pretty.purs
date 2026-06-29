@@ -18,7 +18,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricD
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (assignment, block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Primitive.Parse (getPrec)
-import SExpr (Branch, Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), ctrName, DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
 import Util (type (×), error, isEmpty, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
@@ -46,7 +46,7 @@ instance RootOp Pattern where
    rootOp _ = Nothing
 
 instance Ann a => RootOp (Expr a) where
-   rootOp (Constr _ c _) | c == cCons = Just ":"
+   rootOp (Constr _ c _) | ctrName c == cCons = Just ":"
    rootOp (BinaryApp _ op _) = Just op
    rootOp (UnaryPrefixApp op _) = Just op
    rootOp _ = Nothing
@@ -69,7 +69,7 @@ class IsSimple (e :: Type) where
 instance Ann a => IsSimple (Expr a) where
    isSimple (BinaryApp _ _ _) = false
    isSimple (UnaryPrefixApp _ _) = false
-   isSimple (Constr _ c _) | c == cCons = false
+   isSimple (Constr _ c _) | ctrName c == cCons = false
    isSimple (Lambda _) = false
    isSimple (Ternary _ _ _) = false
    isSimple _ = true
@@ -127,11 +127,11 @@ instance Ann a => Pretty (Expr a) where
    pretty (Int α n) = highlightIf α (number n)
    pretty (Float α n) = highlightIf α (number n)
    pretty (Str α str) = highlightIf α (string str)
-   pretty (Constr _ "__NoArgs" Nil) = text "()"
-   pretty (Constr α c Nil) = highlightIf α (text c)
-   pretty (Constr α c as) = highlightIf α (expr $ prettyConstr c as)
+   pretty (Constr _ ("__NoArgs" : Nil) Nil) = text "()"
+   pretty (Constr α c Nil) = highlightIf α (text (dottedName c))
+   pretty (Constr α c as) = highlightIf α (expr $ prettyConstr (ctrName c) as)
    pretty (ConstrKw α c es xes) =
-      highlightIf α (text c <> parens (commas ((pretty <$> es) <> ((\(x ↦ e) -> text x <> text "=" <> pretty e) <$> xes))))
+      highlightIf α (text (dottedName c) <> parens (commas ((pretty <$> es) <> ((\(x ↦ e) -> text x <> text "=" <> pretty e) <$> xes))))
    pretty (Dictionary α Nil) = highlightIf α (text "{}")
    pretty (Dictionary α es) = highlightIf α (expr $ record $ map pretty es)
    pretty (Matrix α e (x × y) e') =
@@ -278,7 +278,7 @@ prettyConsArg e lhs = case rootOp e of
    Just op -> if (if lhs then (<=) else (<)) (getPrec op) (getPrec ":") then parens (pretty e) else pretty e
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
-prettyAppChain (App f (Constr _ "__NoArgs" Nil)) as =
+prettyAppChain (App f (Constr _ ("__NoArgs" : Nil) Nil)) as =
    prettyAppChain f Nil <> text "()" <> renderArgs as
    where
    renderArgs Nil = mempty

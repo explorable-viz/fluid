@@ -11,7 +11,7 @@ import Data.Either (Either(..), either)
 import Data.Foldable (for_, length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, find, take, unzip, zip, zipWith, (:))
+import Data.List (List(..), drop, find, last, take, unzip, zip, zipWith, (:))
 import Data.List (difference) as L
 import Data.List.NonEmpty (NonEmptyList(..), foldr, groupBy, head, toList)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -46,8 +46,8 @@ data Expr a
    | Int a Int
    | Float a Number
    | Str a String
-   | Constr a Ctr (List (Expr a))
-   | ConstrKw a Ctr (List (Expr a)) (List (Bind (Expr a))) -- positional then keyword
+   | Constr a Name (List (Expr a))
+   | ConstrKw a Name (List (Expr a)) (List (Bind (Expr a)))
    | Dictionary a (List (DictEntry a × Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (LambdaClause a)
@@ -95,6 +95,9 @@ pListVarAnon = PListVar varAnon
 showPattern :: Pattern + ListRestPattern -> String
 showPattern (Left p') = show p'
 showPattern (Right p') = show p'
+
+ctrName :: Name -> Ctr
+ctrName = definitely "constructor name" <<< last
 
 ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
 ctrFor (Left (PVar _)) = Nothing
@@ -216,7 +219,7 @@ recDefFwd :: forall m. HasClassCtx m => MonadError Error m => RecDef (TyResult C
 recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (close <<< snd <$> unwrap xcs))
    where
    close (Clause Returns body) = Clause Returns body
-   close (Clause (Assigns δ) (ps × s)) = Clause (Assigns δ) (ps × Seq s (Return (Constr Returns cNone Nil)))
+   close (Clause (Assigns δ) (ps × s)) = Clause (Assigns δ) (ps × Seq s (Return (Constr Returns (cNone : Nil) Nil)))
 
 paragraphFwd :: forall m. HasClassCtx m => MonadError Error m => List (ParagraphElem (TyResult Ctx)) -> m (E.Expr (TyResult Ctx))
 paragraphFwd elems = do
@@ -251,11 +254,11 @@ exprFwd (Float α n) =
 exprFwd (Str α s) =
    pure $ E.Str α s
 exprFwd (Constr α c ss) =
-   E.Constr α c <$> traverse desug ss
+   E.Constr α (ctrName c) <$> traverse desug ss
 exprFwd (ConstrKw α c es xes) = do
    λ <- askClassCtx
-   reordered <- reorderKw λ c (length es) xes
-   E.Constr α c <$> traverse desug (es <> reordered)
+   reordered <- reorderKw λ (ctrName c) (length es) xes
+   E.Constr α (ctrName c) <$> traverse desug (es <> reordered)
 exprFwd (Dictionary α sss) = do
    let ks × ss = unzip sss
    ks' <- traverse desug ks
