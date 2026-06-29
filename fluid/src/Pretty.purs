@@ -129,7 +129,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Str α str) = highlightIf α (string str)
    pretty (Constr _ c Nil) | ctrName c == "__NoArgs" = text "()"
    pretty (Constr α c Nil) = highlightIf α (text (dottedName c))
-   pretty (Constr α c as) = highlightIf α (expr $ prettyConstr (ctrName c) as)
+   pretty (Constr α c as) = highlightIf α (expr $ prettyConstr (dottedName c) as)
    pretty (ConstrKw α c es xes) =
       highlightIf α (text (dottedName c) <> parens (commas ((pretty <$> es) <> ((\(x ↦ e) -> text x <> text "=" <> pretty e) <$> xes))))
    pretty (Dictionary α Nil) = highlightIf α (text "{}")

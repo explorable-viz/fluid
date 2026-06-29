@@ -12,7 +12,7 @@ import Bind (Bind, Name, (↦))
 import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (NonEmptyList(..), toList)
+import Data.List.NonEmpty (NonEmptyList(..), cons, toList)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.NonEmpty ((:|))
 import Data.String (codePointFromChar)
@@ -316,8 +316,8 @@ expr = context "expr" $ ternary <?> "expression"
             <|> dict
             <|> paragraph
             <|> str
-            <|> var
             <|> constr
+            <|> var
             <|> parensExpr
             <|> docExpr
             <|> number
@@ -340,7 +340,10 @@ expr = context "expr" $ ternary <?> "expression"
          var = variable <#> Var
 
          constr :: Parser (Raw Expr)
-         constr = (\c -> Constr unit (pure c) Nil) <$> constructor
+         constr = try do
+            prefix <- many (try (variable <* delim '.'))
+            c <- constructor
+            pure (Constr unit (foldr cons (pure c) prefix) Nil)
 
          number :: Parser (Raw Expr)
          number = try (float <#> Float unit) <|> (integer <#> Int unit)
