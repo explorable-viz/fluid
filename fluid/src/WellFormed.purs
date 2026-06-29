@@ -13,6 +13,7 @@ import Data.List.NonEmpty as NEL
 import Data.Semigroup.Foldable (foldl1)
 import Data.Set (Set, unions)
 import Data.Set as Set
+import Data.String (Pattern(..), contains)
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
 import DataType (arity)
@@ -137,30 +138,34 @@ capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
 importedCxt :: forall a. Map.Map ModuleName Cxt -> S.Stmt a -> Cxt
-importedCxt memo (S.Import q f) =
+importedCxt memo (S.Import q Nothing) =
+   -- spec `import` rule: additionally bind the module name to ModEntry(q).
+   -- Single-segment only for now; dotted packages deferred.
    let
       γ = findWithDefault Map.empty q memo
    in
-      maybe γ (\xs -> Map.filterKeys (_ `Set.member` Set.fromFoldable xs) γ) f
+      if contains (Pattern "/") q then γ else Map.insert q (Module q) γ
+importedCxt memo (S.Import q (Just xs)) =
+   Map.filterKeys (_ `Set.member` Set.fromFoldable xs) (findWithDefault Map.empty q memo)
 importedCxt _ _ = Map.empty
 
 wellFormed :: forall m a. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> S.Stmt a -> m (TyResult Ctx × S.Stmt (TyResult Ctx))
 wellFormed _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
-wellFormed _ γ (S.Return e) = do
-   wellFormedExpr γ e
+wellFormed memo γ (S.Return e) = do
+   wellFormedExpr memo γ e
    pure (Returns × S.Return (Assigns Map.empty <$ e))
-wellFormed _ γ (S.ExprStmt e) = do
-   wellFormedExpr γ e
+wellFormed memo γ (S.ExprStmt e) = do
+   wellFormedExpr memo γ e
    pure (Assigns Map.empty × S.ExprStmt (Assigns Map.empty <$ e))
-wellFormed _ γ (S.Assert e e') = do
-   wellFormedExpr γ e
-   for_ e' (wellFormedExpr γ)
+wellFormed memo γ (S.Assert e e') = do
+   wellFormedExpr memo γ e
+   for_ e' (wellFormedExpr memo γ)
    pure (Assigns Map.empty × S.Assert (Assigns Map.empty <$ e) ((Assigns Map.empty <$ _) <$> e'))
-wellFormed _ γ (S.Def (S.VarDef p e)) = do
+wellFormed memo γ (S.Def (S.VarDef p e)) = do
    let xs = bv p
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throw $ "Variable captured by its own definition: " <> x
-   wellFormedExpr γ e
+   wellFormedExpr memo γ e
    pure (Assigns (constMap true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e)))
 wellFormed memo γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
@@ -189,7 +194,7 @@ wellFormed memo γ (S.Seq s1 s2) = do
 wellFormed memo γ (S.If es elseBranch) = do
    es' <- traverse
       ( \(e × s) -> do
-           wellFormedExpr γ e
+           wellFormedExpr memo γ e
            r × s' <- wellFormed memo γ s
            pure (r × ((Assigns Map.empty <$ e) × s'))
       )
@@ -199,7 +204,7 @@ wellFormed memo γ (S.If es elseBranch) = do
       Nothing -> pure (Assigns Map.empty × Nothing)
    pure (foldl1 mergeRes (NEL.cons rElse (fst <$> es')) × S.If (snd <$> es') elseBranch')
 wellFormed memo γ (S.Match e ps) = do
-   wellFormedExpr γ e
+   wellFormedExpr memo γ e
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
@@ -230,17 +235,26 @@ wellFormed memo _ (S.Import q f) = do
       when (not (Map.member x γ)) $ throw $ "Cannot import name " <> x <> " from module " <> q
    pure (Assigns Map.empty × S.Import q f)
 
-wellFormedExpr :: forall m a. MonadError Error m => Cxt -> S.Expr a -> m Unit
-wellFormedExpr γ e = do
+-- spec `simple-module`: a name bound to ModEntry(q) resolves to module q.
+namesModule :: forall a. Cxt -> S.Expr a -> Maybe ModuleName
+namesModule γ (S.Var x) = case Map.lookup x γ of
+   Just (Module q) -> Just q
+   _ -> Nothing
+namesModule _ _ = Nothing
+
+wellFormedExpr :: forall m a. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> m Unit
+wellFormedExpr memo γ e = do
    for_ (fv e) \x -> case Map.lookup x γ of
       Just (VarStatus false) -> throw $ "Not definitely assigned: " <> x
       Nothing -> throw $ "Unbound name: " <> x
       _ -> pure unit -- VarStatus true, or a class/module name (unconditionally in scope)
-   constrArities (classesOf γ) e
+   checkExpr memo γ e
 
-constrArities :: forall m a. MonadError Error m => ClassCtx -> S.Expr a -> m Unit
-constrArities λ = go
+checkExpr :: forall m a. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> m Unit
+checkExpr memo γ = go
    where
+   λ = classesOf γ
+
    go :: S.Expr a -> m Unit
    go (S.Constr _ c es) = do
       n <- maybe (throw $ "Unknown constructor: " <> c) pure (arity λ c)
@@ -253,7 +267,14 @@ constrArities λ = go
    go (S.BinaryApp e _ e') = go e *> go e'
    go (S.UnaryPrefixApp _ e) = go e
    go (S.Ternary c e e') = go c *> go e *> go e'
-   go (S.Project e _) = go e
+   -- spec `attr-module`: member of a module must be in its context; otherwise (attr-object) unchecked.
+   go (S.Project e y) = do
+      case namesModule γ e of
+         Just q -> when (not (Map.member y (findWithDefault Map.empty q memo)))
+            $ throw
+            $ "module " <> q <> " has no member " <> y
+         Nothing -> pure unit
+      go e
    go (S.DProject e e') = go e *> go e'
    go (S.Matrix _ e _ e') = go e *> go e'
    go (S.Lambda (S.LambdaClause (_ × e))) = go e

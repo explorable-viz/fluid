@@ -14,6 +14,7 @@ purepy_cases =
    , { file: "purepy/import_in_if.fld", expected_error: "Import not at top level: module/foo" }
    , { file: "purepy/import_in_match_case.fld", expected_error: "Import not at top level: module/foo" }
    , { file: "purepy/from_import_unknown_member.fld", expected_error: "Cannot import name baz from module module/two_vals_lib" }
+   , { file: "purepy/attr_unknown_member.fld", expected_error: "module qual_lib has no member unknown" }
    , { file: "purepy/mutual_split.fld", expected_error: "Unbound name: odd" }
    , { file: "purepy/cond_partial_def.fld", expected_error: "Not definitely assigned: x" }
    , { file: "purepy/no_else.fld", expected_error: "Not definitely assigned: x" }
