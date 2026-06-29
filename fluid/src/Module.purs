@@ -4,6 +4,8 @@ import Prelude
 
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
+import Data.Bifunctor (lmap)
+import Data.Either (Either, either)
 import Data.Foldable (foldM, foldl)
 import Data.List (List(..), takeWhile, (:))
 import Data.Map (Map)
@@ -29,7 +31,7 @@ import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasClassCtx, ClassCtx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
-import Util (type (×), throwLeft, withMsg, (×))
+import Util (type (×), throw, throwLeft, withMsg, (×))
 import Util.Map (constMap, keys, findWithDefault, restrict)
 import Util.Set ((∪))
 import Val (class HasModuleStore, modifyStore, Env)
@@ -54,16 +56,14 @@ predefinedDeps q = takeWhile (_ /= q) predefined
 -- module's exports so each reachable module is checked at most once; the
 -- dependency graph is acyclic, so this terminates.
 checkModules
-   :: forall m
-    . MonadError Error m
-   => DependencyGraph
+   :: DependencyGraph
    -> Map ModuleName (Raw S.Module)
    -> Cxt
    -> List ModuleName
-   -> m (Map ModuleName Cxt)
+   -> Either String (Map ModuleName Cxt)
 checkModules graph modules baseCxt roots = foldM go Map.empty roots
    where
-   go :: Map ModuleName Cxt -> ModuleName -> m (Map ModuleName Cxt)
+   go :: Map ModuleName Cxt -> ModuleName -> Either String (Map ModuleName Cxt)
    go memo q
       | Map.member q memo = pure memo
       | otherwise = do
@@ -72,7 +72,7 @@ checkModules graph modules baseCxt roots = foldM go Map.empty roots
               Nothing -> pure (Map.insert q Map.empty memo')
               Just mod -> do
                  let γ = foldl (\acc i -> acc `Map.union` findWithDefault Map.empty i memo') baseCxt (predefinedDeps q)
-                 δ <- withMsg ("Checking module " <> q) (checkModule memo' γ mod)
+                 δ <- lmap (_ <> "\nChecking module " <> q) (checkModule memo' γ mod)
                  λ <- classesOfModule q mod
                  pure (Map.insert q ((Class <$> λ) `Map.union` (VarStatus true <$ δ)) memo')
 
@@ -81,8 +81,8 @@ prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    sCxt <- parseModuleGraph (predefined <> imports)
    let moduleClassCtx = Map.insert "__NoArgs" { mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
-   programClasses <- classes mainModule s
-   fullClassCtx <- unionWith_mergeEq moduleClassCtx programClasses
+   programClasses <- either throw pure (classes mainModule s)
+   fullClassCtx <- either throw pure (unionWith_mergeEq moduleClassCtx programClasses)
    local (\(FileCxt r) -> FileCxt (r { classCtx = fullClassCtx })) do
       modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = moduleClassCtx }))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) sCxt.modules
@@ -105,14 +105,14 @@ prepConfig primitives fluidSrc = do
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure (primitives' × γ)
-      memo <- checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> imports)
+      memo <- either throw pure (checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> imports))
       let
          baseCxt =
             foldl (\acc q -> acc `Map.union` findWithDefault Map.empty q memo)
                (constMap (VarStatus true) (keys primitives))
                predefined
                `Map.union` Map.singleton "__NoArgs" (Class { mod: builtins, base: Nothing, fields: Nil })
-      sty <- checkProgram memo baseCxt s
+      sty <- either throw pure (checkProgram memo baseCxt s)
       eTy <- desug sty
       let e = dropLeadingImports ((unit <$ eTy) :: Raw Stmt)
       let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fullClassCtx }
@@ -154,7 +154,7 @@ parseModuleGraph roots = do
             collectModules visited graph modules classCtx rest
          else do
             mod' × λ × imports' <- parseAndCollect mod
-            classCtx' <- unionWith_mergeEq classCtx λ
+            classCtx' <- either throw pure (unionWith_mergeEq classCtx λ)
             collectModules
                (Set.insert mod visited)
                (Map.insert mod imports' graph)
@@ -167,5 +167,5 @@ parseModuleGraph roots = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
       mod × imports <- throwLeft <#> withMsg ("Loading module " <> path) $ parseModule src
-      λ <- classesOfModule path mod
+      λ <- either throw pure (classesOfModule path mod)
       pure $ mod × λ × (predefinedDeps path <> imports)

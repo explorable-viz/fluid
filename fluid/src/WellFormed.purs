@@ -3,7 +3,8 @@ module WellFormed where
 import Prelude
 
 import Bind (Var)
-import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Error.Class (throwError)
+import Data.Either (Either)
 import Data.Foldable (foldM, foldMap, foldr, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
@@ -19,24 +20,23 @@ import Data.Tuple (fst, snd)
 import DataType (arity)
 import DefiniteAssignment (ClassCtx, Ctx, Entry(..), Cxt, TyResult(..), classesOf, extendStatuses, fields, mergeRes, overrideRes, unionWith_mergeEq)
 import Util.Map (constMap, findWithDefault)
-import Effect.Exception (Error)
 import Expr (bv, fv)
 import Lattice (Raw)
 import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module(..), ParagraphElem(..), Pattern(..), Stmt(..), VarDef(..)) as S
-import Util (type (×), throw, (×))
+import Util (type (×), (×))
 import Util.Set ((\\), (∪))
 
-checkProgram :: forall m. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> Raw S.Stmt -> m (S.Stmt (TyResult Ctx))
+checkProgram :: Map.Map ModuleName Cxt -> Cxt -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
 checkProgram memo baseCxt s = checkTopLevelImports s *> (snd <$> wellFormed memo baseCxt s)
 
 -- Imports may appear only on the top-level statement spine, not nested in
 -- if/match/def blocks.
-checkTopLevelImports :: forall m a. MonadError Error m => S.Stmt a -> m Unit
+checkTopLevelImports :: forall a. S.Stmt a -> Either String Unit
 checkTopLevelImports = spine
    where
    spine (S.Seq s1 s2) = spine s1 *> spine s2
    spine (S.Import _ _) = pure unit
-   spine s = for_ (nestedImports s) \q -> throw $ "Import not at top level: " <> q
+   spine s = for_ (nestedImports s) \q -> throwError $ "Import not at top level: " <> q
 
 nestedImports :: forall a. S.Stmt a -> List ModuleName
 nestedImports (S.Import q _) = q : Nil
@@ -46,10 +46,10 @@ nestedImports (S.Match _ ps) = foldMap (nestedImports <<< snd) ps
 nestedImports (S.DefRec ds) = foldMap (\(_ × S.Clause _ (_ × s)) -> nestedImports s) ds
 nestedImports _ = Nil
 
-classesOfModule :: forall m a. MonadError Error m => String -> S.Module a -> m ClassCtx
+classesOfModule :: forall a. String -> S.Module a -> Either String ClassCtx
 classesOfModule q (S.Module ss) = foldM unionWith_mergeEq Map.empty =<< traverse (classes q) ss
 
-checkModule :: forall m. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> m Ctx
+checkModule :: Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String Ctx
 checkModule memo γ (S.Module ss) =
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure Map.empty
@@ -61,7 +61,7 @@ checkModule memo γ (S.Module ss) =
 mainModule :: String
 mainModule = "__main__"
 
-classes :: forall m a. MonadError Error m => String -> S.Stmt a -> m ClassCtx
+classes :: forall a. String -> S.Stmt a -> Either String ClassCtx
 classes q (S.Dataclass c b xs) = pure (Map.singleton c { mod: q, base: b, fields: xs })
 classes q (S.Seq s1 s2) = do
    λ1 <- classes q s1
@@ -149,7 +149,7 @@ importedCxt memo (S.Import q (Just xs)) =
    Map.filterKeys (_ `Set.member` Set.fromFoldable xs) (findWithDefault Map.empty q memo)
 importedCxt _ _ = Map.empty
 
-wellFormed :: forall m a. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> S.Stmt a -> m (TyResult Ctx × S.Stmt (TyResult Ctx))
+wellFormed :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Stmt a -> Either String (TyResult Ctx × S.Stmt (TyResult Ctx))
 wellFormed _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
 wellFormed memo γ (S.Return e) = do
    wellFormedExpr memo γ e
@@ -164,7 +164,7 @@ wellFormed memo γ (S.Assert e e') = do
 wellFormed memo γ (S.Def (S.VarDef p e)) = do
    let xs = bv p
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
-      throw $ "Variable captured by its own definition: " <> x
+      throwError $ "Variable captured by its own definition: " <> x
    wellFormedExpr memo γ e
    pure (Assigns (constMap true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e)))
 wellFormed memo γ (S.DefRec ds) = do
@@ -183,10 +183,10 @@ wellFormed memo γ (S.DefRec ds) = do
 wellFormed memo γ (S.Seq s1 s2) = do
    r1 × s1' <- wellFormed memo γ s1
    case r1 of
-      Returns -> throw "Unreachable statement"
+      Returns -> throwError "Unreachable statement"
       Assigns δ -> do
          for_ (Set.toUnfoldable (captures s1 `Set.intersection` assigns s2) :: Array Var) \x ->
-            throw $ "Captured variable reassigned: " <> x
+            throwError $ "Captured variable reassigned: " <> x
          λ1 <- classes mainModule s1
          let γ' = Map.union (importedCxt memo s1) (Map.union (Class <$> λ1) (γ `extendStatuses` δ))
          r2 × s2' <- wellFormed memo γ' s2
@@ -218,21 +218,21 @@ wellFormed memo γ (S.Match e ps) = do
       S.PVar _ -> Returns
       _ -> Assigns Map.empty
 wellFormed _ γ (S.Dataclass c b xs) = do
-   when (length (nub xs) /= length xs) $ throw $ "Duplicate field names in class: " <> c
+   when (length (nub xs) /= length xs) $ throwError $ "Duplicate field names in class: " <> c
    case b of
       Nothing -> pure unit
       Just base -> do
          inherited <- fields (classesOf γ) base
          let clash = Set.intersection (Set.fromFoldable xs) (Set.fromFoldable inherited)
          when (not Set.isEmpty clash)
-            $ throw
+            $ throwError
             $ "Class " <> c <> " redeclares inherited field(s): "
                  <> show (Set.toUnfoldable clash :: List Var)
    pure (Assigns Map.empty × S.Dataclass c b xs)
 wellFormed memo _ (S.Import q f) = do
    let γ = findWithDefault Map.empty q memo
    for_ f \xs -> for_ xs \x ->
-      when (not (Map.member x γ)) $ throw $ "Cannot import name " <> x <> " from module " <> q
+      when (not (Map.member x γ)) $ throwError $ "Cannot import name " <> x <> " from module " <> q
    pure (Assigns Map.empty × S.Import q f)
 
 -- spec `simple-module`: a name bound to ModEntry(q) resolves to module q.
@@ -242,26 +242,26 @@ namesModule γ (S.Var x) = case Map.lookup x γ of
    _ -> Nothing
 namesModule _ _ = Nothing
 
-wellFormedExpr :: forall m a. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> m Unit
+wellFormedExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String Unit
 wellFormedExpr memo γ e = do
    for_ (fv e) \x -> case Map.lookup x γ of
-      Nothing -> throw $ "Unbound name: " <> x
+      Nothing -> throwError $ "Unbound name: " <> x
       Just (VarStatus true) -> pure unit
-      Just (VarStatus false) -> throw $ "Not definitely assigned: " <> x
+      Just (VarStatus false) -> throwError $ "Not definitely assigned: " <> x
       Just (Class _) -> pure unit
       Just (Module _) -> pure unit
    checkExpr memo γ e
 
-checkExpr :: forall m a. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> m Unit
+checkExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String Unit
 checkExpr memo γ = go
    where
    λ = classesOf γ
 
-   go :: S.Expr a -> m Unit
+   go :: S.Expr a -> Either String Unit
    go (S.Constr _ c es) = do
-      n <- maybe (throw $ "Unknown constructor: " <> c) pure (arity λ c)
+      n <- maybe (throwError $ "Unknown constructor: " <> c) pure (arity λ c)
       when (length es /= n)
-         $ throw
+         $ throwError
          $ c <> " expects " <> show n <> " argument(s); got " <> show (length es)
       for_ es go
    go (S.ConstrKw _ _ es xes) = for_ es go *> for_ (xes <#> snd) go
@@ -273,7 +273,7 @@ checkExpr memo γ = go
    go (S.Project e y) = do
       case namesModule γ e of
          Just q -> when (not (Map.member y (findWithDefault Map.empty q memo)))
-            $ throw
+            $ throwError
             $ "module " <> q <> " has no member " <> y
          Nothing -> pure unit
       go e

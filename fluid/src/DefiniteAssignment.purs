@@ -3,21 +3,20 @@ module DefiniteAssignment where
 import Prelude
 
 import Bind (Var)
-import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except.Trans (ExceptT)
 import Control.Monad.Reader.Trans (ReaderT)
 import Control.Monad.State.Trans (StateT)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Writer.Trans (WriterT)
 import Data.Foldable (foldl, for_)
+import Data.Either (Either)
 import Data.List (List)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
-import Effect.Exception (Error)
-import Util (throw)
 
 type Ctx = Map Var Boolean
 
@@ -80,21 +79,21 @@ extendStatuses :: Cxt -> Ctx -> Cxt
 extendStatuses γ δ = Map.union (VarStatus <$> δ) γ
 
 -- Inherited then own.
-fields :: forall m. MonadError Error m => ClassCtx -> Var -> m (List Var)
+fields :: ClassCtx -> Var -> Either String (List Var)
 fields λ = go Set.empty
    where
    go seen c
-      | c `Set.member` seen = throw $ "Cyclic class hierarchy at: " <> c
+      | c `Set.member` seen = throwError $ "Cyclic class hierarchy at: " <> c
       | otherwise = case Map.lookup c λ of
-           Nothing -> throw $ "Unknown class: " <> c
+           Nothing -> throwError $ "Unknown class: " <> c
            Just { base: Nothing, fields: xs } -> pure xs
            Just { base: Just b, fields: xs } -> (_ <> xs) <$> go (Set.insert c seen) b
 
-unionWith_mergeEq :: forall m. MonadError Error m => ClassCtx -> ClassCtx -> m ClassCtx
+unionWith_mergeEq :: ClassCtx -> ClassCtx -> Either String ClassCtx
 unionWith_mergeEq a b = do
    let dups = Set.toUnfoldable (Set.intersection (Map.keys a # Set.fromFoldable) (Map.keys b # Set.fromFoldable)) :: List Var
    for_ dups \k -> case Map.lookup k a, Map.lookup k b of
-      Just va, Just vb | va /= vb -> throw $ "Conflicting class declarations: " <> k
+      Just va, Just vb | va /= vb -> throwError $ "Conflicting class declarations: " <> k
       _, _ -> pure unit
    pure (Map.union a b)
 

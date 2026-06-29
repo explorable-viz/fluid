@@ -7,7 +7,7 @@ import Bind (keys) as B
 import Data.Set (Set, empty, fromFoldable, insert, member, singleton, unions) as Set
 import Control.Monad.Error.Class (class MonadError)
 import Data.Bitraversable (rtraverse)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (for_, length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
@@ -397,7 +397,7 @@ popRecordFwd _ _ = throw (shapeMismatch unit)
 
 reorderKw :: forall m b. MonadError Error m => ClassCtx -> Ctr -> Int -> List (Bind b) -> m (List b)
 reorderKw λ c n xbs = do
-   fs <- DA.fields λ c
+   fs <- either throw pure (DA.fields λ c)
    let expected = Set.fromFoldable (drop n fs)
    let provided = Set.fromFoldable (xbs <#> fst)
    when (expected /= provided) $ throw $
