@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 
-import Bind (varAnon)
+import Bind (simple, varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader, local)
 import DefiniteAssignment (class HasClassCtx, ClassCtx, askClassCtx, fields)
@@ -300,9 +300,9 @@ eval_module γ = go empty
    step _ _ αs = pure (empty × αs)
 
 moduleBinding :: forall m. MonadWithGraphAlloc m => ModuleName -> Env Vertex -> m (Env Vertex)
-moduleBinding (x : Nil) γ_q
-   | not (isJust (lookup x γ_q)) = maplet x <$> val Nothing empty (V.Mod γ_q)
-moduleBinding _ _ = pure empty
+moduleBinding q γ_q = case simple q of
+   Just x | not (isJust (lookup x γ_q)) -> maplet x <$> val Nothing empty (V.Mod γ_q)
+   _ -> pure empty
 
 importInto :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
 importInto γ q = do

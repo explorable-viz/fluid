@@ -127,7 +127,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Int α n) = highlightIf α (number n)
    pretty (Float α n) = highlightIf α (number n)
    pretty (Str α str) = highlightIf α (string str)
-   pretty (Constr _ ("__NoArgs" : Nil) Nil) = text "()"
+   pretty (Constr _ c Nil) | ctrName c == "__NoArgs" = text "()"
    pretty (Constr α c Nil) = highlightIf α (text (dottedName c))
    pretty (Constr α c as) = highlightIf α (expr $ prettyConstr (ctrName c) as)
    pretty (ConstrKw α c es xes) =
@@ -278,7 +278,7 @@ prettyConsArg e lhs = case rootOp e of
    Just op -> if (if lhs then (<=) else (<)) (getPrec op) (getPrec ":") then parens (pretty e) else pretty e
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
-prettyAppChain (App f (Constr _ ("__NoArgs" : Nil) Nil)) as =
+prettyAppChain (App f (Constr _ c Nil)) as | ctrName c == "__NoArgs" =
    prettyAppChain f Nil <> text "()" <> renderArgs as
    where
    renderArgs Nil = mempty

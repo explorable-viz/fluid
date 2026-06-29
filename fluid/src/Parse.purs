@@ -116,7 +116,7 @@ returnStmt :: Parser (Raw Stmt)
 returnStmt = do
    reserved "return"
    e <- optionMaybe (sameOrIndented *> expr)
-   pure $ Return $ fromMaybe (Constr unit (cNone : Nil) Nil) e
+   pure $ Return $ fromMaybe (Constr unit (pure cNone) Nil) e
 
 assertStmt :: Parser (Raw Stmt)
 assertStmt = do
@@ -249,7 +249,7 @@ expr = context "expr" $ ternary <?> "expression"
          consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
          consOp = do
             reservedOperator ":|"
-            pure \e e' -> Constr unit (cCons : Nil) (e : e' : Nil)
+            pure \e e' -> Constr unit (pure cCons) (e : e' : Nil)
 
       simpleChain :: Parser (Raw Expr)
       simpleChain = withPos (simple >>= chain)
@@ -284,7 +284,7 @@ expr = context "expr" $ ternary <?> "expression"
                   _ -> do
                      ps <- commas ternary
                      pure $ case ps of
-                        Nil -> App e (Constr unit (cNoArgs : Nil) Nil)
+                        Nil -> App e (Constr unit (pure cNoArgs) Nil)
                         x : xs -> foldl App e (x : xs)
                close ')'
                chain e'
@@ -340,7 +340,7 @@ expr = context "expr" $ ternary <?> "expression"
          var = variable <#> Var
 
          constr :: Parser (Raw Expr)
-         constr = (\c -> Constr unit (c : Nil) Nil) <$> constructor
+         constr = (\c -> Constr unit (pure c) Nil) <$> constructor
 
          number :: Parser (Raw Expr)
          number = try (float <#> Float unit) <|> (integer <#> Int unit)
@@ -469,7 +469,7 @@ expr = context "expr" $ ternary <?> "expression"
                             delim ','
                             e' <- ternary
                             close ')'
-                            pure $ Constr unit (cPair : Nil) (e : e' : Nil)
+                            pure $ Constr unit (pure cPair) (e : e' : Nil)
                        , fail "Expected `)` or `,` after `(expr`"
                        ]
                , fail "Expected `op` or `expr` after `(`"
@@ -497,7 +497,7 @@ fromImportStmt = do
    pure $ Import q (Just (toList xs))
 
 modPath :: Parser Name
-modPath = toList <$> sepBy1 variable (delim '.')
+modPath = sepBy1 variable (delim '.')
 
 stmtImports :: forall a. Stmt a -> List Name
 stmtImports (Import q _) = q : Nil

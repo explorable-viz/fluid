@@ -3,6 +3,8 @@ module Bind where
 import Prelude
 import Data.Foldable (intercalate)
 import Data.List (List(..), (:))
+import Data.List.NonEmpty (NonEmptyList, uncons)
+import Data.Maybe (Maybe(..))
 import Data.Set (Set, empty)
 import Data.Tuple (Tuple(..), fst, snd)
 import Util (type (×), definitely, singleton, whenever)
@@ -11,13 +13,18 @@ import Util.Set ((∪))
 -- Not easy as a newtype as there is no Coercible instance for Set.
 type Var = String
 
-type Name = List Var
+type Name = NonEmptyList Var
 
 dottedName :: Name -> String
 dottedName = intercalate "."
 
 pathName :: Name -> String
 pathName = intercalate "/"
+
+simple :: Name -> Maybe Var
+simple n = case uncons n of
+   { head: x, tail: Nil } -> Just x
+   _ -> Nothing
 
 varAnon = "_" :: Var
 

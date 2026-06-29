@@ -2,7 +2,7 @@ module WellFormed where
 
 import Prelude
 
-import Bind (Name, Var, dottedName)
+import Bind (Name, Var, dottedName, simple)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either)
 import Data.Foldable (foldM, foldMap, foldr, for_)
@@ -56,7 +56,7 @@ checkModule memo γ (S.Module ss) =
 
 -- Entry program's module (spec entry point E; its __name__ is "__main__").
 mainModule :: Name
-mainModule = "__main__" : Nil
+mainModule = pure "__main__"
 
 classes :: forall a. Name -> S.Stmt a -> Either String ClassCtx
 classes q (S.Dataclass c b xs) = pure (Map.singleton c { mod: q, base: b, fields: xs })
@@ -139,8 +139,8 @@ importedCxt memo (S.Import q Nothing) =
    let
       γ = findWithDefault Map.empty q memo
    in
-      case q of
-         x : Nil | not (Map.member x γ) -> Map.insert x (Module q) γ
+      case simple q of
+         Just x | not (Map.member x γ) -> Map.insert x (Module q) γ
          _ -> γ
 importedCxt memo (S.Import q (Just xs)) =
    Map.filterKeys (_ `Set.member` Set.fromFoldable xs) (findWithDefault Map.empty q memo)
@@ -233,16 +233,17 @@ wellFormed memo _ (S.Import q f) = do
    pure (Assigns Map.empty × S.Import q f)
 
 asName :: forall a. S.Expr a -> Maybe Name
-asName (S.Var x) = Just (x : Nil)
-asName (S.Project e y) = asName e <#> (_ <> (y : Nil))
+asName (S.Var x) = Just (pure x)
+asName (S.Project e y) = asName e <#> (_ <> pure y)
 asName _ = Nothing
 
 resolveName :: Map.Map ModuleName Cxt -> Cxt -> Name -> Maybe Entry
-resolveName _ γ (x : Nil) = case Map.lookup x γ of
-   Just (Module q) -> Just (Module q)
-   Just (Class c) -> Just (Class c)
-   _ -> Nothing
-resolveName _ _ _ = Nothing
+resolveName _ γ name = case simple name of
+   Just x -> case Map.lookup x γ of
+      Just (Module q) -> Just (Module q)
+      Just (Class c) -> Just (Class c)
+      _ -> Nothing
+   Nothing -> Nothing
 
 wellFormedExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String Unit
 wellFormedExpr memo = wf

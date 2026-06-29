@@ -5,6 +5,8 @@ import Prelude
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
 import Bind (dottedName, pathName)
+import Data.List.NonEmpty (NonEmptyList(..))
+import Data.NonEmpty ((:|))
 import Data.Bifunctor (lmap)
 import Data.Either (Either, either)
 import Data.Foldable (foldM, foldl)
@@ -40,10 +42,10 @@ import Val (class HasModuleStore, modifyStore, Env)
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
 builtins :: ModuleName
-builtins = "lib" : "builtins" : Nil
+builtins = NonEmptyList ("lib" :| "builtins" : Nil)
 
 prelude :: ModuleName
-prelude = "lib" : "prelude" : Nil
+prelude = NonEmptyList ("lib" :| "prelude" : Nil)
 
 predefined :: List ModuleName
 predefined = builtins : prelude : Nil

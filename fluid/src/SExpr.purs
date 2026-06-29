@@ -11,9 +11,9 @@ import Data.Either (Either(..), either)
 import Data.Foldable (for_, length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, find, last, take, unzip, zip, zipWith, (:))
+import Data.List (List(..), drop, find, take, unzip, zip, zipWith, (:))
 import Data.List (difference) as L
-import Data.List.NonEmpty (NonEmptyList(..), foldr, groupBy, head, toList)
+import Data.List.NonEmpty (NonEmptyList(..), foldr, groupBy, head, last, toList)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty ((:|))
@@ -97,7 +97,7 @@ showPattern (Left p') = show p'
 showPattern (Right p') = show p'
 
 ctrName :: Name -> Ctr
-ctrName = definitely "constructor name" <<< last
+ctrName = last
 
 ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
 ctrFor (Left (PVar _)) = Nothing
@@ -219,7 +219,7 @@ recDefFwd :: forall m. HasClassCtx m => MonadError Error m => RecDef (TyResult C
 recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (close <<< snd <$> unwrap xcs))
    where
    close (Clause Returns body) = Clause Returns body
-   close (Clause (Assigns δ) (ps × s)) = Clause (Assigns δ) (ps × Seq s (Return (Constr Returns (cNone : Nil) Nil)))
+   close (Clause (Assigns δ) (ps × s)) = Clause (Assigns δ) (ps × Seq s (Return (Constr Returns (pure cNone) Nil)))
 
 paragraphFwd :: forall m. HasClassCtx m => MonadError Error m => List (ParagraphElem (TyResult Ctx)) -> m (E.Expr (TyResult Ctx))
 paragraphFwd elems = do
