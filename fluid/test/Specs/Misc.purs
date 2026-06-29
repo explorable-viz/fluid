@@ -82,6 +82,7 @@ misc_cases =
    , { file: "module/import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "module/from_import_value.fld", fwd_expect: "1" }
    , { file: "module/from_import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
+   , { file: "qualified_access.fld", fwd_expect: "1" }
    , { file: "ternary/basic_true.fld", fwd_expect: "5" }
    , { file: "ternary/basic_false.fld", fwd_expect: "6" }
    , { file: "ternary/looser_than_plus.fld", fwd_expect: "7" }

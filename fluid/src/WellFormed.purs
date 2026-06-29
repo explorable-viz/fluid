@@ -144,7 +144,7 @@ importedCxt memo (S.Import q Nothing) =
    let
       γ = findWithDefault Map.empty q memo
    in
-      if contains (Pattern "/") q then γ else Map.insert q (Module q) γ
+      if contains (Pattern "/") q || Map.member q γ then γ else Map.insert q (Module q) γ
 importedCxt memo (S.Import q (Just xs)) =
    Map.filterKeys (_ `Set.member` Set.fromFoldable xs) (findWithDefault Map.empty q memo)
 importedCxt _ _ = Map.empty

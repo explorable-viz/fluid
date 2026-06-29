@@ -14,6 +14,7 @@ import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
+import Data.String (Pattern(..), contains)
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, snd)
 import DataType (arity, checkArity, consistentWith, dataType, showCtr)
@@ -32,7 +33,7 @@ import ModuleGraph (ModuleName)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, absurd, check, definitely, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
+import Util (type (×), Endo, absurd, check, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
 import Util.Map (unionWith_never, get, keys, lookup, lookup', findWithDefault, maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
@@ -168,6 +169,8 @@ eval doc_opt γ e0 αs = do
                Val _ _ (V.Constr c vs), Val _ _ (V.Str x) -> do
                   xs <- askClassCtx >>= flip fields c
                   find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (c <> " has no field " <> x)
+               Val _ _ (V.Module γ_m), Val _ _ (V.Str x) ->
+                  withMsg "Module member" $ lookup' x γ_m
                Val _ _ (V.Dictionary _), _ -> throw $ "Found " <> prettyP v' <> ", expected string"
                _, _ -> throw $ "Found " <> prettyP v <> ", expected dict or object"
          App e e' -> do
@@ -220,11 +223,13 @@ evalStmt doc_opt γ s αs = case s of
    ExprStmt e -> do
       _ <- eval Nothing γ e αs
       pure (Assigns empty empty)
-   Import q f -> do
-      load q
-      { cache } <- getStore
-      let γ_q = definitely "import loaded" (Map.lookup q cache)
-      pure (Assigns (maybe γ_q (\xs -> restrict (Set.fromFoldable xs) γ_q) f) empty)
+   Import q Nothing -> do
+      γ_q <- load q
+      mb <- moduleBinding q γ_q
+      pure (Assigns (γ_q <+> mb) empty)
+   Import q (Just xs) -> do
+      γ_q <- load q
+      pure (Assigns (restrict (Set.fromFoldable xs) γ_q) empty)
    Seq s1 s2 -> do
       r1 <- evalStmt Nothing γ s1 αs
       case r1 of
@@ -294,19 +299,31 @@ eval_module γ = go empty
       pure (γ'' × αs)
    step _ _ αs = pure (empty × αs)
 
+-- spec eval-import: bind the (single-segment) module name to its module value.
+-- Dotted packages deferred; ambient builtins/prelude are dotted, hence excluded.
+moduleBinding :: forall m. MonadWithGraphAlloc m => ModuleName -> Env Vertex -> m (Env Vertex)
+moduleBinding q γ_q
+   | contains (Pattern "/") q = pure empty
+   | isJust (lookup q γ_q) = pure empty -- self-named export: flatten wins (transitional)
+   | otherwise = maplet q <$> val Nothing empty (V.Module γ_q)
+
 importInto :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
 importInto γ q = do
-   load q
-   { cache } <- getStore
-   pure (γ <+> definitely "module loaded" (Map.lookup q cache))
+   γ_q <- load q
+   mb <- moduleBinding q γ_q
+   pure (γ <+> γ_q <+> mb)
 
-load :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m Unit
+-- spec ⇒load: build (or reuse the cached) environment for module q.
+load :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m (Env Vertex)
 load q = do
    { primitives, modules, graph, cache } <- getStore
-   unless (Map.member q cache) do
-      γ_q <- foldM importInto primitives (findWithDefault Nil q graph)
-      γ' <- maybe (pure empty) (\defs' -> eval_module γ_q defs' empty) (Map.lookup q modules)
-      modifyStore (\s -> s { cache = Map.insert q γ' s.cache })
+   case Map.lookup q cache of
+      Just γ' -> pure γ'
+      Nothing -> do
+         γ_q <- foldM importInto primitives (findWithDefault Nil q graph)
+         γ' <- maybe (pure empty) (\defs' -> eval_module γ_q defs' empty) (Map.lookup q modules)
+         modifyStore (\s -> s { cache = Map.insert q γ' s.cache })
+         pure γ'
 
 type GraphEval g s t =
    { g :: g
