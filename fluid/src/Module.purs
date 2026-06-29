@@ -66,7 +66,7 @@ checkModules graph modules baseCxt roots = foldM go Map.empty roots
                  let γ = foldl (\acc i -> acc `Map.union` findWithDefault Map.empty i memo') baseCxt (predefinedImports q)
                  δ <- withMsg ("Checking module " <> q) (checkModule memo' γ mod)
                  λ <- classesOfModule q mod
-                 pure (Map.insert q ((Class <$> λ) `Map.union` (Status true <$ δ)) memo')
+                 pure (Map.insert q ((Class <$> λ) `Map.union` (VarStatus true <$ δ)) memo')
 
    predefinedImports :: ModuleName -> List ModuleName
    predefinedImports q
@@ -103,10 +103,10 @@ prepConfig primitives fluidSrc = do
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure (primitives' × γ)
-      memo <- checkModules sCxt.graph sCxt.modules (constMap (Status true) (keys primitives)) (builtins : prelude : imports)
+      memo <- checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (builtins : prelude : imports)
       let
          baseCxt =
-            constMap (Status true) (keys primitives)
+            constMap (VarStatus true) (keys primitives)
                `Map.union` findWithDefault Map.empty builtins memo
                `Map.union` findWithDefault Map.empty prelude memo
                `Map.union` Map.singleton "__NoArgs" (Class { mod: builtins, base: Nothing, fields: Nil })

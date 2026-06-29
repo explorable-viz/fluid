@@ -233,9 +233,9 @@ wellFormed memo _ (S.Import q f) = do
 wellFormedExpr :: forall m a. MonadError Error m => Cxt -> S.Expr a -> m Unit
 wellFormedExpr γ e = do
    for_ (fv e) \x -> case Map.lookup x γ of
-      Just (Status false) -> throw $ "Not definitely assigned: " <> x
+      Just (VarStatus false) -> throw $ "Not definitely assigned: " <> x
       Nothing -> throw $ "Unbound name: " <> x
-      _ -> pure unit -- Status true, or a class/module name (unconditionally in scope)
+      _ -> pure unit -- VarStatus true, or a class/module name (unconditionally in scope)
    constrArities (classesOf γ) e
 
 constrArities :: forall m a. MonadError Error m => ClassCtx -> S.Expr a -> m Unit

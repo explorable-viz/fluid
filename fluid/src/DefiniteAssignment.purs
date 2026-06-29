@@ -33,7 +33,7 @@ type ClassCtx = Map Var ClassEntry
 
 -- spec context entry θ (Definition 1).
 data Entry
-   = Status Boolean -- a ∈ 𝔹 (definite-assignment status)
+   = VarStatus Boolean -- a ∈ 𝔹 (definite-assignment status)
    | Class ClassEntry -- ⟨q, x⃗, c⟩
    | Module String -- q (module reference; populated by imports)
 
@@ -77,7 +77,7 @@ classesOf = Map.mapMaybe case _ of
 
 -- Override Γ with definite-assignment statuses δ (δ wins).
 extendStatuses :: Cxt -> Ctx -> Cxt
-extendStatuses γ δ = Map.union (Status <$> δ) γ
+extendStatuses γ δ = Map.union (VarStatus <$> δ) γ
 
 -- Inherited then own.
 fields :: forall m. MonadError Error m => ClassCtx -> Var -> m (List Var)
