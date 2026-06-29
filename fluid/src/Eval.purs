@@ -220,10 +220,11 @@ evalStmt doc_opt γ s αs = case s of
    ExprStmt e -> do
       _ <- eval Nothing γ e αs
       pure (Assigns empty empty)
-   Import q -> do
+   Import q f -> do
       load q
       { cache } <- getStore
-      pure (Assigns (definitely "import loaded" (Map.lookup q cache)) empty)
+      let γ = definitely "import loaded" (Map.lookup q cache)
+      pure (Assigns (maybe γ (\xs -> restrict (Set.fromFoldable xs) γ) f) empty)
    Seq s1 s2 -> do
       r1 <- evalStmt Nothing γ s1 αs
       case r1 of

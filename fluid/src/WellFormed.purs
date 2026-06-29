@@ -34,11 +34,11 @@ checkTopLevelImports :: forall m a. MonadError Error m => S.Stmt a -> m Unit
 checkTopLevelImports = spine
    where
    spine (S.Seq s1 s2) = spine s1 *> spine s2
-   spine (S.Import _) = pure unit
+   spine (S.Import _ _) = pure unit
    spine s = for_ (nestedImports s) \q -> throw $ "Import not at top level: " <> q
 
 nestedImports :: forall a. S.Stmt a -> List ModuleName
-nestedImports (S.Import q) = q : Nil
+nestedImports (S.Import q _) = q : Nil
 nestedImports (S.Seq s1 s2) = nestedImports s1 <> nestedImports s2
 nestedImports (S.If es elseBranch) = foldMap (nestedImports <<< snd) es <> maybe Nil nestedImports elseBranch
 nestedImports (S.Match _ ps) = foldMap (nestedImports <<< snd) ps
@@ -79,7 +79,7 @@ assigns (S.Match _ ps) = unions (assigns <$> (snd <$> ps))
 assigns (S.DefRec ds) = unions (Set.singleton <<< fst <$> ds)
 assigns (S.Seq s1 s2) = assigns s1 ∪ assigns s2
 assigns (S.Dataclass _ _ _) = Set.empty
-assigns (S.Import _) = Set.empty
+assigns (S.Import _ _) = Set.empty
 
 captures :: forall a. S.Stmt a -> Set Var
 captures S.Pass = Set.empty
@@ -98,7 +98,7 @@ captures (S.DefRec ds) =
       (fv s \\ unions (bv <$> ps)) \\ assigns s
 captures (S.Seq s1 s2) = captures s1 ∪ captures s2
 captures (S.Dataclass _ _ _) = Set.empty
-captures (S.Import _) = Set.empty
+captures (S.Import _ _) = Set.empty
 
 capturesE :: forall a. S.Expr a -> Set Var
 capturesE (S.Var _) = Set.empty
@@ -137,7 +137,11 @@ capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
 importedCxt :: forall a. Map.Map ModuleName Cxt -> S.Stmt a -> Cxt
-importedCxt memo (S.Import q) = findWithDefault Map.empty q memo
+importedCxt memo (S.Import q f) =
+   let
+      γ = findWithDefault Map.empty q memo
+   in
+      maybe γ (\xs -> Map.filterKeys (_ `Set.member` Set.fromFoldable xs) γ) f
 importedCxt _ _ = Map.empty
 
 wellFormed :: forall m a. MonadError Error m => Map.Map ModuleName Cxt -> Cxt -> S.Stmt a -> m (TyResult Ctx × S.Stmt (TyResult Ctx))
@@ -220,7 +224,11 @@ wellFormed _ γ (S.Dataclass c b xs) = do
             $ "Class " <> c <> " redeclares inherited field(s): "
                  <> show (Set.toUnfoldable clash :: List Var)
    pure (Assigns Map.empty × S.Dataclass c b xs)
-wellFormed _ _ (S.Import q) = pure (Assigns Map.empty × S.Import q)
+wellFormed memo _ (S.Import q f) = do
+   let γ = findWithDefault Map.empty q memo
+   for_ f \xs -> for_ xs \x ->
+      when (not (Map.member x γ)) $ throw $ "Cannot import name " <> x <> " from module " <> q
+   pure (Assigns Map.empty × S.Import q f)
 
 wellFormedExpr :: forall m a. MonadError Error m => Cxt -> S.Expr a -> m Unit
 wellFormedExpr γ e = do

@@ -1,0 +1,2 @@
+from module.two_vals_lib import baz
+0

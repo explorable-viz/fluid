@@ -3,6 +3,7 @@ module Pretty (PrettyShow(..), class Pretty, compare, pretty, prettyP) where
 import Prelude
 
 import Bind (Bind, Var, (↦))
+import Data.Foldable (intercalate)
 import Data.List (List(..), fromFoldable, singleton, (:))
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Maybe (Maybe(..), maybe)
@@ -218,7 +219,9 @@ instance Ann a => Pretty (Stmt a) where
    pretty (Assert cond Nothing) = text "assert" <+> pretty cond
    pretty (Assert cond (Just msg)) = text "assert" <+> pretty cond <> text "," <+> pretty msg
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
-   pretty (Import q) = text "import" <+> text (dottedPath q)
+   pretty (Import q Nothing) = text "import" <+> text (dottedPath q)
+   pretty (Import q (Just xs)) =
+      text "from" <+> text (dottedPath q) <+> text "import" <+> text (intercalate ", " xs)
    pretty (Dataclass c b xs) =
       text "@dataclass" <> line
          <> text "class" <+> text c
@@ -326,7 +329,9 @@ instance Highlightable a => Pretty (E.Stmt a) where
    pretty (E.DefRec (E.RecDefs _ ρ)) = text "def" <+> pretty ρ
    pretty E.Pass = text "pass"
    pretty (E.ExprStmt e) = pretty e
-   pretty (E.Import q) = text "import" <+> text (dottedPath q)
+   pretty (E.Import q Nothing) = text "import" <+> text (dottedPath q)
+   pretty (E.Import q (Just xs)) =
+      text "from" <+> text (dottedPath q) <+> text "import" <+> text (intercalate ", " xs)
    pretty (E.Seq s1 s2) = pretty s1 <++> pretty s2
 
 instance Highlightable a => Pretty (Cont a) where

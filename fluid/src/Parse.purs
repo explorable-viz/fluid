@@ -13,7 +13,7 @@ import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList(..), toList)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.NonEmpty ((:|))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
@@ -111,7 +111,7 @@ varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> importStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (expr <#> ExprStmt)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> importStmt <|> fromImportStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (expr <#> ExprStmt)
 
 returnStmt :: Parser (Raw Stmt)
 returnStmt = do
@@ -133,7 +133,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser (Raw Stmt)
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> importStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (Return <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> importStmt <|> fromImportStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (Return <$> expr)
 
 programStmts :: Parser (Raw Stmt)
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
@@ -487,13 +487,21 @@ module_ :: Parser (Raw Module)
 module_ = Module <<< toList <$> many1 (align stmt)
 
 importStmt :: Parser (Raw Stmt)
-importStmt = reserved "import" *> (Import <$> modPath)
+importStmt = reserved "import" *> (modPath <#> \q -> Import q Nothing)
+
+fromImportStmt :: Parser (Raw Stmt)
+fromImportStmt = do
+   reserved "from"
+   q <- modPath
+   reserved "import"
+   xs <- sepBy1 (variable <|> constructor) (delim ',')
+   pure $ Import q (Just (toList xs))
 
 modPath :: Parser String
 modPath = joinWith "/" <<< fromFoldable <$> sepBy1 variable (delim '.')
 
 stmtImports :: forall a. Stmt a -> List String
-stmtImports (Import q) = q : Nil
+stmtImports (Import q _) = q : Nil
 stmtImports (Seq s1 s2) = stmtImports s1 <> stmtImports s2
 stmtImports _ = Nil
 
@@ -502,8 +510,8 @@ moduleImports (Module ss) = ss >>= stmtImports
 
 -- Leading imports form the slicing input boundary; later imports are computed in-graph.
 leadingImports :: forall a. Stmt a -> List String
-leadingImports (Import q) = q : Nil
-leadingImports (Seq (Import q) rest) = q : leadingImports rest
+leadingImports (Import q _) = q : Nil
+leadingImports (Seq (Import q _) rest) = q : leadingImports rest
 leadingImports _ = Nil
 
 topLevel :: forall a. Parser a -> Parser a
