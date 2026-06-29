@@ -4,11 +4,13 @@ import Prelude
 
 import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
+import App.Util.Selector (sel𝔹)
 import App.View.Util (Fig, Options)
 import Bind (Bind)
 import Control.Monad.Error.Class (class MonadError, catchError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Either (Either(..))
+import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
@@ -45,6 +47,7 @@ type TestLinkedOutputsSpec =
    { spec :: Options
    , δ_out :: Selector Val
    , out_expect :: Selector Val
+   , inert_expect :: Maybe (Selector Val)
    , file :: String
    }
 
@@ -74,12 +77,13 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
       test (folder </> File file) primitives { δv, fwd_expect, bwd_expect: Just bwd_expect, inputs } (n × is_bench)
 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => HasClassCtx m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
-linkedOutputsTest { spec, δ_out, out_expect, file } = do
+linkedOutputsTest { spec, δ_out, out_expect, inert_expect, file } = do
    fluidSrc <- loadFile spec.fluidSrcPaths (File file)
    fig <- loadFig spec fluidSrc <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult file \_ ->
       pure (selectionResult fig).v
    checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (fst $ out_expect (botOf <$> v))
+   for_ inert_expect \sel -> checkEq "inert" "inert_expect" (isInert <$> v) (sel𝔹 sel v)
    pure fig
 
 linkedOutputsSuite :: forall m. MonadAff m => MonadError Error m => HasClassCtx m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array TestLinkedOutputsSpec -> Array (String × m Unit)

@@ -30,6 +30,7 @@ linkedOutputs_spec1 =
                         >.> listElement 3 (linePoint 2 (dictVal f_y select))
                    )
               )
+   , inert_expect: Nothing
    , file: "slicing/linked_outputs/bar_chart_line_chart.fld"
    }
 
@@ -51,6 +52,7 @@ linkedOutputs_spec2 =
                         >.> scatterPoint 6 (dictVal f_y select)
                    )
               )
+   , inert_expect: Nothing
    , file: "slicing/linked_outputs/stacked_bar_scatter_plot.fld"
    }
 
@@ -65,6 +67,7 @@ movingAverages_spec =
         }
    , δ_out: identity >>> (_ × Persistent) -- TODO: make this a non-trivial test
    , out_expect: identity >>> (_ × Persistent)
+   , inert_expect: Nothing
    , file: "linked_outputs/moving_average.fld"
    }
 
@@ -79,6 +82,7 @@ linkedOutputs_cases =
           }
      , δ_out: snd select
      , out_expect: select
+     , inert_expect: Just (identity >>> (_ × Persistent))
      , file: "linked_outputs/pairs.fld"
      }
    , { spec:
@@ -109,6 +113,7 @@ linkedOutputs_cases =
                      >.> matrixElement 2 1 select
                      >.> matrixElement 2 2 select
                 )
+     , inert_expect: Nothing
      , file: "linked_outputs/convolution.fld"
      }
    , linkedOutputs_spec1
