@@ -29,8 +29,6 @@ import Util.Set ((\\), (∪))
 checkProgram :: Map.Map ModuleName Cxt -> Cxt -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
 checkProgram memo baseCxt s = checkTopLevelImports s *> (snd <$> wellFormed memo baseCxt s)
 
--- Imports may appear only on the top-level statement spine, not nested in
--- if/match/def blocks.
 checkTopLevelImports :: forall a. S.Stmt a -> Either String Unit
 checkTopLevelImports = spine
    where
@@ -139,8 +137,6 @@ capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
 importedCxt :: forall a. Map.Map ModuleName Cxt -> S.Stmt a -> Cxt
 importedCxt memo (S.Import q Nothing) =
-   -- spec `import` rule: additionally bind the module name to ModEntry(q).
-   -- Single-segment only for now; dotted packages deferred.
    let
       γ = findWithDefault Map.empty q memo
    in
@@ -235,18 +231,12 @@ wellFormed memo _ (S.Import q f) = do
       when (not (Map.member x γ)) $ throwError $ "Cannot import name " <> x <> " from module " <> q
    pure (Assigns Map.empty × S.Import q f)
 
--- Figure 10 `names` (simple-module case): a variable bound to a module name
--- resolves to that module. Class and qualified cases not yet needed
--- (constructors are bare; submodules deferred).
 names :: forall a. Cxt -> S.Expr a -> Maybe ModuleName
 names γ (S.Var x) = case Map.lookup x γ of
    Just (Module q) -> Just q
    _ -> Nothing
 names _ _ = Nothing
 
--- Figure 10 `Γ ⊢ e`: expression well-formedness. Threads Γ so the `var` rule
--- applies per occurrence (a name bound to a module/class is not a value), and
--- `attr-module` consumes a module base without recursing into it.
 wellFormedExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String Unit
 wellFormedExpr memo = wf
    where
@@ -268,11 +258,10 @@ wellFormedExpr memo = wf
    wf γ (S.UnaryPrefixApp op e) = var γ op *> wf γ e
    wf γ (S.Ternary c e e') = wf γ c *> wf γ e *> wf γ e'
    wf γ (S.Project e y) = case names γ e of
-      Just q -> when (not (Map.member y (findWithDefault Map.empty q memo))) -- attr-module
-
+      Just q -> when (not (Map.member y (findWithDefault Map.empty q memo)))
          $ throwError
          $ "module " <> q <> " has no member " <> y
-      Nothing -> wf γ e -- attr-object
+      Nothing -> wf γ e
    wf γ (S.DProject e e') = wf γ e *> wf γ e'
    wf γ (S.Matrix _ body (x × y) source) =
       wf γ source *> wf (assignedIn γ (Set.singleton x ∪ Set.singleton y)) body
@@ -299,7 +288,6 @@ wellFormedExpr memo = wf
          S.ListCompDecl (S.VarDef p src) -> wf γ' src *> qualifiers (assignedIn γ' (bv p)) qs
    wf γ (S.DocExpr e e') = wf γ e *> wf γ e'
 
--- Figure 10 `var`/`var-builtin` (builtins pre-merged into Γ): a name used as a value.
 var :: Cxt -> Var -> Either String Unit
 var γ x = case Map.lookup x γ of
    Just (VarStatus true) -> pure unit

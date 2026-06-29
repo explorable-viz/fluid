@@ -44,17 +44,12 @@ builtins = "lib/builtins"
 prelude :: ModuleName
 prelude = "lib/prelude"
 
--- Predefined modules, in dependency order: every module implicitly depends on
--- those that precede it (builtins, then prelude, then the rest).
 predefined :: List ModuleName
 predefined = builtins : prelude : Nil
 
 predefinedDeps :: ModuleName -> List ModuleName
 predefinedDeps q = takeWhile (_ /= q) predefined
 
--- Memoised (unlike the spec) by fully-qualified module name, caching each
--- module's exports so each reachable module is checked at most once; the
--- dependency graph is acyclic, so this terminates.
 checkModules
    :: DependencyGraph
    -> Map ModuleName (Raw S.Module)

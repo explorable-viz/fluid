@@ -170,7 +170,7 @@ eval doc_opt γ e0 αs = do
                Val _ _ (V.Constr c vs), Val _ _ (V.Str x) -> do
                   xs <- askClassCtx >>= \λ -> either throw pure (fields λ c)
                   find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (c <> " has no field " <> x)
-               Val _ _ (V.Module γ_m), Val _ _ (V.Str x) ->
+               Val _ _ (V.Mod γ_m), Val _ _ (V.Str x) ->
                   withMsg "Module member" $ lookup' x γ_m
                Val _ _ (V.Dictionary _), _ -> throw $ "Found " <> prettyP v' <> ", expected string"
                _, _ -> throw $ "Found " <> prettyP v <> ", expected dict or object"
@@ -300,13 +300,11 @@ eval_module γ = go empty
       pure (γ'' × αs)
    step _ _ αs = pure (empty × αs)
 
--- spec eval-import: bind the (single-segment) module name to its module value.
--- Dotted packages deferred; ambient builtins/prelude are dotted, hence excluded.
 moduleBinding :: forall m. MonadWithGraphAlloc m => ModuleName -> Env Vertex -> m (Env Vertex)
 moduleBinding q γ_q
    | contains (Pattern "/") q = pure empty
-   | isJust (lookup q γ_q) = pure empty -- self-named export: flatten wins (transitional)
-   | otherwise = maplet q <$> val Nothing empty (V.Module γ_q)
+   | isJust (lookup q γ_q) = pure empty
+   | otherwise = maplet q <$> val Nothing empty (V.Mod γ_q)
 
 importInto :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
 importInto γ q = do
@@ -314,7 +312,6 @@ importInto γ q = do
    mb <- moduleBinding q γ_q
    pure (γ <+> γ_q <+> mb)
 
--- spec ⇒load: build (or reuse the cached) environment for module q.
 load :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m (Env Vertex)
 load q = do
    { primitives, modules, graph, cache } <- getStore
