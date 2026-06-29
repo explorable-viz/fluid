@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
-import Data.Foldable (foldM)
+import Data.Foldable (foldM, foldl)
 import Data.List (List(..), (:))
 import Data.Map (Map)
 import Data.Map as Map
@@ -42,10 +42,8 @@ builtins = "lib/builtins"
 prelude :: ModuleName
 prelude = "lib/prelude"
 
--- Demand-driven well-formedness: from the entry's imports, follow the graph and
--- check each reachable module once, under `primitives + its imports' exports`
--- (graph is acyclic, so this terminates). Memoised on each module's exports
--- (own classes + own definitions), which are what importers see.
+-- Unlike the spec's `⊢_M`, memoised on each module's exports so each reachable
+-- module is checked at most once (the graph is acyclic, so this terminates).
 checkModules
    :: forall m
     . MonadError Error m
@@ -60,18 +58,20 @@ checkModules graph modules baseCxt roots = foldM go Map.empty roots
    go memo q
       | Map.member q memo = pure memo
       | otherwise = do
-           memo' × γ <- foldM step (memo × baseCxt) (findWithDefault Nil q graph)
+           memo' <- foldM go memo (findWithDefault Nil q graph)
            case Map.lookup q modules of
               Nothing -> pure (Map.insert q Map.empty memo')
               Just mod -> do
-                 δ <- withMsg ("Checking module " <> q) (checkModule Map.empty γ mod)
+                 let γ = foldl (\acc i -> acc `Map.union` findWithDefault Map.empty i memo') baseCxt (predefinedImports q)
+                 δ <- withMsg ("Checking module " <> q) (checkModule memo' γ mod)
                  λ <- classesOfModule q mod
                  pure (Map.insert q ((Class <$> λ) `Map.union` (Status true <$ δ)) memo')
 
-   step :: Map ModuleName Cxt × Cxt -> ModuleName -> m (Map ModuleName Cxt × Cxt)
-   step (memo × acc) i = do
-      memo' <- go memo i
-      pure (memo' × (acc `Map.union` findWithDefault Map.empty i memo'))
+   predefinedImports :: ModuleName -> List ModuleName
+   predefinedImports q
+      | q == builtins = Nil
+      | q == prelude = builtins : Nil
+      | otherwise = builtins : prelude : Nil
 
 prepConfig :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
