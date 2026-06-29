@@ -72,8 +72,8 @@ data ListRest a
 
 data Pattern
    = PVar Var
-   | PConstr Ctr (List Pattern)
-   | PConstrKw Ctr (List Pattern) (List (Bind Pattern)) -- positional then keyword
+   | PConstr Name (List Pattern)
+   | PConstrKw Name (List Pattern) (List (Bind Pattern))
    | PRecord (List (Bind Pattern))
    | PListEmpty
    | PListNonEmpty Pattern ListRestPattern
@@ -101,8 +101,8 @@ ctrName = last
 
 ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
 ctrFor (Left (PVar _)) = Nothing
-ctrFor (Left (PConstr c _)) = pure c
-ctrFor (Left (PConstrKw c _ _)) = pure c
+ctrFor (Left (PConstr c _)) = pure (ctrName c)
+ctrFor (Left (PConstrKw c _ _)) = pure (ctrName c)
 ctrFor (Left (PRecord _)) = Nothing
 ctrFor (Left PListEmpty) = pure cNil
 ctrFor (Left (PListNonEmpty _ _)) = pure cCons
@@ -417,7 +417,7 @@ expandKw p = do
    go λ p
    where
    go λ (PConstrKw c ps xps) = do
-      reordered <- reorderKw λ c (length ps) xps
+      reordered <- reorderKw λ (ctrName c) (length ps) xps
       PConstr c <$> traverse (go λ) (ps <> reordered)
    go λ (PConstr c ps) = PConstr c <$> traverse (go λ) ps
    go λ (PRecord xps) = PRecord <$> traverse (traverse (go λ)) xps
@@ -473,16 +473,17 @@ unless _ (Left (PVar _)) = Nil
 unless _ (Left (PRecord _)) = Nil
 unless λ (Left (PConstr c _)) =
    let
-      dt = case dataType λ c of
+      c0 = ctrName c
+      dt = case dataType λ c0 of
          Just d -> d
-         Nothing -> error $ "Unknown constructor: " <> c
+         Nothing -> error $ "Unknown constructor: " <> c0
       arityOf c' = case arity λ c' of
          Just n -> n
          Nothing -> error $ "Unknown constructor: " <> c'
    in
-      (S.toUnfoldable (ctrs dt) `L.difference` singleton c)
-         <#> \c' -> Left (PConstr c' (replicate (arityOf c') pVarAnon))
-unless _ (Left PListEmpty) = Left (PConstr cCons (replicate 2 pVarAnon)) : Nil
+      (S.toUnfoldable (ctrs dt) `L.difference` singleton c0)
+         <#> \c' -> Left (PConstr (pure c') (replicate (arityOf c') pVarAnon))
+unless _ (Left PListEmpty) = Left (PConstr (pure cCons) (replicate 2 pVarAnon)) : Nil
 unless _ (Left (PListNonEmpty _ _)) = Left PListEmpty : Nil
 unless _ (Right (PListVar _)) = Nil
 unless _ (Right (PListNext _ _)) = Right PListEnd : Nil

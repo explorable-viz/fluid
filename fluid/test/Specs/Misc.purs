@@ -46,6 +46,7 @@ misc_cases =
    , { file: "module/import_simple.fld", fwd_expect: "84" }
    , { file: "module/import_simple_unused.fld", fwd_expect: "84" }
    , { file: "module/qualified_construct.fld", fwd_expect: "Coord(3, 4)" }
+   , { file: "module/qualified_pattern.fld", fwd_expect: "7" }
    , { file: "normalise.fld", fwd_expect: "(33, 66)" }
    , { file: "not_parens_op.fld", fwd_expect: """@doc("hello") -42""" }
    , { file: "nub.fld", fwd_expect: "1 :| 2 :| 3 :| 4 :| []" }

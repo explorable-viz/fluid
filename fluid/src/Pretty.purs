@@ -42,7 +42,7 @@ class RootOp (e :: Type) where
    rootOp :: e -> Maybe String
 
 instance RootOp Pattern where
-   rootOp (PConstr c _) | c == cCons = Just ":"
+   rootOp (PConstr c _) | ctrName c == cCons = Just ":"
    rootOp _ = Nothing
 
 instance Ann a => RootOp (Expr a) where
@@ -178,11 +178,11 @@ instance Ann a => Pretty (Pattern × Stmt a) where
 instance Pretty Pattern where
    pretty (PVar x) = text x
    pretty (PRecord xps) = record $ map pretty xps
-   pretty (PConstr "__NoArgs" Nil) = text "()"
-   pretty (PConstr c Nil) = text c
-   pretty (PConstr c ps) = prettyConstr c ps
+   pretty (PConstr c Nil) | ctrName c == "__NoArgs" = text "()"
+   pretty (PConstr c Nil) = text (dottedName c)
+   pretty (PConstr c ps) = prettyConstr (dottedName c) ps
    pretty (PConstrKw c ps xps) =
-      text c <> parens (commas ((pretty <$> ps) <> ((\(x ↦ p) -> text x <> text "=" <> pretty p) <$> xps)))
+      text (dottedName c) <> parens (commas ((pretty <$> ps) <> ((\(x ↦ p) -> text x <> text "=" <> pretty p) <$> xps)))
    pretty (PListEmpty) = text "[]"
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
 
@@ -238,7 +238,7 @@ instance Ann a => Pretty (RecDefs a) where
    pretty bs = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> bs))
 
 instance Ann a => Pretty (Branch a) where
-   pretty (v × Clause _ (NonEmptyList (PConstr "__NoArgs" Nil :| Nil) × b)) =
+   pretty (v × Clause _ (NonEmptyList (PConstr (NonEmptyList ("__NoArgs" :| Nil)) Nil :| Nil) × b)) =
       text "def" <+> text v <> text "()" <> block (pretty b)
    pretty (v × Clause _ (ps × b)) =
       text "def"

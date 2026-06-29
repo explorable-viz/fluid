@@ -36,21 +36,23 @@ pattern :: Parser Pattern
 pattern = defer \_ -> buildExprParser [ [ P.Infix pConsOp P.AssocRight ] ] simplePattern
 
 simplePattern :: Parser Pattern
-simplePattern = pVar <|> pConstr <|> pRecord <|> pList <|> parensPattern
+simplePattern = pConstr <|> pVar <|> pRecord <|> pList <|> parensPattern
    where
    pVar :: Parser Pattern
    pVar = PVar <$> variable
 
    pConstr :: Parser Pattern
-   pConstr = defer \_ -> do
+   pConstr = defer \_ -> try do
+      prefix <- many (try (variable <* delim '.'))
       c <- constructor
       args <- option Nil (parens (commas constrArg))
       let
+         name = foldr cons (pure c) prefix
          positionals = takeLefts args
          kws = takeRights args
       pure $ case kws of
-         Nil -> PConstr c positionals
-         _ -> PConstrKw c positionals kws
+         Nil -> PConstr name positionals
+         _ -> PConstrKw name positionals kws
       where
       constrArg :: Parser (Pattern + Bind Pattern)
       constrArg = defer \_ -> (Right <$> try kwArg) <|> (Left <$> simplePattern)
@@ -92,13 +94,13 @@ simplePattern = pVar <|> pConstr <|> pRecord <|> pList <|> parensPattern
               delim ','
               p' <- pattern
               delim ')'
-              pure $ PConstr cPair (p : p' : Nil)
+              pure $ PConstr (pure cPair) (p : p' : Nil)
          ]
 
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = do
    reservedOperator ":|"
-   pure \e e' -> PConstr cCons (e : e' : Nil)
+   pure \e e' -> PConstr (pure cCons) (e : e' : Nil)
 
 varDef :: Parser (Raw VarDef)
 varDef = do
@@ -207,7 +209,7 @@ recDefs = many1 recDef
       b <- blockBody
       let
          ps = case ps0 of
-            Nil -> NonEmptyList (PConstr cNoArgs Nil :| Nil)
+            Nil -> NonEmptyList (PConstr (pure cNoArgs) Nil :| Nil)
             x : xs -> NonEmptyList (x :| xs)
       pure $ p × Clause unit (ps × b)
 
@@ -332,7 +334,7 @@ expr = context "expr" $ ternary <?> "expression"
             e <- ternary
             let
                ps = case ps0 of
-                  Nil -> NonEmptyList (PConstr cNoArgs Nil :| Nil)
+                  Nil -> NonEmptyList (PConstr (pure cNoArgs) Nil :| Nil)
                   x : xs -> NonEmptyList (x :| xs)
             pure $ Lambda (LambdaClause (ps × e))
 
