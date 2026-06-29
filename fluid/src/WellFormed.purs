@@ -22,7 +22,7 @@ import DefiniteAssignment (ClassCtx, Ctx, Entry(..), Cxt, TyResult(..), classesO
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
-import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module(..), ParagraphElem(..), Pattern(..), Stmt(..), VarDef(..)) as S
+import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..)) as S
 import Util (type (×), (×))
 import Util.Set ((\\), (∪))
 
@@ -235,65 +235,79 @@ wellFormed memo _ (S.Import q f) = do
       when (not (Map.member x γ)) $ throwError $ "Cannot import name " <> x <> " from module " <> q
    pure (Assigns Map.empty × S.Import q f)
 
--- spec `simple-module`: a name bound to ModEntry(q) resolves to module q.
-namesModule :: forall a. Cxt -> S.Expr a -> Maybe ModuleName
-namesModule γ (S.Var x) = case Map.lookup x γ of
+-- Figure 10 `names` (simple-module case): a variable bound to a module name
+-- resolves to that module. Class and qualified cases not yet needed
+-- (constructors are bare; submodules deferred).
+names :: forall a. Cxt -> S.Expr a -> Maybe ModuleName
+names γ (S.Var x) = case Map.lookup x γ of
    Just (Module q) -> Just q
    _ -> Nothing
-namesModule _ _ = Nothing
+names _ _ = Nothing
 
+-- Figure 10 `Γ ⊢ e`: expression well-formedness. Threads Γ so the `var` rule
+-- applies per occurrence (a name bound to a module/class is not a value), and
+-- `attr-module` consumes a module base without recursing into it.
 wellFormedExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String Unit
-wellFormedExpr memo γ e = do
-   for_ (fv e) \x -> case Map.lookup x γ of
-      Nothing -> throwError $ "Unbound name: " <> x
-      Just (VarStatus true) -> pure unit
-      Just (VarStatus false) -> throwError $ "Not definitely assigned: " <> x
-      Just (Class _) -> pure unit
-      Just (Module _) -> pure unit
-   checkExpr memo γ e
-
-checkExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String Unit
-checkExpr memo γ = go
+wellFormedExpr memo = wf
    where
-   λ = classesOf γ
-
-   go :: S.Expr a -> Either String Unit
-   go (S.Constr _ c es) = do
-      n <- maybe (throwError $ "Unknown constructor: " <> c) pure (arity λ c)
+   wf :: Cxt -> S.Expr a -> Either String Unit
+   wf γ (S.Var x) = var γ x
+   wf γ (S.Op op) = var γ op
+   wf _ (S.Int _ _) = pure unit
+   wf _ (S.Float _ _) = pure unit
+   wf _ (S.Str _ _) = pure unit
+   wf γ (S.Constr _ c es) = do
+      n <- maybe (throwError $ "Unknown constructor: " <> c) pure (arity (classesOf γ) c)
       when (length es /= n)
          $ throwError
          $ c <> " expects " <> show n <> " argument(s); got " <> show (length es)
-      for_ es go
-   go (S.ConstrKw _ _ es xes) = for_ es go *> for_ (xes <#> snd) go
-   go (S.App e e') = go e *> go e'
-   go (S.BinaryApp e _ e') = go e *> go e'
-   go (S.UnaryPrefixApp _ e) = go e
-   go (S.Ternary c e e') = go c *> go e *> go e'
-   -- spec `attr-module`: member of a module must be in its context; otherwise (attr-object) unchecked.
-   go (S.Project e y) = do
-      case namesModule γ e of
-         Just q -> when (not (Map.member y (findWithDefault Map.empty q memo)))
-            $ throwError
-            $ "module " <> q <> " has no member " <> y
-         Nothing -> pure unit
-      go e
-   go (S.DProject e e') = go e *> go e'
-   go (S.Matrix _ e _ e') = go e *> go e'
-   go (S.Lambda (S.LambdaClause (_ × e))) = go e
-   go (S.Dictionary _ kvs) = for_ kvs \(k × v) -> goKey k *> go v
+      for_ es (wf γ)
+   wf γ (S.ConstrKw _ _ es xes) = for_ es (wf γ) *> for_ (xes <#> snd) (wf γ)
+   wf γ (S.App e e') = wf γ e *> wf γ e'
+   wf γ (S.BinaryApp e op e') = wf γ e *> var γ op *> wf γ e'
+   wf γ (S.UnaryPrefixApp op e) = var γ op *> wf γ e
+   wf γ (S.Ternary c e e') = wf γ c *> wf γ e *> wf γ e'
+   wf γ (S.Project e y) = case names γ e of
+      Just q -> when (not (Map.member y (findWithDefault Map.empty q memo))) -- attr-module
+
+         $ throwError
+         $ "module " <> q <> " has no member " <> y
+      Nothing -> wf γ e -- attr-object
+   wf γ (S.DProject e e') = wf γ e *> wf γ e'
+   wf γ (S.Matrix _ body (x × y) source) =
+      wf γ source *> wf (assignedIn γ (Set.singleton x ∪ Set.singleton y)) body
+   wf γ (S.Lambda (S.LambdaClause (ps × e))) = wf (assignedIn γ (unions (bv <$> ps))) e
+   wf γ (S.Dictionary _ kvs) = for_ kvs \(k × v) -> dictKey k *> wf γ v
       where
-      goKey (S.ExprKey e) = go e
-      goKey (S.VarKey _ _) = pure unit
-   go (S.Paragraph elems) = for_ elems \el -> case el of
-      S.Unquote e -> go e
+      dictKey (S.ExprKey e) = wf γ e
+      dictKey (S.VarKey _ _) = pure unit
+   wf γ (S.Paragraph elems) = for_ elems case _ of
+      S.Unquote e -> wf γ e
       S.Token _ -> pure unit
-   go (S.ListEmpty _) = pure unit
-   go (S.ListNonEmpty _ e l) = go e *> goRest l
+   wf _ (S.ListEmpty _) = pure unit
+   wf γ (S.ListNonEmpty _ e l) = wf γ e *> listRest l
       where
-      goRest (S.End _) = pure unit
-      goRest (S.Next _ e' l') = go e' *> goRest l'
-   go (S.ListEnum e e') = go e *> go e'
-   go (S.ListComp _ e _) = go e
-   go (S.DocExpr e e') = go e *> go e'
-   go _ = pure unit
+      listRest (S.End _) = pure unit
+      listRest (S.Next _ e' l') = wf γ e' *> listRest l'
+   wf γ (S.ListEnum e e') = wf γ e *> wf γ e'
+   wf γ (S.ListComp _ e quals) = qualifiers γ quals
+      where
+      qualifiers γ' Nil = wf γ' e
+      qualifiers γ' (q : qs) = case q of
+         S.ListCompGuard cond -> wf γ' cond *> qualifiers γ' qs
+         S.ListCompGen p src -> wf γ' src *> qualifiers (assignedIn γ' (bv p)) qs
+         S.ListCompDecl (S.VarDef p src) -> wf γ' src *> qualifiers (assignedIn γ' (bv p)) qs
+   wf γ (S.DocExpr e e') = wf γ e *> wf γ e'
+
+-- Figure 10 `var`/`var-builtin` (builtins pre-merged into Γ): a name used as a value.
+var :: Cxt -> Var -> Either String Unit
+var γ x = case Map.lookup x γ of
+   Just (VarStatus true) -> pure unit
+   Just (VarStatus false) -> throwError $ "Not definitely assigned: " <> x
+   Just (Module q) -> throwError $ "module " <> q <> " is not a value"
+   Just (Class _) -> throwError $ "class " <> x <> " is not a value"
+   Nothing -> throwError $ "Unbound name: " <> x
+
+assignedIn :: Cxt -> Set Var -> Cxt
+assignedIn γ xs = γ `extendStatuses` constMap true xs
 

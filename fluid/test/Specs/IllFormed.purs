@@ -49,4 +49,5 @@ illFormed_cases =
    , { file: "match_partial_def.fld", expected_error: "Not definitely assigned: result" }
    , { file: "match_exhaustive_assign.fld", expected_error: "Not definitely assigned: result" }
    , { file: "from_import_selective.fld", expected_error: "Unbound name: bar" }
+   , { file: "bare_module.fld", expected_error: "module qual_lib is not a value" }
    ]
