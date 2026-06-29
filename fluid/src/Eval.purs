@@ -223,8 +223,8 @@ evalStmt doc_opt γ s αs = case s of
    Import q f -> do
       load q
       { cache } <- getStore
-      let γ = definitely "import loaded" (Map.lookup q cache)
-      pure (Assigns (maybe γ (\xs -> restrict (Set.fromFoldable xs) γ) f) empty)
+      let γ_q = definitely "import loaded" (Map.lookup q cache)
+      pure (Assigns (maybe γ_q (\xs -> restrict (Set.fromFoldable xs) γ_q) f) empty)
    Seq s1 s2 -> do
       r1 <- evalStmt Nothing γ s1 αs
       case r1 of
