@@ -11,6 +11,7 @@
 	};
 
 	const src = `import lib.matrix
+import lib.view
 import matrixMultiply.matrices
 
 MultiView([
