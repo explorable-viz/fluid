@@ -232,11 +232,17 @@ wellFormed memo _ (S.Import q f) = do
       when (not (Map.member x γ)) $ throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
    pure (Assigns Map.empty × S.Import q f)
 
-names :: forall a. Cxt -> S.Expr a -> Maybe ModuleName
-names γ (S.Var x) = case Map.lookup x γ of
-   Just (Module q) -> Just q
+asName :: forall a. S.Expr a -> Maybe Name
+asName (S.Var x) = Just (x : Nil)
+asName (S.Project e y) = asName e <#> (_ <> (y : Nil))
+asName _ = Nothing
+
+resolveName :: Map.Map ModuleName Cxt -> Cxt -> Name -> Maybe Entry
+resolveName _ γ (x : Nil) = case Map.lookup x γ of
+   Just (Module q) -> Just (Module q)
+   Just (Class c) -> Just (Class c)
    _ -> Nothing
-names _ _ = Nothing
+resolveName _ _ _ = Nothing
 
 wellFormedExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String Unit
 wellFormedExpr memo = wf
@@ -258,11 +264,11 @@ wellFormedExpr memo = wf
    wf γ (S.BinaryApp e op e') = wf γ e *> var γ op *> wf γ e'
    wf γ (S.UnaryPrefixApp op e) = var γ op *> wf γ e
    wf γ (S.Ternary c e e') = wf γ c *> wf γ e *> wf γ e'
-   wf γ (S.Project e y) = case names γ e of
-      Just q -> when (not (Map.member y (findWithDefault Map.empty q memo)))
+   wf γ (S.Project e y) = case resolveName memo γ =<< asName e of
+      Just (Module q) -> when (not (Map.member y (findWithDefault Map.empty q memo)))
          $ throwError
          $ "module " <> dottedName q <> " has no member " <> y
-      Nothing -> wf γ e
+      _ -> wf γ e
    wf γ (S.DProject e e') = wf γ e *> wf γ e'
    wf γ (S.Matrix _ body (x × y) source) =
       wf γ source *> wf (assignedIn γ (Set.singleton x ∪ Set.singleton y)) body
