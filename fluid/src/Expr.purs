@@ -2,7 +2,7 @@ module Expr where
 
 import Prelude hiding (absurd, top)
 
-import Bind (Var)
+import Bind (Name, Var)
 import Control.Apply (lift2)
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
@@ -65,7 +65,7 @@ data Stmt a
    | DefRec (RecDefs a)
    | Pass
    | ExprStmt (Expr a)
-   | Import String (Maybe (List Var)) -- module name; Nothing = whole module, Just xs = from-import of xs
+   | Import Name (Maybe (List Var))
    | Seq (Stmt a) (Stmt a)
 
 newtype Module a = Module (List (Stmt a))

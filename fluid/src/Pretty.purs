@@ -2,14 +2,13 @@ module Pretty (PrettyShow(..), class Pretty, compare, pretty, prettyP) where
 
 import Prelude
 
-import Bind (Bind, Var, (↦))
+import Bind (Bind, Var, dottedName, (↦))
 import Data.Foldable (intercalate)
 import Data.List (List(..), fromFoldable, singleton, (:))
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Data.NonEmpty ((:|))
-import Data.String (Pattern(..), Replacement(..), replaceAll) as DS
 import Data.Traversable (class Foldable)
 import DataType (Ctr, cCons)
 import Dict (Dict)
@@ -119,9 +118,6 @@ operatorApp n (UnaryPrefixApp op s) =
             text op <+> operatorApp n' s
 operatorApp _ e = prettySimple e
 
-dottedPath :: String -> String
-dottedPath = DS.replaceAll (DS.Pattern "/") (DS.Replacement ".")
-
 lambda :: forall a. Ann a => List Pattern -> Stmt a -> Doc
 lambda ps s = text "lambda" <+> prettyList ps <> text ":" <+> pretty s
 
@@ -219,9 +215,9 @@ instance Ann a => Pretty (Stmt a) where
    pretty (Assert cond Nothing) = text "assert" <+> pretty cond
    pretty (Assert cond (Just msg)) = text "assert" <+> pretty cond <> text "," <+> pretty msg
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
-   pretty (Import q Nothing) = text "import" <+> text (dottedPath q)
+   pretty (Import q Nothing) = text "import" <+> text (dottedName q)
    pretty (Import q (Just xs)) =
-      text "from" <+> text (dottedPath q) <+> text "import" <+> text (intercalate ", " xs)
+      text "from" <+> text (dottedName q) <+> text "import" <+> text (intercalate ", " xs)
    pretty (Dataclass c b xs) =
       text "@dataclass" <> line
          <> text "class" <+> text c
@@ -329,9 +325,9 @@ instance Highlightable a => Pretty (E.Stmt a) where
    pretty (E.DefRec (E.RecDefs _ ρ)) = text "def" <+> pretty ρ
    pretty E.Pass = text "pass"
    pretty (E.ExprStmt e) = pretty e
-   pretty (E.Import q Nothing) = text "import" <+> text (dottedPath q)
+   pretty (E.Import q Nothing) = text "import" <+> text (dottedName q)
    pretty (E.Import q (Just xs)) =
-      text "from" <+> text (dottedPath q) <+> text "import" <+> text (intercalate ", " xs)
+      text "from" <+> text (dottedName q) <+> text "import" <+> text (intercalate ", " xs)
    pretty (E.Seq s1 s2) = pretty s1 <++> pretty s2
 
 instance Highlightable a => Pretty (Cont a) where

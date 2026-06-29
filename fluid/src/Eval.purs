@@ -15,7 +15,6 @@ import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
-import Data.String (Pattern(..), contains)
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, snd)
 import DataType (arity, checkArity, consistentWith, dataType, showCtr)
@@ -301,10 +300,9 @@ eval_module γ = go empty
    step _ _ αs = pure (empty × αs)
 
 moduleBinding :: forall m. MonadWithGraphAlloc m => ModuleName -> Env Vertex -> m (Env Vertex)
-moduleBinding q γ_q
-   | contains (Pattern "/") q = pure empty
-   | isJust (lookup q γ_q) = pure empty
-   | otherwise = maplet q <$> val Nothing empty (V.Mod γ_q)
+moduleBinding (x : Nil) γ_q
+   | not (isJust (lookup x γ_q)) = maplet x <$> val Nothing empty (V.Mod γ_q)
+moduleBinding _ _ = pure empty
 
 importInto :: forall m. HasClassCtx m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
 importInto γ q = do

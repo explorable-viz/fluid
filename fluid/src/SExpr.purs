@@ -2,7 +2,7 @@ module SExpr where
 
 import Prelude hiding (absurd, top, unless)
 
-import Bind (Bind, Var, varAnon, (↦))
+import Bind (Bind, Name, Var, varAnon, (↦))
 import Bind (keys) as B
 import Data.Set (Set, empty, fromFoldable, insert, member, singleton, unions) as Set
 import Control.Monad.Error.Class (class MonadError)
@@ -129,7 +129,7 @@ data Stmt a
    | Assert (Expr a) (Maybe (Expr a))
    | Seq (Stmt a) (Stmt a)
    | Dataclass Var (Maybe Var) (List Var)
-   | Import String (Maybe (List Var)) -- module name; Nothing = whole module, Just xs = from-import of xs
+   | Import Name (Maybe (List Var))
 
 data Clause a = Clause a (NonEmptyList Pattern × Stmt a)
 

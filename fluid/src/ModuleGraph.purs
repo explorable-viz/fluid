@@ -2,10 +2,11 @@ module ModuleGraph where
 
 import Data.List (List)
 import Data.Map (Map)
+import Bind (Name)
 import DefiniteAssignment (ClassCtx)
 import Expr (Module)
 
-type ModuleName = String
+type ModuleName = Name
 
 type ModuleCxt a =
    { roots :: List ModuleName

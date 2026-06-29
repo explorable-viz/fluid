@@ -1,6 +1,7 @@
 module Bind where
 
 import Prelude
+import Data.Foldable (intercalate)
 import Data.List (List(..), (:))
 import Data.Set (Set, empty)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -9,6 +10,14 @@ import Util.Set ((∪))
 
 -- Not easy as a newtype as there is no Coercible instance for Set.
 type Var = String
+
+type Name = List Var
+
+dottedName :: Name -> String
+dottedName = intercalate "."
+
+pathName :: Name -> String
+pathName = intercalate "/"
 
 varAnon = "_" :: Var
 

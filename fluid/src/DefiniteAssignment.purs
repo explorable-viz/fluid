@@ -2,7 +2,7 @@ module DefiniteAssignment where
 
 import Prelude
 
-import Bind (Var)
+import Bind (Name, Var)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except.Trans (ExceptT)
 import Control.Monad.Reader.Trans (ReaderT)
@@ -23,7 +23,7 @@ type Ctx = Map Var Boolean
 -- Class-entry case of the spec context entry θ (Definition 1): ⟨q, x⃗, c⟩.
 -- Declaring-context Γ subscript deferred until the unified context exists.
 type ClassEntry =
-   { mod :: String -- q: defining module (cf. ModuleGraph.ModuleName)
+   { mod :: Name
    , base :: Maybe Var -- c: base class (⊥ = Nothing)
    , fields :: List Var -- x⃗: own field names (distinct)
    }
@@ -34,7 +34,7 @@ type ClassCtx = Map Var ClassEntry
 data Entry
    = VarStatus Boolean -- a ∈ 𝔹 (definite-assignment status)
    | Class ClassEntry -- ⟨q, x⃗, c⟩
-   | Module String -- q (module reference; populated by imports)
+   | Module Name
 
 -- spec context Γ. (Ctx above is the status-only definite-assignment delta Δ,
 -- carried as the AST annotation; it remains separate from Γ for now.)

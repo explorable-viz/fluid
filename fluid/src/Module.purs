@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
+import Bind (dottedName, pathName)
 import Data.Bifunctor (lmap)
 import Data.Either (Either, either)
 import Data.Foldable (foldM, foldl)
@@ -39,10 +40,10 @@ import Val (class HasModuleStore, modifyStore, Env)
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
 builtins :: ModuleName
-builtins = "lib/builtins"
+builtins = "lib" : "builtins" : Nil
 
 prelude :: ModuleName
-prelude = "lib/prelude"
+prelude = "lib" : "prelude" : Nil
 
 predefined :: List ModuleName
 predefined = builtins : prelude : Nil
@@ -67,7 +68,7 @@ checkModules graph modules baseCxt roots = foldM go Map.empty roots
               Nothing -> pure (Map.insert q Map.empty memo')
               Just mod -> do
                  let γ = foldl (\acc i -> acc `Map.union` findWithDefault Map.empty i memo') baseCxt (predefinedDeps q)
-                 δ <- lmap (_ <> "\nChecking module " <> q) (checkModule memo' γ mod)
+                 δ <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule memo' γ mod)
                  λ <- classesOfModule q mod
                  pure (Map.insert q ((Class <$> λ) `Map.union` (VarStatus true <$ δ)) memo')
 
@@ -160,7 +161,7 @@ parseModuleGraph roots = do
    parseAndCollect :: ModuleName -> m (Raw S.Module × ClassCtx × List ModuleName)
    parseAndCollect path = do
       FileCxt { fluidSrcPaths } <- ask
-      src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
-      mod × imports <- throwLeft <#> withMsg ("Loading module " <> path) $ parseModule src
+      src <- loadFile fluidSrcPaths (File (pathName path <> fluidExtension))
+      mod × imports <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
       λ <- either throw pure (classesOfModule path mod)
       pure $ mod × λ × (predefinedDeps path <> imports)

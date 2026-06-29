@@ -2,7 +2,7 @@ module WellFormed where
 
 import Prelude
 
-import Bind (Var)
+import Bind (Name, Var, dottedName)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either)
 import Data.Foldable (foldM, foldMap, foldr, for_)
@@ -14,7 +14,6 @@ import Data.List.NonEmpty as NEL
 import Data.Semigroup.Foldable (foldl1)
 import Data.Set (Set, unions)
 import Data.Set as Set
-import Data.String (Pattern(..), contains)
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
 import DataType (arity)
@@ -34,7 +33,7 @@ checkTopLevelImports = spine
    where
    spine (S.Seq s1 s2) = spine s1 *> spine s2
    spine (S.Import _ _) = pure unit
-   spine s = for_ (nestedImports s) \q -> throwError $ "Import not at top level: " <> q
+   spine s = for_ (nestedImports s) \q -> throwError $ "Import not at top level: " <> dottedName q
 
 nestedImports :: forall a. S.Stmt a -> List ModuleName
 nestedImports (S.Import q _) = q : Nil
@@ -44,7 +43,7 @@ nestedImports (S.Match _ ps) = foldMap (nestedImports <<< snd) ps
 nestedImports (S.DefRec ds) = foldMap (\(_ × S.Clause _ (_ × s)) -> nestedImports s) ds
 nestedImports _ = Nil
 
-classesOfModule :: forall a. String -> S.Module a -> Either String ClassCtx
+classesOfModule :: forall a. Name -> S.Module a -> Either String ClassCtx
 classesOfModule q (S.Module ss) = foldM unionWith_mergeEq Map.empty =<< traverse (classes q) ss
 
 checkModule :: Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String Ctx
@@ -56,10 +55,10 @@ checkModule memo γ (S.Module ss) =
          Returns -> Map.empty
 
 -- Entry program's module (spec entry point E; its __name__ is "__main__").
-mainModule :: String
-mainModule = "__main__"
+mainModule :: Name
+mainModule = "__main__" : Nil
 
-classes :: forall a. String -> S.Stmt a -> Either String ClassCtx
+classes :: forall a. Name -> S.Stmt a -> Either String ClassCtx
 classes q (S.Dataclass c b xs) = pure (Map.singleton c { mod: q, base: b, fields: xs })
 classes q (S.Seq s1 s2) = do
    λ1 <- classes q s1
@@ -140,7 +139,9 @@ importedCxt memo (S.Import q Nothing) =
    let
       γ = findWithDefault Map.empty q memo
    in
-      if contains (Pattern "/") q || Map.member q γ then γ else Map.insert q (Module q) γ
+      case q of
+         x : Nil | not (Map.member x γ) -> Map.insert x (Module q) γ
+         _ -> γ
 importedCxt memo (S.Import q (Just xs)) =
    Map.filterKeys (_ `Set.member` Set.fromFoldable xs) (findWithDefault Map.empty q memo)
 importedCxt _ _ = Map.empty
@@ -228,7 +229,7 @@ wellFormed _ γ (S.Dataclass c b xs) = do
 wellFormed memo _ (S.Import q f) = do
    let γ = findWithDefault Map.empty q memo
    for_ f \xs -> for_ xs \x ->
-      when (not (Map.member x γ)) $ throwError $ "Cannot import name " <> x <> " from module " <> q
+      when (not (Map.member x γ)) $ throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
    pure (Assigns Map.empty × S.Import q f)
 
 names :: forall a. Cxt -> S.Expr a -> Maybe ModuleName
@@ -260,7 +261,7 @@ wellFormedExpr memo = wf
    wf γ (S.Project e y) = case names γ e of
       Just q -> when (not (Map.member y (findWithDefault Map.empty q memo)))
          $ throwError
-         $ "module " <> q <> " has no member " <> y
+         $ "module " <> dottedName q <> " has no member " <> y
       Nothing -> wf γ e
    wf γ (S.DProject e e') = wf γ e *> wf γ e'
    wf γ (S.Matrix _ body (x × y) source) =
@@ -292,7 +293,7 @@ var :: Cxt -> Var -> Either String Unit
 var γ x = case Map.lookup x γ of
    Just (VarStatus true) -> pure unit
    Just (VarStatus false) -> throwError $ "Not definitely assigned: " <> x
-   Just (Module q) -> throwError $ "module " <> q <> " is not a value"
+   Just (Module q) -> throwError $ "module " <> dottedName q <> " is not a value"
    Just (Class _) -> throwError $ "class " <> x <> " is not a value"
    Nothing -> throwError $ "Unbound name: " <> x
 

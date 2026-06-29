@@ -5,10 +5,10 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Lazy (defer)
 import Control.Monad.State (StateT)
-import Data.Array (fromFoldable, some)
+import Data.Array (some)
 import Data.Bifunctor (lmap)
 import Data.CodePoint.Unicode (isSpace)
-import Bind (Bind, (↦))
+import Bind (Bind, Name, (↦))
 import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
@@ -17,7 +17,6 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.NonEmpty ((:|))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
-import Data.String.Common (joinWith)
 import Data.Traversable (foldl, foldr)
 import DataType (cCons, cNoArgs, cNone, cPair)
 import Lattice (Raw)
@@ -497,19 +496,18 @@ fromImportStmt = do
    xs <- sepBy1 (variable <|> constructor) (delim ',')
    pure $ Import q (Just (toList xs))
 
-modPath :: Parser String
-modPath = joinWith "/" <<< fromFoldable <$> sepBy1 variable (delim '.')
+modPath :: Parser Name
+modPath = toList <$> sepBy1 variable (delim '.')
 
-stmtImports :: forall a. Stmt a -> List String
+stmtImports :: forall a. Stmt a -> List Name
 stmtImports (Import q _) = q : Nil
 stmtImports (Seq s1 s2) = stmtImports s1 <> stmtImports s2
 stmtImports _ = Nil
 
-moduleImports :: forall a. Module a -> List String
+moduleImports :: forall a. Module a -> List Name
 moduleImports (Module ss) = ss >>= stmtImports
 
--- Leading imports form the slicing input boundary; later imports are computed in-graph.
-leadingImports :: forall a. Stmt a -> List String
+leadingImports :: forall a. Stmt a -> List Name
 leadingImports (Import q _) = q : Nil
 leadingImports (Seq (Import q _) rest) = q : leadingImports rest
 leadingImports _ = Nil
@@ -525,8 +523,8 @@ parse parser input =
    printError (ParseError msg (Position { line, column })) =
       "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
 
-parseProgram :: String -> Either String (Raw Stmt × List String)
+parseProgram :: String -> Either String (Raw Stmt × List Name)
 parseProgram src = parse (topLevel programStmts) src <#> \s -> s × stmtImports s
 
-parseModule :: String -> Either String (Raw Module × List String)
+parseModule :: String -> Either String (Raw Module × List Name)
 parseModule src = parse (topLevel module_) src <#> \m -> m × moduleImports m
