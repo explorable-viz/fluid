@@ -1,0 +1,3 @@
+x = 5
+import interleaved_import_lib
+x + y

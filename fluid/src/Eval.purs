@@ -353,10 +353,12 @@ sliceBwd { g, graph_bwd, inα, outα } out𝔹 =
 graphEval :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classCtx } stmt =
    local (\(FileCxt r) -> FileCxt (r { classCtx = classCtx })) do
+      { modules } <- getStore
+      let mαs = Set.unions (vertices <$> Map.values modules)
       _ × _ × g × inα × outα <- flip runAllocT n do
          sα <- alloc stmt
          let inα = EnvStmt γ sα
-         g × outα <- runWithGraphT_spy (asReturns <$> evalStmt Nothing γ sα mempty) (vertices inα)
+         g × outα <- runWithGraphT_spy (asReturns <$> evalStmt Nothing γ sα mempty) (vertices inα ∪ mαs)
          when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
          pure (g × inα × outα)
       pure { g, graph_bwd, inα, outα }
