@@ -135,13 +135,11 @@ capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
 importedCxt :: forall a. Map.Map ModuleName Cxt -> S.Stmt a -> Cxt
-importedCxt memo (S.Import q Nothing) =
-   let
-      γ = findWithDefault Map.empty q memo
-   in
-      case simple q of
-         Just x | not (Map.member x γ) -> Map.insert x (Module q) γ
-         _ -> γ
+importedCxt memo (S.Import q Nothing) = case simple q of
+   Just x | not (Map.member x γ) -> Map.insert x (Module q) γ
+   _ -> γ
+   where
+   γ = findWithDefault Map.empty q memo
 importedCxt memo (S.Import q (Just xs)) =
    Map.filterKeys (_ `Set.member` Set.fromFoldable xs) (findWithDefault Map.empty q memo)
 importedCxt _ _ = Map.empty
