@@ -20,7 +20,7 @@ import DefiniteAssignment (ClassEntry, Ctx, Entry(..), Cxt, TyResult(..), classF
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
-import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..)) as S
+import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..)) as S
 import Util (type (×), singleton, (×))
 import Util.Set ((\\), (∪))
 
@@ -161,7 +161,8 @@ wellFormed memo γ (S.Def (S.VarDef p e)) = do
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throwError $ "Variable captured by its own definition: " <> x
    e' <- wellFormedExpr memo γ e
-   pure (Assigns (constMap true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e')))
+   p' <- qualifyPattern memo γ p
+   pure (Assigns (constMap true xs) × S.Def (S.VarDef p' (Assigns Map.empty <$ e')))
 wellFormed memo γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
    let γ' = γ `extendCxt` constMap true fs
@@ -170,8 +171,9 @@ wellFormed memo γ (S.DefRec ds) = do
            let xs = unions (bv <$> ps)
            let ys = assigns s \\ xs
            let γ'' = γ' `extendCxt` constMap true xs `extendCxt` constMap false ys
+           ps' <- traverse (qualifyPattern memo γ') ps
            r × s' <- wellFormed memo γ'' s
-           pure (x × S.Clause r (ps × s'))
+           pure (x × S.Clause r (ps' × s'))
       )
       ds
    pure (Assigns (constMap true fs) × S.DefRec ds')
@@ -203,8 +205,9 @@ wellFormed memo γ (S.Match e ps) = do
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
+           p' <- qualifyPattern memo γ p
            r × s' <- wellFormed memo (γ `extendCxt` constMap true xs) s
-           pure (overrideRes (Assigns (constMap true xs)) r × (p × s'))
+           pure (overrideRes (Assigns (constMap true xs)) r × (p' × s'))
       )
       ps
    pure (foldl1 mergeRes ((fst <$> ps') `NEL.snoc` rFall) × S.Match (Assigns Map.empty <$ e') (snd <$> ps'))
@@ -290,8 +293,10 @@ wellFormedExpr memo = wf
    wf γ (S.DProject e e') = S.DProject <$> wf γ e <*> wf γ e'
    wf γ (S.Matrix α body (x × y) source) =
       (\source' body' -> S.Matrix α body' (x × y) source') <$> wf γ source <*> wf (assignedIn γ (Set.singleton x ∪ Set.singleton y)) body
-   wf γ (S.Lambda (S.LambdaClause (ps × e))) =
-      (\e' -> S.Lambda (S.LambdaClause (ps × e'))) <$> wf (assignedIn γ (unions (bv <$> ps))) e
+   wf γ (S.Lambda (S.LambdaClause (ps × e))) = do
+      ps' <- traverse (qualifyPattern memo γ) ps
+      e' <- wf (assignedIn γ (unions (bv <$> ps))) e
+      pure (S.Lambda (S.LambdaClause (ps' × e')))
    wf γ (S.Dictionary α kvs) = S.Dictionary α <$> traverse (\(k × v) -> (×) <$> dictKey k <*> wf γ v) kvs
       where
       dictKey (S.ExprKey e) = S.ExprKey <$> wf γ e
@@ -315,10 +320,12 @@ wellFormedExpr memo = wf
             map (S.ListCompGuard cond' : _) <$> qualifiers γ' qs
          S.ListCompGen p src -> do
             src' <- wf γ' src
-            map (S.ListCompGen p src' : _) <$> qualifiers (assignedIn γ' (bv p)) qs
+            p' <- qualifyPattern memo γ' p
+            map (S.ListCompGen p' src' : _) <$> qualifiers (assignedIn γ' (bv p)) qs
          S.ListCompDecl (S.VarDef p src) -> do
             src' <- wf γ' src
-            map (S.ListCompDecl (S.VarDef p src') : _) <$> qualifiers (assignedIn γ' (bv p)) qs
+            p' <- qualifyPattern memo γ' p
+            map (S.ListCompDecl (S.VarDef p' src') : _) <$> qualifiers (assignedIn γ' (bv p)) qs
    wf γ (S.DocExpr e e') = S.DocExpr <$> wf γ e <*> wf γ e'
 
    qualified ce c = NEL.snoc ce.mod (NEL.last c)
@@ -333,4 +340,22 @@ var γ x = case Map.lookup x γ of
 
 assignedIn :: Cxt -> Set Var -> Cxt
 assignedIn γ xs = γ `extendCxt` constMap true xs
+
+qualifyPattern :: Map.Map ModuleName Cxt -> Cxt -> S.Pattern -> Either String S.Pattern
+qualifyPattern memo γ = qualify
+   where
+   qualify (S.PConstr c ps) = do
+      fqn <- fqnOf c
+      S.PConstr fqn <$> traverse qualify ps
+   qualify (S.PConstrKw c ps xps) = do
+      fqn <- fqnOf c
+      S.PConstrKw fqn <$> traverse qualify ps <*> traverse (traverse qualify) xps
+   qualify (S.PRecord xps) = S.PRecord <$> traverse (traverse qualify) xps
+   qualify (S.PListNonEmpty p lr) = S.PListNonEmpty <$> qualify p <*> qualifyRest lr
+   qualify p = pure p
+   qualifyRest (S.PListNext p lr) = S.PListNext <$> qualify p <*> qualifyRest lr
+   qualifyRest lr = pure lr
+   fqnOf c = case resolveName memo γ c of
+      Just (Class ce) -> pure (NEL.snoc ce.mod (NEL.last c))
+      _ -> throwError $ "Unknown dataclass: " <> dottedName c
 
