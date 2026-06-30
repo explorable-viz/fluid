@@ -78,7 +78,7 @@ prepConfig :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => Monad
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    sCxt <- parseModuleGraph (predefined <> imports)
-   let moduleClassCtx = Map.insert "__NoArgs" { mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
+   let moduleClassCtx = Map.insert "__NoArgs" { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
    programClasses <- either throw pure (classes mainModule s)
    fullClassCtx <- either throw pure (unionWith_mergeEq moduleClassCtx programClasses)
    local (\(FileCxt r) -> FileCxt (r { classCtx = fullClassCtx })) do
@@ -109,7 +109,7 @@ prepConfig primitives fluidSrc = do
             foldl (\acc q -> acc `Map.union` findWithDefault Map.empty q memo)
                (constMap (VarStatus true) (keys primitives))
                predefined
-               `Map.union` Map.singleton "__NoArgs" (Class { mod: builtins, base: Nothing, fields: Nil })
+               `Map.union` Map.singleton "__NoArgs" (Class { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil })
       sty <- either throw pure (checkProgram memo baseCxt s)
       eTy <- desug sty
       let e = dropLeadingImports ((unit <$ eTy) :: Raw Stmt)

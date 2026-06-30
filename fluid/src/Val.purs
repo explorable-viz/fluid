@@ -253,7 +253,7 @@ instance Apply BaseVal where
    apply (Dictionary fxvs) (Dictionary xvs) = Dictionary (fxvs <*> xvs)
    apply (Matrix fm) (Matrix m) = Matrix (fm <*> m)
    apply (Fun ff) (Fun f) = Fun (ff <*> f)
-   apply (Cls c) (Cls c') = Cls (c ≜ c')
+   apply (Cls c) (Cls c') = Cls (c { mod = c.mod ≜ c'.mod, base = c.base ≜ c'.base, fields = c.fields ≜ c'.fields })
    apply (Mod fγ) (Mod γ) = Mod (fγ <*> γ)
    apply _ _ = shapeMismatch unit
 
@@ -366,7 +366,7 @@ instance BoundedJoinSemilattice a => Expandable (BaseVal a) (Raw BaseVal) where
    expand (Constr c vs) (Constr c' us) = Constr (c ≜ c') (expand vs us)
    expand (Matrix m) (Matrix m') = Matrix (expand m m')
    expand (Fun φ) (Fun φ') = Fun (expand φ φ')
-   expand (Cls c) (Cls c') = Cls (c ≜ c')
+   expand (Cls c) (Cls c') = Cls (c { mod = c.mod ≜ c'.mod, base = c.base ≜ c'.base, fields = c.fields ≜ c'.fields })
    expand (Mod γ) (Mod γ') = Mod (expand γ γ')
    expand _ _ = shapeMismatch unit
 

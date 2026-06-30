@@ -17,27 +17,24 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
+import Util (definitely)
 
 type Ctx = Map Var Boolean
 
--- Class-entry case of the spec context entry θ (Definition 1): ⟨q, x⃗, c⟩.
--- Declaring-context Γ subscript deferred until the unified context exists.
 type ClassEntry =
-   { mod :: Name
-   , base :: Maybe Var -- c: base class (⊥ = Nothing)
-   , fields :: List Var -- x⃗: own field names (distinct)
+   { cxt :: Cxt -- declaring context (resolves the base class)
+   , mod :: Name -- defining module
+   , base :: Maybe Var -- base class, if any
+   , fields :: List Var -- own field names, distinct
    }
 
 type ClassCtx = Map Var ClassEntry
 
--- spec context entry θ (Definition 1).
 data Entry
-   = VarStatus Boolean -- a ∈ 𝔹 (definite-assignment status)
-   | Class ClassEntry -- ⟨q, x⃗, c⟩
+   = VarStatus Boolean -- definite-assignment status
+   | Class ClassEntry
    | Module Name
 
--- spec context Γ. (Ctx above is the status-only definite-assignment delta Δ,
--- carried as the AST annotation; it remains separate from Γ for now.)
 type Cxt = Map Var Entry
 
 class HasClassCtx m where
@@ -68,40 +65,41 @@ mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
 
--- Class entries of Γ, as a ClassCtx (for the DataType-derived lookups).
 classesOf :: Cxt -> ClassCtx
 classesOf = Map.mapMaybe case _ of
    Class ce -> Just ce
+   _ -> Nothing
+
+classFor :: Cxt -> Var -> Maybe ClassEntry
+classFor γ c = case Map.lookup c γ of
+   Just (Class ce) -> Just ce
    _ -> Nothing
 
 -- Override Γ with definite-assignment statuses δ (δ wins).
 extendStatuses :: Cxt -> Ctx -> Cxt
 extendStatuses γ δ = Map.union (VarStatus <$> δ) γ
 
--- Inherited then own.
-fields :: ClassCtx -> Var -> Either String (List Var)
-fields λ = go Set.empty
-   where
-   go seen c
-      | c `Set.member` seen = throwError $ "Cyclic class hierarchy at: " <> c
-      | otherwise = case Map.lookup c λ of
-           Nothing -> throwError $ "Unknown class: " <> c
-           Just { base: Nothing, fields: xs } -> pure xs
-           Just { base: Just b, fields: xs } -> (_ <> xs) <$> go (Set.insert c seen) b
+fields :: ClassEntry -> List Var
+fields ce = case ce.base of
+   Nothing -> ce.fields
+   Just b -> fields (definitely "ill-formed class entry" (classFor ce.cxt b)) <> ce.fields
 
 unionWith_mergeEq :: ClassCtx -> ClassCtx -> Either String ClassCtx
 unionWith_mergeEq a b = do
    let dups = Set.toUnfoldable (Set.intersection (Map.keys a # Set.fromFoldable) (Map.keys b # Set.fromFoldable)) :: List Var
    for_ dups \k -> case Map.lookup k a, Map.lookup k b of
-      Just va, Just vb | va /= vb -> throwError $ "Conflicting class declarations: " <> k
+      Just ce1, Just ce2 | differ ce1 ce2 -> throwError $ "Conflicting class declarations: " <> k
       _, _ -> pure unit
    pure (Map.union a b)
+   where
+   differ ce1 ce2 = ce1.mod /= ce2.mod || ce1.base /= ce2.base || ce1.fields /= ce2.fields
 
 -- ======================
 -- boilerplate
 -- ======================
 derive instance Functor TyResult
 derive instance Eq a => Eq (TyResult a)
+derive instance Eq Entry
 
 instance (Monad m, HasClassCtx m) => HasClassCtx (StateT s m) where
    askClassCtx = lift askClassCtx

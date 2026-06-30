@@ -5,7 +5,7 @@ import Prelude
 import Bind (Name, Var, dottedName)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either)
-import Data.Foldable (foldM, foldMap, foldr, for_)
+import Data.Foldable (foldMap, foldr, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.List (List(..), length, nub, (:))
@@ -16,11 +16,11 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (ClassCtx, Ctx, Entry(..), Cxt, TyResult(..), classesOf, extendStatuses, fields, mergeRes, overrideRes, unionWith_mergeEq)
+import DefiniteAssignment (ClassCtx, Ctx, Entry(..), Cxt, TyResult(..), classFor, extendStatuses, fields, mergeRes, overrideRes, unionWith_mergeEq)
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
-import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..), ctrName) as S
+import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..)) as S
 import Util (type (×), singleton, (×))
 import Util.Set ((\\), (∪))
 
@@ -43,7 +43,10 @@ nestedImports (S.DefRec ds) = foldMap (\(_ × S.Clause _ (_ × s)) -> nestedImpo
 nestedImports _ = Nil
 
 classesOfModule :: forall a. Name -> S.Module a -> Either String ClassCtx
-classesOfModule q (S.Module ss) = foldM unionWith_mergeEq Map.empty =<< traverse (classes q) ss
+classesOfModule q (S.Module ss) =
+   case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
+      Nothing -> pure Map.empty
+      Just s -> classes q s
 
 checkModule :: Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String Ctx
 checkModule memo γ (S.Module ss) =
@@ -58,12 +61,12 @@ mainModule :: Name
 mainModule = pure "__main__"
 
 classes :: forall a. Name -> S.Stmt a -> Either String ClassCtx
-classes q (S.Dataclass c b xs) = pure (Map.singleton c { mod: q, base: b, fields: xs })
-classes q (S.Seq s1 s2) = do
-   λ1 <- classes q s1
-   λ2 <- classes q s2
-   unionWith_mergeEq λ1 λ2
-classes _ _ = pure Map.empty
+classes q = go Map.empty
+   where
+   go acc (S.Dataclass c b xs) =
+      unionWith_mergeEq acc (Map.singleton c { cxt: Class <$> acc, mod: q, base: b, fields: xs })
+   go acc (S.Seq s1 s2) = go acc s1 >>= \acc' -> go acc' s2
+   go acc _ = pure acc
 
 assigns :: forall a. S.Stmt a -> Set Var
 assigns S.Pass = Set.empty
@@ -180,7 +183,7 @@ wellFormed memo γ (S.Seq s1 s2) = do
          for_ (Set.toUnfoldable (captures s1 `Set.intersection` assigns s2) :: Array Var) \x ->
             throwError $ "Captured variable reassigned: " <> x
          λ1 <- classes mainModule s1
-         let γ' = Map.union (importedCxt memo s1) (Map.union (Class <$> λ1) (γ `extendStatuses` δ))
+         let γ' = Map.union (importedCxt memo s1) (Map.union (Class <$> (λ1 <#> _ { cxt = γ })) (γ `extendStatuses` δ))
          r2 × s2' <- wellFormed memo γ' s2
          pure (overrideRes r1 r2 × S.Seq s1' s2')
 wellFormed memo γ (S.If es elseBranch) = do
@@ -214,7 +217,7 @@ wellFormed _ γ (S.Dataclass c b xs) = do
    case b of
       Nothing -> pure unit
       Just base -> do
-         inherited <- fields (classesOf γ) base
+         inherited <- maybe (throwError $ "Unknown class: " <> base) (pure <<< fields) (classFor γ base)
          let clash = Set.intersection (Set.fromFoldable xs) (Set.fromFoldable inherited)
          when (not Set.isEmpty clash)
             $ throwError
@@ -260,8 +263,8 @@ wellFormedExpr memo = wf
    wf _ (S.Float _ _) = pure unit
    wf _ (S.Str _ _) = pure unit
    wf γ (S.Constr _ c es) = case resolveName memo γ c of
-      Just (Class cls) -> do
-         fs <- fields (Map.union (maybe Map.empty classesOf (Map.lookup cls.mod memo)) (classesOf γ)) (S.ctrName c)
+      Just (Class ce) -> do
+         let fs = fields ce
          when (length es /= length fs)
             $ throwError
             $ dottedName c <> " expects " <> show (length fs) <> " argument(s); got " <> show (length es)
