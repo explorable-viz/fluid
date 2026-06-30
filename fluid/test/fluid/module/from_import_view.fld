@@ -1,0 +1,2 @@
+from lib.view import MultiView
+MultiView([1, 2])
