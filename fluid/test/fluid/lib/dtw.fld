@@ -1,4 +1,4 @@
-import lib.fnum
+from lib.fnum import minimal, eq
 
 def nextIndices(n, m, window):
   return [(i, j) for i in [0 .. n - 1] for j in [max(0, i - window) .. min(m - 1, i + window)]]

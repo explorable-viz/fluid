@@ -134,10 +134,9 @@ capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
 importedCxt :: forall a. Map.Map ModuleName Cxt -> S.Stmt a -> Cxt
-importedCxt memo (S.Import q Nothing) = Map.insert x1 (Module (singleton x1)) γ
+importedCxt _ (S.Import q Nothing) = Map.singleton x1 (Module (singleton x1))
    where
    x1 = NEL.head q
-   γ = findWithDefault Map.empty q memo
 importedCxt memo (S.Import q (Just xs)) =
    Map.filterKeys (_ `Set.member` Set.fromFoldable xs) (findWithDefault Map.empty q memo)
 importedCxt _ _ = Map.empty

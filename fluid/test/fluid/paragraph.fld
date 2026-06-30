@@ -1,4 +1,4 @@
-import lib.view
+from lib.view import Paragraph, Text
 
 better = "better"
 

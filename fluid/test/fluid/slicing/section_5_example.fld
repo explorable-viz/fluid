@@ -1,4 +1,4 @@
-import slicing.section_5_example_inputs
+from slicing.section_5_example_inputs import data, types
 
 def map(f, []):
   return []

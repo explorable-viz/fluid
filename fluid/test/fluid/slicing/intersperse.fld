@@ -1,4 +1,4 @@
-import slicing.intersperse_inputs
+from slicing.intersperse_inputs import xs, sep
 
 def intersperse([], _):
   return []

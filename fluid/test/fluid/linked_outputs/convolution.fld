@@ -1,5 +1,5 @@
-import lib.matrix
-import linked_outputs.convolution_data
+from lib.matrix import zero, wrap, convolve
+from linked_outputs.convolution_data import data
 
 filter1_ = [
     [0, 0, 0],

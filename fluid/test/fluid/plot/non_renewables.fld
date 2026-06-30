@@ -1,4 +1,4 @@
-import lib.view
+from lib.view import BarChart, MultiView, ScatterPlot, Default
 
 countries = ["BRA", "EGY", "IND", "JPN"]
 

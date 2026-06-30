@@ -1,5 +1,5 @@
-import lib.stats
-import dataset.ssp126
+from lib.stats import mergesort, qcut
+from dataset.ssp126 import ssp126
 
 data = mergesort([x.changed for x in ssp126])
 qcut(data, [5, 50, 95])

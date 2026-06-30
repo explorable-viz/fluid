@@ -1,4 +1,4 @@
-import linked_outputs.pairs_data
+from linked_outputs.pairs_data import data
 
 q = 1
 

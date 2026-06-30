@@ -1,5 +1,5 @@
-import lib.graphics
-import dataset.renewables_restricted
+from lib.graphics import colours1, grouped_bar_chart, caption
+from dataset.renewables_restricted import data
 
 year = 2015
 
