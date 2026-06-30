@@ -22,7 +22,7 @@ import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
 import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..), ctrName) as S
-import Util (type (×), (×))
+import Util (type (×), singleton, (×))
 import Util.Set ((\\), (∪))
 
 checkProgram :: Map.Map ModuleName Cxt -> Cxt -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
@@ -231,26 +231,23 @@ wellFormed memo _ (S.Import q f) = do
    pure (Assigns Map.empty × S.Import q f)
 
 asName :: forall a. S.Expr a -> Maybe Name
-asName (S.Var x) = Just (pure x)
-asName (S.Project e y) = asName e <#> (_ <> pure y)
+asName (S.Var x) = Just (singleton x)
+asName (S.Project e y) = asName e <#> (_ <> singleton y)
 asName _ = Nothing
 
 resolveName :: Map.Map ModuleName Cxt -> Cxt -> Name -> Maybe Entry
-resolveName memo γ name = case simple name of
-   Just x -> simpleEntry x
-   Nothing ->
-      let
-         { init, last: x } = NEL.unsnoc name
-      in
-         case NEL.fromList init >>= resolveName memo γ of
-            Just (Module q) -> qualifiedEntry q x
-            _ -> Nothing
+resolveName memo γ name = case NEL.fromList init of
+   Nothing -> simpleEntry
+   Just prefix -> case resolveName memo γ prefix of
+      Just (Module q) -> qualifiedEntry q
+      _ -> Nothing
    where
-   simpleEntry x = case Map.lookup x γ of
+   { init, last: x } = NEL.unsnoc name
+   simpleEntry = case Map.lookup x γ of
       Just (Module q) -> Just (Module q)
       Just (Class c) -> Just (Class c)
       _ -> Nothing
-   qualifiedEntry q x = case Map.lookup x (findWithDefault Map.empty q memo) of
+   qualifiedEntry q = case Map.lookup x (findWithDefault Map.empty q memo) of
       Just (Class c) -> Just (Class c)
       _
          | Map.member (NEL.snoc q x) memo -> Just (Module (NEL.snoc q x))
