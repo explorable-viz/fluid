@@ -2,7 +2,7 @@ module WellFormed where
 
 import Prelude
 
-import Bind (Name, Var, dottedName, simple)
+import Bind (Name, Var, dottedName)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either)
 import Data.Foldable (foldM, foldMap, foldr, for_)
@@ -16,7 +16,6 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DataType (arity)
 import DefiniteAssignment (ClassCtx, Ctx, Entry(..), Cxt, TyResult(..), classesOf, extendStatuses, fields, mergeRes, overrideRes, unionWith_mergeEq)
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
@@ -135,10 +134,9 @@ capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
 importedCxt :: forall a. Map.Map ModuleName Cxt -> S.Stmt a -> Cxt
-importedCxt memo (S.Import q Nothing) = case simple q of
-   Just x | not (Map.member x γ) -> Map.insert x (Module q) γ
-   _ -> γ
+importedCxt memo (S.Import q Nothing) = Map.insert x1 (Module (singleton x1)) γ
    where
+   x1 = NEL.head q
    γ = findWithDefault Map.empty q memo
 importedCxt memo (S.Import q (Just xs)) =
    Map.filterKeys (_ `Set.member` Set.fromFoldable xs) (findWithDefault Map.empty q memo)
@@ -262,12 +260,14 @@ wellFormedExpr memo = wf
    wf _ (S.Int _ _) = pure unit
    wf _ (S.Float _ _) = pure unit
    wf _ (S.Str _ _) = pure unit
-   wf γ (S.Constr _ c es) = do
-      n <- maybe (throwError $ "Unknown constructor: " <> dottedName c) pure (arity (classesOf γ) (S.ctrName c))
-      when (length es /= n)
-         $ throwError
-         $ dottedName c <> " expects " <> show n <> " argument(s); got " <> show (length es)
-      for_ es (wf γ)
+   wf γ (S.Constr _ c es) = case resolveName memo γ c of
+      Just (Class cls) -> do
+         fs <- fields (Map.union (maybe Map.empty classesOf (Map.lookup cls.mod memo)) (classesOf γ)) (S.ctrName c)
+         when (length es /= length fs)
+            $ throwError
+            $ dottedName c <> " expects " <> show (length fs) <> " argument(s); got " <> show (length es)
+         for_ es (wf γ)
+      _ -> throwError $ "Unknown constructor: " <> dottedName c
    wf γ (S.ConstrKw _ _ es xes) = for_ es (wf γ) *> for_ (xes <#> snd) (wf γ)
    wf γ (S.App e e') = wf γ e *> wf γ e'
    wf γ (S.BinaryApp e op e') = wf γ e *> var γ op *> wf γ e'
