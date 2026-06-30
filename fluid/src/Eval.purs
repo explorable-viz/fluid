@@ -64,7 +64,7 @@ match (Val α _ (V.Constr c vs)) (ElimConstr m) = do
 match v (ElimConstr m) = do
    λ <- askClassCtx
    d <- case Set.toUnfoldable (keys m) :: List _ of
-      c : _ -> maybe (throw $ "Unknown constructor: " <> showCtr c) pure (dataType λ c)
+      c : _ -> maybe (throw $ "Unknown dataclass: " <> showCtr c) pure (dataType λ c)
       Nil -> throw "Pattern matched empty ElimConstr"
    throw $ patternMismatch (prettyP v) (show d)
 match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
@@ -83,7 +83,7 @@ matchMany (v : vs) (ContElim σ) = do
    γ' × κ' × βs <- matchMany vs κ
    pure $ γ `unionWith_never` γ' × κ' × (αs ∪ βs)
 matchMany (_ : vs) (ContStmt _) = throw $
-   show (length vs + 1) <> " extra argument(s) to constructor/dictionary; did you forget parentheses in lambda pattern?"
+   show (length vs + 1) <> " extra argument(s) to dataclass/dictionary; did you forget parentheses in lambda pattern?"
 
 closeDefs :: forall m. HasClassCtx m => MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
@@ -123,7 +123,7 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
-   n <- askClassCtx >>= \λ -> maybe (throw $ "Unknown constructor: " <> showCtr c) pure (arity λ c)
+   n <- askClassCtx >>= \λ -> maybe (throw $ "Unknown dataclass: " <> showCtr c) pure (arity λ c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    let
       v' =

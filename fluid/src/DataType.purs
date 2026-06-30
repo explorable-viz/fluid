@@ -59,8 +59,8 @@ consistentWith :: forall m. MonadError Error m => ClassCtx -> Set Ctr -> Set Ctr
 consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
    Nil -> pure unit
    c : _ -> case dataType λ c of
-      Nothing -> throw $ "Unknown constructor: " <> showCtr c
-      Just d -> withMsg ("constructors of " <> show d <> " do not include " <> show (S.map showCtr cs))
+      Nothing -> throw $ "Unknown dataclass: " <> showCtr c
+      Just d -> withMsg ("dataclasses of " <> show d <> " do not include " <> show (S.map showCtr cs))
          $ for_ (S.toUnfoldable cs :: List Ctr) \c'' -> case dataType λ c'' of
               Just d'' | d'' == d -> pure unit
               _ -> throw "mismatch"
@@ -69,7 +69,7 @@ checkArity :: forall m. MonadError Error m => ClassCtx -> Ctr -> Int -> m Unit
 checkArity λ c n = case arity λ c of
    Just n' | n' == n -> pure unit
    Just n' -> throw $ showCtr c <> " arity " <> show n' <> "; got " <> show n
-   Nothing -> throw $ "Unknown constructor: " <> showCtr c
+   Nothing -> throw $ "Unknown dataclass: " <> showCtr c
 
 -- Assumes Λ acyclic.
 rootClass :: ClassCtx -> Ctr -> Ctr

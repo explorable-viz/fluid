@@ -377,13 +377,13 @@ popConstrFwd :: forall m. HasClassCtx m => MonadError Error m => DataType -> Cla
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
 popConstrFwd d (((p : π') × π'' × s) : ks) = do
    λ <- askClassCtx
-   n <- maybe (throw $ "Unknown constructor: " <> c) pure (arity λ c)
-   dt <- maybe (throw $ "Unknown constructor: " <> c) pure (dataType λ c)
+   n <- maybe (throw $ "Unknown dataclass: " <> c) pure (arity λ c)
+   dt <- maybe (throw $ "Unknown dataclass: " <> c) pure (dataType λ c)
    assert (length π == n && dt == d) $
       forConstrFwd c ((π <> π') × π'' × s) <$> popConstrFwd d ks
    where
    π = subpatts p
-   c = definitely ("Failed to distinguish constructor: " <> showPattern p) (ctrFor p)
+   c = definitely ("Failed to distinguish dataclass: " <> showPattern p) (ctrFor p)
 popConstrFwd _ Nil = pure Nil
 
 forConstrFwd :: Ctr -> ClauseState' (TyResult Ctx) -> Endo (List (Ctr × ClausesState' (TyResult Ctx)))
@@ -460,7 +460,7 @@ clausesStateFwd' ks = case ks of
    ((p : _) × _) : _ -> do
       λ <- askClassCtx
       let c = definitely ("clausesStateFwd ctrFor failed for: " <> showPattern p) (ctrFor p)
-      dt <- maybe (throw $ "Unknown constructor: " <> c) pure (dataType λ c)
+      dt <- maybe (throw $ "Unknown dataclass: " <> c) pure (dataType λ c)
       kss <- popConstrFwd dt ks
       ContElim <$> ElimConstr <$> D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
 
@@ -476,10 +476,10 @@ unless λ (Left (PConstr c _)) =
       c0 = ctrName c
       dt = case dataType λ c0 of
          Just d -> d
-         Nothing -> error $ "Unknown constructor: " <> c0
+         Nothing -> error $ "Unknown dataclass: " <> c0
       arityOf c' = case arity λ c' of
          Just n -> n
-         Nothing -> error $ "Unknown constructor: " <> c'
+         Nothing -> error $ "Unknown dataclass: " <> c'
    in
       (S.toUnfoldable (ctrs dt) `L.difference` singleton c0)
          <#> \c' -> Left (PConstr (singleton c') (replicate (arityOf c') pVarAnon))

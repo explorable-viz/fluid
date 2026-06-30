@@ -18,8 +18,8 @@ purepy_cases =
    , { file: "purepy/dataclass_two_bases.fld", expected_error: "\"ParseError on line 10, column 10:\\nExpected ')'\"" }
    , { file: "purepy/dataclass_unknown_base.fld", expected_error: "Unknown class: Unknown" }
    , { file: "purepy/duplicate_def_in_region.fld", expected_error: "Shape mismatch" }
-   , { file: "purepy/forward_class_in_def.fld", expected_error: "Unknown constructor: Point" }
-   , { file: "purepy/forward_class_top.fld", expected_error: "Unknown constructor: Point" }
+   , { file: "purepy/forward_class_in_def.fld", expected_error: "Unknown dataclass: Point" }
+   , { file: "purepy/forward_class_top.fld", expected_error: "Unknown dataclass: Point" }
    , { file: "purepy/from_import_unknown_member.fld", expected_error: "Cannot import name baz from module module.two_vals_lib" }
    , { file: "purepy/import_in_def.fld", expected_error: "Import not at top level: module.foo" }
    , { file: "purepy/import_in_if.fld", expected_error: "Import not at top level: module.foo" }
@@ -31,7 +31,7 @@ purepy_cases =
    , { file: "purepy/no_else.fld", expected_error: "Not definitely assigned: x" }
    , { file: "purepy/pat_class_arity.fld", expected_error: "Assertion failure: " }
    , { file: "purepy/pat_class_bad_keyword.fld", expected_error: "Class Coord keyword fields mismatch: expected (\"y\" : Nil), got (\"z\" : Nil)" }
-   , { file: "purepy/pat_class_unknown.fld", expected_error: "Unknown constructor: NotAClass" }
+   , { file: "purepy/pat_class_unknown.fld", expected_error: "Unknown dataclass: NotAClass" }
    , { file: "purepy/self_capture.fld", expected_error: "Variable captured by its own definition: x" }
    , { file: "purepy/self_capture_lambda.fld", expected_error: "Variable captured by its own definition: f" }
    , { file: "purepy/shadow_captured.fld", expected_error: "Captured variable reassigned: x" }

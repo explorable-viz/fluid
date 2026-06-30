@@ -266,7 +266,7 @@ wellFormedExpr memo = wf
             $ throwError
             $ dottedName c <> " expects " <> show (length fs) <> " argument(s); got " <> show (length es)
          for_ es (wf γ)
-      _ -> throwError $ "Unknown constructor: " <> dottedName c
+      _ -> throwError $ "Unknown dataclass: " <> dottedName c
    wf γ (S.ConstrKw _ _ es xes) = for_ es (wf γ) *> for_ (xes <#> snd) (wf γ)
    wf γ (S.App e e') = wf γ e *> wf γ e'
    wf γ (S.BinaryApp e op e') = wf γ e *> var γ op *> wf γ e'
