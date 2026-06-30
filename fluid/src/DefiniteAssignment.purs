@@ -28,8 +28,6 @@ type ClassEntry =
    , fields :: List Var -- own field names, distinct
    }
 
-type ClassCtx = Map Var ClassEntry
-
 data Entry
    = VarStatus Boolean -- definite-assignment status
    | Class ClassEntry
@@ -37,8 +35,8 @@ data Entry
 
 type Cxt = Map Var Entry
 
-class HasClassCtx m where
-   askClassCtx :: m ClassCtx
+class HasCxt m where
+   askCxt :: m Cxt
 
 data TyResult a = Returns | Assigns a
 
@@ -65,7 +63,7 @@ mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
 
-classesOf :: Cxt -> ClassCtx
+classesOf :: Cxt -> Map Var ClassEntry
 classesOf = Map.mapMaybe case _ of
    Class ce -> Just ce
    _ -> Nothing
@@ -75,16 +73,15 @@ classFor γ c = case Map.lookup c γ of
    Just (Class ce) -> Just ce
    _ -> Nothing
 
--- Override Γ with definite-assignment statuses δ (δ wins).
-extendStatuses :: Cxt -> Ctx -> Cxt
-extendStatuses γ δ = Map.union (VarStatus <$> δ) γ
+extendCxt :: Cxt -> Ctx -> Cxt
+extendCxt γ δ = Map.union (VarStatus <$> δ) γ
 
 fields :: ClassEntry -> List Var
 fields ce = case ce.base of
    Nothing -> ce.fields
    Just b -> fields (definitely "ill-formed class entry" (classFor ce.cxt b)) <> ce.fields
 
-unionWith_mergeEq :: ClassCtx -> ClassCtx -> Either String ClassCtx
+unionWith_mergeEq :: Map Var ClassEntry -> Map Var ClassEntry -> Either String (Map Var ClassEntry)
 unionWith_mergeEq a b = do
    let dups = Set.toUnfoldable (Set.intersection (Map.keys a # Set.fromFoldable) (Map.keys b # Set.fromFoldable)) :: List Var
    for_ dups \k -> case Map.lookup k a, Map.lookup k b of
@@ -101,14 +98,14 @@ derive instance Functor TyResult
 derive instance Eq a => Eq (TyResult a)
 derive instance Eq Entry
 
-instance (Monad m, HasClassCtx m) => HasClassCtx (StateT s m) where
-   askClassCtx = lift askClassCtx
+instance (Monad m, HasCxt m) => HasCxt (StateT s m) where
+   askCxt = lift askCxt
 
-instance (Monad m, HasClassCtx m) => HasClassCtx (ReaderT r m) where
-   askClassCtx = lift askClassCtx
+instance (Monad m, HasCxt m) => HasCxt (ReaderT r m) where
+   askCxt = lift askCxt
 
-instance (Monad m, HasClassCtx m) => HasClassCtx (ExceptT e m) where
-   askClassCtx = lift askClassCtx
+instance (Monad m, HasCxt m) => HasCxt (ExceptT e m) where
+   askCxt = lift askCxt
 
-instance (Monad m, HasClassCtx m, Monoid w) => HasClassCtx (WriterT w m) where
-   askClassCtx = lift askClassCtx
+instance (Monad m, HasCxt m, Monoid w) => HasCxt (WriterT w m) where
+   askCxt = lift askCxt

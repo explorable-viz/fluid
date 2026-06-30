@@ -10,7 +10,7 @@ import Control.Monad.Reader (class MonadReader, ReaderT)
 import Control.Monad.State (StateT)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Writer (WriterT)
-import DefiniteAssignment (class HasClassCtx, ClassEntry)
+import DefiniteAssignment (class HasCxt, ClassEntry)
 import Data.Array (concat, (!!))
 import Data.Map (Map)
 import Data.Map as Map
@@ -117,7 +117,7 @@ instance (Monad m, HasModuleStore m, Monoid w) => HasModuleStore (WriterT w m) w
 
 type Op =
    forall m
-    . HasClassCtx m
+    . HasCxt m
    => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadError Error m

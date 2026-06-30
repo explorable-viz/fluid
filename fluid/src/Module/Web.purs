@@ -6,7 +6,7 @@ import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (class MonadError, class MonadTrans, lift)
 import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, ask, runReaderT)
 import Control.Monad.State (StateT, evalStateT, get, modify_)
-import DefiniteAssignment (class HasClassCtx)
+import DefiniteAssignment (class HasCxt)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
@@ -37,8 +37,8 @@ derive newtype instance MonadAff m => MonadAff (WebT m)
 derive newtype instance Monad m => MonadAsk FileCxt (WebT m)
 derive newtype instance Monad m => MonadReader FileCxt (WebT m)
 
-instance Monad m => HasClassCtx (WebT m) where
-   askClassCtx = WebT (ask <#> \(FileCxt { classCtx }) -> classCtx)
+instance Monad m => HasCxt (WebT m) where
+   askCxt = WebT (ask <#> \(FileCxt { classCtx }) -> classCtx)
 
 instance MonadTrans WebT where
    lift m = WebT (lift (lift m))

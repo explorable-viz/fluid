@@ -11,12 +11,12 @@ import Data.List (List(..), (:))
 import Data.List as List
 import Data.List (filter) as L
 import Data.Map as Map
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set (fromFoldable, map, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
-import DefiniteAssignment (ClassCtx)
+import DefiniteAssignment (ClassEntry, Cxt, classesOf, fields)
 import Dict (Dict, fromFoldable)
 import Effect.Exception (Error)
 import Util (absurd, definitely', error, throw, withMsg, (×))
@@ -55,46 +55,44 @@ instance Show DataType where
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
-consistentWith :: forall m. MonadError Error m => ClassCtx -> Set Ctr -> Set Ctr -> m Unit
-consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
+consistentWith :: forall m. MonadError Error m => Cxt -> Set Ctr -> Set Ctr -> m Unit
+consistentWith γ cs cs' = case S.toUnfoldable cs' :: List Ctr of
    Nil -> pure unit
-   c : _ -> case dataType λ c of
+   c : _ -> case dataType γ c of
       Nothing -> throw $ "Unknown dataclass: " <> showCtr c
       Just d -> withMsg ("dataclasses of " <> show d <> " do not include " <> show (S.map showCtr cs))
-         $ for_ (S.toUnfoldable cs :: List Ctr) \c'' -> case dataType λ c'' of
+         $ for_ (S.toUnfoldable cs :: List Ctr) \c'' -> case dataType γ c'' of
               Just d'' | d'' == d -> pure unit
               _ -> throw "mismatch"
 
-checkArity :: forall m. MonadError Error m => ClassCtx -> Ctr -> Int -> m Unit
-checkArity λ c n = case arity λ c of
+checkArity :: forall m. MonadError Error m => Cxt -> Ctr -> Int -> m Unit
+checkArity γ c n = case arity γ c of
    Just n' | n' == n -> pure unit
    Just n' -> throw $ showCtr c <> " arity " <> show n' <> "; got " <> show n
    Nothing -> throw $ "Unknown dataclass: " <> showCtr c
 
--- Assumes Λ acyclic.
-rootClass :: ClassCtx -> Ctr -> Ctr
+rootClass :: Map.Map Var ClassEntry -> Ctr -> Ctr
 rootClass λ c = case Map.lookup c λ of
    Just { base: Just b } -> rootClass λ b
    _ -> c
 
 -- Concrete iff a leaf.
-isCtr :: ClassCtx -> Ctr -> Boolean
+isCtr :: Map.Map Var ClassEntry -> Ctr -> Boolean
 isCtr λ c = Map.member c λ && not (any (\(_ × { base }) -> base == Just c) (Map.toUnfoldable λ :: List _))
 
-dataType :: ClassCtx -> Ctr -> Maybe DataType
-dataType λ c =
+dataType :: Cxt -> Ctr -> Maybe DataType
+dataType γ c =
    if isCtr λ c then Just (DataType r (fromFoldable (sigOf <$> siblings)))
    else Nothing
    where
+   λ = classesOf γ
    r = rootClass λ c
    siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isCtr λ c' && rootClass λ c' == r)
-   sigOf (c' × { base: mb, fields: xs }) = c' × (inherited + List.length xs)
-      where
-      inherited = maybe 0 (\b -> maybe 0 (List.length <<< _.fields) (Map.lookup b λ)) mb
+   sigOf (c' × ce) = c' × List.length (fields ce)
 
-arity :: ClassCtx -> Ctr -> Maybe Int
-arity λ c = do
-   DataType _ sigs <- dataType λ c
+arity :: Cxt -> Ctr -> Maybe Int
+arity γ c = do
+   DataType _ sigs <- dataType γ c
    lookup c sigs
 
 -- Used internally by primitives, desugaring or rendering layer.

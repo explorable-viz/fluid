@@ -3,7 +3,7 @@ module ModuleGraph where
 import Data.List (List)
 import Data.Map (Map)
 import Bind (Name)
-import DefiniteAssignment (ClassCtx)
+import DefiniteAssignment (Cxt)
 import Expr (Module)
 
 type ModuleName = Name
@@ -12,7 +12,7 @@ type ModuleCxt a =
    { roots :: List ModuleName
    , graph :: DependencyGraph
    , modules :: Modules a
-   , classCtx :: ClassCtx
+   , classCtx :: Cxt
    }
 
 type DependencyGraph = Map ModuleName (List ModuleName)

@@ -16,7 +16,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (ClassCtx, Ctx, Entry(..), Cxt, TyResult(..), classFor, extendStatuses, fields, mergeRes, overrideRes, unionWith_mergeEq)
+import DefiniteAssignment (ClassEntry, Ctx, Entry(..), Cxt, TyResult(..), classFor, extendCxt, fields, mergeRes, overrideRes, unionWith_mergeEq)
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
@@ -42,7 +42,7 @@ nestedImports (S.Match _ ps) = foldMap (nestedImports <<< snd) ps
 nestedImports (S.DefRec ds) = foldMap (\(_ × S.Clause _ (_ × s)) -> nestedImports s) ds
 nestedImports _ = Nil
 
-classesOfModule :: forall a. Name -> S.Module a -> Either String ClassCtx
+classesOfModule :: forall a. Name -> S.Module a -> Either String (Map.Map Var ClassEntry)
 classesOfModule q (S.Module ss) =
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure Map.empty
@@ -60,7 +60,7 @@ checkModule memo γ (S.Module ss) =
 mainModule :: Name
 mainModule = pure "__main__"
 
-classes :: forall a. Name -> S.Stmt a -> Either String ClassCtx
+classes :: forall a. Name -> S.Stmt a -> Either String (Map.Map Var ClassEntry)
 classes q = go Map.empty
    where
    go acc (S.Dataclass c b xs) =
@@ -164,12 +164,12 @@ wellFormed memo γ (S.Def (S.VarDef p e)) = do
    pure (Assigns (constMap true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e)))
 wellFormed memo γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
-   let γ' = γ `extendStatuses` constMap true fs
+   let γ' = γ `extendCxt` constMap true fs
    ds' <- traverse
       ( \(x × S.Clause _ (ps × s)) -> do
            let xs = unions (bv <$> ps)
            let ys = assigns s \\ xs
-           let γ'' = γ' `extendStatuses` constMap true xs `extendStatuses` constMap false ys
+           let γ'' = γ' `extendCxt` constMap true xs `extendCxt` constMap false ys
            r × s' <- wellFormed memo γ'' s
            pure (x × S.Clause r (ps × s'))
       )
@@ -183,7 +183,7 @@ wellFormed memo γ (S.Seq s1 s2) = do
          for_ (Set.toUnfoldable (captures s1 `Set.intersection` assigns s2) :: Array Var) \x ->
             throwError $ "Captured variable reassigned: " <> x
          λ1 <- classes mainModule s1
-         let γ' = Map.union (importedCxt memo s1) (Map.union (Class <$> (λ1 <#> _ { cxt = γ })) (γ `extendStatuses` δ))
+         let γ' = Map.union (importedCxt memo s1) (Map.union (Class <$> (λ1 <#> _ { cxt = γ })) (γ `extendCxt` δ))
          r2 × s2' <- wellFormed memo γ' s2
          pure (overrideRes r1 r2 × S.Seq s1' s2')
 wellFormed memo γ (S.If es elseBranch) = do
@@ -203,7 +203,7 @@ wellFormed memo γ (S.Match e ps) = do
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
-           r × s' <- wellFormed memo (γ `extendStatuses` constMap true xs) s
+           r × s' <- wellFormed memo (γ `extendCxt` constMap true xs) s
            pure (overrideRes (Assigns (constMap true xs)) r × (p × s'))
       )
       ps
@@ -315,5 +315,5 @@ var γ x = case Map.lookup x γ of
    Nothing -> throwError $ "Unbound name: " <> x
 
 assignedIn :: Cxt -> Set Var -> Cxt
-assignedIn γ xs = γ `extendStatuses` constMap true xs
+assignedIn γ xs = γ `extendCxt` constMap true xs
 

@@ -24,7 +24,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import DefiniteAssignment (class HasClassCtx)
+import DefiniteAssignment (class HasCxt)
 import Eval (ConjugatePair, graphCP, graphEval, withOp)
 import File (class LoadFile, File(..), FileCxt)
 import Graph (class Graph, DVertex, DVertex', Vertex(..), VertexData, dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
@@ -195,7 +195,7 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
+loadFig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
 loadFig options@{ inputs, linking } fluidSrc = do
    { s, e, gconfig } <- prepConfig primitives fluidSrc
    eval@({ inα: EnvStmt γα _, outα, g: g0 }) <- graphEval gconfig e

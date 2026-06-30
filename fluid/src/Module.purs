@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
-import Bind (dottedName, pathName)
+import Bind (Var, dottedName, pathName)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.NonEmpty ((:|))
 import Data.Bifunctor (lmap)
@@ -31,7 +31,7 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName)
 import Parse (leadingImports, parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (class HasClassCtx, ClassCtx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
+import DefiniteAssignment (class HasCxt, ClassEntry, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), throw, throwLeft, withMsg, (×))
@@ -74,15 +74,15 @@ checkModules graph modules baseCxt roots = foldM go Map.empty roots
                  λ <- classesOfModule q mod
                  pure (Map.insert q ((Class <$> λ) `Map.union` (VarStatus true <$ δ)) memo')
 
-prepConfig :: forall m. HasClassCtx m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
+prepConfig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    sCxt <- parseModuleGraph (predefined <> imports)
    let moduleClassCtx = Map.insert "__NoArgs" { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
    programClasses <- either throw pure (classes mainModule s)
    fullClassCtx <- either throw pure (unionWith_mergeEq moduleClassCtx programClasses)
-   local (\(FileCxt r) -> FileCxt (r { classCtx = fullClassCtx })) do
-      modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = moduleClassCtx }))
+   local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> fullClassCtx })) do
+      modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> moduleClassCtx }))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) sCxt.modules
       let
          moduleCxt =
@@ -113,15 +113,15 @@ prepConfig primitives fluidSrc = do
       sty <- either throw pure (checkProgram memo baseCxt s)
       eTy <- desug sty
       let e = dropLeadingImports ((unit <$ eTy) :: Raw Stmt)
-      let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fullClassCtx }
+      let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: Class <$> fullClassCtx }
       pure { s, e, gconfig }
 
--- Desugaring deferred to prepConfig so it runs under a populated ClassCtx.
+-- Desugaring deferred to prepConfig so it runs under a populated class context.
 type SModuleCxt =
    { roots :: List ModuleName
    , graph :: DependencyGraph
    , modules :: Map ModuleName (Raw S.Module)
-   , classCtx :: ClassCtx
+   , classCtx :: Map Var ClassEntry
    }
 
 parseModuleGraph
@@ -142,9 +142,9 @@ parseModuleGraph roots = do
       :: Set ModuleName
       -> DependencyGraph
       -> Map ModuleName (Raw S.Module)
-      -> ClassCtx
+      -> Map Var ClassEntry
       -> List ModuleName
-      -> m (DependencyGraph × Map ModuleName (Raw S.Module) × ClassCtx)
+      -> m (DependencyGraph × Map ModuleName (Raw S.Module) × Map Var ClassEntry)
    collectModules visited graph modules classCtx imports = case imports of
       Nil -> pure $ (graph × modules × classCtx)
       mod : rest ->
@@ -160,7 +160,7 @@ parseModuleGraph roots = do
                classCtx'
                (imports' <> rest)
 
-   parseAndCollect :: ModuleName -> m (Raw S.Module × ClassCtx × List ModuleName)
+   parseAndCollect :: ModuleName -> m (Raw S.Module × Map Var ClassEntry × List ModuleName)
    parseAndCollect path = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (pathName path <> fluidExtension))

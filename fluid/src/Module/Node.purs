@@ -8,7 +8,7 @@ import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, ask, ru
 import Control.Monad.State (StateT, evalStateT, get, modify_)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import DefiniteAssignment (class HasClassCtx)
+import DefiniteAssignment (class HasCxt)
 import Val (class HasModuleStore, ModuleStore, emptyStore)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
@@ -49,8 +49,8 @@ derive newtype instance MonadAff m => MonadAff (NodeT m)
 derive newtype instance Monad m => MonadAsk FileCxt (NodeT m)
 derive newtype instance Monad m => MonadReader FileCxt (NodeT m)
 
-instance Monad m => HasClassCtx (NodeT m) where
-   askClassCtx = NodeT (ask <#> \(FileCxt { classCtx }) -> classCtx)
+instance Monad m => HasCxt (NodeT m) where
+   askCxt = NodeT (ask <#> \(FileCxt { classCtx }) -> classCtx)
 
 instance Monad m => HasModuleStore (NodeT m) where
    getStore = NodeT (lift get)
