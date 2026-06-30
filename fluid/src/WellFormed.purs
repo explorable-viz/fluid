@@ -147,21 +147,21 @@ importedCxt _ _ = Map.empty
 wellFormed :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Stmt a -> Either String (TyResult Ctx × S.Stmt (TyResult Ctx))
 wellFormed _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
 wellFormed memo γ (S.Return e) = do
-   wellFormedExpr memo γ e
-   pure (Returns × S.Return (Assigns Map.empty <$ e))
+   e' <- wellFormedExpr memo γ e
+   pure (Returns × S.Return (Assigns Map.empty <$ e'))
 wellFormed memo γ (S.ExprStmt e) = do
-   wellFormedExpr memo γ e
-   pure (Assigns Map.empty × S.ExprStmt (Assigns Map.empty <$ e))
+   e' <- wellFormedExpr memo γ e
+   pure (Assigns Map.empty × S.ExprStmt (Assigns Map.empty <$ e'))
 wellFormed memo γ (S.Assert e e') = do
-   wellFormedExpr memo γ e
-   for_ e' (wellFormedExpr memo γ)
-   pure (Assigns Map.empty × S.Assert (Assigns Map.empty <$ e) ((Assigns Map.empty <$ _) <$> e'))
+   e1 <- wellFormedExpr memo γ e
+   e2 <- traverse (wellFormedExpr memo γ) e'
+   pure (Assigns Map.empty × S.Assert (Assigns Map.empty <$ e1) ((Assigns Map.empty <$ _) <$> e2))
 wellFormed memo γ (S.Def (S.VarDef p e)) = do
    let xs = bv p
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throwError $ "Variable captured by its own definition: " <> x
-   wellFormedExpr memo γ e
-   pure (Assigns (constMap true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e)))
+   e' <- wellFormedExpr memo γ e
+   pure (Assigns (constMap true xs) × S.Def (S.VarDef p (Assigns Map.empty <$ e')))
 wellFormed memo γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
    let γ' = γ `extendCxt` constMap true fs
@@ -189,9 +189,9 @@ wellFormed memo γ (S.Seq s1 s2) = do
 wellFormed memo γ (S.If es elseBranch) = do
    es' <- traverse
       ( \(e × s) -> do
-           wellFormedExpr memo γ e
+           e' <- wellFormedExpr memo γ e
            r × s' <- wellFormed memo γ s
-           pure (r × ((Assigns Map.empty <$ e) × s'))
+           pure (r × ((Assigns Map.empty <$ e') × s'))
       )
       es
    rElse × elseBranch' <- case elseBranch of
@@ -199,7 +199,7 @@ wellFormed memo γ (S.If es elseBranch) = do
       Nothing -> pure (Assigns Map.empty × Nothing)
    pure (foldl1 mergeRes (NEL.cons rElse (fst <$> es')) × S.If (snd <$> es') elseBranch')
 wellFormed memo γ (S.Match e ps) = do
-   wellFormedExpr memo γ e
+   e' <- wellFormedExpr memo γ e
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
@@ -207,7 +207,7 @@ wellFormed memo γ (S.Match e ps) = do
            pure (overrideRes (Assigns (constMap true xs)) r × (p × s'))
       )
       ps
-   pure (foldl1 mergeRes ((fst <$> ps') `NEL.snoc` rFall) × S.Match (Assigns Map.empty <$ e) (snd <$> ps'))
+   pure (foldl1 mergeRes ((fst <$> ps') `NEL.snoc` rFall) × S.Match (Assigns Map.empty <$ e') (snd <$> ps'))
    where
    rFall = case fst (NEL.last ps) of
       S.PVar _ -> Returns
@@ -253,58 +253,75 @@ resolveName memo γ name = case NEL.fromList init of
          | Map.member (NEL.snoc q x) memo -> Just (Module (NEL.snoc q x))
          | otherwise -> Nothing
 
-wellFormedExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String Unit
+-- Validate an expression and rewrite each constructor name to its fully-qualified
+-- form (defining module followed by class name).
+wellFormedExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String (S.Expr a)
 wellFormedExpr memo = wf
    where
-   wf :: Cxt -> S.Expr a -> Either String Unit
-   wf γ (S.Var x) = var γ x
-   wf γ (S.Op op) = var γ op
-   wf _ (S.Int _ _) = pure unit
-   wf _ (S.Float _ _) = pure unit
-   wf _ (S.Str _ _) = pure unit
-   wf γ (S.Constr _ c es) = case resolveName memo γ c of
+   wf :: Cxt -> S.Expr a -> Either String (S.Expr a)
+   wf γ e@(S.Var x) = e <$ var γ x
+   wf γ e@(S.Op op) = e <$ var γ op
+   wf _ e@(S.Int _ _) = pure e
+   wf _ e@(S.Float _ _) = pure e
+   wf _ e@(S.Str _ _) = pure e
+   wf γ (S.Constr α c es) = case resolveName memo γ c of
       Just (Class ce) -> do
          let fs = fields ce
          when (length es /= length fs)
             $ throwError
             $ dottedName c <> " expects " <> show (length fs) <> " argument(s); got " <> show (length es)
-         for_ es (wf γ)
+         S.Constr α (qualified ce c) <$> traverse (wf γ) es
       _ -> throwError $ "Unknown dataclass: " <> dottedName c
-   wf γ (S.ConstrKw _ _ es xes) = for_ es (wf γ) *> for_ (xes <#> snd) (wf γ)
-   wf γ (S.App e e') = wf γ e *> wf γ e'
-   wf γ (S.BinaryApp e op e') = wf γ e *> var γ op *> wf γ e'
-   wf γ (S.UnaryPrefixApp op e) = var γ op *> wf γ e
-   wf γ (S.Ternary c e e') = wf γ c *> wf γ e *> wf γ e'
+   wf γ (S.ConstrKw α c es xes) = case resolveName memo γ c of
+      Just (Class ce) ->
+         S.ConstrKw α (qualified ce c) <$> traverse (wf γ) es <*> traverse (\(x × e) -> (x × _) <$> wf γ e) xes
+      _ -> throwError $ "Unknown dataclass: " <> dottedName c
+   wf γ (S.App e e') = S.App <$> wf γ e <*> wf γ e'
+   wf γ (S.BinaryApp e op e') = S.BinaryApp <$> wf γ e <*> (op <$ var γ op) <*> wf γ e'
+   wf γ (S.UnaryPrefixApp op e) = var γ op *> (S.UnaryPrefixApp op <$> wf γ e)
+   wf γ (S.Ternary c e e') = S.Ternary <$> wf γ c <*> wf γ e <*> wf γ e'
    wf γ (S.Project e y) = case resolveName memo γ =<< asName e of
-      Just (Module q) -> when (not (Map.member y (findWithDefault Map.empty q memo)))
-         $ throwError
-         $ "module " <> dottedName q <> " has no member " <> y
-      _ -> wf γ e
-   wf γ (S.DProject e e') = wf γ e *> wf γ e'
-   wf γ (S.Matrix _ body (x × y) source) =
-      wf γ source *> wf (assignedIn γ (Set.singleton x ∪ Set.singleton y)) body
-   wf γ (S.Lambda (S.LambdaClause (ps × e))) = wf (assignedIn γ (unions (bv <$> ps))) e
-   wf γ (S.Dictionary _ kvs) = for_ kvs \(k × v) -> dictKey k *> wf γ v
+      Just (Module q) -> do
+         when (not (Map.member y (findWithDefault Map.empty q memo)))
+            $ throwError
+            $ "module " <> dottedName q <> " has no member " <> y
+         pure (S.Project e y)
+      _ -> flip S.Project y <$> wf γ e
+   wf γ (S.DProject e e') = S.DProject <$> wf γ e <*> wf γ e'
+   wf γ (S.Matrix α body (x × y) source) =
+      (\source' body' -> S.Matrix α body' (x × y) source') <$> wf γ source <*> wf (assignedIn γ (Set.singleton x ∪ Set.singleton y)) body
+   wf γ (S.Lambda (S.LambdaClause (ps × e))) =
+      (\e' -> S.Lambda (S.LambdaClause (ps × e'))) <$> wf (assignedIn γ (unions (bv <$> ps))) e
+   wf γ (S.Dictionary α kvs) = S.Dictionary α <$> traverse (\(k × v) -> (×) <$> dictKey k <*> wf γ v) kvs
       where
-      dictKey (S.ExprKey e) = wf γ e
-      dictKey (S.VarKey _ _) = pure unit
-   wf γ (S.Paragraph elems) = for_ elems case _ of
-      S.Unquote e -> wf γ e
-      S.Token _ -> pure unit
-   wf _ (S.ListEmpty _) = pure unit
-   wf γ (S.ListNonEmpty _ e l) = wf γ e *> listRest l
+      dictKey (S.ExprKey e) = S.ExprKey <$> wf γ e
+      dictKey k@(S.VarKey _ _) = pure k
+   wf γ (S.Paragraph elems) = S.Paragraph <$> traverse pe elems
       where
-      listRest (S.End _) = pure unit
-      listRest (S.Next _ e' l') = wf γ e' *> listRest l'
-   wf γ (S.ListEnum e e') = wf γ e *> wf γ e'
-   wf γ (S.ListComp _ e quals) = qualifiers γ quals
+      pe (S.Unquote e) = S.Unquote <$> wf γ e
+      pe t@(S.Token _) = pure t
+   wf _ e@(S.ListEmpty _) = pure e
+   wf γ (S.ListNonEmpty α e l) = S.ListNonEmpty α <$> wf γ e <*> listRest l
       where
-      qualifiers γ' Nil = wf γ' e
+      listRest l'@(S.End _) = pure l'
+      listRest (S.Next α' e' l') = S.Next α' <$> wf γ e' <*> listRest l'
+   wf γ (S.ListEnum e e') = S.ListEnum <$> wf γ e <*> wf γ e'
+   wf γ (S.ListComp α e quals) = (\(e' × quals') -> S.ListComp α e' quals') <$> qualifiers γ quals
+      where
+      qualifiers γ' Nil = (_ × Nil) <$> wf γ' e
       qualifiers γ' (q : qs) = case q of
-         S.ListCompGuard cond -> wf γ' cond *> qualifiers γ' qs
-         S.ListCompGen p src -> wf γ' src *> qualifiers (assignedIn γ' (bv p)) qs
-         S.ListCompDecl (S.VarDef p src) -> wf γ' src *> qualifiers (assignedIn γ' (bv p)) qs
-   wf γ (S.DocExpr e e') = wf γ e *> wf γ e'
+         S.ListCompGuard cond -> do
+            cond' <- wf γ' cond
+            map (S.ListCompGuard cond' : _) <$> qualifiers γ' qs
+         S.ListCompGen p src -> do
+            src' <- wf γ' src
+            map (S.ListCompGen p src' : _) <$> qualifiers (assignedIn γ' (bv p)) qs
+         S.ListCompDecl (S.VarDef p src) -> do
+            src' <- wf γ' src
+            map (S.ListCompDecl (S.VarDef p src') : _) <$> qualifiers (assignedIn γ' (bv p)) qs
+   wf γ (S.DocExpr e e') = S.DocExpr <$> wf γ e <*> wf γ e'
+
+   qualified ce c = NEL.snoc ce.mod (NEL.last c)
 
 var :: Cxt -> Var -> Either String Unit
 var γ x = case Map.lookup x γ of
