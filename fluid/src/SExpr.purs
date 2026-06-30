@@ -482,8 +482,8 @@ unless λ (Left (PConstr c _)) =
          Nothing -> error $ "Unknown constructor: " <> c'
    in
       (S.toUnfoldable (ctrs dt) `L.difference` singleton c0)
-         <#> \c' -> Left (PConstr (pure c') (replicate (arityOf c') pVarAnon))
-unless _ (Left PListEmpty) = Left (PConstr (pure cCons) (replicate 2 pVarAnon)) : Nil
+         <#> \c' -> Left (PConstr (singleton c') (replicate (arityOf c') pVarAnon))
+unless _ (Left PListEmpty) = Left (PConstr (singleton cCons) (replicate 2 pVarAnon)) : Nil
 unless _ (Left (PListNonEmpty _ _)) = Left PListEmpty : Nil
 unless _ (Right (PListVar _)) = Nil
 unless _ (Right (PListNext _ _)) = Right PListEnd : Nil

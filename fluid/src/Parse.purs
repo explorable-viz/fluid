@@ -30,7 +30,7 @@ import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import Primitive.Parse (OpDef(..), OpType(..), Fixity(..), opDefs)
 import SExpr (Branch, Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
-import Util (type (+), type (×), error, nonEmpty, (×))
+import Util (type (+), type (×), error, nonEmpty, singleton, (×))
 
 pattern :: Parser Pattern
 pattern = defer \_ -> buildExprParser [ [ P.Infix pConsOp P.AssocRight ] ] simplePattern
@@ -47,7 +47,7 @@ simplePattern = pConstr <|> pVar <|> pRecord <|> pList <|> parensPattern
       c <- constructor
       args <- option Nil (parens (commas constrArg))
       let
-         name = foldr cons (pure c) prefix
+         name = foldr cons (singleton c) prefix
          positionals = takeLefts args
          kws = takeRights args
       pure $ case kws of
@@ -94,13 +94,13 @@ simplePattern = pConstr <|> pVar <|> pRecord <|> pList <|> parensPattern
               delim ','
               p' <- pattern
               delim ')'
-              pure $ PConstr (pure cPair) (p : p' : Nil)
+              pure $ PConstr (singleton cPair) (p : p' : Nil)
          ]
 
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = do
    reservedOperator ":|"
-   pure \e e' -> PConstr (pure cCons) (e : e' : Nil)
+   pure \e e' -> PConstr (singleton cCons) (e : e' : Nil)
 
 varDef :: Parser (Raw VarDef)
 varDef = do
@@ -118,7 +118,7 @@ returnStmt :: Parser (Raw Stmt)
 returnStmt = do
    reserved "return"
    e <- optionMaybe (sameOrIndented *> expr)
-   pure $ Return $ fromMaybe (Constr unit (pure cNone) Nil) e
+   pure $ Return $ fromMaybe (Constr unit (singleton cNone) Nil) e
 
 assertStmt :: Parser (Raw Stmt)
 assertStmt = do
@@ -209,7 +209,7 @@ recDefs = many1 recDef
       b <- blockBody
       let
          ps = case ps0 of
-            Nil -> NonEmptyList (PConstr (pure cNoArgs) Nil :| Nil)
+            Nil -> NonEmptyList (PConstr (singleton cNoArgs) Nil :| Nil)
             x : xs -> NonEmptyList (x :| xs)
       pure $ p × Clause unit (ps × b)
 
@@ -251,7 +251,7 @@ expr = context "expr" $ ternary <?> "expression"
          consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
          consOp = do
             reservedOperator ":|"
-            pure \e e' -> Constr unit (pure cCons) (e : e' : Nil)
+            pure \e e' -> Constr unit (singleton cCons) (e : e' : Nil)
 
       simpleChain :: Parser (Raw Expr)
       simpleChain = withPos (simple >>= chain)
@@ -286,7 +286,7 @@ expr = context "expr" $ ternary <?> "expression"
                   _ -> do
                      ps <- commas ternary
                      pure $ case ps of
-                        Nil -> App e (Constr unit (pure cNoArgs) Nil)
+                        Nil -> App e (Constr unit (singleton cNoArgs) Nil)
                         x : xs -> foldl App e (x : xs)
                close ')'
                chain e'
@@ -334,7 +334,7 @@ expr = context "expr" $ ternary <?> "expression"
             e <- ternary
             let
                ps = case ps0 of
-                  Nil -> NonEmptyList (PConstr (pure cNoArgs) Nil :| Nil)
+                  Nil -> NonEmptyList (PConstr (singleton cNoArgs) Nil :| Nil)
                   x : xs -> NonEmptyList (x :| xs)
             pure $ Lambda (LambdaClause (ps × e))
 
@@ -345,7 +345,7 @@ expr = context "expr" $ ternary <?> "expression"
          constr = try do
             prefix <- many (try (variable <* delim '.'))
             c <- constructor
-            pure (Constr unit (foldr cons (pure c) prefix) Nil)
+            pure (Constr unit (foldr cons (singleton c) prefix) Nil)
 
          number :: Parser (Raw Expr)
          number = try (float <#> Float unit) <|> (integer <#> Int unit)
@@ -474,7 +474,7 @@ expr = context "expr" $ ternary <?> "expression"
                             delim ','
                             e' <- ternary
                             close ')'
-                            pure $ Constr unit (pure cPair) (e : e' : Nil)
+                            pure $ Constr unit (singleton cPair) (e : e' : Nil)
                        , fail "Expected `)` or `,` after `(expr`"
                        ]
                , fail "Expected `op` or `expr` after `(`"
