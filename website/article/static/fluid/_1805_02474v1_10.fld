@@ -1,6 +1,6 @@
-import scigen
-import util
-import dataset.scigen._1805_02474v1_10
+from scigen import rankLabel, trendWord, growShrink, smallerHigher, improve, improvements, shorterLonger, betterWorse, underOverPerforming
+from util import insertionSort, findIndex, find_with_key_, model
+from dataset.scigen._1805_02474v1_10 import tableData
 
 import lib.view
 

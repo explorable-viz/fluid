@@ -1,5 +1,5 @@
-import convolution.test_image  # defines inputImage
-import convolution.emboss     # defines filter
+from convolution.test_image import inputImage
+from convolution.emboss import filter
 
 import lib.view
 

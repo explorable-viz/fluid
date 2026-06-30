@@ -40,6 +40,7 @@ misc_cases =
    , { file: "map.fld", fwd_expect: "5 :| 7 :| 13 :| 15 :| 4 :| 3 :| -3 :| []" }
    , { file: "merge_sort.fld", fwd_expect: "1 :| 2 :| 3 :| []" }
    , { file: "module/from_import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
+   , { file: "module/from_import_view.fld", fwd_expect: "MultiView(1 :| 2 :| [])" }
    , { file: "module/from_import_value.fld", fwd_expect: "1" }
    , { file: "module/import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "module/import_modules.fld", fwd_expect: "84" }

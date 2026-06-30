@@ -1,6 +1,6 @@
-import energy_data
+from energy_data import nonRenewables, renewables
 
-import lib.view
+from lib.view import ScatterPlot
 
 def isCountry(name, x):
   return name == x.country

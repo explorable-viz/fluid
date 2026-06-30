@@ -1,6 +1,6 @@
-import nap3_ccra3_data
+from nap3_ccra3_data import nap3_actions, ccra3_risks
 
-import lib.view
+from lib.view import BarChart, MultiView, Default, Link
 
 eval_scores = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
