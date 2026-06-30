@@ -236,12 +236,25 @@ asName (S.Project e y) = asName e <#> (_ <> pure y)
 asName _ = Nothing
 
 resolveName :: Map.Map ModuleName Cxt -> Cxt -> Name -> Maybe Entry
-resolveName _ γ name = case simple name of
-   Just x -> case Map.lookup x γ of
+resolveName memo γ name = case simple name of
+   Just x -> simpleEntry x
+   Nothing ->
+      let
+         { init, last: x } = NEL.unsnoc name
+      in
+         case NEL.fromList init >>= resolveName memo γ of
+            Just (Module q) -> qualifiedEntry q x
+            _ -> Nothing
+   where
+   simpleEntry x = case Map.lookup x γ of
       Just (Module q) -> Just (Module q)
       Just (Class c) -> Just (Class c)
       _ -> Nothing
-   Nothing -> Nothing
+   qualifiedEntry q x = case Map.lookup x (findWithDefault Map.empty q memo) of
+      Just (Class c) -> Just (Class c)
+      _
+         | Map.member (NEL.snoc q x) memo -> Just (Module (NEL.snoc q x))
+         | otherwise -> Nothing
 
 wellFormedExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String Unit
 wellFormedExpr memo = wf
