@@ -12,7 +12,7 @@ import Bind (Bind, Name, (↦))
 import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (NonEmptyList(..), cons, toList)
+import Data.List.NonEmpty (NonEmptyList(..), cons, last, toList)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.NonEmpty ((:|))
 import Data.String (codePointFromChar)
@@ -94,13 +94,13 @@ simplePattern = pConstr <|> pVar <|> pRecord <|> pList <|> parensPattern
               delim ','
               p' <- pattern
               delim ')'
-              pure $ PConstr (singleton cPair) (p : p' : Nil)
+              pure $ PConstr (singleton (last cPair)) (p : p' : Nil)
          ]
 
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = do
    reservedOperator ":|"
-   pure \e e' -> PConstr (singleton cCons) (e : e' : Nil)
+   pure \e e' -> PConstr (singleton (last cCons)) (e : e' : Nil)
 
 varDef :: Parser (Raw VarDef)
 varDef = do
@@ -118,7 +118,7 @@ returnStmt :: Parser (Raw Stmt)
 returnStmt = do
    reserved "return"
    e <- optionMaybe (sameOrIndented *> expr)
-   pure $ Return $ fromMaybe (Constr unit (singleton cNone) Nil) e
+   pure $ Return $ fromMaybe (Constr unit (singleton (last cNone)) Nil) e
 
 assertStmt :: Parser (Raw Stmt)
 assertStmt = do
@@ -209,7 +209,7 @@ recDefs = many1 recDef
       b <- blockBody
       let
          ps = case ps0 of
-            Nil -> NonEmptyList (PConstr (singleton cNoArgs) Nil :| Nil)
+            Nil -> NonEmptyList (PConstr (singleton (last cNoArgs)) Nil :| Nil)
             x : xs -> NonEmptyList (x :| xs)
       pure $ p × Clause unit (ps × b)
 
@@ -251,7 +251,7 @@ expr = context "expr" $ ternary <?> "expression"
          consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
          consOp = do
             reservedOperator ":|"
-            pure \e e' -> Constr unit (singleton cCons) (e : e' : Nil)
+            pure \e e' -> Constr unit (singleton (last cCons)) (e : e' : Nil)
 
       simpleChain :: Parser (Raw Expr)
       simpleChain = withPos (simple >>= chain)
@@ -286,7 +286,7 @@ expr = context "expr" $ ternary <?> "expression"
                   _ -> do
                      ps <- commas ternary
                      pure $ case ps of
-                        Nil -> App e (Constr unit (singleton cNoArgs) Nil)
+                        Nil -> App e (Constr unit (singleton (last cNoArgs)) Nil)
                         x : xs -> foldl App e (x : xs)
                close ')'
                chain e'
@@ -334,7 +334,7 @@ expr = context "expr" $ ternary <?> "expression"
             e <- ternary
             let
                ps = case ps0 of
-                  Nil -> NonEmptyList (PConstr (singleton cNoArgs) Nil :| Nil)
+                  Nil -> NonEmptyList (PConstr (singleton (last cNoArgs)) Nil :| Nil)
                   x : xs -> NonEmptyList (x :| xs)
             pure $ Lambda (LambdaClause (ps × e))
 
@@ -474,7 +474,7 @@ expr = context "expr" $ ternary <?> "expression"
                             delim ','
                             e' <- ternary
                             close ')'
-                            pure $ Constr unit (singleton cPair) (e : e' : Nil)
+                            pure $ Constr unit (singleton (last cPair)) (e : e' : Nil)
                        , fail "Expected `)` or `,` after `(expr`"
                        ]
                , fail "Expected `op` or `expr` after `(`"

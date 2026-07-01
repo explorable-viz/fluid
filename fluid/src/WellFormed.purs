@@ -25,7 +25,7 @@ import Util (type (×), singleton, (×))
 import Util.Set ((\\), (∪))
 
 checkProgram :: Map.Map ModuleName Cxt -> Cxt -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
-checkProgram memo baseCxt s = checkTopLevelImports s *> (snd <$> wellFormed memo baseCxt s)
+checkProgram memo baseCxt s = checkTopLevelImports s *> (snd <$> wellFormed mainModule memo baseCxt s)
 
 checkTopLevelImports :: forall a. S.Stmt a -> Either String Unit
 checkTopLevelImports = spine
@@ -48,13 +48,17 @@ classesOfModule q (S.Module ss) =
       Nothing -> pure Map.empty
       Just s -> classes q s
 
-checkModule :: Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String Ctx
-checkModule memo γ (S.Module ss) =
+checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String (Ctx × S.Module (TyResult Ctx))
+checkModule q memo γ (S.Module ss) =
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
-      Nothing -> pure Map.empty
-      Just s -> checkTopLevelImports s *> wellFormed memo γ s <#> \(r × _) -> case r of
-         Assigns δ -> δ
-         Returns -> Map.empty
+      Nothing -> pure (Map.empty × S.Module Nil)
+      Just s -> checkTopLevelImports s *> wellFormed q memo γ s <#> \(r × s') ->
+         delta r × S.Module (unSeq s')
+   where
+   delta (Assigns δ) = δ
+   delta Returns = Map.empty
+   unSeq (S.Seq s1 s2) = s1 : unSeq s2
+   unSeq s = s : Nil
 
 -- Entry program's module (spec entry point E; its __name__ is "__main__").
 mainModule :: Name
@@ -144,26 +148,26 @@ importedCxt memo (S.Import q (Just xs)) =
    Map.filterKeys (_ `Set.member` Set.fromFoldable xs) (findWithDefault Map.empty q memo)
 importedCxt _ _ = Map.empty
 
-wellFormed :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Stmt a -> Either String (TyResult Ctx × S.Stmt (TyResult Ctx))
-wellFormed _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
-wellFormed memo γ (S.Return e) = do
+wellFormed :: forall a. Name -> Map.Map ModuleName Cxt -> Cxt -> S.Stmt a -> Either String (TyResult Ctx × S.Stmt (TyResult Ctx))
+wellFormed _ _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
+wellFormed _ memo γ (S.Return e) = do
    e' <- wellFormedExpr memo γ e
    pure (Returns × S.Return (Assigns Map.empty <$ e'))
-wellFormed memo γ (S.ExprStmt e) = do
+wellFormed _ memo γ (S.ExprStmt e) = do
    e' <- wellFormedExpr memo γ e
    pure (Assigns Map.empty × S.ExprStmt (Assigns Map.empty <$ e'))
-wellFormed memo γ (S.Assert e e') = do
+wellFormed _ memo γ (S.Assert e e') = do
    e1 <- wellFormedExpr memo γ e
    e2 <- traverse (wellFormedExpr memo γ) e'
    pure (Assigns Map.empty × S.Assert (Assigns Map.empty <$ e1) ((Assigns Map.empty <$ _) <$> e2))
-wellFormed memo γ (S.Def (S.VarDef p e)) = do
+wellFormed _ memo γ (S.Def (S.VarDef p e)) = do
    let xs = bv p
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throwError $ "Variable captured by its own definition: " <> x
    e' <- wellFormedExpr memo γ e
    p' <- qualifyPattern memo γ p
    pure (Assigns (constMap true xs) × S.Def (S.VarDef p' (Assigns Map.empty <$ e')))
-wellFormed memo γ (S.DefRec ds) = do
+wellFormed q memo γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
    let γ' = γ `extendCxt` constMap true fs
    ds' <- traverse
@@ -172,41 +176,41 @@ wellFormed memo γ (S.DefRec ds) = do
            let ys = assigns s \\ xs
            let γ'' = γ' `extendCxt` constMap true xs `extendCxt` constMap false ys
            ps' <- traverse (qualifyPattern memo γ') ps
-           r × s' <- wellFormed memo γ'' s
+           r × s' <- wellFormed q memo γ'' s
            pure (x × S.Clause r (ps' × s'))
       )
       ds
    pure (Assigns (constMap true fs) × S.DefRec ds')
-wellFormed memo γ (S.Seq s1 s2) = do
-   r1 × s1' <- wellFormed memo γ s1
+wellFormed q memo γ (S.Seq s1 s2) = do
+   r1 × s1' <- wellFormed q memo γ s1
    case r1 of
       Returns -> throwError "Unreachable statement"
       Assigns δ -> do
          for_ (Set.toUnfoldable (captures s1 `Set.intersection` assigns s2) :: Array Var) \x ->
             throwError $ "Captured variable reassigned: " <> x
-         λ1 <- classes mainModule s1
+         λ1 <- classes q s1
          let γ' = Map.union (importedCxt memo s1) (Map.union (Class <$> (λ1 <#> _ { cxt = γ })) (γ `extendCxt` δ))
-         r2 × s2' <- wellFormed memo γ' s2
+         r2 × s2' <- wellFormed q memo γ' s2
          pure (overrideRes r1 r2 × S.Seq s1' s2')
-wellFormed memo γ (S.If es elseBranch) = do
+wellFormed q memo γ (S.If es elseBranch) = do
    es' <- traverse
       ( \(e × s) -> do
            e' <- wellFormedExpr memo γ e
-           r × s' <- wellFormed memo γ s
+           r × s' <- wellFormed q memo γ s
            pure (r × ((Assigns Map.empty <$ e') × s'))
       )
       es
    rElse × elseBranch' <- case elseBranch of
-      Just s -> map Just <$> wellFormed memo γ s
+      Just s -> map Just <$> wellFormed q memo γ s
       Nothing -> pure (Assigns Map.empty × Nothing)
    pure (foldl1 mergeRes (NEL.cons rElse (fst <$> es')) × S.If (snd <$> es') elseBranch')
-wellFormed memo γ (S.Match e ps) = do
+wellFormed q memo γ (S.Match e ps) = do
    e' <- wellFormedExpr memo γ e
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
            p' <- qualifyPattern memo γ p
-           r × s' <- wellFormed memo (γ `extendCxt` constMap true xs) s
+           r × s' <- wellFormed q memo (γ `extendCxt` constMap true xs) s
            pure (overrideRes (Assigns (constMap true xs)) r × (p' × s'))
       )
       ps
@@ -215,7 +219,7 @@ wellFormed memo γ (S.Match e ps) = do
    rFall = case fst (NEL.last ps) of
       S.PVar _ -> Returns
       _ -> Assigns Map.empty
-wellFormed _ γ (S.Dataclass c b xs) = do
+wellFormed _ _ γ (S.Dataclass c b xs) = do
    when (length (nub xs) /= length xs) $ throwError $ "Duplicate field names in class: " <> c
    case b of
       Nothing -> pure unit
@@ -227,7 +231,7 @@ wellFormed _ γ (S.Dataclass c b xs) = do
             $ "Class " <> c <> " redeclares inherited field(s): "
                  <> show (Set.toUnfoldable clash :: List Var)
    pure (Assigns Map.empty × S.Dataclass c b xs)
-wellFormed memo _ (S.Import q f) = do
+wellFormed _ memo _ (S.Import q f) = do
    let γ = findWithDefault Map.empty q memo
    for_ f \xs -> for_ xs \x ->
       when (not (Map.member x γ)) $ throwError $ "Cannot import name " <> x <> " from module " <> dottedName q

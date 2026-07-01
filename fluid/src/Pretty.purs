@@ -5,7 +5,7 @@ import Prelude
 import Bind (Bind, Var, dottedName, (↦))
 import Data.Foldable (intercalate)
 import Data.List (List(..), fromFoldable, singleton, (:))
-import Data.List.NonEmpty (NonEmptyList(..), toList)
+import Data.List.NonEmpty (NonEmptyList(..), last, toList)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Data.NonEmpty ((:|))
@@ -42,11 +42,11 @@ class RootOp (e :: Type) where
    rootOp :: e -> Maybe String
 
 instance RootOp Pattern where
-   rootOp (PConstr c _) | ctrName c == cCons = Just ":"
+   rootOp (PConstr c _) | ctrName c == last cCons = Just ":"
    rootOp _ = Nothing
 
 instance Ann a => RootOp (Expr a) where
-   rootOp (Constr _ c _) | ctrName c == cCons = Just ":"
+   rootOp (Constr _ c _) | ctrName c == last cCons = Just ":"
    rootOp (BinaryApp _ op _) = Just op
    rootOp (UnaryPrefixApp op _) = Just op
    rootOp _ = Nothing
@@ -69,7 +69,7 @@ class IsSimple (e :: Type) where
 instance Ann a => IsSimple (Expr a) where
    isSimple (BinaryApp _ _ _) = false
    isSimple (UnaryPrefixApp _ _) = false
-   isSimple (Constr _ c _) | ctrName c == cCons = false
+   isSimple (Constr _ c _) | ctrName c == last cCons = false
    isSimple (Lambda _) = false
    isSimple (Ternary _ _ _) = false
    isSimple _ = true
@@ -310,7 +310,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Float a n) = highlightIf a (number n)
    pretty (E.Str a str) = highlightIf a (string str)
    pretty (E.Dictionary a ees) = highlightIf a $ record (pretty <$> ees)
-   pretty (E.Constr a c es) = highlightIf a (prettyConstr c es)
+   pretty (E.Constr a c es) = highlightIf a (prettyConstr (last c) es)
    pretty (E.Matrix a e1 (i × j) e2) =
       highlightIf a $ matrix (pretty e1 <+> text "for" <+> pair text i j <+> text "in" <+> pretty e2)
    pretty (E.Lambda a o) = highlightIf a (text "lambda") <+> pretty o -- really?
@@ -375,7 +375,7 @@ instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Dictionary (DictRep svs))
       | isEmpty svs = text "{}"
       | otherwise = record (pretty <$> (toUnfoldable svs))
-   pretty (V.Constr c vs) = prettyConstr c vs
+   pretty (V.Constr c vs) = prettyConstr (last c) vs
    pretty (V.Matrix (MatrixRep (vss × _ × _))) = vcommas $ fromFoldable (prettyList <$> vss) -- ???
    pretty (V.Fun phi) = pretty phi
    pretty (V.Cls _) = text "<class>"
@@ -384,7 +384,7 @@ instance Highlightable a => Pretty (BaseVal a) where
 instance Highlightable a => Pretty (Fun a) where
    pretty (V.Closure _ _ _) = text "cl"
    pretty (V.Foreign phi _) = pretty phi
-   pretty (V.PartialConstr c vs) = prettyConstr c vs
+   pretty (V.PartialConstr c vs) = prettyConstr (last c) vs
 
 instance Pretty ForeignOp where
    pretty (ForeignOp (s × _)) = pretty s

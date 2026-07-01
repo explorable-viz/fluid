@@ -2,7 +2,7 @@ module Val where
 
 import Prelude hiding (absurd, append)
 
-import Bind (Var)
+import Bind (Name, Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Except (ExceptT)
@@ -23,7 +23,6 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
-import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
 import Effect.Aff.Class (class MonadAff)
@@ -57,7 +56,7 @@ data BaseVal a
    = Int Int
    | Float Number
    | Str String
-   | Constr Ctr (List (Val a)) -- always saturated
+   | Constr Name (List (Val a)) -- always saturated
    | Dictionary (DictRep a)
    | Matrix (MatrixRep a)
    | Fun (Fun a)
@@ -73,7 +72,7 @@ asVal e = if unpack typeName e == "Val" then Just (unpack unsafeCoerce e) else N
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)
    | Foreign ForeignOp (List (Val a)) -- never saturated
-   | PartialConstr Ctr (List (Val a)) -- never saturated
+   | PartialConstr Name (List (Val a)) -- never saturated
 
 class (Highlightable a, BoundedLattice a) <= Ann a
 

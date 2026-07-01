@@ -2,7 +2,7 @@ module DataType where
 
 import Prelude hiding (absurd)
 
-import Bind (Var)
+import Bind (Name, Var, dottedName, qual)
 import Control.Monad.Error.Class (class MonadError)
 import Data.CodePoint.Unicode (isUpper)
 import Data.Foldable (any, for_)
@@ -10,8 +10,12 @@ import Data.Function (on)
 import Data.List (List(..), (:))
 import Data.List as List
 import Data.List (filter) as L
+import Data.List.NonEmpty (NonEmptyList(..)) as NE
+import Data.NonEmpty ((:|))
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
+import Data.Array (last) as A
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String (Pattern(..), split)
 import Data.Set (Set)
 import Data.Set (fromFoldable, map, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
@@ -36,8 +40,8 @@ isCtrOp str = ':' == (definitely' $ charAt 0 str)
 
 showCtr :: Ctr -> String
 showCtr c
-   | isCtrName c = c
-   | isCtrOp c = "(" <> c <> ")"
+   | isCtrName (simpleName c) = simpleName c
+   | isCtrOp (simpleName c) = "(" <> simpleName c <> ")"
    | otherwise = error absurd
 
 data DataType = DataType TypeName (Dict CtrSig)
@@ -71,14 +75,18 @@ checkArity γ c n = case arity γ c of
    Just n' -> throw $ showCtr c <> " arity " <> show n' <> "; got " <> show n
    Nothing -> throw $ "Unknown dataclass: " <> showCtr c
 
+-- A class entry's base, as a fully-qualified name (entries store its simple name).
+baseFqn :: ClassEntry -> Maybe Ctr
+baseFqn ce = (dottedName <<< qual ce.mod) <$> ce.base
+
 rootClass :: Map.Map Var ClassEntry -> Ctr -> Ctr
 rootClass λ c = case Map.lookup c λ of
-   Just { base: Just b } -> rootClass λ b
+   Just ce | Just b <- baseFqn ce -> rootClass λ b
    _ -> c
 
 -- Concrete iff a leaf.
 isCtr :: Map.Map Var ClassEntry -> Ctr -> Boolean
-isCtr λ c = Map.member c λ && not (any (\(_ × { base }) -> base == Just c) (Map.toUnfoldable λ :: List _))
+isCtr λ c = Map.member c λ && not (any (\(_ × ce) -> baseFqn ce == Just c) (Map.toUnfoldable λ :: List _))
 
 dataType :: Cxt -> Ctr -> Maybe DataType
 dataType γ c =
@@ -95,26 +103,37 @@ arity γ c = do
    DataType _ sigs <- dataType γ c
    lookup c sigs
 
+-- Module paths for the builtin/library constructors (hard-coded for now).
+lib_builtins :: Var -> Name
+lib_builtins = qual (NE.NonEmptyList ("lib" :| "builtins" : Nil))
+
+lib_view :: Var -> Name
+lib_view = qual (NE.NonEmptyList ("lib" :| "view" : Nil))
+
+-- Last (simple) segment of a possibly-qualified constructor name.
+simpleName :: Ctr -> String
+simpleName c = fromMaybe c (A.last (split (Pattern ".") c))
+
 -- Used internally by primitives, desugaring or rendering layer.
-cDefault = "Default" :: Ctr -- Orientation
-cRotated = "Rotated" :: Ctr
-cBarChart = "BarChart" :: Ctr -- View
-cLineChart = "LineChart" :: Ctr
-cLinePlot = "LinePlot" :: Ctr
-cMultiView = "MultiView" :: Ctr
-cScatterPlot = "ScatterPlot" :: Ctr
-cParagraph = "Paragraph" :: Ctr
-cFalse = "False" :: Ctr -- Bool
-cTrue = "True" :: Ctr
-cNil = "Nil" :: Ctr -- List
-cCons = "Cons" :: Ctr
-cPair = "Pair" :: Ctr -- Pair
-cNothing = "Nothing" :: Ctr -- Maybe
-cJust = "Just" :: Ctr
-cNone = "None" :: Ctr -- NoneType
-cNoArgs = "__NoArgs" :: Ctr -- internal: zero-arg fn signature/call
-cText = "Text" :: Ctr
-cLink = "Link" :: Ctr
+cDefault = lib_view "Default" :: Name -- Orientation
+cRotated = lib_view "Rotated" :: Name
+cBarChart = lib_view "BarChart" :: Name -- View
+cLineChart = lib_view "LineChart" :: Name
+cLinePlot = lib_view "LinePlot" :: Name
+cMultiView = lib_view "MultiView" :: Name
+cScatterPlot = lib_view "ScatterPlot" :: Name
+cParagraph = lib_view "Paragraph" :: Name
+cFalse = lib_builtins "False" :: Name -- Bool
+cTrue = lib_builtins "True" :: Name
+cNil = lib_builtins "Nil" :: Name -- List
+cCons = lib_builtins "Cons" :: Name
+cPair = lib_builtins "Pair" :: Name -- Pair
+cNothing = lib_builtins "Nothing" :: Name -- Maybe
+cJust = lib_builtins "Just" :: Name
+cNone = lib_builtins "None" :: Name -- NoneType
+cNoArgs = lib_builtins "__NoArgs" :: Name -- internal: zero-arg fn signature/call
+cText = lib_view "Text" :: Name
+cLink = lib_view "Link" :: Name
 -- Field names used internally by rendering layer.
 f_caption = "caption" :: FieldName
 f_colour = "c" :: FieldName

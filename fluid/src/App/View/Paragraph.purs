@@ -9,6 +9,7 @@ import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (mapWithIndex)
 import Data.Foldable (all, sequence_)
+import Data.List.NonEmpty (last)
 import DataType (cParagraph)
 import Effect (Effect)
 
@@ -29,4 +30,4 @@ instance Viewable Paragraph Unit where
    setSelection _ (Paragraph views) select rootElement = do
       sequence_ $ flip mapWithIndex views \i view -> do
          child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
-         setSelection unit view (listElement i >>> constrArg cParagraph 0 >>> select) child
+         setSelection unit view (listElement i >>> constrArg (last cParagraph) 0 >>> select) child

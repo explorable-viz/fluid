@@ -3,7 +3,7 @@ module Bind where
 import Prelude
 import Data.Foldable (intercalate)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (NonEmptyList, uncons)
+import Data.List.NonEmpty (NonEmptyList, snoc, uncons)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, empty)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -17,6 +17,9 @@ type Name = NonEmptyList Var
 
 dottedName :: Name -> String
 dottedName = intercalate "."
+
+qual :: Name -> Var -> Name
+qual = snoc
 
 pathName :: Name -> String
 pathName = intercalate "/"

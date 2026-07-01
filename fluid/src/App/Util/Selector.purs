@@ -5,11 +5,12 @@ import Prelude hiding (absurd)
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, getPersistent, selStates)
 import Bind (Var)
 import Data.List (List(..), updateAt, (!!), (:))
+import Data.List.NonEmpty (last)
 import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cJust, f_segments, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cJust, f_segments, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely, error, (×))
@@ -47,31 +48,31 @@ persist δα = \v -> (over SelStates ((<$>) mapδ) v) × Persistent
    mapδ s = s { persistent = (T.fst <<< δα) s.persistent }
 
 fst :: SelSetter Val Val
-fst = constrArg cPair 0
+fst = constrArg (last cPair) 0
 
 snd :: SelSetter Val Val
-snd = constrArg cPair 1
+snd = constrArg (last cPair) 1
 
 just :: Setter (Val (SelStates 𝔹)) 𝔹
-just = constr cJust
+just = constr (last cJust)
 
 multiView :: SelSetter Val Val
-multiView = constrArg cMultiView 0
+multiView = constrArg (last cMultiView) 0
 
 multiViewEntry :: Int -> SelSetter Val Val
 multiViewEntry n = listElement n >>> multiView
 
 lineChart :: SelSetter Val Val
-lineChart = constrArg cLineChart 3
+lineChart = constrArg (last cLineChart) 3
 
 linePoint :: Int -> SelSetter Val Val
-linePoint i = listElement i >>> constrArg cLinePlot 1
+linePoint i = listElement i >>> constrArg (last cLinePlot) 1
 
 barChart :: SelSetter Val Val
-barChart = constrArg cBarChart 3
+barChart = constrArg (last cBarChart) 3
 
 scatterPlot :: SelSetter Val Val
-scatterPlot = constrArg cScatterPlot 1
+scatterPlot = constrArg (last cScatterPlot) 1
 
 scatterPoint :: Int -> Setter (Val (SelStates 𝔹)) (Val (SelStates 𝔹))
 scatterPoint i = listElement i
@@ -84,7 +85,7 @@ nthSegment :: Int -> SelSetter Val Val
 nthSegment n = dictVal f_z >>> listElement n
 
 paragraph :: SelSetter Val Val
-paragraph = constrArg cParagraph 0
+paragraph = constrArg (last cParagraph) 0
 
 matrixElement :: Int -> Int -> SelSetter Val Val
 matrixElement i j δv (Val α doc (Matrix r)) =
@@ -98,16 +99,16 @@ listElement n δv = unsafePartial $ case _ of
    Val α doc (Constr c (v : u : Nil)) | c == cCons ->
       first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listElement (n - 1) δv u)
 
-constrArg :: Ctr -> Int -> SelSetter Val Val
+constrArg :: Var -> Int -> SelSetter Val Val
 constrArg c n δv = unsafePartial $ case _ of
-   Val α doc (Constr c' us) | c == c' ->
+   Val α doc (Constr c' us) | c == last c' ->
       first (\u' -> Val α doc (Constr c' $ fromJust (updateAt n u' us)))
          $ definitely "constrArg out of bounds"
          $ δv <$> (us !! n)
 
-constr :: Ctr -> Setter (Val (SelStates 𝔹)) 𝔹
-constr c' δα = unsafePartial $ case _ of
-   Val α doc (Constr c vs) | c == c' -> first (\α' -> Val α' doc (Constr c vs)) (persist δα α)
+constr :: Var -> Setter (Val (SelStates 𝔹)) 𝔹
+constr c δα = unsafePartial $ case _ of
+   Val α doc (Constr c' vs) | c == last c' -> first (\α' -> Val α' doc (Constr c' vs)) (persist δα α)
 
 dict :: Setter (Val (SelStates 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of

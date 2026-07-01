@@ -8,6 +8,7 @@ import App.View.Util.D3 (create)
 import App.View.Util.D3 as D3
 import Data.Foldable (sequence_)
 import Data.FunctorWithIndex (mapWithIndex)
+import Data.List.NonEmpty (last)
 import DataType (cMultiView)
 import Effect (Effect)
 
@@ -27,4 +28,4 @@ instance Viewable MultiView Unit where
    setSelection _ (MultiView views) select rootElement = do
       sequence_ $ flip mapWithIndex views \i view -> do
          child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
-         setSelection unit view (listElement i >>> constrArg cMultiView 0 >>> select) child
+         setSelection unit view (listElement i >>> constrArg (last cMultiView) 0 >>> select) child

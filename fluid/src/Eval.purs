@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 
-import Bind (simple, varAnon)
+import Bind (dottedName, simple, varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader, local)
 import DefiniteAssignment (class HasCxt, Cxt, askCxt, classFor, fields)
@@ -56,8 +56,8 @@ match v (ElimVar x κ)
    | otherwise = pure (maplet x v × κ × empty)
 match (Val α _ (V.Constr c vs)) (ElimConstr m) = do
    λ <- askCxt
-   withMsg "Pattern mismatch" $ consistentWith λ (Set.singleton c) (keys m)
-   κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
+   withMsg "Pattern mismatch" $ consistentWith λ (Set.singleton (dottedName c)) (keys m)
+   κ <- lookup (dottedName c) m # orElse ("Incomplete patterns: no branch for " <> showCtr (dottedName c))
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
 match v (ElimConstr m) = do
@@ -122,8 +122,8 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
-   n <- askCxt >>= \λ -> maybe (throw $ "Unknown dataclass: " <> showCtr c) pure (arity λ c)
-   check (length vs < n) ("Too many arguments to " <> showCtr c)
+   n <- askCxt >>= \λ -> maybe (throw $ "Unknown dataclass: " <> showCtr (dottedName c)) pure (arity λ (dottedName c))
+   check (length vs < n) ("Too many arguments to " <> showCtr (dottedName c))
    let
       v' =
          if length vs < n - 1 then
@@ -166,8 +166,8 @@ eval doc_opt γ e0 αs = do
                Val _ _ (V.Dictionary (DictRep d)), Val _ _ (V.Str s) ->
                   withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
                Val _ _ (V.Constr c vs), Val _ _ (V.Str x) -> do
-                  xs <- askCxt >>= \λ -> maybe (throw $ "Ill-formed value: unknown dataclass " <> c) (pure <<< fields) (classFor λ c)
-                  find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (c <> " has no field " <> x)
+                  xs <- askCxt >>= \λ -> maybe (throw $ "Ill-formed value: unknown dataclass " <> dottedName c) (pure <<< fields) (classFor λ (dottedName c))
+                  find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (dottedName c <> " has no field " <> x)
                Val _ _ (V.Mod γ_m), Val _ _ (V.Str x) ->
                   withMsg "Module member" $ lookup' x γ_m
                Val _ _ (V.Dictionary _), _ -> throw $ "Found " <> prettyP v' <> ", expected string"
@@ -206,7 +206,7 @@ evalStmt doc_opt γ s αs = case s of
    Match e σ -> do
       v <- eval Nothing γ e αs
       case σ, v of
-         ElimConstr m, Val _ _ (V.Constr c _) | not (isJust (lookup c m)) ->
+         ElimConstr m, Val _ _ (V.Constr c _) | not (isJust (lookup (dottedName c) m)) ->
             pure (Assigns empty empty)
          _, _ -> do
             γ' × κ × αs' <- match v σ
@@ -260,7 +260,7 @@ evalVal γ (Dictionary α ees) αs = do
       d = D.fromFoldable $ zip ss (zip βs us)
    pure $ Just (α × V.Dictionary (DictRep d))
 evalVal γ (Constr α c es) αs = do
-   askCxt >>= \λ -> checkArity λ c (length es)
+   askCxt >>= \λ -> checkArity λ (dottedName c) (length es)
    vs <- traverse (flip (eval Nothing γ) αs) es
    pure $ Just (α × V.Constr c vs)
 evalVal γ (Matrix α e (x × y) e') αs = do

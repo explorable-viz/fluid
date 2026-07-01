@@ -12,7 +12,6 @@ import Data.Set (Set, empty, unions)
 import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
-import DataType (Ctr)
 import Dict (Dict)
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
@@ -29,7 +28,7 @@ data Expr a
    | Float a Number
    | Str a String
    | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
-   | Constr a Ctr (List (Expr a))
+   | Constr a Name (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
    | DProject (Expr a) (Expr a)

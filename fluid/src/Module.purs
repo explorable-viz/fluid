@@ -6,6 +6,7 @@ import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
 import Bind (Var, dottedName, pathName)
 import Data.List.NonEmpty (NonEmptyList(..))
+import Data.List.NonEmpty (snoc) as NEL
 import Data.NonEmpty ((:|))
 import Data.Bifunctor (lmap)
 import Data.Either (Either, either)
@@ -31,7 +32,7 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName)
 import Parse (leadingImports, parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (class HasCxt, ClassEntry, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
+import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), throw, throwLeft, withMsg, (×))
@@ -53,26 +54,35 @@ predefined = builtins : prelude : Nil
 predefinedDeps :: ModuleName -> List ModuleName
 predefinedDeps q = takeWhile (_ /= q) predefined
 
+-- The runtime class context is keyed by fully-qualified name (defining module
+-- then class), matching the FQNs the desugar bakes into constructors.
+fqnKeyed :: Map Var ClassEntry -> Cxt
+fqnKeyed m = Map.fromFoldable (reKey <$> (Map.toUnfoldable m :: List _))
+   where
+   reKey (name × ce) = dottedName (NEL.snoc ce.mod name) × Class ce
+
+type CheckedModules = Map ModuleName Cxt × Map ModuleName (S.Module (TyResult Ctx))
+
 checkModules
    :: DependencyGraph
    -> Map ModuleName (Raw S.Module)
    -> Cxt
    -> List ModuleName
-   -> Either String (Map ModuleName Cxt)
-checkModules graph modules baseCxt roots = foldM go Map.empty roots
+   -> Either String CheckedModules
+checkModules graph modules baseCxt roots = foldM go (Map.empty × Map.empty) roots
    where
-   go :: Map ModuleName Cxt -> ModuleName -> Either String (Map ModuleName Cxt)
-   go memo q
-      | Map.member q memo = pure memo
+   go :: CheckedModules -> ModuleName -> Either String CheckedModules
+   go acc@(memo × _) q
+      | Map.member q memo = pure acc
       | otherwise = do
-           memo' <- foldM go memo (findWithDefault Nil q graph)
+           memo' × qmods' <- foldM go acc (findWithDefault Nil q graph)
            case Map.lookup q modules of
-              Nothing -> pure (Map.insert q Map.empty memo')
+              Nothing -> pure (Map.insert q Map.empty memo' × qmods')
               Just mod -> do
-                 let γ = foldl (\acc i -> acc `Map.union` findWithDefault Map.empty i memo') baseCxt (predefinedDeps q)
-                 δ <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule memo' γ mod)
+                 let γ = foldl (\acc' i -> acc' `Map.union` findWithDefault Map.empty i memo') baseCxt (predefinedDeps q)
+                 δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q memo' γ mod)
                  λ <- classesOfModule q mod
-                 pure (Map.insert q ((Class <$> λ) `Map.union` (VarStatus true <$ δ)) memo')
+                 pure (Map.insert q ((Class <$> λ) `Map.union` (VarStatus true <$ δ)) memo' × Map.insert q qmod qmods')
 
 prepConfig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
@@ -81,9 +91,11 @@ prepConfig primitives fluidSrc = do
    let moduleClassCtx = Map.insert "__NoArgs" { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
    programClasses <- either throw pure (classes mainModule s)
    fullClassCtx <- either throw pure (unionWith_mergeEq moduleClassCtx programClasses)
-   local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> fullClassCtx })) do
-      modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> moduleClassCtx }))
-         $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) sCxt.modules
+   memo × qualModules <- either throw pure
+      (checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> imports))
+   local (\(FileCxt r) -> FileCxt (r { classCtx = fqnKeyed fullClassCtx })) do
+      modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = fqnKeyed moduleClassCtx }))
+         $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qualModules
       let
          moduleCxt =
             { roots: sCxt.roots
@@ -103,7 +115,6 @@ prepConfig primitives fluidSrc = do
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure (primitives' × γ)
-      memo <- either throw pure (checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> imports))
       let
          baseCxt =
             foldl (\acc q -> acc `Map.union` findWithDefault Map.empty q memo)
@@ -113,7 +124,7 @@ prepConfig primitives fluidSrc = do
       sty <- either throw pure (checkProgram memo baseCxt s)
       eTy <- desug sty
       let e = dropLeadingImports ((unit <$ eTy) :: Raw Stmt)
-      let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: Class <$> fullClassCtx }
+      let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fqnKeyed fullClassCtx }
       pure { s, e, gconfig }
 
 -- Desugaring deferred to prepConfig so it runs under a populated class context.

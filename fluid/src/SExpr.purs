@@ -2,7 +2,7 @@ module SExpr where
 
 import Prelude hiding (absurd, top, unless)
 
-import Bind (Bind, Name, Var, varAnon, (↦))
+import Bind (Bind, Name, Var, dottedName, varAnon, (↦))
 import Bind (keys) as B
 import Data.Set (Set, empty, fromFoldable, insert, member, singleton, unions) as Set
 import Control.Monad.Error.Class (class MonadError)
@@ -101,14 +101,14 @@ ctrName = last
 
 ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
 ctrFor (Left (PVar _)) = Nothing
-ctrFor (Left (PConstr c _)) = pure (ctrName c)
-ctrFor (Left (PConstrKw c _ _)) = pure (ctrName c)
+ctrFor (Left (PConstr c _)) = pure (dottedName c)
+ctrFor (Left (PConstrKw c _ _)) = pure (dottedName c)
 ctrFor (Left (PRecord _)) = Nothing
-ctrFor (Left PListEmpty) = pure cNil
-ctrFor (Left (PListNonEmpty _ _)) = pure cCons
+ctrFor (Left PListEmpty) = pure (dottedName cNil)
+ctrFor (Left (PListNonEmpty _ _)) = pure (dottedName cCons)
 ctrFor (Right (PListVar _)) = Nothing
-ctrFor (Right PListEnd) = pure cNil
-ctrFor (Right (PListNext _ _)) = pure cCons
+ctrFor (Right PListEnd) = pure (dottedName cNil)
+ctrFor (Right (PListNext _ _)) = pure (dottedName cCons)
 
 subpatts :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 subpatts (Left (PVar _)) = Nil
@@ -187,7 +187,7 @@ econs :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
 econs α e e' = E.Constr α cCons (e : e' : Nil)
 
 elimBool :: forall a. Cont a -> Cont a -> Elim a
-elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
+elimBool κ κ' = ElimConstr (D.fromFoldable [ dottedName cTrue × κ, dottedName cFalse × κ' ])
 
 moduleFwd :: forall m. HasCxt m => MonadError Error m => Module (TyResult Ctx) -> m (E.Module (TyResult Ctx))
 moduleFwd (Module ss) = E.Module <$> traverse stmtFwd ss
@@ -219,7 +219,7 @@ recDefFwd :: forall m. HasCxt m => MonadError Error m => RecDef (TyResult Ctx) -
 recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (close <<< snd <$> unwrap xcs))
    where
    close (Clause Returns body) = Clause Returns body
-   close (Clause (Assigns δ) (ps × s)) = Clause (Assigns δ) (ps × Seq s (Return (Constr Returns (pure cNone) Nil)))
+   close (Clause (Assigns δ) (ps × s)) = Clause (Assigns δ) (ps × Seq s (Return (Constr Returns cNone Nil)))
 
 paragraphFwd :: forall m. HasCxt m => MonadError Error m => List (ParagraphElem (TyResult Ctx)) -> m (E.Expr (TyResult Ctx))
 paragraphFwd elems = do
@@ -254,11 +254,11 @@ exprFwd (Float α n) =
 exprFwd (Str α s) =
    pure $ E.Str α s
 exprFwd (Constr α c ss) =
-   E.Constr α (ctrName c) <$> traverse desug ss
+   E.Constr α c <$> traverse desug ss
 exprFwd (ConstrKw α c es xes) = do
    λ <- askCxt
-   reordered <- reorderKw λ (ctrName c) (length es) xes
-   E.Constr α (ctrName c) <$> traverse desug (es <> reordered)
+   reordered <- reorderKw λ c (length es) xes
+   E.Constr α c <$> traverse desug (es <> reordered)
 exprFwd (Dictionary α sss) = do
    let ks × ss = unzip sss
    ks' <- traverse desug ks
@@ -398,13 +398,13 @@ popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
 popRecordFwd _ Nil = pure Nil
 popRecordFwd _ _ = throw (shapeMismatch unit)
 
-reorderKw :: forall m b. MonadError Error m => Cxt -> Ctr -> Int -> List (Bind b) -> m (List b)
+reorderKw :: forall m b. MonadError Error m => Cxt -> Name -> Int -> List (Bind b) -> m (List b)
 reorderKw λ c n xbs = do
-   fs <- maybe (throw $ "Unknown dataclass: " <> c) (pure <<< DA.fields) (DA.classFor λ c)
+   fs <- maybe (throw $ "Unknown dataclass: " <> dottedName c) (pure <<< DA.fields) (DA.classFor λ (dottedName c))
    let expected = Set.fromFoldable (drop n fs)
    let provided = Set.fromFoldable (xbs <#> fst)
    when (expected /= provided) $ throw $
-      "Class " <> c <> " keyword fields mismatch: expected " <> show (S.toUnfoldable expected :: List Var)
+      "Class " <> last c <> " keyword fields mismatch: expected " <> show (S.toUnfoldable expected :: List Var)
          <> ", got "
          <> show (S.toUnfoldable provided :: List Var)
    pure $ drop n fs <#> \f ->
@@ -417,7 +417,7 @@ expandKw p = do
    go λ p
    where
    go λ (PConstrKw c ps xps) = do
-      reordered <- reorderKw λ (ctrName c) (length ps) xps
+      reordered <- reorderKw λ c (length ps) xps
       PConstr c <$> traverse (go λ) (ps <> reordered)
    go λ (PConstr c ps) = PConstr c <$> traverse (go λ) ps
    go λ (PRecord xps) = PRecord <$> traverse (traverse (go λ)) xps
@@ -473,7 +473,7 @@ unless _ (Left (PVar _)) = Nil
 unless _ (Left (PRecord _)) = Nil
 unless λ (Left (PConstr c _)) =
    let
-      c0 = ctrName c
+      c0 = dottedName c
       dt = case dataType λ c0 of
          Just d -> d
          Nothing -> error $ "Unknown dataclass: " <> c0
@@ -483,7 +483,7 @@ unless λ (Left (PConstr c _)) =
    in
       (S.toUnfoldable (ctrs dt) `L.difference` singleton c0)
          <#> \c' -> Left (PConstr (singleton c') (replicate (arityOf c') pVarAnon))
-unless _ (Left PListEmpty) = Left (PConstr (singleton cCons) (replicate 2 pVarAnon)) : Nil
+unless _ (Left PListEmpty) = Left (PConstr cCons (replicate 2 pVarAnon)) : Nil
 unless _ (Left (PListNonEmpty _ _)) = Left PListEmpty : Nil
 unless _ (Right (PListVar _)) = Nil
 unless _ (Right (PListNext _ _)) = Right PListEnd : Nil
