@@ -5,13 +5,11 @@ import Prelude
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
 import Bind (Var, dottedName, pathName)
-import Data.List.NonEmpty (NonEmptyList(..))
 import Data.List.NonEmpty (snoc) as NEL
-import Data.NonEmpty ((:|))
 import Data.Bifunctor (lmap)
 import Data.Either (Either, either)
 import Data.Foldable (foldM, foldl)
-import Data.List (List(..), takeWhile, (:))
+import Data.List (List(..), (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -29,7 +27,7 @@ import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
-import ModuleGraph (DependencyGraph, ModuleName)
+import ModuleGraph (DependencyGraph, ModuleName, builtins, predefined, predefinedDeps)
 import Parse (importName, parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
@@ -41,18 +39,6 @@ import Util.Set ((∪))
 import Val (class HasModuleStore, modifyStore, Env)
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
-
-builtins :: ModuleName
-builtins = NonEmptyList ("lib" :| "builtins" : Nil)
-
-prelude :: ModuleName
-prelude = NonEmptyList ("lib" :| "prelude" : Nil)
-
-predefined :: List ModuleName
-predefined = builtins : prelude : Nil
-
-predefinedDeps :: ModuleName -> List ModuleName
-predefinedDeps q = takeWhile (_ /= q) predefined
 
 -- The runtime class context is keyed by fully-qualified name (defining module
 -- then class), matching the FQNs the desugar bakes into constructors.

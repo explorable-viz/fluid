@@ -21,19 +21,19 @@ import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asStmt, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Import(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asStmt, fv)
 import File (class LoadFile, FileCxt(..))
 import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
-import ModuleGraph (ModuleName)
+import ModuleGraph (ModuleName, predefinedDeps)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, absurd, check, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
-import Util.Map (unionWith_never, get, keys, lookup, lookup', findWithDefault, maplet, restrict, (<+>))
+import Util.Map (unionWith_never, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
@@ -274,22 +274,33 @@ evalVal γ (Lambda α σ) _ =
 evalVal _ _ _ = pure Nothing
 
 eval_module :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
-eval_module γ (Module _ ss0) = go empty ss0
+eval_module γ0 (Module is ss0) αs0 = do
+   base <- foldM (\g i -> (g <+> _) <$> evalImport i) γ0 is
+   go base empty ss0 αs0
    where
-   go :: Env Vertex -> List (Stmt Vertex) -> Set Vertex -> m (Env Vertex)
-   go γ' Nil _ = pure γ'
-   go γ' (s : ss) αs = do
-      γ'' × αs' <- step γ' s αs
-      go (γ' <+> γ'') ss αs'
+   go :: Env Vertex -> Env Vertex -> List (Stmt Vertex) -> Set Vertex -> m (Env Vertex)
+   go _ γ' Nil _ = pure γ'
+   go γ γ' (s : ss) αs = do
+      γ'' × αs' <- step γ γ' s αs
+      go γ (γ' <+> γ'') ss αs'
 
-   step γ' (Def (VarDef σ e)) αs = do
+   step γ γ' (Def (VarDef σ e)) αs = do
       v <- eval Nothing (γ <+> γ') e αs
       γ'' × _ × αs' <- match v σ
       pure (γ'' × αs')
-   step γ' (DefRec (RecDefs α ρ)) αs = do
+   step γ γ' (DefRec (RecDefs α ρ)) αs = do
       γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
       pure (γ'' × αs)
-   step _ _ αs = pure (empty × αs)
+   step _ _ _ αs = pure (empty × αs)
+
+evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Import -> m (Env Vertex)
+evalImport (Import q Nothing) = do
+   γ_q <- load q
+   mb <- moduleBinding q γ_q
+   pure (γ_q <+> mb)
+evalImport (Import q (Just xs)) = do
+   γ_q <- load q
+   pure (restrict (Set.fromFoldable xs) γ_q)
 
 moduleBinding :: forall m. MonadWithGraphAlloc m => ModuleName -> Env Vertex -> m (Env Vertex)
 moduleBinding q γ_q = case simple q of
@@ -304,11 +315,11 @@ importInto γ q = do
 
 load :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m (Env Vertex)
 load q = do
-   { primitives, modules, graph, cache } <- getStore
+   { primitives, modules, cache } <- getStore
    case Map.lookup q cache of
       Just γ' -> pure γ'
       Nothing -> do
-         γ_q <- foldM importInto primitives (findWithDefault Nil q graph)
+         γ_q <- foldM importInto primitives (predefinedDeps q)
          γ' <- maybe (pure empty) (\defs' -> eval_module γ_q defs' empty) (Map.lookup q modules)
          modifyStore (\s -> s { cache = Map.insert q γ' s.cache })
          pure γ'
