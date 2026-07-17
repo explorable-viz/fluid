@@ -5,9 +5,8 @@ import Prelude hiding (absurd, top)
 import Bind (Name, Var)
 import Control.Apply (lift2)
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
-import Data.List (List(..), (:), zipWith)
+import Data.List (List, zipWith)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, empty, unions)
 import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
@@ -64,14 +63,11 @@ data Stmt a
    | DefRec (RecDefs a)
    | Pass
    | ExprStmt (Expr a)
-   | Import Name (Maybe (List Var))
    | Seq (Stmt a) (Stmt a)
 
-newtype Module a = Module (List (Stmt a))
+data Import = Import Name (Maybe (List Var))
 
-dropLeadingImports :: forall a. Stmt a -> Stmt a
-dropLeadingImports (Seq (Import _ _) rest) = dropLeadingImports rest
-dropLeadingImports s = s
+data Module a = Module (List Import) (List (Stmt a))
 
 class FV a where
    fv :: a -> Set Var
@@ -112,7 +108,6 @@ instance FV (Stmt a) where
    fv (DefRec ρ) = fv ρ
    fv Pass = empty
    fv (ExprStmt e) = fv e
-   fv (Import _ _) = empty
    fv (Seq s s') = fv s ∪ fv s'
 
 instance FV a => FV (Dict a) where
@@ -185,7 +180,6 @@ instance JoinSemilattice a => JoinSemilattice (Stmt a) where
    join (DefRec ρ) (DefRec ρ') = DefRec (ρ ∨ ρ')
    join Pass Pass = Pass
    join (ExprStmt e) (ExprStmt e') = ExprStmt (e ∨ e')
-   join (Import q f) (Import q' f') = Import (q ≜ q') (f ≜ f')
    join (Seq s1 s2) (Seq s1' s2') = Seq (s1 ∨ s1') (s2 ∨ s2')
    join _ _ = shapeMismatch unit
 
@@ -196,7 +190,6 @@ instance BoundedJoinSemilattice a => Expandable (Stmt a) (Raw Stmt) where
    expand (DefRec ρ) (DefRec ρ') = DefRec (expand ρ ρ')
    expand Pass Pass = Pass
    expand (ExprStmt e) (ExprStmt e') = ExprStmt (expand e e')
-   expand (Import q f) (Import q' f') = Import (q ≜ q') (f ≜ f')
    expand (Seq s1 s2) (Seq s1' s2') = Seq (expand s1 s1') (expand s2 s2')
    expand _ _ = shapeMismatch unit
 
@@ -273,11 +266,10 @@ instance Vertices (Stmt Vertex) where
    vertices (DefRec ρ) = vertices ρ
    vertices Pass = empty
    vertices (ExprStmt e) = vertices e
-   vertices (Import _ _) = empty
    vertices (Seq s1 s2) = vertices s1 ∪ vertices s2
 
 instance Vertices (Module Vertex) where
-   vertices (Module ss) = unions (vertices <$> ss)
+   vertices (Module _ ss) = unions (vertices <$> ss)
 
 -- ======================
 -- boilerplate
@@ -300,7 +292,6 @@ derive instance Traversable RecDefs
 derive instance Functor Stmt
 derive instance Foldable Stmt
 derive instance Traversable Stmt
-derive instance Newtype (Module a) _
 derive instance Functor Module
 
 -- For terms of a fixed shape.
@@ -344,23 +335,19 @@ instance Apply Stmt where
    apply (DefRec fρ) (DefRec ρ) = DefRec (fρ <*> ρ)
    apply Pass Pass = Pass
    apply (ExprStmt fe) (ExprStmt e) = ExprStmt (fe <*> e)
-   apply (Import q f) (Import q' f') = Import (q ≜ q') (f ≜ f')
    apply (Seq fs1 fs2) (Seq s1 s2) = Seq (fs1 <*> s1) (fs2 <*> s2)
    apply _ _ = shapeMismatch unit
 
 instance Apply Module where
-   apply (Module Nil) (Module Nil) = Module Nil
-   apply (Module (fs : fss)) (Module (s : ss)) =
-      Module ((fs <*> s) : unwrap (apply (Module fss) (Module ss)))
-   apply _ _ = shapeMismatch unit
+   apply (Module fis fss) (Module _ ss) = Module fis (zipWith (<*>) fss ss)
 
 instance Foldable Module where
-   foldl f acc (Module ss) = foldl (foldl f) acc ss
+   foldl f acc (Module _ ss) = foldl (foldl f) acc ss
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
 instance Traversable Module where
-   traverse f (Module ss) = Module <$> traverse (traverse f) ss
+   traverse f (Module is ss) = Module is <$> traverse (traverse f) ss
    sequence = sequenceDefault
 
 derive instance Eq a => Eq (Expr a)

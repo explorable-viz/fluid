@@ -222,13 +222,6 @@ evalStmt doc_opt γ s αs = case s of
    ExprStmt e -> do
       _ <- eval Nothing γ e αs
       pure (Assigns empty empty)
-   Import q Nothing -> do
-      γ_q <- load q
-      mb <- moduleBinding q γ_q
-      pure (Assigns (γ_q <+> mb) empty)
-   Import q (Just xs) -> do
-      γ_q <- load q
-      pure (Assigns (restrict (Set.fromFoldable xs) γ_q) empty)
    Seq s1 s2 -> do
       r1 <- evalStmt Nothing γ s1 αs
       case r1 of
@@ -281,13 +274,13 @@ evalVal γ (Lambda α σ) _ =
 evalVal _ _ _ = pure Nothing
 
 eval_module :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
-eval_module γ = go empty
+eval_module γ (Module _ ss0) = go empty ss0
    where
-   go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
-   go γ' (Module Nil) _ = pure γ'
-   go γ' (Module (s : ss)) αs = do
+   go :: Env Vertex -> List (Stmt Vertex) -> Set Vertex -> m (Env Vertex)
+   go γ' Nil _ = pure γ'
+   go γ' (s : ss) αs = do
       γ'' × αs' <- step γ' s αs
-      go (γ' <+> γ'') (Module ss) αs'
+      go (γ' <+> γ'') ss αs'
 
    step γ' (Def (VarDef σ e)) αs = do
       v <- eval Nothing (γ <+> γ') e αs

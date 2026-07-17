@@ -327,9 +327,6 @@ instance Highlightable a => Pretty (E.Stmt a) where
    pretty (E.DefRec (E.RecDefs _ ρ)) = text "def" <+> pretty ρ
    pretty E.Pass = text "pass"
    pretty (E.ExprStmt e) = pretty e
-   pretty (E.Import q Nothing) = text "import" <+> text (dottedName q)
-   pretty (E.Import q (Just xs)) =
-      text "from" <+> text (dottedName q) <+> text "import" <+> text (intercalate ", " xs)
    pretty (E.Seq s1 s2) = pretty s1 <++> pretty s2
 
 instance Highlightable a => Pretty (Cont a) where

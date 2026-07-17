@@ -32,7 +32,7 @@ import Desugarable (class Desugarable, desug)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (class BV, class FV, Cont(..), Elim(..), asElim, bv, fv)
-import Expr (Expr(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
+import Expr (Expr(..), Import(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
 import Util.Set ((\\), (∪))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, definitely, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -191,9 +191,9 @@ elimBool :: forall a. Cont a -> Cont a -> Elim a
 elimBool κ κ' = ElimConstr (D.fromFoldable [ dottedName cTrue × κ, dottedName cFalse × κ' ])
 
 moduleFwd :: forall m. HasCxt m => MonadError Error m => Module (TyResult Ctx) -> m (E.Module (TyResult Ctx))
-moduleFwd (Module is ss) = E.Module <$> ((\ss' -> (importToCore <$> is) <> ss') <$> traverse stmtFwd ss)
+moduleFwd (Module is ss) = E.Module (importFwd <$> is) <$> traverse stmtFwd ss
    where
-   importToCore (Import q f) = E.Import q f
+   importFwd (Import q f) = E.Import q f
 
 -- Use of eliminators to establish module bindings is a bit naff, because we don't really have a notion of
 -- "rest of module" to use as continuation. So use empty dictionary (unit tuple) as continuation, and disregard

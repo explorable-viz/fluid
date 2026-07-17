@@ -22,7 +22,7 @@ import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Eval (GraphConfig, importInto)
-import Expr (Stmt, dropLeadingImports, fv)
+import Expr (Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
 
 import Graph (vertices)
@@ -124,7 +124,7 @@ prepConfig primitives fluidSrc = do
                `Map.union` Map.singleton "__NoArgs" (Class { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil })
       sty <- either throw pure (checkProgram memo baseCxt imports s)
       eTy <- desug sty
-      let e = dropLeadingImports ((unit <$ eTy) :: Raw Stmt)
+      let e = (unit <$ eTy) :: Raw Stmt
       let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fqnKeyed fullClassCtx }
       pure { s, e, gconfig }
 
