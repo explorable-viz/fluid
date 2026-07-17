@@ -30,7 +30,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName)
-import Parse (leadingImports, parseModule, parseProgram)
+import Parse (importName, parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
@@ -87,12 +87,13 @@ checkModules graph modules baseCxt roots = foldM go (Map.empty × Map.empty) roo
 prepConfig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   sCxt <- parseModuleGraph (predefined <> imports)
+   let importNames = importName <$> imports
+   sCxt <- parseModuleGraph (predefined <> importNames)
    let moduleClassCtx = Map.insert "__NoArgs" { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
    programClasses <- either throw pure (classes mainModule s)
    fullClassCtx <- either throw pure (unionWith_mergeEq moduleClassCtx programClasses)
    memo × qualModules <- either throw pure
-      (checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> imports))
+      (checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> importNames))
    local (\(FileCxt r) -> FileCxt (r { classCtx = fqnKeyed fullClassCtx })) do
       modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = fqnKeyed moduleClassCtx }))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qualModules
@@ -111,7 +112,7 @@ prepConfig primitives fluidSrc = do
             runWithGraphT_spy
                ( do
                     modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
-                    foldM importInto primitives' (predefined <> leadingImports s)
+                    foldM importInto primitives' (predefined <> importNames)
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure (primitives' × γ)
@@ -121,7 +122,7 @@ prepConfig primitives fluidSrc = do
                (constMap (VarStatus true) (keys primitives))
                predefined
                `Map.union` Map.singleton "__NoArgs" (Class { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil })
-      sty <- either throw pure (checkProgram memo baseCxt s)
+      sty <- either throw pure (checkProgram memo baseCxt imports s)
       eTy <- desug sty
       let e = dropLeadingImports ((unit <$ eTy) :: Raw Stmt)
       let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fqnKeyed fullClassCtx }

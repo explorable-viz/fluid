@@ -18,7 +18,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricD
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (assignment, block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Primitive.Parse (getPrec)
-import SExpr (Branch, Clause(..), ctrName, DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), ctrName, DictEntry(..), Expr(..), Import(..), LambdaClause(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
 import Util (type (×), error, isEmpty, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
@@ -200,6 +200,11 @@ instance Ann a => Pretty (VarDef a) where
 instance Ann a => Pretty (VarDefs a) where
    pretty ds = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> ds))
 
+instance Pretty Import where
+   pretty (Import q Nothing) = text "import" <+> text (dottedName q)
+   pretty (Import q (Just xs)) =
+      text "from" <+> text (dottedName q) <+> text "import" <+> text (intercalate ", " xs)
+
 instance Ann a => Pretty (Stmt a) where
    pretty (Return e) = text "return" <+> pretty e
    pretty (If (NonEmptyList (ss :| sss)) e) =
@@ -215,9 +220,6 @@ instance Ann a => Pretty (Stmt a) where
    pretty (Assert cond Nothing) = text "assert" <+> pretty cond
    pretty (Assert cond (Just msg)) = text "assert" <+> pretty cond <> text "," <+> pretty msg
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
-   pretty (Import q Nothing) = text "import" <+> text (dottedName q)
-   pretty (Import q (Just xs)) =
-      text "from" <+> text (dottedName q) <+> text "import" <+> text (intercalate ", " xs)
    pretty (Dataclass c b xs) =
       text "@dataclass" <> line
          <> text "class" <+> text c

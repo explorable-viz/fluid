@@ -132,7 +132,8 @@ data Stmt a
    | Assert (Expr a) (Maybe (Expr a))
    | Seq (Stmt a) (Stmt a)
    | Dataclass Var (Maybe Var) (List Var)
-   | Import Name (Maybe (List Var))
+
+data Import = Import Name (Maybe (List Var))
 
 data Clause a = Clause a (NonEmptyList Pattern × Stmt a)
 
@@ -154,7 +155,7 @@ data Qualifier a
    | ListCompGen Pattern (Expr a)
    | ListCompDecl (VarDef a) -- could allow VarDefs instead
 
-data Module a = Module (List (Stmt a))
+data Module a = Module (List Import) (List (Stmt a))
 
 instance Desugarable DictEntry E.Expr where
    desug (ExprKey e) = desug e
@@ -190,7 +191,9 @@ elimBool :: forall a. Cont a -> Cont a -> Elim a
 elimBool κ κ' = ElimConstr (D.fromFoldable [ dottedName cTrue × κ, dottedName cFalse × κ' ])
 
 moduleFwd :: forall m. HasCxt m => MonadError Error m => Module (TyResult Ctx) -> m (E.Module (TyResult Ctx))
-moduleFwd (Module ss) = E.Module <$> traverse stmtFwd ss
+moduleFwd (Module is ss) = E.Module <$> ((\ss' -> (importToCore <$> is) <> ss') <$> traverse stmtFwd ss)
+   where
+   importToCore (Import q f) = E.Import q f
 
 -- Use of eliminators to establish module bindings is a bit naff, because we don't really have a notion of
 -- "rest of module" to use as continuation. So use empty dictionary (unit tuple) as continuation, and disregard
@@ -319,7 +322,6 @@ stmtFwd (Assert cond msg_opt) =
    msg = fromMaybe (Str Returns "AssertionError") msg_opt
 stmtFwd (Seq s1 s2) = E.Seq <$> stmtFwd s1 <*> stmtFwd s2
 stmtFwd (Dataclass _ _ _) = pure E.Pass
-stmtFwd (Import q xs) = pure (E.Import q xs)
 
 ifElseFwd :: forall m. HasCxt m => MonadError Error m => IfElseClauses (TyResult Ctx) -> m (E.Stmt (TyResult Ctx))
 ifElseFwd (sss × s) =
@@ -547,7 +549,7 @@ derive instance Functor ParagraphElem
 derive instance Functor Expr
 
 instance Functor Module where
-   map f (Module ss) = Module (map f <$> ss)
+   map f (Module is ss) = Module is (map f <$> ss)
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join _ = error unimplemented
@@ -580,6 +582,11 @@ instance Show ListRestPattern where
 derive instance Eq a => Eq (Stmt a)
 derive instance Generic (Stmt a) _
 instance Show a => Show (Stmt a) where
+   show c = genericShow c
+
+derive instance Eq Import
+derive instance Generic Import _
+instance Show Import where
    show c = genericShow c
 
 derive instance Eq a => Eq (Clause a)
@@ -666,7 +673,6 @@ instance FV (Stmt a) where
    fv (Assert cond msg) = fv cond ∪ maybe Set.empty fv msg
    fv (Seq s1 s2) = fv s1 ∪ fv s2
    fv (Dataclass _ _ _) = Set.empty
-   fv (Import _ _) = Set.empty
 
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e

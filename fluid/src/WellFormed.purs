@@ -5,7 +5,7 @@ import Prelude
 import Bind (Name, Var, dottedName)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either)
-import Data.Foldable (foldMap, foldr, for_)
+import Data.Foldable (foldM, foldr, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.List (List(..), length, nub, (:))
@@ -20,40 +20,41 @@ import DefiniteAssignment (ClassEntry, Ctx, Entry(..), Cxt, TyResult(..), classF
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
-import SExpr (Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..)) as S
+import SExpr (Clause(..), DictEntry(..), Expr(..), Import(..), LambdaClause(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..)) as S
 import Util (type (×), singleton, (×))
 import Util.Set ((\\), (∪))
 
-checkProgram :: Map.Map ModuleName Cxt -> Cxt -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
-checkProgram memo baseCxt s = checkTopLevelImports s *> (snd <$> wellFormed mainModule memo baseCxt s)
+checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
+checkProgram memo baseCxt imports s = do
+   γImp <- checkImports memo imports
+   snd <$> wellFormed mainModule memo (γImp `Map.union` baseCxt) s
 
-checkTopLevelImports :: forall a. S.Stmt a -> Either String Unit
-checkTopLevelImports = spine
+checkImports :: Map.Map ModuleName Cxt -> List S.Import -> Either String Cxt
+checkImports memo = foldM (\acc i -> (_ `Map.union` acc) <$> importCxt memo i) Map.empty
+
+importCxt :: Map.Map ModuleName Cxt -> S.Import -> Either String Cxt
+importCxt _ (S.Import q Nothing) = pure (Map.singleton x1 (Module (singleton x1)))
    where
-   spine (S.Seq s1 s2) = spine s1 *> spine s2
-   spine (S.Import _ _) = pure unit
-   spine s = for_ (nestedImports s) \q -> throwError $ "Import not at top level: " <> dottedName q
-
-nestedImports :: forall a. S.Stmt a -> List ModuleName
-nestedImports (S.Import q _) = q : Nil
-nestedImports (S.Seq s1 s2) = nestedImports s1 <> nestedImports s2
-nestedImports (S.If es elseBranch) = foldMap (nestedImports <<< snd) es <> maybe Nil nestedImports elseBranch
-nestedImports (S.Match _ ps) = foldMap (nestedImports <<< snd) ps
-nestedImports (S.DefRec ds) = foldMap (\(_ × S.Clause _ (_ × s)) -> nestedImports s) ds
-nestedImports _ = Nil
+   x1 = NEL.head q
+importCxt memo (S.Import q (Just xs)) = do
+   let γ = findWithDefault Map.empty q memo
+   for_ xs \x ->
+      when (not (Map.member x γ)) $ throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
+   pure (Map.filterKeys (_ `Set.member` Set.fromFoldable xs) γ)
 
 classesOfModule :: forall a. Name -> S.Module a -> Either String (Map.Map Var ClassEntry)
-classesOfModule q (S.Module ss) =
+classesOfModule q (S.Module _ ss) =
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure Map.empty
       Just s -> classes q s
 
 checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String (Ctx × S.Module (TyResult Ctx))
-checkModule q memo γ (S.Module ss) =
+checkModule q memo γ (S.Module imports ss) = do
+   γImp <- checkImports memo imports
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
-      Nothing -> pure (Map.empty × S.Module Nil)
-      Just s -> checkTopLevelImports s *> wellFormed q memo γ s <#> \(r × s') ->
-         delta r × S.Module (unSeq s')
+      Nothing -> pure (Map.empty × S.Module imports Nil)
+      Just s -> wellFormed q memo (γImp `Map.union` γ) s <#> \(r × s') ->
+         delta r × S.Module imports (unSeq s')
    where
    delta (Assigns δ) = δ
    delta Returns = Map.empty
@@ -83,7 +84,6 @@ assigns (S.Match _ ps) = unions (assigns <$> (snd <$> ps))
 assigns (S.DefRec ds) = unions (Set.singleton <<< fst <$> ds)
 assigns (S.Seq s1 s2) = assigns s1 ∪ assigns s2
 assigns (S.Dataclass _ _ _) = Set.empty
-assigns (S.Import _ _) = Set.empty
 
 captures :: forall a. S.Stmt a -> Set Var
 captures S.Pass = Set.empty
@@ -102,7 +102,6 @@ captures (S.DefRec ds) =
       (fv s \\ unions (bv <$> ps)) \\ assigns s
 captures (S.Seq s1 s2) = captures s1 ∪ captures s2
 captures (S.Dataclass _ _ _) = Set.empty
-captures (S.Import _ _) = Set.empty
 
 capturesE :: forall a. S.Expr a -> Set Var
 capturesE (S.Var _) = Set.empty
@@ -139,14 +138,6 @@ capturesE (S.ListNonEmpty _ e l) = capturesE e ∪ capturesEListRest l
 capturesE (S.ListEnum e1 e2) = capturesE e1 ∪ capturesE e2
 capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
-
-importedCxt :: forall a. Map.Map ModuleName Cxt -> S.Stmt a -> Cxt
-importedCxt _ (S.Import q Nothing) = Map.singleton x1 (Module (singleton x1))
-   where
-   x1 = NEL.head q
-importedCxt memo (S.Import q (Just xs)) =
-   Map.filterKeys (_ `Set.member` Set.fromFoldable xs) (findWithDefault Map.empty q memo)
-importedCxt _ _ = Map.empty
 
 wellFormed :: forall a. Name -> Map.Map ModuleName Cxt -> Cxt -> S.Stmt a -> Either String (TyResult Ctx × S.Stmt (TyResult Ctx))
 wellFormed _ _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
@@ -189,7 +180,7 @@ wellFormed q memo γ (S.Seq s1 s2) = do
          for_ (Set.toUnfoldable (captures s1 `Set.intersection` assigns s2) :: Array Var) \x ->
             throwError $ "Captured variable reassigned: " <> x
          λ1 <- classes q s1
-         let γ' = Map.union (importedCxt memo s1) (Map.union (Class <$> (λ1 <#> _ { cxt = γ })) (γ `extendCxt` δ))
+         let γ' = Map.union (Class <$> (λ1 <#> _ { cxt = γ })) (γ `extendCxt` δ)
          r2 × s2' <- wellFormed q memo γ' s2
          pure (overrideRes r1 r2 × S.Seq s1' s2')
 wellFormed q memo γ (S.If es elseBranch) = do
@@ -231,11 +222,6 @@ wellFormed _ _ γ (S.Dataclass c b xs) = do
             $ "Class " <> c <> " redeclares inherited field(s): "
                  <> show (Set.toUnfoldable clash :: List Var)
    pure (Assigns Map.empty × S.Dataclass c b xs)
-wellFormed _ memo _ (S.Import q f) = do
-   let γ = findWithDefault Map.empty q memo
-   for_ f \xs -> for_ xs \x ->
-      when (not (Map.member x γ)) $ throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
-   pure (Assigns Map.empty × S.Import q f)
 
 asName :: forall a. S.Expr a -> Maybe Name
 asName (S.Var x) = Just (singleton x)

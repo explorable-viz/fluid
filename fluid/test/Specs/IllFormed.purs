@@ -21,9 +21,9 @@ purepy_cases =
    , { file: "purepy/forward_class_in_def.fld", expected_error: "Unknown dataclass: Point" }
    , { file: "purepy/forward_class_top.fld", expected_error: "Unknown dataclass: Point" }
    , { file: "purepy/from_import_unknown_member.fld", expected_error: "Cannot import name baz from module module.two_vals_lib" }
-   , { file: "purepy/import_in_def.fld", expected_error: "Import not at top level: module.foo" }
-   , { file: "purepy/import_in_if.fld", expected_error: "Import not at top level: module.foo" }
-   , { file: "purepy/import_in_match_case.fld", expected_error: "Import not at top level: module.foo" }
+   , { file: "purepy/import_in_def.fld", expected_error: "\"ParseError on line 2, column 10:\\nimports must precede statements\"" }
+   , { file: "purepy/import_in_if.fld", expected_error: "\"ParseError on line 2, column 10:\\nimports must precede statements\"" }
+   , { file: "purepy/import_in_match_case.fld", expected_error: "\"ParseError on line 3, column 12:\\nimports must precede statements\"" }
    , { file: "purepy/match_var_leak.fld", expected_error: "Not definitely assigned: x" }
    , { file: "purepy/mutual_def_block_local.fld", expected_error: "Not definitely assigned: g" }
    , { file: "purepy/mutual_split.fld", expected_error: "Unbound name: odd" }
@@ -49,5 +49,5 @@ illFormed_cases =
    , { file: "match_exhaustive_assign.fld", expected_error: "Not definitely assigned: result" }
    , { file: "match_partial_def.fld", expected_error: "Not definitely assigned: result" }
    , { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }
-   , { file: "use_before_import.fld", expected_error: "Unbound name: c\nChecking module use_before_import_mod" }
+   , { file: "use_before_import.fld", expected_error: "\"ParseError on line 2, column 6:\\nimports must precede statements\"\nLoading module use_before_import_mod" }
    ]

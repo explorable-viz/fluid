@@ -1,3 +1,0 @@
-x = 5
-from interleaved_import_lib import y
-x + y

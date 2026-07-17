@@ -29,7 +29,7 @@ import Parsing.Expr (Assoc(..), OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import Primitive.Parse (OpDef(..), OpType(..), Fixity(..), opDefs)
-import SExpr (Branch, Clause(..), DictEntry(..), Expr(..), LambdaClause(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), DictEntry(..), Expr(..), Import(..), LambdaClause(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, Stmt(..), VarDef(..), VarDefs)
 import Util (type (+), type (×), error, nonEmpty, singleton, (×))
 
 pattern :: Parser Pattern
@@ -112,7 +112,7 @@ varDefs :: Parser (Raw VarDefs)
 varDefs = many1 varDef
 
 stmt :: Parser (Raw Stmt)
-stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> importStmt <|> fromImportStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (expr <#> ExprStmt)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (expr <#> ExprStmt)
 
 returnStmt :: Parser (Raw Stmt)
 returnStmt = do
@@ -134,7 +134,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser (Raw Stmt)
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> importStmt <|> fromImportStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> (Return <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <$> expr)
 
 programStmts :: Parser (Raw Stmt)
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
@@ -488,34 +488,33 @@ expr = context "expr" $ ternary <?> "expression"
             pure $ DocExpr e e'
 
 module_ :: Parser (Raw Module)
-module_ = Module <<< toList <$> many1 (align stmt)
+module_ = do
+   is <- many (align import_)
+   ss <- many1 (align stmt)
+   pure $ Module is (toList ss)
 
-importStmt :: Parser (Raw Stmt)
-importStmt = reserved "import" *> (modPath <#> \q -> Import q Nothing)
+misplacedImport :: forall a. Parser a
+misplacedImport = (reserved "import" <|> reserved "from") *> fail "imports must precede statements"
 
-fromImportStmt :: Parser (Raw Stmt)
-fromImportStmt = do
-   reserved "from"
-   q <- modPath
-   reserved "import"
-   xs <- sepBy1 (variable <|> constructor) (delim ',')
-   pure $ Import q (Just (toList xs))
+import_ :: Parser Import
+import_ = importAll <|> fromImport
+   where
+   importAll = reserved "import" *> (modPath <#> \q -> Import q Nothing)
+   fromImport = do
+      reserved "from"
+      q <- modPath
+      reserved "import"
+      xs <- sepBy1 (variable <|> constructor) (delim ',')
+      pure $ Import q (Just (toList xs))
 
 modPath :: Parser Name
 modPath = sepBy1 variable (delim '.')
 
-stmtImports :: forall a. Stmt a -> List Name
-stmtImports (Import q _) = q : Nil
-stmtImports (Seq s1 s2) = stmtImports s1 <> stmtImports s2
-stmtImports _ = Nil
+importName :: Import -> Name
+importName (Import q _) = q
 
 moduleImports :: forall a. Module a -> List Name
-moduleImports (Module ss) = ss >>= stmtImports
-
-leadingImports :: forall a. Stmt a -> List Name
-leadingImports (Import q _) = q : Nil
-leadingImports (Seq (Import q _) rest) = q : leadingImports rest
-leadingImports _ = Nil
+moduleImports (Module is _) = importName <$> is
 
 topLevel :: forall a. Parser a -> Parser a
 topLevel p = whitespace *> withPos p <* whitespace <* eof
@@ -528,8 +527,13 @@ parse parser input =
    printError (ParseError msg (Position { line, column })) =
       "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
 
-parseProgram :: String -> Either String (Raw Stmt × List Name)
-parseProgram src = parse (topLevel programStmts) src <#> \s -> s × stmtImports s
+parseProgram :: String -> Either String (Raw Stmt × List Import)
+parseProgram src = parse (topLevel programBody) src
+   where
+   programBody = do
+      is <- many (align import_)
+      s <- programStmts
+      pure (s × is)
 
 parseModule :: String -> Either String (Raw Module × List Name)
 parseModule src = parse (topLevel module_) src <#> \m -> m × moduleImports m

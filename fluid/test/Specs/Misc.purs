@@ -33,7 +33,6 @@ misc_cases =
    , { file: "include_input_into_output.fld"
      , fwd_expect: "(1, 1)"
      }
-   , { file: "interleaved_import.fld", fwd_expect: "15" }
    , { file: "length.fld", fwd_expect: "2" }
    , { file: "lexical_scoping.fld", fwd_expect: "\"6\"" } -- avoid triple-quotes here as VSCode gets confused
    , { file: "lookup.fld", fwd_expect: """Just("sarah")""" }
