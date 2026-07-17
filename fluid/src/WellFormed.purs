@@ -36,11 +36,19 @@ importCxt :: Map.Map ModuleName Cxt -> S.Import -> Either String Cxt
 importCxt _ (S.Import q Nothing) = pure (Map.singleton x1 (Mod (singleton x1)))
    where
    x1 = NEL.head q
-importCxt modCxt (S.Import q (Just xs)) = do
-   let γ = findWithDefault Map.empty q modCxt
-   for_ xs \x ->
-      when (not (Map.member x γ)) $ throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
-   pure (Map.filterKeys (_ `Set.member` Set.fromFoldable xs) γ)
+importCxt modCxt (S.Import q (Just xs)) = importFrom modCxt q xs
+
+importFrom :: Map.Map ModuleName Cxt -> ModuleName -> List Var -> Either String Cxt
+importFrom modCxt q = go
+   where
+   γ = findWithDefault Map.empty q modCxt
+   go Nil = pure Map.empty
+   go (x : xs) = do
+      rest <- go xs
+      case Map.lookup x γ of
+         Just (Mod q') -> pure (Map.insert x (ModLoaded q' (findWithDefault Map.empty q' modCxt)) rest)
+         Just θ -> pure (Map.insert x θ rest)
+         Nothing -> throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
 
 classesOfModule :: forall a. Name -> S.Module a -> Either String (Map.Map Var ClassEntry)
 classesOfModule q (S.Module _ ss) =
