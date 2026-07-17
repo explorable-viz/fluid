@@ -2,13 +2,13 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 
-import Bind (Var, dottedName, simple, varAnon)
+import Bind (Var, dottedName, varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader, local)
 import DefiniteAssignment (class HasCxt, Cxt, askCxt, classFor, fields)
 import Data.Array ((..))
 import Data.List (List(..), find, foldM, length, snoc, unzip, zip, (:))
-import Data.List.NonEmpty (unsnoc, fromList) as NEL
+import Data.List.NonEmpty (head, unsnoc, fromList) as NEL
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (unwrap)
@@ -297,11 +297,22 @@ eval_module γ0 (Module is ss0) αs0 = do
 evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Import -> m (Env Vertex)
 evalImport (Import q Nothing) = do
    γ_q <- load q
-   mb <- moduleBinding q γ_q
-   pure (γ_q <+> mb)
+   v <- val Nothing empty (V.ModLoaded q γ_q)
+   v' <- loadsTo q v
+   pure (maplet (NEL.head q) v')
 evalImport (Import q (Just xs)) = do
    γ_q <- load q
    importsFrom γ_q xs
+
+loadsTo :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Val Vertex -> m (Val Vertex)
+loadsTo q v = case NEL.fromList init of
+   Nothing -> pure v
+   Just q' -> do
+      ρ <- load q'
+      v' <- val Nothing empty (V.ModLoaded q' (ρ <+> maplet x v))
+      loadsTo q' v'
+   where
+   { init, last: x } = NEL.unsnoc q
 
 importsFrom :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> List Var -> m (Env Vertex)
 importsFrom γ_q = go
@@ -317,16 +328,8 @@ importsFrom γ_q = go
          Just v -> pure (maplet x v <+> rest)
          Nothing -> pure rest
 
-moduleBinding :: forall m. MonadWithGraphAlloc m => ModuleName -> Env Vertex -> m (Env Vertex)
-moduleBinding q γ_q = case simple q of
-   Just x | not (isJust (lookup x γ_q)) -> maplet x <$> val Nothing empty (V.ModLoaded q γ_q)
-   _ -> pure empty
-
 importInto :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
-importInto γ q = do
-   γ_q <- load q
-   mb <- moduleBinding q γ_q
-   pure (γ <+> γ_q <+> mb)
+importInto γ q = (γ <+> _) <$> load q
 
 load :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m (Env Vertex)
 load q = do

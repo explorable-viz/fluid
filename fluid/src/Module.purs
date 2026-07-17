@@ -19,7 +19,8 @@ import Data.Traversable (traverse)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Eval (GraphConfig, importInto)
+import Eval (GraphConfig, evalImport, importInto)
+import Expr (Import(..)) as E
 import Expr (Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
 
@@ -34,7 +35,7 @@ import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResu
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), throw, throwLeft, whenever, withMsg, (×))
-import Util.Map (constMap, keys, findWithDefault, restrict)
+import Util.Map (constMap, keys, findWithDefault, restrict, (<+>))
 import Util.Set ((∪))
 import Val (class HasModuleStore, modifyStore, Env)
 
@@ -104,7 +105,8 @@ prepConfig primitives fluidSrc = do
             runWithGraphT_spy
                ( do
                     modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
-                    foldM importInto primitives' (predefined <> importNames)
+                    γ0 <- foldM importInto primitives' predefined
+                    foldM (\γ (S.Import q f) -> (γ <+> _) <$> evalImport (E.Import q f)) γ0 imports
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure (primitives' × γ)
