@@ -61,7 +61,8 @@ data BaseVal a
    | Matrix (MatrixRep a)
    | Fun (Fun a)
    | Cls ClassEntry
-   | Mod (Env a)
+   | Mod Name
+   | ModLoaded Name (Env a)
 
 val :: forall m. MonadWithGraphAlloc m => Maybe (Val Vertex) -> Set Vertex -> BaseVal Vertex -> m (Val Vertex)
 val doc_opt = new (flip Val doc_opt)
@@ -88,11 +89,11 @@ type ModuleStore =
    { primitives :: Env Vertex
    , modules :: Map ModuleName (Module Vertex)
    , graph :: DependencyGraph
-   , cache :: Map ModuleName (Env Vertex)
+   , modEnv :: Map ModuleName (Env Vertex)
    }
 
 emptyStore :: ModuleStore
-emptyStore = { primitives: empty, modules: Map.empty, graph: Map.empty, cache: Map.empty }
+emptyStore = { primitives: empty, modules: Map.empty, graph: Map.empty, modEnv: Map.empty }
 
 class Monad m <= HasModuleStore m where
    getStore :: m ModuleStore
@@ -253,7 +254,8 @@ instance Apply BaseVal where
    apply (Matrix fm) (Matrix m) = Matrix (fm <*> m)
    apply (Fun ff) (Fun f) = Fun (ff <*> f)
    apply (Cls c) (Cls c') = Cls (c { mod = c.mod ≜ c'.mod, base = c.base ≜ c'.base, fields = c.fields ≜ c'.fields })
-   apply (Mod fγ) (Mod γ) = Mod (fγ <*> γ)
+   apply (Mod q) (Mod q') = Mod (q ≜ q')
+   apply (ModLoaded q fγ) (ModLoaded q' γ) = ModLoaded (q ≜ q') (fγ <*> γ)
    apply _ _ = shapeMismatch unit
 
 instance Apply Fun where
@@ -366,7 +368,8 @@ instance BoundedJoinSemilattice a => Expandable (BaseVal a) (Raw BaseVal) where
    expand (Matrix m) (Matrix m') = Matrix (expand m m')
    expand (Fun φ) (Fun φ') = Fun (expand φ φ')
    expand (Cls c) (Cls c') = Cls (c { mod = c.mod ≜ c'.mod, base = c.base ≜ c'.base, fields = c.fields ≜ c'.fields })
-   expand (Mod γ) (Mod γ') = Mod (expand γ γ')
+   expand (Mod q) (Mod q') = Mod (q ≜ q')
+   expand (ModLoaded q γ) (ModLoaded q' γ') = ModLoaded (q ≜ q') (expand γ γ')
    expand _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
@@ -411,7 +414,8 @@ instance Vertices (BaseVal Vertex) where
    vertices (Matrix m) = vertices m
    vertices (Fun f) = vertices f
    vertices (Cls _) = empty
-   vertices (Mod γ) = vertices γ
+   vertices (Mod _) = empty
+   vertices (ModLoaded _ γ) = vertices γ
 
 instance Vertices (DictRep Vertex) where
    vertices (DictRep d) = foldMap (\k (α × v) -> vertices (DictKey (k × α)) ∪ vertices v) (unwrap d)

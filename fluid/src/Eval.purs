@@ -168,7 +168,7 @@ eval doc_opt γ e0 αs = do
                Val _ _ (V.Constr c vs), Val _ _ (V.Str x) -> do
                   xs <- askCxt >>= \λ -> maybe (throw $ "Ill-formed value: unknown dataclass " <> dottedName c) (pure <<< fields) (classFor λ (dottedName c))
                   find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (dottedName c <> " has no field " <> x)
-               Val _ _ (V.Mod γ_m), Val _ _ (V.Str x) ->
+               Val _ _ (V.ModLoaded _ γ_m), Val _ _ (V.Str x) ->
                   withMsg "Module member" $ lookup' x γ_m
                Val _ _ (V.Dictionary _), _ -> throw $ "Found " <> prettyP v' <> ", expected string"
                _, _ -> throw $ "Found " <> prettyP v <> ", expected dict or object"
@@ -304,7 +304,7 @@ evalImport (Import q (Just xs)) = do
 
 moduleBinding :: forall m. MonadWithGraphAlloc m => ModuleName -> Env Vertex -> m (Env Vertex)
 moduleBinding q γ_q = case simple q of
-   Just x | not (isJust (lookup x γ_q)) -> maplet x <$> val Nothing empty (V.Mod γ_q)
+   Just x | not (isJust (lookup x γ_q)) -> maplet x <$> val Nothing empty (V.ModLoaded q γ_q)
    _ -> pure empty
 
 importInto :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
@@ -315,13 +315,13 @@ importInto γ q = do
 
 load :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m (Env Vertex)
 load q = do
-   { primitives, modules, cache } <- getStore
-   case Map.lookup q cache of
+   { primitives, modules, modEnv } <- getStore
+   case Map.lookup q modEnv of
       Just γ' -> pure γ'
       Nothing -> do
          γ_q <- foldM importInto primitives (predefinedDeps q)
          γ' <- maybe (pure empty) (\defs' -> eval_module γ_q defs' empty) (Map.lookup q modules)
-         modifyStore (\s -> s { cache = Map.insert q γ' s.cache })
+         modifyStore (\s -> s { modEnv = Map.insert q γ' s.modEnv })
          pure γ'
 
 type GraphEval g s t =
