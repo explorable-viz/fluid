@@ -8,6 +8,7 @@ import Control.Monad.Reader (class MonadReader, local)
 import DefiniteAssignment (class HasCxt, Cxt, askCxt, classFor, fields)
 import Data.Array ((..))
 import Data.List (List(..), find, foldM, length, snoc, unzip, zip, (:))
+import Data.List.NonEmpty (unsnoc, fromList) as NEL
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (unwrap)
@@ -321,8 +322,18 @@ load q = do
       Nothing -> do
          γ_q <- foldM importInto primitives (predefinedDeps q)
          γ' <- maybe (pure empty) (\defs' -> eval_module γ_q defs' empty) (Map.lookup q modules)
-         modifyStore (\s -> s { modEnv = Map.insert q γ' s.modEnv })
-         pure γ'
+         subs <- submodulesEnv (Map.keys modules) q
+         let loaded = subs <+> γ'
+         modifyStore (\s -> s { modEnv = Map.insert q loaded s.modEnv })
+         pure loaded
+
+submodulesEnv :: forall m. MonadWithGraphAlloc m => Set ModuleName -> ModuleName -> m (Env Vertex)
+submodulesEnv known q = foldM add empty (Set.toUnfoldable known :: List _)
+   where
+   add γ m = case NEL.unsnoc m of
+      { init, last: x }
+         | NEL.fromList init == Just q -> (\v -> γ <+> maplet x v) <$> val Nothing empty (V.Mod m)
+         | otherwise -> pure γ
 
 type GraphEval g s t =
    { g :: g
