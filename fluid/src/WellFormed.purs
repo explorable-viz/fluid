@@ -27,16 +27,22 @@ import Util.Set ((\\), (∪))
 checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
 checkProgram modCxt baseCxt imports s = do
    γImp <- checkImports modCxt imports
-   snd <$> wellFormed mainModule modCxt (γImp `Map.union` baseCxt) s
+   snd <$> wellFormed mainModule (γImp `Map.union` baseCxt) s
 
 checkImports :: Map.Map ModuleName Cxt -> List S.Import -> Either String Cxt
 checkImports modCxt = foldM (\acc i -> (_ `Map.union` acc) <$> importCxt modCxt i) Map.empty
 
 importCxt :: Map.Map ModuleName Cxt -> S.Import -> Either String Cxt
-importCxt _ (S.Import q Nothing) = pure (Map.singleton x1 (Mod (singleton x1)))
-   where
-   x1 = NEL.head q
+importCxt modCxt (S.Import q Nothing) =
+   pure (Map.singleton (NEL.head q) (loadsTo modCxt q (ModLoaded q (findWithDefault Map.empty q modCxt))))
 importCxt modCxt (S.Import q (Just xs)) = importFrom modCxt q xs
+
+loadsTo :: Map.Map ModuleName Cxt -> ModuleName -> Entry -> Entry
+loadsTo modCxt q θ = case NEL.fromList init of
+   Nothing -> θ
+   Just q' -> loadsTo modCxt q' (ModLoaded q' (Map.insert x θ (findWithDefault Map.empty q' modCxt)))
+   where
+   { init, last: x } = NEL.unsnoc q
 
 importFrom :: Map.Map ModuleName Cxt -> ModuleName -> List Var -> Either String Cxt
 importFrom modCxt q = go
@@ -61,7 +67,7 @@ checkModule q modCxt γ (S.Module imports ss) = do
    γImp <- checkImports modCxt imports
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure (Map.empty × S.Module imports Nil)
-      Just s -> wellFormed q modCxt (γImp `Map.union` γ) s <#> \(r × s') ->
+      Just s -> wellFormed q (γImp `Map.union` γ) s <#> \(r × s') ->
          delta r × S.Module imports (unSeq s')
    where
    delta (Assigns δ) = δ
@@ -147,26 +153,26 @@ capturesE (S.ListEnum e1 e2) = capturesE e1 ∪ capturesE e2
 capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
-wellFormed :: forall a. Name -> Map.Map ModuleName Cxt -> Cxt -> S.Stmt a -> Either String (TyResult Ctx × S.Stmt (TyResult Ctx))
-wellFormed _ _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
-wellFormed _ modCxt γ (S.Return e) = do
-   e' <- wellFormedExpr modCxt γ e
+wellFormed :: forall a. Name -> Cxt -> S.Stmt a -> Either String (TyResult Ctx × S.Stmt (TyResult Ctx))
+wellFormed _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
+wellFormed _ γ (S.Return e) = do
+   e' <- wellFormedExpr γ e
    pure (Returns × S.Return (Assigns Map.empty <$ e'))
-wellFormed _ modCxt γ (S.ExprStmt e) = do
-   e' <- wellFormedExpr modCxt γ e
+wellFormed _ γ (S.ExprStmt e) = do
+   e' <- wellFormedExpr γ e
    pure (Assigns Map.empty × S.ExprStmt (Assigns Map.empty <$ e'))
-wellFormed _ modCxt γ (S.Assert e e') = do
-   e1 <- wellFormedExpr modCxt γ e
-   e2 <- traverse (wellFormedExpr modCxt γ) e'
+wellFormed _ γ (S.Assert e e') = do
+   e1 <- wellFormedExpr γ e
+   e2 <- traverse (wellFormedExpr γ) e'
    pure (Assigns Map.empty × S.Assert (Assigns Map.empty <$ e1) ((Assigns Map.empty <$ _) <$> e2))
-wellFormed _ modCxt γ (S.Def (S.VarDef p e)) = do
+wellFormed _ γ (S.Def (S.VarDef p e)) = do
    let xs = bv p
    for_ (Set.toUnfoldable (xs `Set.intersection` capturesE e) :: Array Var) \x ->
       throwError $ "Variable captured by its own definition: " <> x
-   e' <- wellFormedExpr modCxt γ e
-   p' <- qualifyPattern modCxt γ p
+   e' <- wellFormedExpr γ e
+   p' <- qualifyPattern γ p
    pure (Assigns (constMap true xs) × S.Def (S.VarDef p' (Assigns Map.empty <$ e')))
-wellFormed q modCxt γ (S.DefRec ds) = do
+wellFormed q γ (S.DefRec ds) = do
    let fs = unions (Set.singleton <<< fst <$> ds)
    let γ' = γ `extendCxt` constMap true fs
    ds' <- traverse
@@ -174,14 +180,14 @@ wellFormed q modCxt γ (S.DefRec ds) = do
            let xs = unions (bv <$> ps)
            let ys = assigns s \\ xs
            let γ'' = γ' `extendCxt` constMap true xs `extendCxt` constMap false ys
-           ps' <- traverse (qualifyPattern modCxt γ') ps
-           r × s' <- wellFormed q modCxt γ'' s
+           ps' <- traverse (qualifyPattern γ') ps
+           r × s' <- wellFormed q γ'' s
            pure (x × S.Clause r (ps' × s'))
       )
       ds
    pure (Assigns (constMap true fs) × S.DefRec ds')
-wellFormed q modCxt γ (S.Seq s1 s2) = do
-   r1 × s1' <- wellFormed q modCxt γ s1
+wellFormed q γ (S.Seq s1 s2) = do
+   r1 × s1' <- wellFormed q γ s1
    case r1 of
       Returns -> throwError "Unreachable statement"
       Assigns δ -> do
@@ -189,27 +195,27 @@ wellFormed q modCxt γ (S.Seq s1 s2) = do
             throwError $ "Captured variable reassigned: " <> x
          λ1 <- classes q s1
          let γ' = Map.union (Class <$> (λ1 <#> _ { cxt = γ })) (γ `extendCxt` δ)
-         r2 × s2' <- wellFormed q modCxt γ' s2
+         r2 × s2' <- wellFormed q γ' s2
          pure (overrideRes r1 r2 × S.Seq s1' s2')
-wellFormed q modCxt γ (S.If es elseBranch) = do
+wellFormed q γ (S.If es elseBranch) = do
    es' <- traverse
       ( \(e × s) -> do
-           e' <- wellFormedExpr modCxt γ e
-           r × s' <- wellFormed q modCxt γ s
+           e' <- wellFormedExpr γ e
+           r × s' <- wellFormed q γ s
            pure (r × ((Assigns Map.empty <$ e') × s'))
       )
       es
    rElse × elseBranch' <- case elseBranch of
-      Just s -> map Just <$> wellFormed q modCxt γ s
+      Just s -> map Just <$> wellFormed q γ s
       Nothing -> pure (Assigns Map.empty × Nothing)
    pure (foldl1 mergeRes (NEL.cons rElse (fst <$> es')) × S.If (snd <$> es') elseBranch')
-wellFormed q modCxt γ (S.Match e ps) = do
-   e' <- wellFormedExpr modCxt γ e
+wellFormed q γ (S.Match e ps) = do
+   e' <- wellFormedExpr γ e
    ps' <- traverse
       ( \(p × s) -> do
            let xs = bv p
-           p' <- qualifyPattern modCxt γ p
-           r × s' <- wellFormed q modCxt (γ `extendCxt` constMap true xs) s
+           p' <- qualifyPattern γ p
+           r × s' <- wellFormed q (γ `extendCxt` constMap true xs) s
            pure (overrideRes (Assigns (constMap true xs)) r × (p' × s'))
       )
       ps
@@ -218,7 +224,7 @@ wellFormed q modCxt γ (S.Match e ps) = do
    rFall = case fst (NEL.last ps) of
       S.PVar _ -> Returns
       _ -> Assigns Map.empty
-wellFormed _ _ γ (S.Dataclass c b xs) = do
+wellFormed _ γ (S.Dataclass c b xs) = do
    when (length (nub xs) /= length xs) $ throwError $ "Duplicate field names in class: " <> c
    case b of
       Nothing -> pure unit
@@ -236,28 +242,24 @@ asName (S.Var x) = Just (singleton x)
 asName (S.Project e y) = asName e <#> (_ <> singleton y)
 asName _ = Nothing
 
-resolveName :: Map.Map ModuleName Cxt -> Cxt -> Name -> Maybe Entry
-resolveName modCxt γ name = case NEL.fromList init of
-   Nothing -> simpleEntry
-   Just prefix -> case resolveName modCxt γ prefix of
-      Just (Mod q) -> qualifiedEntry q
+resolveName :: Cxt -> Name -> Maybe Entry
+resolveName γ name = case NEL.fromList init of
+   Nothing -> simpleEntry γ x
+   Just q -> case resolveName γ q of
+      Just (ModLoaded _ γ') -> simpleEntry γ' x
       _ -> Nothing
    where
    { init, last: x } = NEL.unsnoc name
-   simpleEntry = case Map.lookup x γ of
-      Just (Mod q) -> Just (Mod q)
-      Just (Class c) -> Just (Class c)
+   simpleEntry g y = case Map.lookup y g of
+      Just e@(VarStatus true) -> Just e
+      Just e@(ModLoaded _ _) -> Just e
+      Just e@(Class _) -> Just e
       _ -> Nothing
-   qualifiedEntry q = case Map.lookup x (findWithDefault Map.empty q modCxt) of
-      Just (Class c) -> Just (Class c)
-      _
-         | Map.member (NEL.snoc q x) modCxt -> Just (Mod (NEL.snoc q x))
-         | otherwise -> Nothing
 
 -- Validate an expression and rewrite each constructor name to its fully-qualified
 -- form (defining module followed by class name).
-wellFormedExpr :: forall a. Map.Map ModuleName Cxt -> Cxt -> S.Expr a -> Either String (S.Expr a)
-wellFormedExpr modCxt = wf
+wellFormedExpr :: forall a. Cxt -> S.Expr a -> Either String (S.Expr a)
+wellFormedExpr = wf
    where
    wf :: Cxt -> S.Expr a -> Either String (S.Expr a)
    wf γ e@(S.Var x) = e <$ var γ x
@@ -265,7 +267,7 @@ wellFormedExpr modCxt = wf
    wf _ e@(S.Int _ _) = pure e
    wf _ e@(S.Float _ _) = pure e
    wf _ e@(S.Str _ _) = pure e
-   wf γ (S.Constr α c es) = case resolveName modCxt γ c of
+   wf γ (S.Constr α c es) = case resolveName γ c of
       Just (Class ce) -> do
          let fs = fields ce
          when (length es /= length fs)
@@ -273,7 +275,7 @@ wellFormedExpr modCxt = wf
             $ dottedName c <> " expects " <> show (length fs) <> " argument(s); got " <> show (length es)
          S.Constr α (qualified ce c) <$> traverse (wf γ) es
       _ -> throwError $ "Unknown dataclass: " <> dottedName c
-   wf γ (S.ConstrKw α c es xes) = case resolveName modCxt γ c of
+   wf γ (S.ConstrKw α c es xes) = case resolveName γ c of
       Just (Class ce) ->
          S.ConstrKw α (qualified ce c) <$> traverse (wf γ) es <*> traverse (\(x × e) -> (x × _) <$> wf γ e) xes
       _ -> throwError $ "Unknown dataclass: " <> dottedName c
@@ -281,9 +283,9 @@ wellFormedExpr modCxt = wf
    wf γ (S.BinaryApp e op e') = S.BinaryApp <$> wf γ e <*> (op <$ var γ op) <*> wf γ e'
    wf γ (S.UnaryPrefixApp op e) = var γ op *> (S.UnaryPrefixApp op <$> wf γ e)
    wf γ (S.Ternary c e e') = S.Ternary <$> wf γ c <*> wf γ e <*> wf γ e'
-   wf γ (S.Project e y) = case resolveName modCxt γ =<< asName e of
-      Just (Mod q) -> do
-         when (not (Map.member y (findWithDefault Map.empty q modCxt)))
+   wf γ (S.Project e y) = case resolveName γ =<< asName e of
+      Just (ModLoaded q γ') -> do
+         when (not (Map.member y γ'))
             $ throwError
             $ "module " <> dottedName q <> " has no member " <> y
          pure (S.Project e y)
@@ -292,7 +294,7 @@ wellFormedExpr modCxt = wf
    wf γ (S.Matrix α body (x × y) source) =
       (\source' body' -> S.Matrix α body' (x × y) source') <$> wf γ source <*> wf (assignedIn γ (Set.singleton x ∪ Set.singleton y)) body
    wf γ (S.Lambda (S.LambdaClause (ps × e))) = do
-      ps' <- traverse (qualifyPattern modCxt γ) ps
+      ps' <- traverse (qualifyPattern γ) ps
       e' <- wf (assignedIn γ (unions (bv <$> ps))) e
       pure (S.Lambda (S.LambdaClause (ps' × e')))
    wf γ (S.Dictionary α kvs) = S.Dictionary α <$> traverse (\(k × v) -> (×) <$> dictKey k <*> wf γ v) kvs
@@ -318,11 +320,11 @@ wellFormedExpr modCxt = wf
             map (S.ListCompGuard cond' : _) <$> qualifiers γ' qs
          S.ListCompGen p src -> do
             src' <- wf γ' src
-            p' <- qualifyPattern modCxt γ' p
+            p' <- qualifyPattern γ' p
             map (S.ListCompGen p' src' : _) <$> qualifiers (assignedIn γ' (bv p)) qs
          S.ListCompDecl (S.VarDef p src) -> do
             src' <- wf γ' src
-            p' <- qualifyPattern modCxt γ' p
+            p' <- qualifyPattern γ' p
             map (S.ListCompDecl (S.VarDef p' src') : _) <$> qualifiers (assignedIn γ' (bv p)) qs
    wf γ (S.DocExpr e e') = S.DocExpr <$> wf γ e <*> wf γ e'
 
@@ -340,8 +342,8 @@ var γ x = case Map.lookup x γ of
 assignedIn :: Cxt -> Set Var -> Cxt
 assignedIn γ xs = γ `extendCxt` constMap true xs
 
-qualifyPattern :: Map.Map ModuleName Cxt -> Cxt -> S.Pattern -> Either String S.Pattern
-qualifyPattern modCxt γ = qualify
+qualifyPattern :: Cxt -> S.Pattern -> Either String S.Pattern
+qualifyPattern γ = qualify
    where
    qualify (S.PConstr c ps) = do
       fqn <- fqnOf c
@@ -354,7 +356,7 @@ qualifyPattern modCxt γ = qualify
    qualify p = pure p
    qualifyRest (S.PListNext p lr) = S.PListNext <$> qualify p <*> qualifyRest lr
    qualifyRest lr = pure lr
-   fqnOf c = case resolveName modCxt γ c of
+   fqnOf c = case resolveName γ c of
       Just (Class ce) -> pure (NEL.snoc ce.mod (NEL.last c))
       _ -> throwError $ "Unknown dataclass: " <> dottedName c
 
