@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 
-import Bind (dottedName, simple, varAnon)
+import Bind (Var, dottedName, simple, varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader, local)
 import DefiniteAssignment (class HasCxt, Cxt, askCxt, classFor, fields)
@@ -301,7 +301,21 @@ evalImport (Import q Nothing) = do
    pure (γ_q <+> mb)
 evalImport (Import q (Just xs)) = do
    γ_q <- load q
-   pure (restrict (Set.fromFoldable xs) γ_q)
+   importsFrom γ_q xs
+
+importsFrom :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> List Var -> m (Env Vertex)
+importsFrom γ_q = go
+   where
+   go Nil = pure empty
+   go (x : xs) = do
+      rest <- go xs
+      case lookup x γ_q of
+         Just (Val _ _ (V.Mod q')) -> do
+            ρ'' <- load q'
+            v <- val Nothing empty (V.ModLoaded q' ρ'')
+            pure (maplet x v <+> rest)
+         Just v -> pure (maplet x v <+> rest)
+         Nothing -> pure rest
 
 moduleBinding :: forall m. MonadWithGraphAlloc m => ModuleName -> Env Vertex -> m (Env Vertex)
 moduleBinding q γ_q = case simple q of
