@@ -31,7 +31,8 @@ type ClassEntry =
 data Entry
    = VarStatus Boolean -- definite-assignment status
    | Class ClassEntry
-   | Module Name
+   | Mod Name
+   | ModLoaded Name Cxt
 
 type Cxt = Map Var Entry
 

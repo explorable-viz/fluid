@@ -5,11 +5,11 @@ import Prelude
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
 import Bind (Var, dottedName, pathName)
-import Data.List.NonEmpty (snoc) as NEL
+import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Bifunctor (lmap)
 import Data.Either (Either, either)
 import Data.Foldable (foldM, foldl)
-import Data.List (List(..), (:))
+import Data.List (List(..), mapMaybe, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -33,7 +33,7 @@ import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
-import Util (type (×), throw, throwLeft, withMsg, (×))
+import Util (type (×), throw, throwLeft, whenever, withMsg, (×))
 import Util.Map (constMap, keys, findWithDefault, restrict)
 import Util.Set ((∪))
 import Val (class HasModuleStore, modifyStore, Env)
@@ -47,6 +47,11 @@ fqnKeyed m = Map.fromFoldable (reKey <$> (Map.toUnfoldable m :: List _))
    where
    reKey (name × ce) = dottedName (NEL.snoc ce.mod name) × Class ce
 
+submodules :: Set ModuleName -> ModuleName -> Cxt
+submodules known q = Map.fromFoldable (mapMaybe sub (Set.toUnfoldable known))
+   where
+   sub m = let { init, last: x } = NEL.unsnoc m in whenever (NEL.fromList init == Just q) (x × Mod m)
+
 type CheckedModules = Map ModuleName Cxt × Map ModuleName (S.Module (TyResult Ctx))
 
 checkModules
@@ -58,17 +63,18 @@ checkModules
 checkModules graph modules baseCxt roots = foldM go (Map.empty × Map.empty) roots
    where
    go :: CheckedModules -> ModuleName -> Either String CheckedModules
-   go acc@(memo × _) q
-      | Map.member q memo = pure acc
+   go acc@(modCxt × _) q
+      | Map.member q modCxt = pure acc
       | otherwise = do
-           memo' × qmods' <- foldM go acc (findWithDefault Nil q graph)
+           modCxt' × qmods' <- foldM go acc (findWithDefault Nil q graph)
            case Map.lookup q modules of
-              Nothing -> pure (Map.insert q Map.empty memo' × qmods')
+              Nothing -> pure (Map.insert q Map.empty modCxt' × qmods')
               Just mod -> do
-                 let γ = foldl (\acc' i -> acc' `Map.union` findWithDefault Map.empty i memo') baseCxt (predefinedDeps q)
-                 δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q memo' γ mod)
+                 let γ = foldl (\acc' i -> acc' `Map.union` findWithDefault Map.empty i modCxt') baseCxt (predefinedDeps q)
+                 δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q modCxt' γ mod)
                  λ <- classesOfModule q mod
-                 pure (Map.insert q ((Class <$> λ) `Map.union` (VarStatus true <$ δ)) memo' × Map.insert q qmod qmods')
+                 let bindings = submodules (Map.keys modules) q `Map.union` (Class <$> λ) `Map.union` (VarStatus true <$ δ)
+                 pure (Map.insert q bindings modCxt' × Map.insert q qmod qmods')
 
 prepConfig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
@@ -78,7 +84,7 @@ prepConfig primitives fluidSrc = do
    let moduleClassCtx = Map.insert "__NoArgs" { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
    programClasses <- either throw pure (classes mainModule s)
    fullClassCtx <- either throw pure (unionWith_mergeEq moduleClassCtx programClasses)
-   memo × qualModules <- either throw pure
+   modCxt × qualModules <- either throw pure
       (checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> importNames))
    local (\(FileCxt r) -> FileCxt (r { classCtx = fqnKeyed fullClassCtx })) do
       modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = fqnKeyed moduleClassCtx }))
@@ -104,11 +110,11 @@ prepConfig primitives fluidSrc = do
          pure (primitives' × γ)
       let
          baseCxt =
-            foldl (\acc q -> acc `Map.union` findWithDefault Map.empty q memo)
+            foldl (\acc q -> acc `Map.union` findWithDefault Map.empty q modCxt)
                (constMap (VarStatus true) (keys primitives))
                predefined
                `Map.union` Map.singleton "__NoArgs" (Class { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil })
-      sty <- either throw pure (checkProgram memo baseCxt imports s)
+      sty <- either throw pure (checkProgram modCxt baseCxt imports s)
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
       let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fqnKeyed fullClassCtx }
