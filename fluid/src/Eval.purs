@@ -29,7 +29,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
-import ModuleGraph (ModuleName, builtins, predefinedDeps)
+import ModuleGraph (ModuleName, builtins, predefined, predefinedDeps)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
@@ -134,6 +134,13 @@ apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    val doc_opt (singleton α) v'
 apply _ _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
+lookupVar :: forall m. HasModuleStore m => MonadError Error m => Var -> Env Vertex -> m (Val Vertex)
+lookupVar x γ = case lookup x γ of
+   Just v -> pure v
+   Nothing -> do
+      { builtinsEnv } <- getStore
+      lookup x builtinsEnv # orElse ("Unbound name: " <> x)
+
 eval
    :: forall m
     . HasCxt m
@@ -155,10 +162,10 @@ eval doc_opt γ e0 αs = do
       Nothing -> case e0 of
          Var x -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (variable " <> x <> ")"
-            withMsg "Variable lookup" $ lookup' x γ
+            withMsg "Variable lookup" $ lookupVar x γ
          Op op -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (operator " <> op <> ")"
-            withMsg "Variable lookup" $ lookup' op γ
+            withMsg "Variable lookup" $ lookupVar op γ
          DProject e e' -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (projection)"
             v <- eval Nothing γ e αs
@@ -338,7 +345,9 @@ load q = do
    case Map.lookup q modEnv of
       Just γ' -> pure γ'
       Nothing -> do
-         γ_q <- foldM importInto primitives (predefinedDeps q)
+         γ_q <-
+            if q `Set.member` Set.fromFoldable predefined then foldM importInto primitives (predefinedDeps q)
+            else pure empty
          γ' <- maybe (pure empty) (\defs' -> eval_module γ_q q defs' empty) (Map.lookup q modules)
          subs <- submodulesEnv (Map.keys modules) q
          let loaded = (if q == builtins then primitives else empty) <+> subs <+> γ'
@@ -399,8 +408,8 @@ sliceBwd { g, graph_bwd, inα, outα } out𝔹 =
 graphEval :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classCtx } stmt =
    local (\(FileCxt r) -> FileCxt (r { classCtx = classCtx })) do
-      { modules } <- getStore
-      let mαs = Set.unions (vertices <$> Map.values modules)
+      { modules, builtinsEnv } <- getStore
+      let mαs = Set.unions (vertices <$> Map.values modules) ∪ vertices builtinsEnv
       _ × _ × g × inα × outα <- flip runAllocT n do
          sα <- alloc stmt
          let inα = EnvStmt γ sα

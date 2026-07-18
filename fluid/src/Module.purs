@@ -37,7 +37,7 @@ import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfMo
 import SExpr as S
 import Util (type (×), throw, throwLeft, whenever, withMsg, (×), (∩))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict)
-import Util.Set ((∪))
+import Util.Set ((∪), empty)
 import Val (class HasModuleStore, extendEnv, modifyStore, val, Env)
 import Val (BaseVal(..)) as V
 
@@ -149,7 +149,8 @@ prepConfig primitives fluidSrc = do
                ( do
                     modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
                     γ0 <- foldM importInto primitives' predefined
-                    γ1 <- foldM (\γ (S.Import q f) -> (γ `extendEnv` _) <$> evalImport (E.Import q f)) γ0 imports
+                    modifyStore (_ { builtinsEnv = γ0 })
+                    γ1 <- foldM (\γ (S.Import q f) -> (γ `extendEnv` _) <$> evalImport (E.Import q f)) empty imports
                     vName <- val Nothing Set.empty (V.Str "__main__")
                     pure (γ1 `extendEnv` maplet "__name__" vName)
                )
