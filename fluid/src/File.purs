@@ -20,7 +20,7 @@ import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import Util (type (×), (×), debug, error)
+import Util (type (×), (×), debug, orElse)
 
 newtype FileCxt = FileCxt { fluidSrcPaths :: Array Folder, classCtx :: Cxt }
 
@@ -70,16 +70,16 @@ infixr 5 prependFolder as </>
 fluidExtension :: String
 fluidExtension = ".fld"
 
+searchPaths :: Array Folder -> File -> Array File
+searchPaths folders file = prependFolder <$> folders <*> [ file ]
+
 loadFileMaybe :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m (Maybe String)
-loadFileMaybe folders file = foldM step Nothing (prependFolder <$> folders <*> [ file ])
+loadFileMaybe folders file = foldM step Nothing (searchPaths folders file)
    where
    step :: Maybe String -> File -> m (Maybe String)
    step (Just contents) _ = pure (Just contents)
    step Nothing path = loadFileFromPath path
 
 loadFile :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m String
-loadFile folders file = do
-   result <- loadFileMaybe folders file
-   case result of
-      Just contents -> pure contents
-      Nothing -> error ("File not found in any path: " <> show (prependFolder <$> folders <*> [ file ]))
+loadFile folders file =
+   loadFileMaybe folders file >>= orElse ("File not found in any path: " <> show (searchPaths folders file))
