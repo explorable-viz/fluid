@@ -5,11 +5,11 @@ import Prelude
 import Bind (Name, Var, dottedName, properPrefixOf)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either)
-import Data.Foldable (foldM, foldr, for_)
+import Data.Foldable (foldl, foldM, foldr, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.List (List(..), length, nub, (:))
-import ModuleGraph (ModuleName)
+import ModuleGraph (ModuleName, predefinedDeps)
 import Data.List.NonEmpty as NEL
 import Data.Semigroup.Foldable (foldl1)
 import Data.Set (Set, unions)
@@ -26,11 +26,14 @@ import Util.Set ((\\), (∪))
 
 checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
 checkProgram modCxt baseCxt imports s = do
-   γImp <- checkImports mainModule modCxt imports
-   snd <$> wellFormed mainModule (Map.insert "__name__" (VarStatus true) (γImp `Map.union` baseCxt)) s
+   γImp <- checkImports mainModule baseCxt modCxt imports
+   snd <$> wellFormed mainModule (Map.insert "__name__" (VarStatus true) γImp) s
 
-checkImports :: Name -> Map.Map ModuleName Cxt -> List S.Import -> Either String Cxt
-checkImports enclosing modCxt = foldM (\acc i -> (acc `extendCxtWith` _) <$> importCxt enclosing modCxt i) Map.empty
+checkImports :: Name -> Cxt -> Map.Map ModuleName Cxt -> List S.Import -> Either String Cxt
+checkImports enclosing base modCxt =
+   foldM (\acc i -> (acc `extendCxtWith` _) <$> importCxt enclosing modCxt i) seed
+   where
+   seed = foldl (\acc q -> acc `Map.union` findWithDefault Map.empty q modCxt) base (predefinedDeps enclosing)
 
 importCxt :: Name -> Map.Map ModuleName Cxt -> S.Import -> Either String Cxt
 importCxt enclosing modCxt (S.Import q Nothing) = do
@@ -67,11 +70,11 @@ classesOfModule q (S.Module _ ss) =
       Just s -> classes q s
 
 checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String (Ctx × S.Module (TyResult Ctx))
-checkModule q modCxt γ (S.Module imports ss) = do
-   γImp <- checkImports q modCxt imports
+checkModule q modCxt base (S.Module imports ss) = do
+   γImp <- checkImports q base modCxt imports
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure (Map.singleton "__name__" true × S.Module imports Nil)
-      Just s -> wellFormed q (Map.insert "__name__" (VarStatus true) (γImp `Map.union` γ)) s <#> \(r × s') ->
+      Just s -> wellFormed q (Map.insert "__name__" (VarStatus true) γImp) s <#> \(r × s') ->
          Map.insert "__name__" true (delta r) × S.Module imports (unSeq s')
    where
    delta (Assigns δ) = δ

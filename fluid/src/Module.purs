@@ -8,7 +8,7 @@ import Bind (Var, dottedName, pathName, prefixOf)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
-import Data.Foldable (foldM, foldl, intercalate)
+import Data.Foldable (foldM, intercalate)
 import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
 import Data.Map (Map)
 import Data.Map as Map
@@ -106,10 +106,9 @@ checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Ma
            case Map.lookup q modules of
               Nothing -> pure (Map.insert q Map.empty modCxt' × qmods')
               Just mod@(S.Module imports _) -> do
-                 let γ = foldl (\acc' i -> acc' `Map.union` findWithDefault Map.empty i modCxt') baseCxt (predefinedDeps q)
-                 δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q modCxt' γ mod)
+                 δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q modCxt' baseCxt mod)
                  λ <- classesOfModule q mod
-                 γImp <- checkImports q modCxt' imports
+                 γImp <- checkImports q baseCxt modCxt' imports
                  let subs = submodules (Map.keys modules) q
                  let clash = (Map.keys γImp ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
                  when (not Set.isEmpty clash)
@@ -158,9 +157,7 @@ prepConfig primitives fluidSrc = do
          pure (primitives' × γ)
       let
          baseCxt =
-            foldl (\acc q -> acc `Map.union` findWithDefault Map.empty q modCxt)
-               (constMap (VarStatus true) (keys primitives))
-               predefined
+            constMap (VarStatus true) (keys primitives)
                `Map.union` Map.singleton "__NoArgs" (Class { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil })
       sty <- either throw pure (checkProgram modCxt baseCxt imports s)
       eTy <- desug sty
