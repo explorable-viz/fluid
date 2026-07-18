@@ -46,7 +46,9 @@ illFormed_cases :: Array IllFormedSpec
 illFormed_cases =
    [ { file: "bare_module.fld", expected_error: "module qual_lib is not a value" }
    , { file: "from_import_selective.fld", expected_error: "Unbound name: bar" }
+   , { file: "from_import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
    , { file: "from_import_unassigned.fld", expected_error: "Not definitely assigned: x" }
+   , { file: "import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
    , { file: "match_exhaustive_assign.fld", expected_error: "Not definitely assigned: result" }
    , { file: "match_partial_def.fld", expected_error: "Not definitely assigned: result" }
    , { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }

@@ -1,0 +1,2 @@
+import module.bad_pkg.sub
+module.bad_pkg.sub.c

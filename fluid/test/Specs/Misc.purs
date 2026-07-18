@@ -52,6 +52,9 @@ misc_cases =
    , { file: "module/import_absolute_shadow.fld", fwd_expect: "2" }
    , { file: "module/import_simple_unused.fld", fwd_expect: "84" }
    , { file: "module/import_twice.fld", fwd_expect: "1" }
+   , { file: "module/namespace_deep.fld", fwd_expect: "3" }
+   , { file: "module/namespace_from_import.fld", fwd_expect: "1" }
+   , { file: "module/namespace_import.fld", fwd_expect: "1" }
    , { file: "module/parent_after_child.fld", fwd_expect: "5" }
    , { file: "module/qualified_construct.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "module/sibling_submodules.fld", fwd_expect: "3" }
