@@ -274,10 +274,11 @@ evalVal γ (Lambda α σ) _ =
    pure $ Just (α × V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
 evalVal _ _ _ = pure Nothing
 
-eval_module :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
-eval_module γ0 (Module is ss0) αs0 = do
+eval_module :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module γ0 q (Module is ss0) αs0 = do
    base <- foldM (\g i -> (g `extendEnv` _) <$> evalImport i) γ0 is
-   go base empty ss0 αs0
+   vName <- val Nothing empty (V.Str (dottedName q))
+   go base (maplet "__name__" vName) ss0 αs0
    where
    go :: Env Vertex -> Env Vertex -> List (Stmt Vertex) -> Set Vertex -> m (Env Vertex)
    go _ γ' Nil _ = pure γ'
@@ -338,7 +339,7 @@ load q = do
       Just γ' -> pure γ'
       Nothing -> do
          γ_q <- foldM importInto primitives (predefinedDeps q)
-         γ' <- maybe (pure empty) (\defs' -> eval_module γ_q defs' empty) (Map.lookup q modules)
+         γ' <- maybe (pure empty) (\defs' -> eval_module γ_q q defs' empty) (Map.lookup q modules)
          subs <- submodulesEnv (Map.keys modules) q
          let loaded = subs <+> γ'
          modifyStore (\s -> s { modEnv = Map.insert q loaded s.modEnv })

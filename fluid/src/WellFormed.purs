@@ -27,7 +27,7 @@ import Util.Set ((\\), (∪))
 checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
 checkProgram modCxt baseCxt imports s = do
    γImp <- checkImports mainModule modCxt imports
-   snd <$> wellFormed mainModule (γImp `Map.union` baseCxt) s
+   snd <$> wellFormed mainModule (Map.insert "__name__" (VarStatus true) (γImp `Map.union` baseCxt)) s
 
 checkImports :: Name -> Map.Map ModuleName Cxt -> List S.Import -> Either String Cxt
 checkImports enclosing modCxt = foldM (\acc i -> (acc `extendCxtWith` _) <$> importCxt enclosing modCxt i) Map.empty
@@ -70,9 +70,9 @@ checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either S
 checkModule q modCxt γ (S.Module imports ss) = do
    γImp <- checkImports q modCxt imports
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
-      Nothing -> pure (Map.empty × S.Module imports Nil)
-      Just s -> wellFormed q (γImp `Map.union` γ) s <#> \(r × s') ->
-         delta r × S.Module imports (unSeq s')
+      Nothing -> pure (Map.singleton "__name__" true × S.Module imports Nil)
+      Just s -> wellFormed q (Map.insert "__name__" (VarStatus true) (γImp `Map.union` γ)) s <#> \(r × s') ->
+         Map.insert "__name__" true (delta r) × S.Module imports (unSeq s')
    where
    delta (Assigns δ) = δ
    delta Returns = Map.empty
