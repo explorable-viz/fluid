@@ -38,7 +38,9 @@ misc_cases =
    , { file: "lookup.fld", fwd_expect: """Just("sarah")""" }
    , { file: "map.fld", fwd_expect: "5 :| 7 :| 13 :| 15 :| 4 :| 3 :| -3 :| []" }
    , { file: "merge_sort.fld", fwd_expect: "1 :| 2 :| 3 :| []" }
+   , { file: "module/attr_access.fld", fwd_expect: "42" }
    , { file: "module/dotted_attr_access.fld", fwd_expect: "1" }
+   , { file: "module/from_import_multi.fld", fwd_expect: "3" }
    , { file: "module/from_import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "module/from_import_view.fld", fwd_expect: "MultiView(1 :| 2 :| [])" }
    , { file: "module/from_import_value.fld", fwd_expect: "1" }
@@ -46,6 +48,7 @@ misc_cases =
    , { file: "module/import_modules.fld", fwd_expect: "84" }
    , { file: "module/import_simple.fld", fwd_expect: "84" }
    , { file: "module/import_simple_unused.fld", fwd_expect: "84" }
+   , { file: "module/import_twice.fld", fwd_expect: "1" }
    , { file: "module/qualified_construct.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "module/sibling_submodules.fld", fwd_expect: "3" }
    , { file: "module/sibling_submodules_swapped.fld", fwd_expect: "3" }
