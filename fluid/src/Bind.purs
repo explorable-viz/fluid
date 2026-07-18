@@ -3,7 +3,7 @@ module Bind where
 import Prelude
 import Data.Foldable (intercalate)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (NonEmptyList, snoc, uncons)
+import Data.List.NonEmpty (NonEmptyList, snoc, toList, uncons)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, empty)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -20,6 +20,16 @@ dottedName = intercalate "."
 
 qual :: Name -> Var -> Name
 qual = snoc
+
+prefixOf :: Name -> Name -> Boolean
+prefixOf q q' = toList q `go` toList q'
+   where
+   go Nil _ = true
+   go _ Nil = false
+   go (x : xs) (y : ys) = x == y && go xs ys
+
+properPrefixOf :: Name -> Name -> Boolean
+properPrefixOf q q' = q `prefixOf` q' && q /= q'
 
 pathName :: Name -> String
 pathName = intercalate "/"

@@ -4,19 +4,19 @@ import Prelude
 
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
-import Bind (Var, dottedName, pathName)
+import Bind (Var, dottedName, pathName, prefixOf)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
 import Data.Foldable (foldM, foldl, intercalate)
-import Data.List (List(..), catMaybes, elem, mapMaybe, reverse, takeWhile, (:))
+import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), isJust)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
-import Data.Tuple (fst)
+import Data.Tuple (fst, snd)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -59,13 +59,17 @@ parents q = case NEL.fromList (NEL.unsnoc q).init of
    Nothing -> Nil
    Just q' -> parents q' <> (q' : Nil)
 
-importDeps :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => S.Import -> m (List ModuleName × List ModuleName)
-importDeps (S.Import q f) = do
+importDeps :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> S.Import -> m (List ModuleName × List ModuleName)
+importDeps enclosing (S.Import q f) = do
    ps <- probeAll (parents q)
    subs <- case f of
       Nothing -> pure Nil
       Just xs -> probeAll ((NEL.snoc q) <$> xs)
-   pure ((q : subs) × ps)
+   let
+      prefixEdges = case f of
+         Nothing -> filter (_ /= enclosing) (parents q)
+         Just _ -> filter (\p -> not (p `prefixOf` enclosing)) (parents q)
+   pure (((q : subs) <> prefixEdges) × (ps <> (q : subs)))
    where
    probeAll = map catMaybes <<< traverse (\m' -> probeModule m' <#> \b -> whenever b m')
 
@@ -80,7 +84,7 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
    go :: List ModuleName -> Set ModuleName -> ModuleName -> Either String (Set ModuleName)
    go path done q
       | Set.member q done = pure done
-      | q `elem` path = Left ("Cyclic module dependency: " <> intercalate " imports " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
+      | q `elem` path = Left ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
 
 type CheckedModules = Map ModuleName Cxt × Map ModuleName (S.Module (TyResult Ctx))
@@ -104,7 +108,7 @@ checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Ma
                  let γ = foldl (\acc' i -> acc' `Map.union` findWithDefault Map.empty i modCxt') baseCxt (predefinedDeps q)
                  δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q modCxt' γ mod)
                  λ <- classesOfModule q mod
-                 γImp <- checkImports modCxt' imports
+                 γImp <- checkImports q modCxt' imports
                  let subs = submodules (Map.keys modules) q
                  let clash = (Map.keys γImp ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
                  when (not Set.isEmpty clash)
@@ -116,8 +120,8 @@ checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Ma
 prepConfig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   pairs <- traverse importDeps imports
-   let importNames = pairs >>= \(es × ps) -> ps <> es
+   pairs <- traverse (importDeps mainModule) imports
+   let importNames = pairs >>= snd
    sCxt <- parseModuleGraph (predefined <> importNames)
    either throw pure (checkAcyclic sCxt.importGraph (pairs >>= fst))
    let moduleClassCtx = Map.insert "__NoArgs" { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
@@ -213,7 +217,7 @@ parseModuleGraph roots = do
       src <- loadFile fluidSrcPaths (File (pathName path <> fluidExtension))
       mod × _ <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
       λ <- either throw pure (classesOfModule path mod)
-      pairs <- case mod of S.Module is _ -> traverse importDeps is
+      pairs <- case mod of S.Module is _ -> traverse (importDeps path) is
       let edges = pairs >>= fst
-      let deps = predefinedDeps path <> (pairs >>= \(es × ps) -> ps <> es)
+      let deps = predefinedDeps path <> (pairs >>= snd)
       pure $ mod × λ × edges × deps

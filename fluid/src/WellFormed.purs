@@ -2,7 +2,7 @@ module WellFormed where
 
 import Prelude
 
-import Bind (Name, Var, dottedName)
+import Bind (Name, Var, dottedName, properPrefixOf)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either)
 import Data.Foldable (foldM, foldr, for_)
@@ -26,16 +26,19 @@ import Util.Set ((\\), (∪))
 
 checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
 checkProgram modCxt baseCxt imports s = do
-   γImp <- checkImports modCxt imports
+   γImp <- checkImports mainModule modCxt imports
    snd <$> wellFormed mainModule (γImp `Map.union` baseCxt) s
 
-checkImports :: Map.Map ModuleName Cxt -> List S.Import -> Either String Cxt
-checkImports modCxt = foldM (\acc i -> (acc `extendCxtWith` _) <$> importCxt modCxt i) Map.empty
+checkImports :: Name -> Map.Map ModuleName Cxt -> List S.Import -> Either String Cxt
+checkImports enclosing modCxt = foldM (\acc i -> (acc `extendCxtWith` _) <$> importCxt enclosing modCxt i) Map.empty
 
-importCxt :: Map.Map ModuleName Cxt -> S.Import -> Either String Cxt
-importCxt modCxt (S.Import q Nothing) =
+importCxt :: Name -> Map.Map ModuleName Cxt -> S.Import -> Either String Cxt
+importCxt enclosing modCxt (S.Import q Nothing) = do
+   when (enclosing `properPrefixOf` q)
+      $ throwError
+      $ "Module " <> dottedName enclosing <> " cannot import its own descendant " <> dottedName q
    pure (Map.singleton (NEL.head q) (loadsTo modCxt q (ModLoaded q (findWithDefault Map.empty q modCxt))))
-importCxt modCxt (S.Import q (Just xs)) = importFrom modCxt q xs
+importCxt _ modCxt (S.Import q (Just xs)) = importFrom modCxt q xs
 
 loadsTo :: Map.Map ModuleName Cxt -> ModuleName -> Entry -> Entry
 loadsTo modCxt q θ = case NEL.fromList init of
@@ -65,7 +68,7 @@ classesOfModule q (S.Module _ ss) =
 
 checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String (Ctx × S.Module (TyResult Ctx))
 checkModule q modCxt γ (S.Module imports ss) = do
-   γImp <- checkImports modCxt imports
+   γImp <- checkImports q modCxt imports
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure (Map.empty × S.Module imports Nil)
       Just s -> wellFormed q (γImp `Map.union` γ) s <#> \(r × s') ->

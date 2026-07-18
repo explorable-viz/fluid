@@ -50,13 +50,15 @@ illFormed_cases =
    , { file: "from_import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
    , { file: "from_import_unassigned.fld", expected_error: "Not definitely assigned: x" }
    , { file: "import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
-   , { file: "import_cycle.fld", expected_error: "Cyclic module dependency: module.cyc_a imports module.cyc_b imports module.cyc_a" }
-   , { file: "self_import.fld", expected_error: "Cyclic module dependency: module.selfy imports module.selfy" }
+   , { file: "import_cycle.fld", expected_error: "import cycle: module.cyc_a -> module.cyc_b -> module.cyc_a" }
+   , { file: "self_import.fld", expected_error: "import cycle: module.selfy -> module.selfy" }
    , { file: "match_exhaustive_assign.fld", expected_error: "Not definitely assigned: result" }
    , { file: "match_partial_def.fld", expected_error: "Not definitely assigned: result" }
    , { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }
+   , { file: "own_descendant_import.fld", expected_error: "Module module.od_pkg cannot import its own descendant module.od_pkg.sub\nChecking module module.od_pkg" }
    , { file: "reexport_from_import.fld", expected_error: "Cannot import name foo from module module.reexport_mid" }
    , { file: "reexport_import_alias.fld", expected_error: "Cannot import name attr_lib from module module.alias_mid" }
    , { file: "submodule_name_clash.fld", expected_error: "Submodule name clash in module module.clash_pkg: sub" }
+   , { file: "submodule_self_import.fld", expected_error: "import cycle: module.ssi.b -> module.ssi.b" }
    , { file: "use_before_import.fld", expected_error: "\"ParseError on line 2, column 6:\\nimports must precede statements\"\nLoading module use_before_import_mod" }
    ]
