@@ -115,7 +115,7 @@ checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Ma
                  when (not Set.isEmpty clash)
                     $ Left
                     $ "Submodule name clash in module " <> dottedName q <> ": " <> intercalate ", " (Set.toUnfoldable clash :: List Var)
-                 let bindings = subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
+                 let bindings = (if q == builtins then baseCxt else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
                  pure (Map.insert q bindings modCxt' × Map.insert q qmod qmods')
 
 prepConfig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config

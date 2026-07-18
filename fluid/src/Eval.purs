@@ -29,7 +29,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
-import ModuleGraph (ModuleName, predefinedDeps)
+import ModuleGraph (ModuleName, builtins, predefinedDeps)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
@@ -341,7 +341,7 @@ load q = do
          γ_q <- foldM importInto primitives (predefinedDeps q)
          γ' <- maybe (pure empty) (\defs' -> eval_module γ_q q defs' empty) (Map.lookup q modules)
          subs <- submodulesEnv (Map.keys modules) q
-         let loaded = subs <+> γ'
+         let loaded = (if q == builtins then primitives else empty) <+> subs <+> γ'
          modifyStore (\s -> s { modEnv = Map.insert q loaded s.modEnv })
          pure loaded
 

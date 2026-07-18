@@ -59,6 +59,7 @@ misc_cases =
    , { file: "module/namespace_import.fld", fwd_expect: "1" }
    , { file: "module/parent_after_child.fld", fwd_expect: "5" }
    , { file: "module/parent_uses_child.fld", fwd_expect: "6" }
+   , { file: "module/predefined_imports.fld", fwd_expect: "5" }
    , { file: "module/qualified_construct.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "module/sibling_submodules.fld", fwd_expect: "3" }
    , { file: "module/submodule_attr.fld", fwd_expect: "5" }
