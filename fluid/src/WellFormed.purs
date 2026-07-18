@@ -53,6 +53,7 @@ importFrom modCxt q = go
       rest <- go xs
       case Map.lookup x γ of
          Just (Mod q') -> pure (Map.insert x (ModLoaded q' (findWithDefault Map.empty q' modCxt)) rest)
+         Just (VarStatus false) -> throwError $ "Not definitely assigned: " <> x
          Just θ -> pure (Map.insert x θ rest)
          Nothing -> throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
 

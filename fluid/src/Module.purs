@@ -7,8 +7,8 @@ import Control.Monad.Reader (class MonadReader, ask, local)
 import Bind (Var, dottedName, pathName)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Bifunctor (lmap)
-import Data.Either (Either, either)
-import Data.Foldable (foldM, foldl)
+import Data.Either (Either(..), either)
+import Data.Foldable (foldM, foldl, intercalate)
 import Data.List (List(..), mapMaybe, (:))
 import Data.Map (Map)
 import Data.Map as Map
@@ -32,9 +32,9 @@ import ModuleGraph (DependencyGraph, ModuleName, builtins, predefined, predefine
 import Parse (importName, parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
-import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
+import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
-import Util (type (×), throw, throwLeft, whenever, withMsg, (×))
+import Util (type (×), throw, throwLeft, whenever, withMsg, (×), (∩))
 import Util.Map (constMap, keys, findWithDefault, restrict)
 import Util.Set ((∪))
 import Val (class HasModuleStore, extendEnv, modifyStore, Env)
@@ -70,11 +70,17 @@ checkModules graph modules baseCxt roots = foldM go (Map.empty × Map.empty) roo
            modCxt' × qmods' <- foldM go acc (findWithDefault Nil q graph)
            case Map.lookup q modules of
               Nothing -> pure (Map.insert q Map.empty modCxt' × qmods')
-              Just mod -> do
+              Just mod@(S.Module imports _) -> do
                  let γ = foldl (\acc' i -> acc' `Map.union` findWithDefault Map.empty i modCxt') baseCxt (predefinedDeps q)
                  δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q modCxt' γ mod)
                  λ <- classesOfModule q mod
-                 let bindings = submodules (Map.keys modules) q `Map.union` (Class <$> λ) `Map.union` (VarStatus true <$ δ)
+                 γImp <- checkImports modCxt' imports
+                 let subs = submodules (Map.keys modules) q
+                 let clash = (Map.keys γImp ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
+                 when (not Set.isEmpty clash)
+                    $ Left
+                    $ "Submodule name clash in module " <> dottedName q <> ": " <> intercalate ", " (Set.toUnfoldable clash :: List Var)
+                 let bindings = subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
                  pure (Map.insert q bindings modCxt' × Map.insert q qmod qmods')
 
 prepConfig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
