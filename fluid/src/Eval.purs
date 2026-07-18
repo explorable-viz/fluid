@@ -42,8 +42,7 @@ import Val (class HasModuleStore, getStore, modifyStore, BaseVal, DictRep(..), E
 
 -- Needs a better name.
 type GraphConfig =
-   { primitives :: Env Vertex
-   , n :: Int
+   { n :: Int
    , γ :: Env Vertex
    , classCtx :: Cxt
    }

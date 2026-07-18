@@ -139,7 +139,7 @@ prepConfig primitives fluidSrc = do
             , modules
             , classCtx: moduleClassCtx
             }
-      n × _ × primitives' × topLevelEnv <- flip runAllocT 0 do
+      n × _ × topLevelEnv <- flip runAllocT 0 do
          primitives' <- alloc primitives
          modules' <- traverse alloc moduleCxt.modules
          let mαs = Set.unions (vertices <$> Map.values modules')
@@ -154,7 +154,7 @@ prepConfig primitives fluidSrc = do
                     pure (γ1 `extendEnv` maplet "__name__" vName)
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
-         pure (primitives' × γ)
+         pure γ
       let
          baseCxt =
             constMap (VarStatus true) (keys primitives)
@@ -162,7 +162,7 @@ prepConfig primitives fluidSrc = do
       sty <- either throw pure (checkProgram modCxt baseCxt imports s)
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
-      let gconfig = { n, primitives: primitives', γ: restrict (fv e) topLevelEnv, classCtx: fqnKeyed fullClassCtx }
+      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classCtx: fqnKeyed fullClassCtx }
       pure { s, e, gconfig }
 
 -- Desugaring deferred to prepConfig so it runs under a populated class context.
