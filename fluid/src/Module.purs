@@ -2,7 +2,7 @@ module Module where
 
 import Prelude
 
-import Control.Monad.Except (class MonadError, catchError)
+import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
 import Bind (Var, dottedName, pathName)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
@@ -12,7 +12,7 @@ import Data.Foldable (foldM, foldl, intercalate)
 import Data.List (List(..), catMaybes, mapMaybe, (:))
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
@@ -22,7 +22,7 @@ import Effect.Exception (Error)
 import Eval (GraphConfig, evalImport, importInto)
 import Expr (Import(..)) as E
 import Expr (Stmt, fv)
-import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
+import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile, loadFileMaybe)
 
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -51,13 +51,22 @@ fqnKeyed m = Map.fromFoldable (reKey <$> (Map.toUnfoldable m :: List _))
 probeModule :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
 probeModule q = do
    FileCxt { fluidSrcPaths } <- ask
-   catchError (loadFile fluidSrcPaths (File (pathName q <> fluidExtension)) $> true) (\_ -> pure false)
+   isJust <$> loadFileMaybe fluidSrcPaths (File (pathName q <> fluidExtension))
+
+parents :: ModuleName -> List ModuleName
+parents q = case NEL.fromList (NEL.unsnoc q).init of
+   Nothing -> Nil
+   Just q' -> parents q' <> (q' : Nil)
 
 importDeps :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => S.Import -> m (List ModuleName)
-importDeps (S.Import q Nothing) = pure (q : Nil)
-importDeps (S.Import q (Just xs)) = do
-   subs <- traverse (\x -> let m' = NEL.snoc q x in probeModule m' <#> \b -> whenever b m') xs
-   pure (q : catMaybes subs)
+importDeps (S.Import q f) = do
+   ps <- probeAll (parents q)
+   subs <- case f of
+      Nothing -> pure Nil
+      Just xs -> probeAll ((NEL.snoc q) <$> xs)
+   pure (ps <> (q : Nil) <> subs)
+   where
+   probeAll = map catMaybes <<< traverse (\m' -> probeModule m' <#> \b -> whenever b m')
 
 submodules :: Set ModuleName -> ModuleName -> Cxt
 submodules known q = Map.fromFoldable (mapMaybe sub (Set.toUnfoldable known))
@@ -72,13 +81,13 @@ checkModules
    -> Cxt
    -> List ModuleName
    -> Either String CheckedModules
-checkModules graph modules baseCxt roots = foldM go (Map.empty × Map.empty) roots
+checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Map.empty) roots
    where
-   go :: CheckedModules -> ModuleName -> Either String CheckedModules
-   go acc@(modCxt × _) q
-      | Map.member q modCxt = pure acc
+   go :: Set ModuleName -> CheckedModules -> ModuleName -> Either String CheckedModules
+   go visiting acc@(modCxt × _) q
+      | Map.member q modCxt || Set.member q visiting = pure acc
       | otherwise = do
-           modCxt' × qmods' <- foldM go acc (findWithDefault Nil q graph)
+           modCxt' × qmods' <- foldM (go (Set.insert q visiting)) acc (findWithDefault Nil q graph)
            case Map.lookup q modules of
               Nothing -> pure (Map.insert q Map.empty modCxt' × qmods')
               Just mod@(S.Module imports _) -> do

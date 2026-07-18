@@ -70,14 +70,16 @@ infixr 5 prependFolder as </>
 fluidExtension :: String
 fluidExtension = ".fld"
 
-loadFile :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m String
-loadFile folders file = do
-   let paths = prependFolder <$> folders <*> [ file ]
-   result <- foldM step Nothing paths
-   case result of
-      Just contents -> pure contents
-      Nothing -> error ("File not found in any path: " <> show paths)
+loadFileMaybe :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m (Maybe String)
+loadFileMaybe folders file = foldM step Nothing (prependFolder <$> folders <*> [ file ])
    where
    step :: Maybe String -> File -> m (Maybe String)
    step (Just contents) _ = pure (Just contents)
    step Nothing path = loadFileFromPath path
+
+loadFile :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m String
+loadFile folders file = do
+   result <- loadFileMaybe folders file
+   case result of
+      Just contents -> pure contents
+      Nothing -> error ("File not found in any path: " <> show (prependFolder <$> folders <*> [ file ]))
