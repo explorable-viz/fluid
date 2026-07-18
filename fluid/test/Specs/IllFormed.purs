@@ -49,6 +49,8 @@ illFormed_cases =
    , { file: "from_import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
    , { file: "from_import_unassigned.fld", expected_error: "Not definitely assigned: x" }
    , { file: "import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
+   , { file: "import_cycle.fld", expected_error: "Cyclic module dependency: module.cyc_a imports module.cyc_b imports module.cyc_a" }
+   , { file: "self_import.fld", expected_error: "Cyclic module dependency: module.selfy imports module.selfy" }
    , { file: "match_exhaustive_assign.fld", expected_error: "Not definitely assigned: result" }
    , { file: "match_partial_def.fld", expected_error: "Not definitely assigned: result" }
    , { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }

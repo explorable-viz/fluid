@@ -9,13 +9,14 @@ import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
 import Data.Foldable (foldM, foldl, intercalate)
-import Data.List (List(..), catMaybes, mapMaybe, (:))
+import Data.List (List(..), catMaybes, elem, mapMaybe, reverse, takeWhile, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), isJust)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
+import Data.Tuple (fst)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -58,13 +59,13 @@ parents q = case NEL.fromList (NEL.unsnoc q).init of
    Nothing -> Nil
    Just q' -> parents q' <> (q' : Nil)
 
-importDeps :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => S.Import -> m (List ModuleName)
+importDeps :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => S.Import -> m (List ModuleName × List ModuleName)
 importDeps (S.Import q f) = do
    ps <- probeAll (parents q)
    subs <- case f of
       Nothing -> pure Nil
       Just xs -> probeAll ((NEL.snoc q) <$> xs)
-   pure (ps <> (q : Nil) <> subs)
+   pure ((q : subs) × ps)
    where
    probeAll = map catMaybes <<< traverse (\m' -> probeModule m' <#> \b -> whenever b m')
 
@@ -72,6 +73,15 @@ submodules :: Set ModuleName -> ModuleName -> Cxt
 submodules known q = Map.fromFoldable (mapMaybe sub (Set.toUnfoldable known))
    where
    sub m = let { init, last: x } = NEL.unsnoc m in whenever (NEL.fromList init == Just q) (x × Mod m)
+
+checkAcyclic :: DependencyGraph -> List ModuleName -> Either String Unit
+checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
+   where
+   go :: List ModuleName -> Set ModuleName -> ModuleName -> Either String (Set ModuleName)
+   go path done q
+      | Set.member q done = pure done
+      | q `elem` path = Left ("Cyclic module dependency: " <> intercalate " imports " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
+      | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
 
 type CheckedModules = Map ModuleName Cxt × Map ModuleName (S.Module (TyResult Ctx))
 
@@ -106,8 +116,10 @@ checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Ma
 prepConfig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   importNames <- join <$> traverse importDeps imports
+   pairs <- traverse importDeps imports
+   let importNames = pairs >>= \(es × ps) -> ps <> es
    sCxt <- parseModuleGraph (predefined <> importNames)
+   either throw pure (checkAcyclic sCxt.importGraph (pairs >>= fst))
    let moduleClassCtx = Map.insert "__NoArgs" { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
    programClasses <- either throw pure (classes mainModule s)
    fullClassCtx <- either throw pure (unionWith_mergeEq moduleClassCtx programClasses)
@@ -152,6 +164,7 @@ prepConfig primitives fluidSrc = do
 type SModuleCxt =
    { roots :: List ModuleName
    , graph :: DependencyGraph
+   , importGraph :: DependencyGraph
    , modules :: Map ModuleName (Raw S.Module)
    , classCtx :: Map Var ClassEntry
    }
@@ -165,38 +178,42 @@ parseModuleGraph
    => List ModuleName
    -> m SModuleCxt
 parseModuleGraph roots = do
-   graph × modules × classCtx <- collectModules Set.empty Map.empty Map.empty Map.empty roots
-   pure $ { roots, graph, modules, classCtx }
+   graph × importGraph × modules × classCtx <- collectModules Set.empty Map.empty Map.empty Map.empty Map.empty roots
+   pure $ { roots, graph, importGraph, modules, classCtx }
 
    where
 
    collectModules
       :: Set ModuleName
       -> DependencyGraph
+      -> DependencyGraph
       -> Map ModuleName (Raw S.Module)
       -> Map Var ClassEntry
       -> List ModuleName
-      -> m (DependencyGraph × Map ModuleName (Raw S.Module) × Map Var ClassEntry)
-   collectModules visited graph modules classCtx imports = case imports of
-      Nil -> pure $ (graph × modules × classCtx)
+      -> m (DependencyGraph × DependencyGraph × Map ModuleName (Raw S.Module) × Map Var ClassEntry)
+   collectModules visited graph importGraph modules classCtx imports = case imports of
+      Nil -> pure $ (graph × importGraph × modules × classCtx)
       mod : rest ->
          if Set.member mod visited then
-            collectModules visited graph modules classCtx rest
+            collectModules visited graph importGraph modules classCtx rest
          else do
-            mod' × λ × imports' <- parseAndCollect mod
+            mod' × λ × edges × deps <- parseAndCollect mod
             classCtx' <- either throw pure (unionWith_mergeEq classCtx λ)
             collectModules
                (Set.insert mod visited)
-               (Map.insert mod imports' graph)
+               (Map.insert mod deps graph)
+               (Map.insert mod edges importGraph)
                (Map.insert mod mod' modules)
                classCtx'
-               (imports' <> rest)
+               (deps <> rest)
 
-   parseAndCollect :: ModuleName -> m (Raw S.Module × Map Var ClassEntry × List ModuleName)
+   parseAndCollect :: ModuleName -> m (Raw S.Module × Map Var ClassEntry × List ModuleName × List ModuleName)
    parseAndCollect path = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (pathName path <> fluidExtension))
       mod × _ <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
       λ <- either throw pure (classesOfModule path mod)
-      deps <- case mod of S.Module is _ -> join <$> traverse importDeps is
-      pure $ mod × λ × (predefinedDeps path <> deps)
+      pairs <- case mod of S.Module is _ -> traverse importDeps is
+      let edges = pairs >>= fst
+      let deps = predefinedDeps path <> (pairs >>= \(es × ps) -> ps <> es)
+      pure $ mod × λ × edges × deps
