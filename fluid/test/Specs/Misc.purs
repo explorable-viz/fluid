@@ -43,6 +43,7 @@ misc_cases =
    , { file: "module/dotted_attr_access.fld", fwd_expect: "1" }
    , { file: "module/from_import_multi.fld", fwd_expect: "3" }
    , { file: "module/from_import_submodule.fld", fwd_expect: "1" }
+   , { file: "module/from_import_subclass.fld", fwd_expect: "6" }
    , { file: "module/from_import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "module/from_import_view.fld", fwd_expect: "MultiView(1 :| 2 :| [])" }
    , { file: "module/from_import_value.fld", fwd_expect: "1" }

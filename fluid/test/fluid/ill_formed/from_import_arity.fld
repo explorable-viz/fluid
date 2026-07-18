@@ -1,0 +1,2 @@
+from module.shape_lib import Derived
+Derived(1)
