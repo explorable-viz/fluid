@@ -1,0 +1,7 @@
+from module.shape_lib import Base
+
+@dataclass
+class Derived(Base):
+   y: Any
+
+0

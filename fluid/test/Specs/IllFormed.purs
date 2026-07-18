@@ -46,6 +46,7 @@ illFormed_cases :: Array IllFormedSpec
 illFormed_cases =
    [ { file: "bare_module.fld", expected_error: "module qual_lib is not a value" }
    , { file: "from_import_selective.fld", expected_error: "Unbound name: bar" }
+   , { file: "extend_imported_class.fld", expected_error: "Cannot extend imported class: Base" }
    , { file: "from_import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
    , { file: "from_import_unassigned.fld", expected_error: "Not definitely assigned: x" }
    , { file: "import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
@@ -54,6 +55,8 @@ illFormed_cases =
    , { file: "match_exhaustive_assign.fld", expected_error: "Not definitely assigned: result" }
    , { file: "match_partial_def.fld", expected_error: "Not definitely assigned: result" }
    , { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }
+   , { file: "reexport_from_import.fld", expected_error: "Cannot import name foo from module module.reexport_mid" }
+   , { file: "reexport_import_alias.fld", expected_error: "Cannot import name attr_lib from module module.alias_mid" }
    , { file: "submodule_name_clash.fld", expected_error: "Submodule name clash in module module.clash_pkg: sub" }
    , { file: "use_before_import.fld", expected_error: "\"ParseError on line 2, column 6:\\nimports must precede statements\"\nLoading module use_before_import_mod" }
    ]

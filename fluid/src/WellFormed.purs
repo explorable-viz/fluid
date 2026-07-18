@@ -225,13 +225,14 @@ wellFormed q γ (S.Match e ps) = do
    rFall = case fst (NEL.last ps) of
       S.PVar _ -> Returns
       _ -> Assigns Map.empty
-wellFormed _ γ (S.Dataclass c b xs) = do
+wellFormed q γ (S.Dataclass c b xs) = do
    when (length (nub xs) /= length xs) $ throwError $ "Duplicate field names in class: " <> c
    case b of
       Nothing -> pure unit
       Just base -> do
-         inherited <- maybe (throwError $ "Unknown class: " <> base) (pure <<< fields) (classFor γ base)
-         let clash = Set.intersection (Set.fromFoldable xs) (Set.fromFoldable inherited)
+         ce <- maybe (throwError $ "Unknown class: " <> base) pure (classFor γ base)
+         when (ce.mod /= q) $ throwError $ "Cannot extend imported class: " <> base
+         let clash = Set.intersection (Set.fromFoldable xs) (Set.fromFoldable (fields ce))
          when (not Set.isEmpty clash)
             $ throwError
             $ "Class " <> c <> " redeclares inherited field(s): "
