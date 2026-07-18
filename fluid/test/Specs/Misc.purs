@@ -41,12 +41,14 @@ misc_cases =
    , { file: "module/attr_access.fld", fwd_expect: "42" }
    , { file: "module/dotted_attr_access.fld", fwd_expect: "1" }
    , { file: "module/from_import_multi.fld", fwd_expect: "3" }
+   , { file: "module/from_import_submodule.fld", fwd_expect: "1" }
    , { file: "module/from_import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "module/from_import_view.fld", fwd_expect: "MultiView(1 :| 2 :| [])" }
    , { file: "module/from_import_value.fld", fwd_expect: "1" }
    , { file: "module/import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "module/import_modules.fld", fwd_expect: "84" }
    , { file: "module/import_simple.fld", fwd_expect: "84" }
+   , { file: "module/import_absolute_shadow.fld", fwd_expect: "2" }
    , { file: "module/import_simple_unused.fld", fwd_expect: "84" }
    , { file: "module/import_twice.fld", fwd_expect: "1" }
    , { file: "module/qualified_construct.fld", fwd_expect: "Coord(3, 4)" }

@@ -2,14 +2,14 @@ module Module where
 
 import Prelude
 
-import Control.Monad.Except (class MonadError)
+import Control.Monad.Except (class MonadError, catchError)
 import Control.Monad.Reader (class MonadReader, ask, local)
 import Bind (Var, dottedName, pathName)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
 import Data.Foldable (foldM, foldl, intercalate)
-import Data.List (List(..), mapMaybe, (:))
+import Data.List (List(..), catMaybes, mapMaybe, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -29,7 +29,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName, builtins, predefined, predefinedDeps)
-import Parse (importName, parseModule, parseProgram)
+import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfModule, mainModule)
@@ -47,6 +47,17 @@ fqnKeyed :: Map Var ClassEntry -> Cxt
 fqnKeyed m = Map.fromFoldable (reKey <$> (Map.toUnfoldable m :: List _))
    where
    reKey (name × ce) = dottedName (NEL.snoc ce.mod name) × Class ce
+
+probeModule :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
+probeModule q = do
+   FileCxt { fluidSrcPaths } <- ask
+   catchError (loadFile fluidSrcPaths (File (pathName q <> fluidExtension)) $> true) (\_ -> pure false)
+
+importDeps :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => S.Import -> m (List ModuleName)
+importDeps (S.Import q Nothing) = pure (q : Nil)
+importDeps (S.Import q (Just xs)) = do
+   subs <- traverse (\x -> let m' = NEL.snoc q x in probeModule m' <#> \b -> whenever b m') xs
+   pure (q : catMaybes subs)
 
 submodules :: Set ModuleName -> ModuleName -> Cxt
 submodules known q = Map.fromFoldable (mapMaybe sub (Set.toUnfoldable known))
@@ -86,7 +97,7 @@ checkModules graph modules baseCxt roots = foldM go (Map.empty × Map.empty) roo
 prepConfig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   let importNames = importName <$> imports
+   importNames <- join <$> traverse importDeps imports
    sCxt <- parseModuleGraph (predefined <> importNames)
    let moduleClassCtx = Map.insert "__NoArgs" { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
    programClasses <- either throw pure (classes mainModule s)
@@ -176,6 +187,7 @@ parseModuleGraph roots = do
    parseAndCollect path = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (pathName path <> fluidExtension))
-      mod × imports <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
+      mod × _ <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
       λ <- either throw pure (classesOfModule path mod)
-      pure $ mod × λ × (predefinedDeps path <> imports)
+      deps <- case mod of S.Module is _ -> join <$> traverse importDeps is
+      pure $ mod × λ × (predefinedDeps path <> deps)
