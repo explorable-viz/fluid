@@ -10,7 +10,7 @@
 	let { children } = $props();
 
 	onMount(() => {
-		document.body.setAttribute('data-interactive', '');
+		document.body.classList.add('app-ready');
 	});
 </script>
 
