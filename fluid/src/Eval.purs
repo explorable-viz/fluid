@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 
-import Bind (Var, dottedName, varAnon)
+import Bind (Var, dottedName, prefixOf, varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader, local)
 import DefiniteAssignment (class HasCxt, Cxt, askCxt, classFor, fields)
@@ -282,42 +282,39 @@ evalVal _ _ _ = pure Nothing
 
 eval_module :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ0 q (Module is ss0) αs0 = do
-   base <- foldM (\g i -> (g `extendEnv` _) <$> evalImport i) γ0 is
+   base <- foldM (\g i -> (g `extendEnv` _) <$> evalImport q i) γ0 is
    vName <- val Nothing empty (V.Str (dottedName q))
    go base (maplet "__name__" vName) ss0 αs0
    where
    go :: Env Vertex -> Env Vertex -> List (Stmt Vertex) -> Set Vertex -> m (Env Vertex)
    go _ γ' Nil _ = pure γ'
    go γ γ' (s : ss) αs = do
-      γ'' × αs' <- step γ γ' s αs
-      go γ (γ' <+> γ'') ss αs'
+      r <- evalStmt Nothing (γ <+> γ') s αs
+      case r of
+         Assigns γ'' αs' -> go γ (γ' <+> γ'') ss αs'
+         Returns _ -> throw "Module body cannot return"
 
-   step γ γ' (Def (VarDef σ e)) αs = do
-      v <- eval Nothing (γ <+> γ') e αs
-      γ'' × _ × αs' <- match v σ
-      pure (γ'' × αs')
-   step γ γ' (DefRec (RecDefs α ρ)) αs = do
-      γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
-      pure (γ'' × αs)
-   step _ _ _ αs = pure (empty × αs)
-
-evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Import -> m (Env Vertex)
-evalImport (Import q Nothing) = do
+evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Import -> m (Env Vertex)
+evalImport _ (Import q Nothing) = do
    γ_q <- load q
    v <- val Nothing empty (V.ModLoaded q γ_q)
-   v' <- loadsTo q v
+   v' <- loadsTo Nothing q v
    pure (maplet (NEL.head q) v')
-evalImport (Import q (Just xs)) = do
+evalImport enclosing (Import q (Just xs)) = do
    γ_q <- load q
+   v <- val Nothing empty (V.ModLoaded q γ_q)
+   _ <- loadsTo (Just enclosing) q v
    importsFrom γ_q xs
 
-loadsTo :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Val Vertex -> m (Val Vertex)
-loadsTo q v = case NEL.fromList init of
+loadsTo :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Maybe ModuleName -> ModuleName -> Val Vertex -> m (Val Vertex)
+loadsTo bound q v = case NEL.fromList init of
    Nothing -> pure v
-   Just q' -> do
-      ρ <- load q'
-      v' <- val Nothing empty (V.ModLoaded q' (ρ `extendEnv` maplet x v))
-      loadsTo q' v'
+   Just q'
+      | maybe false (q' `prefixOf` _) bound -> pure v
+      | otherwise -> do
+           ρ <- load q'
+           v' <- val Nothing empty (V.ModLoaded q' (ρ `extendEnv` maplet x v))
+           loadsTo bound q' v'
    where
    { init, last: x } = NEL.unsnoc q
 

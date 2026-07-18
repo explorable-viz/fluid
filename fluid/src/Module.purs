@@ -149,7 +149,7 @@ prepConfig primitives fluidSrc = do
                     modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
                     γ0 <- foldM importInto primitives' predefined
                     modifyStore (_ { builtinsEnv = γ0 })
-                    γ1 <- foldM (\γ (S.Import q f) -> (γ `extendEnv` _) <$> evalImport (E.Import q f)) empty imports
+                    γ1 <- foldM (\γ (S.Import q f) -> (γ `extendEnv` _) <$> evalImport mainModule (E.Import q f)) empty imports
                     vName <- val Nothing Set.empty (V.Str "__main__")
                     pure (γ1 `extendEnv` maplet "__name__" vName)
                )
