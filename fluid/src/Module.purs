@@ -35,9 +35,9 @@ import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResu
 import WellFormed (checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), throw, throwLeft, whenever, withMsg, (×))
-import Util.Map (constMap, keys, findWithDefault, restrict, (<+>))
+import Util.Map (constMap, keys, findWithDefault, restrict)
 import Util.Set ((∪))
-import Val (class HasModuleStore, modifyStore, Env)
+import Val (class HasModuleStore, extendEnv, modifyStore, Env)
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
@@ -106,7 +106,7 @@ prepConfig primitives fluidSrc = do
                ( do
                     modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
                     γ0 <- foldM importInto primitives' predefined
-                    foldM (\γ (S.Import q f) -> (γ <+> _) <$> evalImport (E.Import q f)) γ0 imports
+                    foldM (\γ (S.Import q f) -> (γ `extendEnv` _) <$> evalImport (E.Import q f)) γ0 imports
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure (primitives' × γ)

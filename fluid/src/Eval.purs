@@ -38,7 +38,7 @@ import Util.Map (unionWith_never, get, keys, lookup, lookup', maplet, restrict, 
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class HasModuleStore, getStore, modifyStore, BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, forDefs, val)
+import Val (class HasModuleStore, getStore, modifyStore, BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, extendEnv, forDefs, val)
 
 -- Needs a better name.
 type GraphConfig =
@@ -276,7 +276,7 @@ evalVal _ _ _ = pure Nothing
 
 eval_module :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ0 (Module is ss0) αs0 = do
-   base <- foldM (\g i -> (g <+> _) <$> evalImport i) γ0 is
+   base <- foldM (\g i -> (g `extendEnv` _) <$> evalImport i) γ0 is
    go base empty ss0 αs0
    where
    go :: Env Vertex -> Env Vertex -> List (Stmt Vertex) -> Set Vertex -> m (Env Vertex)
@@ -309,7 +309,7 @@ loadsTo q v = case NEL.fromList init of
    Nothing -> pure v
    Just q' -> do
       ρ <- load q'
-      v' <- val Nothing empty (V.ModLoaded q' (ρ <+> maplet x v))
+      v' <- val Nothing empty (V.ModLoaded q' (ρ `extendEnv` maplet x v))
       loadsTo q' v'
    where
    { init, last: x } = NEL.unsnoc q

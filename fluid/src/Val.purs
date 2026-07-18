@@ -165,6 +165,15 @@ instance Map (Env a) String (Val a) where
    insert k v (Env γ) = Env (insert k v γ)
    toUnfoldable (Env γ) = toUnfoldable γ
 
+extendEnv :: forall a. Env a -> Env a -> Env a
+extendEnv γ γ' = unionWith extendVal γ γ'
+
+extendVal :: forall a. Val a -> Val a -> Val a
+extendVal (Val _ _ (ModLoaded q γ)) (Val α' doc' (ModLoaded q' γ')) | q == q' = Val α' doc' (ModLoaded q (γ `extendEnv` γ'))
+extendVal (Val _ _ (Mod q)) v'@(Val _ _ (ModLoaded q' _)) | q == q' = v'
+extendVal v@(Val _ _ (ModLoaded q _)) (Val _ _ (Mod q')) | q == q' = v
+extendVal _ v' = v'
+
 data EnvStmt a = EnvStmt (Env a) (Stmt a)
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)

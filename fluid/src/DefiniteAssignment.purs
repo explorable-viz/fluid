@@ -41,6 +41,15 @@ class HasCxt m where
 
 data TyResult a = Returns | Assigns a
 
+extendCxtWith :: Cxt -> Cxt -> Cxt
+extendCxtWith γ γ' = Map.unionWith extendEntry γ γ'
+
+extendEntry :: Entry -> Entry -> Entry
+extendEntry (ModLoaded q γ) (ModLoaded q' γ') | q == q' = ModLoaded q (γ `extendCxtWith` γ')
+extendEntry (Mod q) θ'@(ModLoaded q' _) | q == q' = θ'
+extendEntry θ@(ModLoaded q _) (Mod q') | q == q' = θ
+extendEntry _ θ' = θ'
+
 overrideCtx :: Ctx -> Ctx -> Ctx
 overrideCtx = flip Map.union
 

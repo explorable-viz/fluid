@@ -16,7 +16,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (ClassEntry, Ctx, Entry(..), Cxt, TyResult(..), classFor, extendCxt, fields, mergeRes, overrideRes, unionWith_mergeEq)
+import DefiniteAssignment (ClassEntry, Ctx, Entry(..), Cxt, TyResult(..), classFor, extendCxt, extendCxtWith, fields, mergeRes, overrideRes, unionWith_mergeEq)
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
@@ -30,7 +30,7 @@ checkProgram modCxt baseCxt imports s = do
    snd <$> wellFormed mainModule (γImp `Map.union` baseCxt) s
 
 checkImports :: Map.Map ModuleName Cxt -> List S.Import -> Either String Cxt
-checkImports modCxt = foldM (\acc i -> (_ `Map.union` acc) <$> importCxt modCxt i) Map.empty
+checkImports modCxt = foldM (\acc i -> (acc `extendCxtWith` _) <$> importCxt modCxt i) Map.empty
 
 importCxt :: Map.Map ModuleName Cxt -> S.Import -> Either String Cxt
 importCxt modCxt (S.Import q Nothing) =
@@ -40,7 +40,7 @@ importCxt modCxt (S.Import q (Just xs)) = importFrom modCxt q xs
 loadsTo :: Map.Map ModuleName Cxt -> ModuleName -> Entry -> Entry
 loadsTo modCxt q θ = case NEL.fromList init of
    Nothing -> θ
-   Just q' -> loadsTo modCxt q' (ModLoaded q' (Map.insert x θ (findWithDefault Map.empty q' modCxt)))
+   Just q' -> loadsTo modCxt q' (ModLoaded q' (findWithDefault Map.empty q' modCxt `extendCxtWith` Map.singleton x θ))
    where
    { init, last: x } = NEL.unsnoc q
 
