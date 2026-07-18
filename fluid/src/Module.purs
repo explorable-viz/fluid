@@ -21,7 +21,7 @@ import DataType (cNoArgs)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Eval (GraphConfig, evalImport, importInto)
+import Eval (GraphConfig, classMembers, evalImport, importInto)
 import Expr (Import(..)) as E
 import Expr (Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile, loadFileMaybe)
@@ -152,7 +152,8 @@ prepConfig primitives fluidSrc = do
                     modifyStore (_ { builtinsEnv = γ0 })
                     γ1 <- foldM (\γ (S.Import q f) -> (γ `extendEnv` _) <$> evalImport mainModule (E.Import q f)) empty imports
                     vName <- val Nothing Set.empty (V.Str "__main__")
-                    pure (γ1 `extendEnv` maplet "__name__" vName)
+                    γλ <- classMembers mainModule
+                    pure (γ1 `extendEnv` maplet "__name__" vName `extendEnv` γλ)
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure γ
