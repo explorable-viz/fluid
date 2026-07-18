@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import '$lib/assets/css/styles.css';
 	import '@fontsource/roboto/latin-300.css';
 	import '@fontsource/roboto/latin-500.css';
@@ -10,6 +11,10 @@
 	import { headerLinks } from '$lib/config/nav';
 
 	let { children } = $props();
+
+	onMount(() => {
+		document.body.setAttribute('data-interactive', '');
+	});
 </script>
 
 <svelte:head>

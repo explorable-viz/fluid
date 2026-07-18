@@ -22,6 +22,7 @@ async function launchBrowser(browserName) {
       browser: browserName,
       headless: HEADLESS,
       defaultViewport: VIEWPORT,
+      protocolTimeout: 300000,
    })
 }
 
@@ -117,6 +118,7 @@ export async function checkWidthApprox(page, selector, expected, tolerance = 5) 
 }
 
 export async function clickToggle(page) {
+   await waitFor(page, "body[data-interactive]")
    await waitFor(page, "#grid.data-pane-hidden")
    const toggle = "button[title='Show data pane']"
    await waitFor(page, toggle)
