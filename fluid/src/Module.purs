@@ -17,6 +17,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
+import DataType (cNoArgs)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -43,12 +44,12 @@ import Val (BaseVal(..)) as V
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
--- The runtime class context is keyed by fully-qualified name (defining module
--- then class), matching the FQNs the desugar bakes into constructors.
-fqnKeyed :: Map Var ClassEntry -> Cxt
+-- The class context is keyed by fully-qualified name (defining module then
+-- class), matching the FQNs the desugar bakes into constructors.
+fqnKeyed :: Map Var ClassEntry -> Map Var ClassEntry
 fqnKeyed m = Map.fromFoldable (reKey <$> (Map.toUnfoldable m :: List _))
    where
-   reKey (name × ce) = dottedName (NEL.snoc ce.mod name) × Class ce
+   reKey (name × ce) = dottedName (NEL.snoc ce.mod name) × ce
 
 probeModule :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
 probeModule q = do
@@ -124,13 +125,13 @@ prepConfig primitives fluidSrc = do
    let importNames = pairs >>= snd
    sCxt <- parseModuleGraph (predefined <> importNames)
    either throw pure (checkAcyclic sCxt.importGraph (pairs >>= fst))
-   let moduleClassCtx = Map.insert "__NoArgs" { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
+   let moduleClassCtx = Map.insert (dottedName cNoArgs) { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
    programClasses <- either throw pure (classes mainModule s)
-   fullClassCtx <- either throw pure (unionWith_mergeEq moduleClassCtx programClasses)
+   fullClassCtx <- either throw pure (unionWith_mergeEq moduleClassCtx (fqnKeyed programClasses))
    modCxt × qualModules <- either throw pure
       (checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> importNames))
-   local (\(FileCxt r) -> FileCxt (r { classCtx = fqnKeyed fullClassCtx })) do
-      modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = fqnKeyed moduleClassCtx }))
+   local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> fullClassCtx })) do
+      modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> moduleClassCtx }))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qualModules
       let
          moduleCxt =
@@ -162,7 +163,7 @@ prepConfig primitives fluidSrc = do
       sty <- either throw pure (checkProgram modCxt baseCxt imports s)
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
-      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classCtx: fqnKeyed fullClassCtx }
+      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classCtx: Class <$> fullClassCtx }
       pure { s, e, gconfig }
 
 -- Desugaring deferred to prepConfig so it runs under a populated class context.
@@ -203,7 +204,7 @@ parseModuleGraph roots = do
             collectModules visited graph importGraph modules classCtx rest
          else do
             mod' × λ × edges × deps <- parseAndCollect mod
-            classCtx' <- either throw pure (unionWith_mergeEq classCtx λ)
+            classCtx' <- either throw pure (unionWith_mergeEq classCtx (fqnKeyed λ))
             collectModules
                (Set.insert mod visited)
                (Map.insert mod deps graph)
