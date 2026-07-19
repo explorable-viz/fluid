@@ -153,6 +153,7 @@ f_segments = "segments" :: FieldName
 f_size = "size" :: FieldName
 f_stackedBars = "stackedBars" :: FieldName
 f_tickLabels = "tickLabels" :: FieldName
+f_views = "views" :: FieldName
 f_width = "width" :: FieldName
 f_x = "x" :: FieldName
 f_y = "y" :: FieldName
