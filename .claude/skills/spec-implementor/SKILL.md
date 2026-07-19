@@ -41,6 +41,9 @@ Avoid comments unless they have substantial marginal value over the code.
 Grammatically, comments should be uninflected: a function that binds imported
 members might have the comment "bind imported members", rather than "binds".
 
+PR bodies likewise: only information of clear marginal value over the diff
+and commit history.
+
 ## Testing
 
 A test is a small program with an expected outcome: accepted, rejected, or
