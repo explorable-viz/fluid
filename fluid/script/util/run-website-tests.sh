@@ -11,5 +11,5 @@ if [ ! -f "test.mjs" ]; then
 fi
 
 echo "Running tests against $BASE_URL..."
-BASE_URL="$BASE_URL" node -e "import('./test.mjs').then(({ main }) => main()).then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })"
+BASE_URL="$BASE_URL" node -e "import('./test.mjs').then(({ main }) => main()).then(() => import('@fluid-org/fluid/script/webtest-lib.mjs')).then(lib => lib.closeBrowsers()).then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })"
 echo "Tests passed."

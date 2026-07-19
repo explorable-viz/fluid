@@ -26,6 +26,23 @@ async function launchBrowser(browserName) {
    })
 }
 
+// One browser per name for the whole process; launching is where flakiness lives.
+const browsers = {}
+
+async function getBrowser(browserName) {
+   if (!browsers[browserName]) {
+      browsers[browserName] = await launchBrowser(browserName)
+   }
+   return browsers[browserName]
+}
+
+export async function closeBrowsers() {
+   for (const name of Object.keys(browsers)) {
+      await browsers[name].close()
+      delete browsers[name]
+   }
+}
+
 export async function waitFor(page, selector, { visible = true } = {}) {
    log(`Waiting for ${selector}${visible ? "" : " (any)"}`)
    try {
@@ -129,7 +146,7 @@ export async function clickToggle(page) {
 async function browserTests(url, browserName, viewport, tests) {
    const label = viewport === MOBILE ? "mobile" : "desktop"
    log(`browserTests: ${browserName} (${label})`)
-   const browser = await launchBrowser(browserName)
+   const browser = await getBrowser(browserName)
    const page = await browser.newPage()
    const browserErrors = []
    const noteError = e => { log(`[browser error] ${e}`); browserErrors.push(e) }
@@ -142,7 +159,7 @@ async function browserTests(url, browserName, viewport, tests) {
       await page.goto(url)
       await test(page)
    }
-   await browser.close()
+   await page.close()
    if (browserErrors.length) testOutcome(false, `browser error(s): ${browserErrors.join("; ")}`)
 }
 
