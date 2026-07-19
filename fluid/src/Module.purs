@@ -125,20 +125,20 @@ prepConfig primitives fluidSrc = do
    let importNames = pairs >>= snd
    sCxt <- parseModuleGraph (predefined <> importNames)
    either throw pure (checkAcyclic sCxt.importGraph (pairs >>= fst))
-   let moduleClassCtx = Map.insert (dottedName cNoArgs) { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
+   let moduleClasses = Map.insert (dottedName cNoArgs) { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
    programClasses <- either throw pure (classes mainModule s)
-   fullClassCtx <- either throw pure (unionWith_mergeEq moduleClassCtx (fqnKeyed programClasses))
+   allClasses <- either throw pure (unionWith_mergeEq moduleClasses (fqnKeyed programClasses))
    modCxt × qualModules <- either throw pure
       (checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> importNames))
-   local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> fullClassCtx })) do
-      modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> moduleClassCtx }))
+   local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> allClasses })) do
+      modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> moduleClasses }))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qualModules
       let
          moduleCxt =
             { roots: sCxt.roots
             , graph: sCxt.graph
             , modules
-            , classCtx: moduleClassCtx
+            , classCtx: moduleClasses
             }
       n × _ × topLevelEnv <- flip runAllocT 0 do
          primitives' <- alloc primitives
@@ -164,7 +164,7 @@ prepConfig primitives fluidSrc = do
       check (Map.keys γTy == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
-      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classCtx: Class <$> fullClassCtx }
+      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classCtx: Class <$> allClasses }
       pure { s, e, gconfig }
 
 -- Desugaring deferred to prepConfig so it runs under a populated class context.
