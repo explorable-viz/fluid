@@ -36,7 +36,7 @@ import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
-import Util (type (×), check, throw, throwLeft, whenever, withMsg, (×), (∩), (⊆))
+import Util (type (×), check, throw, throwLeft, whenever, withMsg, (×), (∩))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
 import Util.Set ((∪), empty)
 import Val (class HasModuleStore, modifyStore, val, Env)
@@ -150,7 +150,7 @@ prepConfig primitives fluidSrc = do
                     modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
                     γ0 <- foldM importInto primitives' predefined
                     modifyStore (_ { builtinsEnv = γ0 })
-                    γ1 <- foldM (\γ (S.Import q f) -> (γ <+> _) <$> evalImport mainModule (E.Import q f)) empty imports
+                    γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
                     vName <- val Nothing Set.empty (V.Str "__main__")
                     pure (γ1 <+> maplet "__name__" vName)
                )
@@ -161,7 +161,7 @@ prepConfig primitives fluidSrc = do
             constMap (VarStatus true) (keys primitives)
                `Map.union` Map.singleton "__NoArgs" (Class { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil })
       γTy × sty <- either throw pure (checkProgram modCxt baseCxt imports s)
-      check (Map.keys γTy ⊆ Set.fromFoldable (keys topLevelEnv)) "reduced context mirrored in top-level environment"
+      check (Map.keys γTy == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
       let gconfig = { n, γ: restrict (fv e) topLevelEnv, classCtx: Class <$> fullClassCtx }

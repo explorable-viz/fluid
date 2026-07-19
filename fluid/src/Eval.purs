@@ -8,7 +8,7 @@ import Control.Monad.Reader (class MonadReader, local)
 import DefiniteAssignment (class HasCxt, Cxt, askCxt, classFor, fields)
 import Data.Array ((..))
 import Data.List (List(..), find, foldM, length, snoc, unzip, zip, (:))
-import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
+import Data.List.NonEmpty (head, snoc, unsnoc, fromList) as NEL
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (unwrap)
@@ -34,7 +34,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, absurd, check, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
-import Util.Map (unionWith_never, get, keys, lookup, lookup', maplet, restrict, (<+>))
+import Util.Map (unionWith_never, delete, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
@@ -285,7 +285,7 @@ evalVal _ _ _ = pure Nothing
 
 eval_module :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ0 q (Module is ss0) αs0 = do
-   base <- foldM (\g i -> (g <+> _) <$> evalImport q i) γ0 is
+   base <- foldM (evalImport q) γ0 is
    vName <- val Nothing empty (V.Str (dottedName q))
    go base (maplet "__name__" vName) ss0 αs0
    where
@@ -297,15 +297,17 @@ eval_module γ0 q (Module is ss0) αs0 = do
          Assigns γ'' αs' -> go γ (γ' <+> γ'') ss αs'
          Returns _ -> throw "Module body cannot return"
 
-evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Import -> m (Env Vertex)
-evalImport _ (Import q Nothing) = do
+-- Transforms the accumulated environment: the erasure of the static import extension,
+-- so a name that statically acquires a module entry loses any value binding.
+evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> Import -> m (Env Vertex)
+evalImport _ γ (Import q Nothing) = do
    _ <- load q
    loadAncestors Nothing q
-   pure empty
-evalImport enclosing (Import q (Just xs)) = do
+   pure (delete (NEL.head q) γ)
+evalImport enclosing γ (Import q (Just xs)) = do
    γ_q <- load q
    loadAncestors (Just enclosing) q
-   importsFrom q γ_q xs
+   importsFrom q γ_q γ xs
 
 loadAncestors :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Maybe ModuleName -> ModuleName -> m Unit
 loadAncestors bound q = case NEL.fromList (NEL.unsnoc q).init of
@@ -314,18 +316,15 @@ loadAncestors bound q = case NEL.fromList (NEL.unsnoc q).init of
       | maybe false (q' `prefixOf` _) bound -> pure unit
       | otherwise -> void (load q') *> loadAncestors bound q'
 
-importsFrom :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> List Var -> m (Env Vertex)
-importsFrom q γ_q = go
+importsFrom :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> Env Vertex -> List Var -> m (Env Vertex)
+importsFrom q γ_q = foldM step
    where
-   go Nil = pure empty
-   go (x : xs) = do
-      rest <- go xs
-      case lookup x γ_q of
-         Just v -> pure (maplet x v <+> rest)
-         Nothing -> do
-            { modules } <- getStore
-            when (Map.member (NEL.snoc q x) modules) (void (load (NEL.snoc q x)))
-            pure rest
+   step γ x = case lookup x γ_q of
+      Just v -> pure (γ <+> maplet x v)
+      Nothing -> do
+         { modules } <- getStore
+         when (Map.member (NEL.snoc q x) modules) (void (load (NEL.snoc q x)))
+         pure (delete x γ)
 
 importInto :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
 importInto γ q = (γ <+> _) <$> load q
