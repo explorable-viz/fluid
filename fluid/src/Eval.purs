@@ -5,7 +5,7 @@ import Prelude hiding (absurd, apply)
 import Bind (Var, dottedName, prefixOf, varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader, local)
-import DefiniteAssignment (class HasCxt, Cxt, Entry(..), askCxt, classFor, fields)
+import DefiniteAssignment (class HasCxt, Cxt, askCxt, classFor, fields)
 import Data.Array ((..))
 import Data.List (List(..), find, foldM, length, snoc, unzip, zip, (:))
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
@@ -16,8 +16,8 @@ import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
-import Data.Tuple (Tuple, curry, snd)
-import DataType (arity, checkArity, consistentWith, dataType, showCtr, simpleName)
+import Data.Tuple (curry, snd)
+import DataType (arity, checkArity, consistentWith, dataType, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -287,8 +287,7 @@ eval_module :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m =
 eval_module γ0 q (Module is ss0) αs0 = do
    base <- foldM (\g i -> (g <+> _) <$> evalImport q i) γ0 is
    vName <- val Nothing empty (V.Str (dottedName q))
-   γ_λ <- classMembers q
-   go base (γ_λ <+> maplet "__name__" vName) ss0 αs0
+   go base (maplet "__name__" vName) ss0 αs0
    where
    go :: Env Vertex -> Env Vertex -> List (Stmt Vertex) -> Set Vertex -> m (Env Vertex)
    go _ γ' Nil _ = pure γ'
@@ -297,18 +296,6 @@ eval_module γ0 q (Module is ss0) αs0 = do
       case r of
          Assigns γ'' αs' -> go γ (γ' <+> γ'') ss αs'
          Returns _ -> throw "Module body cannot return"
-
--- Sentinel members (unused).
-classMembers :: forall m. HasCxt m => MonadWithGraphAlloc m => ModuleName -> m (Env Vertex)
-classMembers q = do
-   λ <- askCxt
-   foldM addClass (empty :: Env Vertex) (Map.toUnfoldable λ :: List (Tuple Var Entry))
-   where
-   addClass γ (fqn × Class ce)
-      | ce.mod == q = do
-           v <- val Nothing empty (V.Cls ce)
-           pure (γ <+> maplet (simpleName fqn) v)
-   addClass γ _ = pure γ
 
 evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Import -> m (Env Vertex)
 evalImport _ (Import q Nothing) = do

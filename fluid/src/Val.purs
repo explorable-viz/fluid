@@ -10,7 +10,7 @@ import Control.Monad.Reader (class MonadReader, ReaderT)
 import Control.Monad.State (StateT)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Writer (WriterT)
-import DefiniteAssignment (class HasCxt, ClassEntry)
+import DefiniteAssignment (class HasCxt)
 import Data.Array (concat, (!!))
 import Data.Map (Map)
 import Data.Map as Map
@@ -60,7 +60,6 @@ data BaseVal a
    | Dictionary (DictRep a)
    | Matrix (MatrixRep a)
    | Fun (Fun a)
-   | Cls ClassEntry
 
 val :: forall m. MonadWithGraphAlloc m => Maybe (Val Vertex) -> Set Vertex -> BaseVal Vertex -> m (Val Vertex)
 val doc_opt = new (flip Val doc_opt)
@@ -252,7 +251,6 @@ instance Apply BaseVal where
    apply (Dictionary fxvs) (Dictionary xvs) = Dictionary (fxvs <*> xvs)
    apply (Matrix fm) (Matrix m) = Matrix (fm <*> m)
    apply (Fun ff) (Fun f) = Fun (ff <*> f)
-   apply (Cls c) (Cls c') = Cls (c { mod = c.mod ≜ c'.mod, base = c.base ≜ c'.base, fields = c.fields ≜ c'.fields })
    apply _ _ = shapeMismatch unit
 
 instance Apply Fun where
@@ -364,7 +362,6 @@ instance BoundedJoinSemilattice a => Expandable (BaseVal a) (Raw BaseVal) where
    expand (Constr c vs) (Constr c' us) = Constr (c ≜ c') (expand vs us)
    expand (Matrix m) (Matrix m') = Matrix (expand m m')
    expand (Fun φ) (Fun φ') = Fun (expand φ φ')
-   expand (Cls c) (Cls c') = Cls (c { mod = c.mod ≜ c'.mod, base = c.base ≜ c'.base, fields = c.fields ≜ c'.fields })
    expand _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
@@ -408,7 +405,6 @@ instance Vertices (BaseVal Vertex) where
    vertices (Dictionary d) = vertices d
    vertices (Matrix m) = vertices m
    vertices (Fun f) = vertices f
-   vertices (Cls _) = empty
 
 instance Vertices (DictRep Vertex) where
    vertices (DictRep d) = foldMap (\k (α × v) -> vertices (DictKey (k × α)) ∪ vertices v) (unwrap d)
