@@ -297,7 +297,7 @@ eval_module γ0 q (Module is ss0) αs0 = do
          Assigns γ'' αs' -> go γ (γ' <+> γ'') ss αs'
          Returns _ -> throw "Module body cannot return"
 
--- Binds imported value members and deletes bindings for names that now denote modules.
+-- Bind imported value members; delete bindings for names that now denote modules.
 evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> Import -> m (Env Vertex)
 evalImport _ γ (Import q Nothing) = do
    _ <- load q
