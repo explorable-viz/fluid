@@ -56,27 +56,6 @@ snd = constrArg (last cPair) 1
 just :: Setter (Val (SelStates 𝔹)) 𝔹
 just = constr (last cJust)
 
-multiView_views :: SelSetter Val Val
-multiView_views = constrArg (last cMultiView) 0
-
-multiViewEntry :: Int -> SelSetter Val Val
-multiViewEntry n = listElement n >>> multiView_views
-
-lineChart_plots :: SelSetter Val Val
-lineChart_plots = constrArg (last cLineChart) 3
-
-linePlot_points :: SelSetter Val Val
-linePlot_points = constrArg (last cLinePlot) 1
-
-linePoint :: Int -> SelSetter Val Val
-linePoint i = listElement i >>> linePlot_points
-
-barChart_stackedBars :: SelSetter Val Val
-barChart_stackedBars = constrArg (last cBarChart) 3
-
-scatterPlot_points :: SelSetter Val Val
-scatterPlot_points = constrArg (last cScatterPlot) 1
-
 -- The index-dependent selectors, closed over field positions resolved by name.
 type Selectors =
    { multiViewEntry :: Int -> SelSetter Val Val
@@ -91,10 +70,10 @@ mkSelectors :: (Name -> FieldName -> Int) -> Selectors
 mkSelectors ix =
    { multiViewEntry: \n -> listElement n >>> constrArg (last cMultiView) (ix cMultiView f_views)
    , paragraphEntry: \n -> listElement n >>> constrArg (last cParagraph) (ix cParagraph f_fragments)
-   , barChart_stackedBars: constrArg (last cBarChart) (ix cBarChart f_stackedBars)
-   , lineChart_plots: constrArg (last cLineChart) (ix cLineChart f_plots)
+   , barChart_stackedBars: \s -> constrArg (last cBarChart) (ix cBarChart f_stackedBars) s
+   , lineChart_plots: \s -> constrArg (last cLineChart) (ix cLineChart f_plots) s
    , linePoint: \i -> listElement i >>> constrArg (last cLinePlot) (ix cLinePlot f_points)
-   , scatterPlot_points: constrArg (last cScatterPlot) (ix cScatterPlot f_points)
+   , scatterPlot_points: \s -> constrArg (last cScatterPlot) (ix cScatterPlot f_points) s
    }
 
 barSegment :: Int -> Int -> SelSetter Val Val

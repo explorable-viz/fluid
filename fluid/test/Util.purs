@@ -3,7 +3,8 @@ module Test.Util where
 import Prelude hiding (absurd, compare)
 
 import App.Util (Selector, getPersistent, unselected)
-import App.Util.Selector (sel𝔹)
+import App.Util.Selector (Selectors, mkSelectors, sel𝔹)
+import DataType (fieldIndex)
 import Data.Array (null) as Array
 import Data.Set as Set
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
@@ -28,16 +29,16 @@ import DefiniteAssignment (class HasCxt)
 import SExpr (Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, log', spyWhen, throw, throwLeft, withMsg, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, definitely, log', spyWhen, throw, throwLeft, withMsg, (×))
 import Util.Map (keys, restrict)
 import Val (class HasModuleStore, class Ann, Env, EnvStmt(..), Val)
 
 type TestSuite m = Array (String × m Unit)
 
 type SelectionSpec =
-   { δv :: Selector Val
+   { δv :: Selectors -> Selector Val
    , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
-   , bwd_expect :: Maybe (Selector Env) -- Nothing for tests that don't perturb output
+   , bwd_expect :: Maybe (Selectors -> Selector Env) -- Nothing for tests that don't perturb output
    , inputs :: Array String -- data inputs to slice forward through; [] = all (no restriction)
    }
 
@@ -89,8 +90,9 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
    let EnvStmt γ_raw s_raw = erase graphed.inα
    let inputs' = if Array.null inputs then keys γ_raw else Set.fromFoldable inputs
 
+   let sels = mkSelectors (\c f -> definitely "field in class" (fieldIndex gconfig.classCtx c f))
    let v = map (const top) outα :: Val 𝔹
-   let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
+   let out0 = fst (δv sels (const unselected <$> v)) <#> getPersistent
 
    EnvStmt in_γ _ <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
@@ -101,7 +103,7 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
    case bwd_expect of
       Nothing -> pure unit
       Just sel -> do
-         let expected = sel𝔹 sel in_γ
+         let expected = sel𝔹 (sel sels) in_γ
          unless (in_γ ≽ expected) $
             throw ("bwd_expect mismatch:\nactual in_γ\n" <> prettyP in_γ <> "\nexpected (sel𝔹)\n" <> prettyP expected)
    unless (null fwd_expect) do

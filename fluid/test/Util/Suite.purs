@@ -4,7 +4,7 @@ import Prelude
 
 import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
-import App.Util.Selector (sel𝔹)
+import App.Util.Selector (Selectors, mkSelectors, sel𝔹)
 import App.View.Util (Fig, Options)
 import Bind (Bind)
 import Control.Monad.Error.Class (class MonadError, catchError)
@@ -37,17 +37,17 @@ type TestSpec =
 
 type TestBwdSpec =
    { file :: String
-   , bwd_expect :: Selector Env
-   , δv :: Selector Val
+   , bwd_expect :: Selectors -> Selector Env
+   , δv :: Selectors -> Selector Val
    , fwd_expect :: String
    , inputs :: Array String
    }
 
 type TestLinkedOutputsSpec =
    { spec :: Options
-   , δ_out :: Selector Val
-   , out_expect :: Selector Val
-   , inert_expect :: Maybe (Selector Val)
+   , δ_out :: Selectors -> Selector Val
+   , out_expect :: Selectors -> Selector Val
+   , inert_expect :: Selectors -> Maybe (Selector Val)
    , file :: String
    }
 
@@ -65,7 +65,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
    asTest { file, fwd_expect } = do
-      test (File file) primitives { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: Nothing, inputs: [] } (n × is_bench)
+      test (File file) primitives { δv: \_ -> identity >>> (_ × Persistent), fwd_expect, bwd_expect: Nothing, inputs: [] } (n × is_bench)
 
 bwdSuite :: forall m. MonadAff m => MonadError Error m => HasCxt m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array TestBwdSpec -> BenchSuite m
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
@@ -79,11 +79,13 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => HasCxt m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect, inert_expect, file } = do
    fluidSrc <- loadFile spec.fluidSrcPaths (File file)
-   fig <- loadFig spec fluidSrc <#> selectOutput δ_out
+   fig0 <- loadFig spec fluidSrc
+   let sels = mkSelectors fig0.resolveField
+   let fig = selectOutput (δ_out sels) fig0
    v <- logTimeWhen timing.selectionResult file \_ ->
       pure (selectionResult fig).v
-   checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (fst $ out_expect (botOf <$> v))
-   for_ inert_expect \sel -> checkEq "inert" "inert_expect" (isInert <$> v) (sel𝔹 sel v)
+   checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (fst $ out_expect sels (botOf <$> v))
+   for_ (inert_expect sels) \sel -> checkEq "inert" "inert_expect" (isInert <$> v) (sel𝔹 sel v)
    pure fig
 
 linkedOutputsSuite :: forall m. MonadAff m => MonadError Error m => HasCxt m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array TestLinkedOutputsSpec -> Array (String × m Unit)
