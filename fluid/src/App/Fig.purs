@@ -5,10 +5,11 @@ import Prelude hiding (absurd, compare)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
 import App.Util.Selector (envVal, ViewSetter)
-import App.View (view')
+import App.View (view', mkViews)
 import App.View.Util (Direction(..), Fig, Options, HTMLId, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
+import DataType (fieldIndex)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Maybe (Maybe(..), maybe)
@@ -36,7 +37,7 @@ import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive.Defs (primitives)
 import Test.Util.Debug (tracing)
-import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
+import Util (type (×), Endo, absurd, definitely, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (class HasModuleStore, Env(..), EnvStmt(..), Val(..), asVal)
@@ -169,12 +170,13 @@ drawFig divId fig@{ spec: options } = do
 
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
    sequence_ $ flip mapWithKey (unwrap ι) \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' options str.intermediate (map to𝕊 <$> v) }
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' views options str.intermediate (map to𝕊 <$> v) }
          (selectIntermediate (Vertex α) >>> redraw)
    where
+   views = mkViews fig.resolveField
    { v, γ, ι } = selectionResult fig
-   out_view = unsafePartial $ view' options str.output v
-   in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' options) γ)
+   out_view = unsafePartial $ view' views options str.output v
+   in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' views options) γ)
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
    unused = keys fig.ι \\ keys ι
    prefix = divId <> "-" <> str.intermediate
@@ -269,6 +271,7 @@ loadFig options@{ inputs, linking } fluidSrc = do
       , intermediate_views: empty
       , in_roots
       , inerts: inertFwd ∩ inertBwd
+      , resolveField: \c f -> definitely "field in class" (fieldIndex gconfig.classCtx c f)
       }
 
 ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)

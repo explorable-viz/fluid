@@ -102,31 +102,31 @@ mkViews ix =
       _ -> typeError u "ScatterPlot"
 
 -- TODO: merge with 'view' below.
-view' :: Partial => Options -> String -> Val (SelStates 𝕊) -> View
-view' options title v@(Val _ v_opt _) =
-   pack $ DocView { doc: viewParagraph <$> v_opt, view: view options title v }
+view' :: Partial => Views -> Options -> String -> Val (SelStates 𝕊) -> View
+view' views options title v@(Val _ v_opt _) =
+   pack $ DocView { doc: viewParagraph <$> v_opt, view: view views options title v }
    where
    viewParagraph (Val _ _ (Constr c (u : Nil))) | c == cParagraph =
-      Paragraph (view options "" <$> from u)
+      Paragraph (view views options "" <$> from u)
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- TODO: given the typeError clause, Partial no longer needed
-view :: Partial => Options -> String -> Val (SelStates 𝕊) -> View
-view options title v@(Val α _ u') = case u' of
+view :: Partial => Views -> Options -> String -> Val (SelStates 𝕊) -> View
+view views options title v@(Val α _ u') = case u' of
    Int n -> pack (Text (show n × α))
    Float n -> pack (Text (show n × α))
    Str str -> pack (Text (str × α))
    Constr c (u : Nil)
       | c == cText -> pack (from u :: Text)
-      | c == cMultiView -> pack (MultiView (view options "" <$> from u))
-      | c == cParagraph -> pack (Paragraph (view options "" <$> from u))
+      | c == cMultiView -> pack (MultiView (view views options "" <$> from u))
+      | c == cParagraph -> pack (Paragraph (view views options "" <$> from u))
    Constr c (_ : _ : Nil)
       -- more consistent with other views for Link to take single argument of record type
       | c == cLink -> pack (from v :: Link)
    Constr c _
-      | c == cBarChart -> pack (from v :: BarChart)
-      | c == cScatterPlot -> pack (from v :: ScatterPlot)
-      | c == cLineChart -> pack (from v :: LineChart)
+      | c == cBarChart -> pack (views.decodeBarChart v)
+      | c == cScatterPlot -> pack (views.decodeScatterPlot v)
+      | c == cLineChart -> pack (views.decodeLineChart v)
       | c == cNil || c == cCons ->
            if tableView then
               let
@@ -136,7 +136,7 @@ view options title v@(Val α _ u') = case u' of
                  rows = arrayDictToArray2 colNames records <#> map snd
               in
                  pack (TableView { title, rowFilter, colNames, rows })
-           else pack (MultiView $ view options "" <$> vs)
+           else pack (MultiView $ view views options "" <$> vs)
            where
            tableView = case A.uncons vs of
               Just { head: Val _ _ (Dictionary _) } -> true
@@ -150,7 +150,7 @@ view options title v@(Val α _ u') = case u' of
    _ -> typeError u' "Viewable"
    where
    viewDict :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View × View)
-   viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view options k v'
+   viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view views options k v'
 
 class Reflect a b where
    from :: Partial => a -> b
@@ -172,17 +172,6 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Se
       , height: P.unpack int (snd (get f_height r))
       }
 
-instance Reflect (Val (SelStates 𝕊)) BarChart where
-   from (Val _ _ u) = case u of
-      Constr c (caption : size : tickLabels : stackedBars : legend : Nil) | c == cBarChart -> BarChart
-         { caption: P.unpack string caption
-         , size: dict from size
-         , tickLabels: dict from tickLabels
-         , stackedBars: dict from <$> from stackedBars
-         , legend: P.unpack boolean legend
-         }
-      _ -> typeError u "BarChart"
-
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
    from r = StackedBar
       { x: P.unpack string (snd (get f_x r))
@@ -195,24 +184,6 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) Segment where
       { y: P.unpack string (snd (get f_y r))
       , z: get_intOrNumber f_z r
       }
-
-instance Reflect (Val (SelStates 𝕊)) LineChart where
-   from (Val _ _ u) = case u of
-      Constr c (size : tickLabels : caption : plots : Nil) | c == cLineChart -> LineChart
-         { size: dict from size
-         , tickLabels: dict from tickLabels
-         , caption: P.unpack string caption
-         , plots: from <$> (from plots :: Array (Val (SelStates 𝕊)))
-         }
-      _ -> typeError u "LineChart"
-
-instance Reflect (Val (SelStates 𝕊)) LinePlot where
-   from (Val _ _ u) = case u of
-      Constr c (name : points : Nil) | c == cLinePlot -> LinePlot
-         { name: P.unpack string name
-         , points: dict from <$> from points
-         }
-      _ -> typeError u "LinePlot"
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Number) where
    from r = Point
@@ -231,15 +202,6 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Orientat
       { x: P.unpack orientation (snd (get f_x r))
       , y: P.unpack orientation (snd (get f_y r))
       }
-
-instance Reflect (Val (SelStates 𝕊)) ScatterPlot where
-   from (Val _ _ u) = case u of
-      Constr c (caption : points : labels : Nil) | c == cScatterPlot -> ScatterPlot
-         { caption: P.unpack string caption
-         , points: dict from <$> from points
-         , labels: dict from labels
-         }
-      _ -> typeError u "ScatterPlot"
 
 instance Reflect (Val (SelStates 𝕊)) Text where
    from (Val α _ v) = case v of

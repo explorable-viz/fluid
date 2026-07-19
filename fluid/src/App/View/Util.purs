@@ -6,7 +6,8 @@ import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetS
 import App.Util.Selector (dictVal)
 import App.View.Util.D3 (create, isEmpty, on, rootSelect, select, setAttrs)
 import App.View.Util.D3 as D3
-import Bind (Var, (↦))
+import Bind (Name, Var, (↦))
+import DataType (FieldName)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..))
 import Data.Argonaut.Decode.Decoders (decodeString)
 import Data.Either (Either(..))
@@ -156,6 +157,7 @@ type Fig =
    , out_view :: Maybe View
    , intermediate_views :: Dict (Maybe View)
    , inerts :: Set DVertex
+   , resolveField :: Name -> FieldName -> Int -- field position by name, from the class declarations
    }
 
 -- ======================
