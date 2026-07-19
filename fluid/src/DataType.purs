@@ -103,6 +103,9 @@ arity γ c = do
    DataType _ sigs <- dataType γ c
    lookup c sigs
 
+-- A constructor's fields resolved to their positions by name.
+type FieldIndex = Name -> FieldName -> Int
+
 fieldIndex :: Cxt -> Name -> FieldName -> Maybe Int
 fieldIndex γ c field = do
    ce <- classFor γ (dottedName c)

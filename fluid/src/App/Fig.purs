@@ -5,7 +5,7 @@ import Prelude hiding (absurd, compare)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
 import App.Util.Selector (envVal, mkSelectors, ViewSetter)
-import App.View (view', mkViews)
+import App.View (view')
 import App.View.Util (Direction(..), Fig, Options, HTMLId, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
@@ -170,14 +170,13 @@ drawFig divId fig@{ spec: options } = do
 
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
    sequence_ $ flip mapWithKey (unwrap ι) \α v ->
-      drawView sels { divId: prefix, suffix: α, view: unsafePartial $ view' views options str.intermediate (map to𝕊 <$> v) }
+      drawView sels { divId: prefix, suffix: α, view: unsafePartial $ view' fig.fieldIndex options str.intermediate (map to𝕊 <$> v) }
          (selectIntermediate (Vertex α) >>> redraw)
    where
-   views = mkViews fig.fieldIndex
    sels = mkSelectors fig.fieldIndex
    { v, γ, ι } = selectionResult fig
-   out_view = unsafePartial $ view' views options str.output v
-   in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' views options) γ)
+   out_view = unsafePartial $ view' fig.fieldIndex options str.output v
+   in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' fig.fieldIndex options) γ)
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
    unused = keys fig.ι \\ keys ι
    prefix = divId <> "-" <> str.intermediate
