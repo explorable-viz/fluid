@@ -119,7 +119,7 @@ instance Viewable MatrixView Unit where
       createCells matrix rootElement
       createBorders matrix rootElement
       pure rootElement
-   setSelection _ (MatrixView { matrix }) select rootElement = do
+   setSelection _ _ (MatrixView { matrix }) select rootElement = do
       setCellSelection matrix select rootElement
       setBorderStyles matrix rootElement
 

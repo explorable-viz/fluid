@@ -3,7 +3,7 @@ module Link where
 import Prelude hiding (join)
 
 import App.Util (SelStates, Selectable, 𝕊, classes, selectionEventData')
-import App.Util.Selector (ViewSelSetter)
+import App.Util.Selector (Selectors, ViewSelSetter)
 import App.View.Text (class Textual, textAttrs)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
@@ -32,8 +32,8 @@ instance Viewable Link Unit where
       rootElement <- parent # create D3.Text [ classes [ "link" ] ]
       rootElement # setText (linkContents link) >>= setDatum link
 
-   setSelection :: Unit -> Link -> Select -> D3.Selection -> Effect Unit
-   setSelection _ link redraw rootElement = do
+   setSelection :: Selectors -> Unit -> Link -> Select -> D3.Selection -> Effect Unit
+   setSelection _ _ link redraw rootElement = do
       rootElement # setStyles (textAttrs link) >>= registerMouseListeners (redraw <<< uncurry selLink <<< selectionEventData')
       where
       selLink :: ViewSelSetter Link

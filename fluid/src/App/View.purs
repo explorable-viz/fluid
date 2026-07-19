@@ -15,17 +15,15 @@ import App.View.StackedBar (StackedBar(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, headers)
 import App.View.Text (Text(..))
 import App.View.Util (Filter(..), View, Options, pack)
-import App.Util.Selector (SelSetter, constrArg, listElement)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Bind (Name)
 import Data.Array as A
 import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), index, (:))
-import Data.List.NonEmpty (last)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (snd)
-import DataType (FieldName, cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_views, f_width, f_x, f_y, f_z)
+import DataType (FieldName, cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_width, f_x, f_y, f_z)
 import Partial.Unsafe (unsafePartial)
 import Dict (Dict)
 import Link (Link(..))
@@ -36,26 +34,16 @@ import Util.Map (get, mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
 type Views =
-   { multiViewEntry :: Int -> SelSetter Val Val
-   , barChart_stackedBars :: SelSetter Val Val
-   , lineChart_plots :: SelSetter Val Val
-   , linePoint :: Int -> SelSetter Val Val
-   , scatterPlot_points :: SelSetter Val Val
-   , decodeBarChart :: Val (SelStates 𝕊) -> BarChart
+   { decodeBarChart :: Val (SelStates 𝕊) -> BarChart
    , decodeLineChart :: Val (SelStates 𝕊) -> LineChart
    , decodeScatterPlot :: Val (SelStates 𝕊) -> ScatterPlot
    }
 
--- Selectors and decoders for the view types, closed over the field positions
--- resolved from the class declarations in view.fld.
+-- Decoders for the positionally-fragile view types, closed over the field
+-- positions resolved by name from the class declarations in view.fld.
 mkViews :: (Name -> FieldName -> Int) -> Views
 mkViews ix =
-   { multiViewEntry: \n -> listElement n >>> constrArg (last cMultiView) (ix cMultiView f_views)
-   , barChart_stackedBars: constrArg (last cBarChart) (ix cBarChart f_stackedBars)
-   , lineChart_plots: constrArg (last cLineChart) (ix cLineChart f_plots)
-   , linePoint: \i -> listElement i >>> constrArg (last cLinePlot) (ix cLinePlot f_points)
-   , scatterPlot_points: constrArg (last cScatterPlot) (ix cScatterPlot f_points)
-   , decodeBarChart: \v -> unsafePartial (decBarChart v)
+   { decodeBarChart: \v -> unsafePartial (decBarChart v)
    , decodeLineChart: \v -> unsafePartial (decLineChart v)
    , decodeScatterPlot: \v -> unsafePartial (decScatterPlot v)
    }

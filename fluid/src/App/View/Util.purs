@@ -3,7 +3,7 @@ module App.View.Util where
 import Prelude
 
 import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, classes, selClasses, selClassesFor)
-import App.Util.Selector (dictVal)
+import App.Util.Selector (Selectors, dictVal)
 import App.View.Util.D3 (create, isEmpty, on, rootSelect, select, setAttrs)
 import App.View.Util.D3 as D3
 import Bind (Name, Var, (↦))
@@ -42,13 +42,13 @@ unpack (View vw) k = vw k
 
 class Viewable a b | a -> b where
    createElement :: b -> a -> D3.Selection -> Effect D3.Selection
-   setSelection :: b -> a -> Select -> D3.Selection -> Effect Unit
+   setSelection :: Selectors -> b -> a -> Select -> D3.Selection -> Effect Unit
    isLeaf :: a -> Boolean
 
 instance Viewable View Unit where
    isLeaf view = unpack view \v -> isLeaf v
    createElement _ view parent = unpack view \v -> createElement unit v parent
-   setSelection _ view select rootElement = unpack view \v -> setSelection unit v select rootElement
+   setSelection sels _ view select rootElement = unpack view \v -> setSelection sels unit v select rootElement
 
 instance Viewable (Dict (View × View)) Unit where
    isLeaf views = size views == 0
@@ -65,34 +65,34 @@ instance Viewable (Dict (View × View)) Unit where
          createElement unit view child
       pure rootElement
 
-   setSelection :: Unit -> Dict (View × View) -> Select -> D3.Selection -> Effect Unit
-   setSelection _ views select rootElement =
+   setSelection :: Selectors -> Unit -> Dict (View × View) -> Select -> D3.Selection -> Effect Unit
+   setSelection sels _ views select rootElement =
       sequence_ $
          flip mapWithIndex (toUnfoldable views :: Array _) \i (x × k_view × view) -> do
             child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
             child1 <- child # D3.select (D3.nthChildOf D3.scope 1)
             child2 <- child # D3.select (D3.nthChildOf D3.scope 2)
-            void $ setSelection unit k_view (\_ -> pure unit) child1 -- TODO: revisit!
-            void $ setSelection unit view (dictVal x >>> select) child2
+            void $ setSelection sels unit k_view (\_ -> pure unit) child1 -- TODO: revisit!
+            void $ setSelection sels unit view (dictVal x >>> select) child2
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
-draw :: forall a. Viewable a Unit => Renderer a
-draw _ { divId, suffix, view } select' = do
+draw :: forall a. Viewable a Unit => Selectors -> Renderer a
+draw sels _ { divId, suffix, view } select' = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
    maybeRootElement <- div # select ("#" <> childId)
-   setSelection unit view select' =<<
+   setSelection sels unit view select' =<<
       ( isEmpty maybeRootElement >>=
            if _ then
               createElement unit view div <#> D3.setAttrs [ "id" ↦ childId ] # join
            else pure maybeRootElement
       )
 
-drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) -> Effect Unit
-drawView rSpec@{ view: vw } redraw =
-   unpack vw (\view -> draw uiHelpers (rSpec { view = view }) redraw)
+drawView :: Selectors -> RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) -> Effect Unit
+drawView sels rSpec@{ view: vw } redraw =
+   unpack vw (\view -> draw sels uiHelpers (rSpec { view = view }) redraw)
 
 foreign import mouseButton :: Event -> Int
 

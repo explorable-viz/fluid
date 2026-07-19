@@ -3,7 +3,7 @@ module App.View.LineChart where
 import Prelude hiding (absurd)
 
 import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, contents, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
-import App.Util.Selector (ViewSelSetter, lineChart_plots, linePoint, listElement)
+import App.Util.Selector (Selectors, ViewSelSetter, listElement)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.Axes (Orientation, create_xAxis, create_yAxis)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
@@ -59,8 +59,8 @@ type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 instance Viewable LineChart Unit where
    isLeaf = const false
 
-   setSelection :: Unit -> LineChart -> Select -> D3.Selection -> Effect Unit
-   setSelection _ (LineChart { plots }) redraw rootElement = do
+   setSelection :: Selectors -> Unit -> LineChart -> Select -> D3.Selection -> Effect Unit
+   setSelection sels _ (LineChart { plots }) redraw rootElement = do
       points <- rootElement # selectAll ".linechart-point"
 
       foreachE points \point -> do
@@ -98,7 +98,7 @@ instance Viewable LineChart Unit where
 
       pointSel :: ViewSelSetter PointCoordinate
       pointSel { i, j } =
-         linePoint j >>> listElement i >>> lineChart_plots
+         sels.linePoint j >>> listElement i >>> sels.lineChart_plots
 
    createElement :: Unit -> LineChart -> D3.Selection -> Effect D3.Selection
    createElement _ (LineChart { size, tickLabels, caption, plots }) parent = do

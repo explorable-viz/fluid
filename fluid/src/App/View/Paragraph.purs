@@ -2,15 +2,13 @@ module App.View.Paragraph where
 
 import Prelude
 
-import App.Util.Selector (constrArg, listElement)
+import App.Util.Selector (Selectors)
 import App.View.Util (class Viewable, Select, View, createElement, isLeaf, setSelection)
 import App.View.Util.D3 (ElementType(..), create, createText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (mapWithIndex)
 import Data.Foldable (all, sequence_)
-import Data.List.NonEmpty (last)
-import DataType (cParagraph)
 import Effect (Effect)
 
 data Paragraph = Paragraph (Array View)
@@ -26,8 +24,8 @@ instance Viewable Paragraph Unit where
          createElement unit view rootElement
       pure rootElement
 
-   setSelection :: Unit -> Paragraph -> Select -> D3.Selection -> Effect Unit
-   setSelection _ (Paragraph views) select rootElement = do
+   setSelection :: Selectors -> Unit -> Paragraph -> Select -> D3.Selection -> Effect Unit
+   setSelection sels _ (Paragraph views) select rootElement = do
       sequence_ $ flip mapWithIndex views \i view -> do
          child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
-         setSelection unit view (listElement i >>> constrArg (last cParagraph) 0 >>> select) child
+         setSelection sels unit view (sels.paragraphEntry i >>> select) child

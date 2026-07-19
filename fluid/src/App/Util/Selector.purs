@@ -3,14 +3,14 @@ module App.Util.Selector where
 import Prelude hiding (absurd)
 
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, getPersistent, selStates)
-import Bind (Var)
+import Bind (Name, Var)
 import Data.List (List(..), updateAt, (!!), (:))
 import Data.List.NonEmpty (last)
 import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cScatterPlot, cJust, f_segments, f_z)
+import DataType (FieldName, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cJust, f_fragments, f_plots, f_points, f_segments, f_stackedBars, f_views, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely, error, (×))
@@ -76,6 +76,26 @@ barChart_stackedBars = constrArg (last cBarChart) 3
 
 scatterPlot_points :: SelSetter Val Val
 scatterPlot_points = constrArg (last cScatterPlot) 1
+
+-- The index-dependent selectors, closed over field positions resolved by name.
+type Selectors =
+   { multiViewEntry :: Int -> SelSetter Val Val
+   , paragraphEntry :: Int -> SelSetter Val Val
+   , barChart_stackedBars :: SelSetter Val Val
+   , lineChart_plots :: SelSetter Val Val
+   , linePoint :: Int -> SelSetter Val Val
+   , scatterPlot_points :: SelSetter Val Val
+   }
+
+mkSelectors :: (Name -> FieldName -> Int) -> Selectors
+mkSelectors ix =
+   { multiViewEntry: \n -> listElement n >>> constrArg (last cMultiView) (ix cMultiView f_views)
+   , paragraphEntry: \n -> listElement n >>> constrArg (last cParagraph) (ix cParagraph f_fragments)
+   , barChart_stackedBars: constrArg (last cBarChart) (ix cBarChart f_stackedBars)
+   , lineChart_plots: constrArg (last cLineChart) (ix cLineChart f_plots)
+   , linePoint: \i -> listElement i >>> constrArg (last cLinePlot) (ix cLinePlot f_points)
+   , scatterPlot_points: constrArg (last cScatterPlot) (ix cScatterPlot f_points)
+   }
 
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =

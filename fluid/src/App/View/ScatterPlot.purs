@@ -3,7 +3,7 @@ module App.View.ScatterPlot where
 import Prelude
 
 import App.Util (Selectable, classes, contents, isPrimary, isSecondary, selClasses, selClassesFor, selectionEventData')
-import App.Util.Selector (ViewSelSetter, scatterPlot_points, listElement)
+import App.Util.Selector (Selectors, ViewSelSetter, listElement)
 import App.View.Util (class Viewable, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), create, numericXAxis, numericYAxis, scaleLinear, setText, translate)
 import App.View.Util.D3 as D3
@@ -106,7 +106,7 @@ instance Viewable ScatterPlot Unit where
 
       pure rootElement
 
-   setSelection _ (ScatterPlot { points }) select rootElement = do
+   setSelection sels _ (ScatterPlot { points }) select rootElement = do
       pointEls <- D3.selectAll ".scatterplot-point" rootElement
       foreachE pointEls \pointEl -> do
          idx :: PointIndex <- D3.datum pointEl
@@ -116,10 +116,10 @@ instance Viewable ScatterPlot Unit where
          void $ D3.classed selClasses false pointEl
          void $ D3.classed (selClassesFor sel) true pointEl
          void $ D3.attrs pointEl (fromFoldable (pointAttrs points idx))
-         registerMouseListeners (select <<< uncurry scatterPlotPoint <<< selectionEventData') pointEl
+         registerMouseListeners (select <<< uncurry (scatterPlotPoint sels) <<< selectionEventData') pointEl
 
-scatterPlotPoint :: ViewSelSetter PointIndex
-scatterPlotPoint { i } = listElement i >>> scatterPlot_points
+scatterPlotPoint :: Selectors -> ViewSelSetter PointIndex
+scatterPlotPoint sels { i } = listElement i >>> sels.scatterPlot_points
 
 pointAttrs :: Array (Point Number) -> PointIndex -> Array (String × String)
 pointAttrs points { i } =

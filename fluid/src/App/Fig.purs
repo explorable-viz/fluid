@@ -4,7 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
-import App.Util.Selector (envVal, ViewSetter)
+import App.Util.Selector (envVal, mkSelectors, ViewSetter)
 import App.View (view', mkViews)
 import App.View.Util (Direction(..), Fig, Options, HTMLId, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
@@ -163,17 +163,18 @@ intermediates { spec, in_roots, inerts } αs =
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig@{ spec: options } = do
-   drawView { divId, suffix: str.output, view: out_view } (selectOutput >>> redraw)
+   drawView sels { divId, suffix: str.output, view: out_view } (selectOutput >>> redraw)
 
    sequence_ $ flip mapWithKey in_views \x view ->
-      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x >>> redraw)
+      drawView sels { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x >>> redraw)
 
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
    sequence_ $ flip mapWithKey (unwrap ι) \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' views options str.intermediate (map to𝕊 <$> v) }
+      drawView sels { divId: prefix, suffix: α, view: unsafePartial $ view' views options str.intermediate (map to𝕊 <$> v) }
          (selectIntermediate (Vertex α) >>> redraw)
    where
    views = mkViews fig.resolveField
+   sels = mkSelectors fig.resolveField
    { v, γ, ι } = selectionResult fig
    out_view = unsafePartial $ view' views options str.output v
    in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' views options) γ)
