@@ -26,7 +26,7 @@ async function launchBrowser(browserName) {
    })
 }
 
-// One browser per name for the whole process; launching is where flakiness lives.
+// Launching is where the flakiness lives.
 const browsers = {}
 
 async function getBrowser(browserName) {
