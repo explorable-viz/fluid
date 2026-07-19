@@ -39,7 +39,6 @@ type Views =
    , decodeScatterPlot :: Val (SelStates 𝕊) -> ScatterPlot
    }
 
--- Decoders for the positionally-fragile view types.
 mkViews :: (Name -> FieldName -> Int) -> Views
 mkViews ix =
    { decodeBarChart: \v -> unsafePartial (decBarChart v)

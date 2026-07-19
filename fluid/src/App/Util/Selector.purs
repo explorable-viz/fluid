@@ -56,7 +56,6 @@ snd = constrArg (last cPair) 1
 just :: Setter (Val (SelStates 𝔹)) 𝔹
 just = constr (last cJust)
 
--- Selectors that navigate to a named field of a view constructor.
 type Selectors =
    { multiViewEntry :: Int -> SelSetter Val Val
    , paragraphEntry :: Int -> SelSetter Val Val

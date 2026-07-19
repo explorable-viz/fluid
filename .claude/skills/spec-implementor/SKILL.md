@@ -52,6 +52,9 @@ particular output when run. Nothing else is observable.
 ## Comments
 
 Avoid comments unless they have substantial marginal value over the code.
+Omit historical commentary: state what the code is or does for a reader who
+meets it fresh, not the motivation for it, what it replaced, or the problem it
+once fixed. That history belongs in the commit message, not the code.
 Grammatically, comments should be uninflected: a function that binds imported
 members gets "bind imported members", rather than "binds". PR bodies likewise:
 only information of clear marginal value over the diff and commit history.
