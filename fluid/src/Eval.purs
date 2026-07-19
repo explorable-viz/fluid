@@ -8,7 +8,7 @@ import Control.Monad.Reader (class MonadReader, local)
 import DefiniteAssignment (class HasCxt, Cxt, Entry(..), askCxt, classFor, fields)
 import Data.Array ((..))
 import Data.List (List(..), find, foldM, length, snoc, unzip, zip, (:))
-import Data.List.NonEmpty (head, unsnoc, fromList) as NEL
+import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (unwrap)
@@ -38,7 +38,7 @@ import Util.Map (unionWith_never, get, keys, lookup, lookup', maplet, restrict, 
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class HasModuleStore, getStore, modifyStore, BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, extendEnv, forDefs, val)
+import Val (class HasModuleStore, getStore, modifyStore, BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, forDefs, val)
 
 -- Needs a better name.
 type GraphConfig =
@@ -175,8 +175,6 @@ eval doc_opt γ e0 αs = do
                Val _ _ (V.Constr c vs), Val _ _ (V.Str x) -> do
                   xs <- askCxt >>= \λ -> maybe (throw $ "Ill-formed value: unknown dataclass " <> dottedName c) (pure <<< fields) (classFor λ (dottedName c))
                   find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (dottedName c <> " has no field " <> x)
-               Val _ _ (V.ModLoaded _ γ_m), Val _ _ (V.Str x) ->
-                  withMsg "Module member" $ lookup' x γ_m
                Val _ _ (V.Dictionary _), _ -> throw $ "Found " <> prettyP v' <> ", expected string"
                _, _ -> throw $ "Found " <> prettyP v <> ", expected dict or object"
          ModMember q x -> do
@@ -287,7 +285,7 @@ evalVal _ _ _ = pure Nothing
 
 eval_module :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ0 q (Module is ss0) αs0 = do
-   base <- foldM (\g i -> (g `extendEnv` _) <$> evalImport q i) γ0 is
+   base <- foldM (\g i -> (g <+> _) <$> evalImport q i) γ0 is
    vName <- val Nothing empty (V.Str (dottedName q))
    γ_λ <- classMembers q
    go base (γ_λ <+> maplet "__name__" vName) ss0 αs0
@@ -314,41 +312,33 @@ classMembers q = do
 
 evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Import -> m (Env Vertex)
 evalImport _ (Import q Nothing) = do
-   γ_q <- load q
-   v <- val Nothing empty (V.ModLoaded q γ_q)
-   v' <- loadsTo Nothing q v
-   pure (maplet (NEL.head q) v')
+   _ <- load q
+   loadAncestors Nothing q
+   pure empty
 evalImport enclosing (Import q (Just xs)) = do
    γ_q <- load q
-   v <- val Nothing empty (V.ModLoaded q γ_q)
-   _ <- loadsTo (Just enclosing) q v
-   importsFrom γ_q xs
+   loadAncestors (Just enclosing) q
+   importsFrom q γ_q xs
 
-loadsTo :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Maybe ModuleName -> ModuleName -> Val Vertex -> m (Val Vertex)
-loadsTo bound q v = case NEL.fromList init of
-   Nothing -> pure v
+loadAncestors :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Maybe ModuleName -> ModuleName -> m Unit
+loadAncestors bound q = case NEL.fromList (NEL.unsnoc q).init of
+   Nothing -> pure unit
    Just q'
-      | maybe false (q' `prefixOf` _) bound -> pure v
-      | otherwise -> do
-           ρ <- load q'
-           v' <- val Nothing empty (V.ModLoaded q' (ρ `extendEnv` maplet x v))
-           loadsTo bound q' v'
-   where
-   { init, last: x } = NEL.unsnoc q
+      | maybe false (q' `prefixOf` _) bound -> pure unit
+      | otherwise -> void (load q') *> loadAncestors bound q'
 
-importsFrom :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> List Var -> m (Env Vertex)
-importsFrom γ_q = go
+importsFrom :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> List Var -> m (Env Vertex)
+importsFrom q γ_q = go
    where
    go Nil = pure empty
    go (x : xs) = do
       rest <- go xs
       case lookup x γ_q of
-         Just (Val _ _ (V.Mod q')) -> do
-            ρ'' <- load q'
-            v <- val Nothing empty (V.ModLoaded q' ρ'')
-            pure (maplet x v <+> rest)
          Just v -> pure (maplet x v <+> rest)
-         Nothing -> pure rest
+         Nothing -> do
+            { modules } <- getStore
+            when (Map.member (NEL.snoc q x) modules) (void (load (NEL.snoc q x)))
+            pure rest
 
 importInto :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
 importInto γ q = (γ <+> _) <$> load q
@@ -363,18 +353,9 @@ load q = do
             if q `Set.member` Set.fromFoldable predefined then foldM importInto primitives (predefinedDeps q)
             else pure empty
          γ' <- maybe (pure empty) (\defs' -> eval_module γ_q q defs' empty) (Map.lookup q modules)
-         subs <- submodulesEnv (Map.keys modules) q
-         let loaded = (if q == builtins then primitives else empty) <+> subs <+> γ'
+         let loaded = (if q == builtins then primitives else empty) <+> γ'
          modifyStore (\s -> s { modEnv = Map.insert q loaded s.modEnv })
          pure loaded
-
-submodulesEnv :: forall m. MonadWithGraphAlloc m => Set ModuleName -> ModuleName -> m (Env Vertex)
-submodulesEnv known q = foldM add empty (Set.toUnfoldable known :: List _)
-   where
-   add γ m = case NEL.unsnoc m of
-      { init, last: x }
-         | NEL.fromList init == Just q -> (\v -> γ <+> maplet x v) <$> val Nothing empty (V.Mod m)
-         | otherwise -> pure γ
 
 type GraphEval g s t =
    { g :: g

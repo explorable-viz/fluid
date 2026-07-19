@@ -37,9 +37,9 @@ import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResu
 import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), throw, throwLeft, whenever, withMsg, (×), (∩))
-import Util.Map (constMap, keys, findWithDefault, maplet, restrict)
+import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
 import Util.Set ((∪), empty)
-import Val (class HasModuleStore, extendEnv, modifyStore, val, Env)
+import Val (class HasModuleStore, modifyStore, val, Env)
 import Val (BaseVal(..)) as V
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
@@ -150,10 +150,10 @@ prepConfig primitives fluidSrc = do
                     modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
                     γ0 <- foldM importInto primitives' predefined
                     modifyStore (_ { builtinsEnv = γ0 })
-                    γ1 <- foldM (\γ (S.Import q f) -> (γ `extendEnv` _) <$> evalImport mainModule (E.Import q f)) empty imports
+                    γ1 <- foldM (\γ (S.Import q f) -> (γ <+> _) <$> evalImport mainModule (E.Import q f)) empty imports
                     vName <- val Nothing Set.empty (V.Str "__main__")
                     γλ <- classMembers mainModule
-                    pure (γ1 `extendEnv` maplet "__name__" vName `extendEnv` γλ)
+                    pure (γ1 <+> maplet "__name__" vName <+> γλ)
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure γ
