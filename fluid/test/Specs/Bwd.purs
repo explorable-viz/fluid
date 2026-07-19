@@ -3,7 +3,7 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, constr, constrArg, dict, dictKey, dictVal, envVal, fst, listCell, listElement, matrix, matrixElement, multiViewEntry, select, select', snd, just, topα, (>.>))
+import App.Util.Selector (barChart_stackedBars, barSegment, constr, constrArg, dict, dictKey, dictVal, envVal, fst, listCell, listElement, matrix, matrixElement, multiViewEntry, select, select', snd, just, topα, (>.>))
 import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
 
@@ -326,7 +326,7 @@ bwd_cases =
                   >.> listElement 30 (dictVal "output" select)
                   >.> listElement 31 (dictVal "output" select)
              )
-     , δv: multiViewEntry 0 (barChart (barSegment 1 0 select))
+     , δv: multiViewEntry 0 (barChart_stackedBars (barSegment 1 0 select))
      , inputs: [ "renewables" ]
      , fwd_expect:
           """MultiView(BarChart("Total output by country", { height: 185, width: 275 }, {
@@ -374,7 +374,7 @@ bwd_cases =
                   >.> listElement 54 (dictVal "nuclearOut" select >.> dictVal "gasOut" select >.> dictVal "coalOut" select >.> dictVal "petrolOut" select)
                   >.> listElement 56 (dictVal "nuclearOut" select >.> dictVal "gasOut" select >.> dictVal "coalOut" select >.> dictVal "petrolOut" select)
              )
-     , δv: multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+     , δv: multiViewEntry 0 (barChart_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
      , inputs: [ "nonRenewables" ]
      , fwd_expect:
           """MultiView(BarChart("Non-renewables by country", { height: 185, width: 275 }, {

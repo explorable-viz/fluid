@@ -3,7 +3,7 @@ module Test.Specs.LinkedOutputs where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixDims, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd, topα, (>.>), select, select')
+import App.Util.Selector (barChart_stackedBars, barSegment, dictVal, fst, lineChart_plots, linePoint, listElement, matrixDims, matrixElement, multiViewEntry, scatterPlot_points, snd, topα, (>.>), select, select')
 import Data.Maybe (Maybe(..))
 import DataType (f_y)
 import File (Folder(..))
@@ -19,11 +19,11 @@ linkedOutputs_spec1 =
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_out: multiViewEntry 0 (barChart (barSegment 1 0 select))
+   , δ_out: multiViewEntry 0 (barChart_stackedBars (barSegment 1 0 select))
    , out_expect:
-        multiViewEntry 0 (barChart (barSegment 1 0 select))
+        multiViewEntry 0 (barChart_stackedBars (barSegment 1 0 select))
            >.> multiViewEntry 1
-              ( lineChart
+              ( lineChart_plots
                    ( listElement 0 (linePoint 2 (dictVal f_y select))
                         >.> listElement 1 (linePoint 2 (dictVal f_y select))
                         >.> listElement 2 (linePoint 2 (dictVal f_y select))
@@ -43,13 +43,13 @@ linkedOutputs_spec2 =
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_out: multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+   , δ_out: multiViewEntry 0 (barChart_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
    , out_expect:
-        multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+        multiViewEntry 0 (barChart_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
            >.> multiViewEntry 1
-              ( scatterPlot
-                   ( scatterPoint 4 (dictVal f_y select)
-                        >.> scatterPoint 6 (dictVal f_y select)
+              ( scatterPlot_points
+                   ( listElement 4 (dictVal f_y select)
+                        >.> listElement 6 (dictVal f_y select)
                    )
               )
    , inert_expect: Nothing

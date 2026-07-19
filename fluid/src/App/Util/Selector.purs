@@ -10,7 +10,7 @@ import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cJust, f_segments, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cScatterPlot, cJust, f_segments, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely, error, (×))
@@ -56,26 +56,26 @@ snd = constrArg (last cPair) 1
 just :: Setter (Val (SelStates 𝔹)) 𝔹
 just = constr (last cJust)
 
-multiView :: SelSetter Val Val
-multiView = constrArg (last cMultiView) 0
+multiView_views :: SelSetter Val Val
+multiView_views = constrArg (last cMultiView) 0
 
 multiViewEntry :: Int -> SelSetter Val Val
-multiViewEntry n = listElement n >>> multiView
+multiViewEntry n = listElement n >>> multiView_views
 
-lineChart :: SelSetter Val Val
-lineChart = constrArg (last cLineChart) 3
+lineChart_plots :: SelSetter Val Val
+lineChart_plots = constrArg (last cLineChart) 3
+
+linePlot_points :: SelSetter Val Val
+linePlot_points = constrArg (last cLinePlot) 1
 
 linePoint :: Int -> SelSetter Val Val
-linePoint i = listElement i >>> constrArg (last cLinePlot) 1
+linePoint i = listElement i >>> linePlot_points
 
-barChart :: SelSetter Val Val
-barChart = constrArg (last cBarChart) 3
+barChart_stackedBars :: SelSetter Val Val
+barChart_stackedBars = constrArg (last cBarChart) 3
 
-scatterPlot :: SelSetter Val Val
-scatterPlot = constrArg (last cScatterPlot) 1
-
-scatterPoint :: Int -> Setter (Val (SelStates 𝔹)) (Val (SelStates 𝔹))
-scatterPoint i = listElement i
+scatterPlot_points :: SelSetter Val Val
+scatterPlot_points = constrArg (last cScatterPlot) 1
 
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =
@@ -83,9 +83,6 @@ barSegment i j =
 
 nthSegment :: Int -> SelSetter Val Val
 nthSegment n = dictVal f_z >>> listElement n
-
-paragraph :: SelSetter Val Val
-paragraph = constrArg (last cParagraph) 0
 
 matrixElement :: Int -> Int -> SelSetter Val Val
 matrixElement i j δv (Val α doc (Matrix r)) =
