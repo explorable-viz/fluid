@@ -26,7 +26,7 @@ async function launchBrowser(browserName) {
    })
 }
 
-// Launching is where the flakiness lives.
+// Relaunching a browser fails intermittently.
 const browsers = {}
 
 async function getBrowser(browserName) {

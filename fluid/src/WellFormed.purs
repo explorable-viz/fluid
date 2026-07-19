@@ -24,8 +24,8 @@ import SExpr (Clause(..), DictEntry(..), Expr(..), Import(..), LambdaClause(..),
 import Util (type (×), singleton, (×))
 import Util.Set ((\\), (∪))
 
--- Also returns the reduced context (the import layer, erased): the desugared program
--- is a term over this context, module and class entries having been resolved away.
+-- Also return the reduced context (the import layer, erased); the desugared
+-- program is a term over it, with module and class entries resolved away.
 checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (Ctx × S.Stmt (TyResult Ctx))
 checkProgram modCxt baseCxt imports s = do
    layer × γImp <- checkImports mainModule baseCxt modCxt imports
@@ -270,8 +270,8 @@ resolveName γ name = case NEL.fromList init of
       Just e@(Class _) -> Just e
       _ -> Nothing
 
--- Validate an expression and rewrite each constructor name to its fully-qualified
--- form (defining module followed by class name).
+-- Validate an expression; rewrite constructor names to fully-qualified form and
+-- module projections to ModMember.
 wellFormedExpr :: forall a. Cxt -> S.Expr a -> Either String (S.Expr a)
 wellFormedExpr = wf
    where
