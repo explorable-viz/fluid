@@ -7,7 +7,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.CodePoint.Unicode (isUpper)
 import Data.Foldable (any, for_)
 import Data.Function (on)
-import Data.List (List(..), (:))
+import Data.List (List(..), elemIndex, (:))
 import Data.List as List
 import Data.List (filter) as L
 import Data.List.NonEmpty (NonEmptyList(..)) as NE
@@ -20,7 +20,7 @@ import Data.Set (Set)
 import Data.Set (fromFoldable, map, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
-import DefiniteAssignment (ClassEntry, Cxt, classesOf, fields)
+import DefiniteAssignment (ClassEntry, Cxt, classFor, classesOf, fields)
 import Dict (Dict, fromFoldable)
 import Effect.Exception (Error)
 import Util (absurd, definitely', error, throw, withMsg, (×))
@@ -102,6 +102,12 @@ arity :: Cxt -> Ctr -> Maybe Int
 arity γ c = do
    DataType _ sigs <- dataType γ c
    lookup c sigs
+
+-- Position of a field within its constructor, by declared name.
+fieldIndex :: Cxt -> Name -> FieldName -> Maybe Int
+fieldIndex γ c field = do
+   ce <- classFor γ (dottedName c)
+   elemIndex field (fields ce)
 
 -- Module paths for the builtin/library constructors (hard-coded for now).
 lib_builtins :: Var -> Name
