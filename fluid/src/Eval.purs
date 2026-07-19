@@ -297,8 +297,7 @@ eval_module γ0 q (Module is ss0) αs0 = do
          Assigns γ'' αs' -> go γ (γ' <+> γ'') ss αs'
          Returns _ -> throw "Module body cannot return"
 
--- Transforms the accumulated environment: the erasure of the static import extension,
--- so a name that statically acquires a module entry loses any value binding.
+-- Binds imported value members and deletes bindings for names that now denote modules.
 evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> Import -> m (Env Vertex)
 evalImport _ γ (Import q Nothing) = do
    _ <- load q
