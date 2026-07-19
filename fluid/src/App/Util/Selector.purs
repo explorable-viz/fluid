@@ -121,11 +121,10 @@ matrix δα = unsafePartial $ case _ of
 matrixDims :: Setter (Val (SelStates 𝔹)) 𝔹
 matrixDims δα = unsafePartial $ case _ of
    Val α doc (Matrix (MatrixRep (vss × MatrixDim (i × βi) × MatrixDim (j × βj)))) ->
-      let
-         βi' × _ = persist δα βi
-         βj' × s = persist δα βj
-      in
-         Val α doc (Matrix (MatrixRep (vss × MatrixDim (i × βi') × MatrixDim (j × βj')))) × s
+      Val α doc (Matrix (MatrixRep (vss × MatrixDim (i × βi') × MatrixDim (j × βj')))) × s
+      where
+      βi' × _ = persist δα βi
+      βj' × s = persist δα βj
 
 -- Flip only the outer Val annotation, regardless of payload (closure, etc.).
 topα :: Setter (Val (SelStates 𝔹)) 𝔹
