@@ -1,0 +1,7 @@
+@dataclass
+class Point:
+  x: Any
+  y: Any
+
+p = Point(1, 2)
+y = p["x"]

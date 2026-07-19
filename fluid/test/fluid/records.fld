@@ -13,5 +13,5 @@ def g({  }):
     { fst: 5, third: "hello", snd: [] },
     { fst: 6, snd: [7, 8] }
   ]],
-  e: { a: 4, h: { i: 6, j: 7 } }.h.j
+  e: { a: 4, h: { i: 6, j: 7 } }["h"]["j"]
 }

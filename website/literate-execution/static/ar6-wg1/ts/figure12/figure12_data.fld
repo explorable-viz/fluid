@@ -25,6 +25,6 @@ def precip(ensemble_data):
 
 hydroData_agg = {
   pr: {
-    std: { extra_annual: dict_map(precip, hydroData.pr.std.extra_annual.ens) }
+    std: { extra_annual: dict_map(precip, hydroData["pr"]["std"]["extra_annual"]["ens"]) }
   }
 }

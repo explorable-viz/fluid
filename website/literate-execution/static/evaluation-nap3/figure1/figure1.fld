@@ -48,10 +48,10 @@ by_topology = actions_by(
 
 # action_counts in the [ { y, z } ] format produced by actions_by
 def total_actions(action_counts):
-  return sum([ r.z for r in action_counts ])
+  return sum([ r["z"] for r in action_counts ])
 
 def actions_with_score(action_counts, eval_score):
-  return sum([ r.z for r in action_counts if r.y == eval_score ])
+  return sum([ r["z"] for r in action_counts if r["y"] == eval_score ])
 
 def proportion(x, y):
   return 0 if y == 0 else x / y

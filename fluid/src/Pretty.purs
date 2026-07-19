@@ -317,6 +317,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Matrix a e1 (i × j) e2) =
       highlightIf a $ matrix (pretty e1 <+> text "for" <+> pair text i j <+> text "in" <+> pretty e2)
    pretty (E.Lambda a o) = highlightIf a (text "lambda") <+> pretty o -- really?
+   pretty (E.Project e x) = pretty e <> text "." <> text x
    pretty (E.DProject e x) = pretty e <> brackets (pretty x)
    pretty (E.ModMember q x) = text (dottedName q) <> text "." <> text x
    pretty (E.App e e') = pretty e <> parens (pretty e') -- TODO

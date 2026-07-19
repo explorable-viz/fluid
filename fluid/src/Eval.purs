@@ -165,6 +165,14 @@ eval doc_opt γ e0 αs = do
          Op op -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (operator " <> op <> ")"
             withMsg "Variable lookup" $ lookupVar op γ
+         Project e x -> do
+            traceWhen (isJust doc_opt) $ "Discarding doc (attribute access)"
+            v <- eval Nothing γ e αs
+            case v of
+               Val _ _ (V.Constr c vs) -> do
+                  xs <- askCxt >>= \λ -> maybe (throw $ "Ill-formed value: unknown dataclass " <> dottedName c) (pure <<< fields) (classFor λ (dottedName c))
+                  find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (dottedName c <> " has no field " <> x)
+               _ -> throw $ "Found " <> prettyP (unit <$ v) <> ", expected object"
          DProject e e' -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (projection)"
             v <- eval Nothing γ e αs
@@ -172,11 +180,8 @@ eval doc_opt γ e0 αs = do
             case v, v' of
                Val _ _ (V.Dictionary (DictRep d)), Val _ _ (V.Str s) ->
                   withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
-               Val _ _ (V.Constr c vs), Val _ _ (V.Str x) -> do
-                  xs <- askCxt >>= \λ -> maybe (throw $ "Ill-formed value: unknown dataclass " <> dottedName c) (pure <<< fields) (classFor λ (dottedName c))
-                  find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (dottedName c <> " has no field " <> x)
-               Val _ _ (V.Dictionary _), _ -> throw $ "Found " <> prettyP v' <> ", expected string"
-               _, _ -> throw $ "Found " <> prettyP v <> ", expected dict or object"
+               Val _ _ (V.Dictionary _), _ -> throw $ "Found " <> prettyP (unit <$ v') <> ", expected string"
+               _, _ -> throw $ "Found " <> prettyP (unit <$ v) <> ", expected dict"
          ModMember q x -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (module member " <> x <> ")"
             { modEnv } <- getStore

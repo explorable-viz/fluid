@@ -48,10 +48,10 @@ nat_env_and_infra_depts = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
 
 # action_counts in the [ { y, z } ] format produced by actions_by
 def total_actions(action_counts):
-  return sum([ r.z for r in action_counts ])
+  return sum([ r["z"] for r in action_counts ])
 
 def actions_with_score(action_counts, eval_score):
-  return sum([ r.z for r in action_counts if r.y == eval_score ])
+  return sum([ r["z"] for r in action_counts if r["y"] == eval_score ])
 
 by_nat_env_and_infra = actions_by("Action Owner", nat_env_and_infra_depts)
 

@@ -6,7 +6,8 @@ import Test.Util.Suite (IllFormedSpec)
 -- pure-py-spec/test/ill-formed/semantic.
 purepy_cases :: Array IllFormedSpec
 purepy_cases =
-   [ { file: "purepy/attr_unknown_member.fld", expected_error: "module qual_lib has no member unknown" }
+   [ { file: "purepy/attr_non_object.fld", expected_error: "Found 5, expected object" }
+   , { file: "purepy/attr_unknown_member.fld", expected_error: "module qual_lib has no member unknown" }
    , { file: "purepy/cond_partial_def.fld", expected_error: "Not definitely assigned: x" }
    , { file: "purepy/constr_bad_keyword.fld", expected_error: "Class Coord keyword fields mismatch: expected (\"y\" : Nil), got (\"z\" : Nil)" }
    , { file: "purepy/construct_arity.fld", expected_error: "Point expects 2 argument(s); got 3" }
@@ -45,6 +46,8 @@ purepy_cases =
 illFormed_cases :: Array IllFormedSpec
 illFormed_cases =
    [ { file: "bare_module.fld", expected_error: "module qual_lib is not a value" }
+   , { file: "dict_attr.fld", expected_error: "Found { a: 1 }, expected object" }
+   , { file: "subscript_non_dict.fld", expected_error: "Found Point(1, 2), expected dict" }
    , { file: "from_import_selective.fld", expected_error: "Unbound name: bar" }
    , { file: "extend_imported_class.fld", expected_error: "Cannot extend imported class: Base" }
    , { file: "from_import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }

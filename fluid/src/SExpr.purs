@@ -273,7 +273,7 @@ exprFwd (Matrix α s (x × y) s') =
 exprFwd (Lambda μ) =
    E.Lambda Returns <$> desug μ
 exprFwd (Project s x) =
-   E.DProject <$> desug s <@> E.Str Returns x
+   E.Project <$> desug s <@> x
 exprFwd (ModMember q x) =
    pure $ E.ModMember q x
 exprFwd (DProject s x) =

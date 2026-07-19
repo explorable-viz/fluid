@@ -5,13 +5,13 @@ from lib.view import MultiView
 
 def newDataTable(offset):
   return map(lambda s: {
-    scenario: s.scenario,
-    beNear: s.bestEstNear + offset,
-    nearRange: (s.lowNear, s.highNear),
-    beMid: s.bestEstMid,
-    midRange: (s.lowMid, s.highMid),
-    beLong: s.bestEstLate,
-    longRange: (s.lowLate, s.highLate)
+    scenario: s["scenario"],
+    beNear: s["bestEstNear"] + offset,
+    nearRange: (s["lowNear"], s["highNear"]),
+    beMid: s["bestEstMid"],
+    midRange: (s["lowMid"], s["highMid"]),
+    beLong: s["bestEstLate"],
+    longRange: (s["lowLate"], s["highLate"])
   }, tableData)
 
 def getByScenario(data, scenario):
@@ -35,10 +35,10 @@ ssp245 = getByScenario_("SSP2-4.5")
 
 MultiView([
   f"""Under the low GHG emissions scenario (SSP1-1.9), global warming of 2°C would
-      {probAsText(calcLikelihood(ssp119.longRange, 2.0))}
+      {probAsText(calcLikelihood(ssp119["longRange"], 2.0))}
       be exceeded at the end of the 21st century.""",
   f"""Under the intermediate GHG emissions scenario (SSP2-4.5), global warming of 2°C would
-      {probAsText(calcLikelihood(ssp245.longRange, 2.0))} be exceeded by the end of the 21st century.
+      {probAsText(calcLikelihood(ssp245["longRange"], 2.0))} be exceeded by the end of the 21st century.
       In the mid-term period (2041-2060), crossing the 2°C mark is
-      {probAsText(calcLikelihood(ssp245.midRange, 2.0))} to occur."""
+      {probAsText(calcLikelihood(ssp245["midRange"], 2.0))} to occur."""
 ])
