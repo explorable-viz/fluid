@@ -14,7 +14,7 @@ else
       echo "Format fixed. Commit again before pushing."
       exit 1
    fi
-   echo "Format OK. Linting (strict build; catches unused imports)."
-   yarn workspace @fluid-org/fluid lint
+   echo "Format OK. Strict build (catches unused imports)."
+   yarn workspace @fluid-org/fluid build-strict
    echo "Pushing."
 fi
