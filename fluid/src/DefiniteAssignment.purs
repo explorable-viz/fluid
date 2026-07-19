@@ -73,6 +73,12 @@ mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
 
+-- Erase a context to its value entries: the runtime environment's static counterpart.
+erase :: Cxt -> Ctx
+erase = Map.mapMaybe case _ of
+   VarStatus b -> Just b
+   _ -> Nothing
+
 classesOf :: Cxt -> Map Var ClassEntry
 classesOf = Map.mapMaybe case _ of
    Class ce -> Just ce

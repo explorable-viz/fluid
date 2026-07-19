@@ -16,7 +16,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (ClassEntry, Ctx, Entry(..), Cxt, TyResult(..), classFor, extendCxt, extendCxtWith, fields, mergeRes, overrideRes, unionWith_mergeEq)
+import DefiniteAssignment (ClassEntry, Ctx, Entry(..), Cxt, TyResult(..), classFor, erase, extendCxt, extendCxtWith, fields, mergeRes, overrideRes, unionWith_mergeEq)
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
@@ -24,14 +24,19 @@ import SExpr (Clause(..), DictEntry(..), Expr(..), Import(..), LambdaClause(..),
 import Util (type (×), singleton, (×))
 import Util.Set ((\\), (∪))
 
-checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (S.Stmt (TyResult Ctx))
+-- Also returns the reduced context (the import layer, erased): the desugared program
+-- is a term over this context, module and class entries having been resolved away.
+checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (Ctx × S.Stmt (TyResult Ctx))
 checkProgram modCxt baseCxt imports s = do
-   γImp <- checkImports mainModule baseCxt modCxt imports
-   snd <$> wellFormed mainModule (Map.insert "__name__" (VarStatus true) γImp) s
+   layer × γImp <- checkImports mainModule baseCxt modCxt imports
+   let reduced = Map.insert "__name__" true (erase layer)
+   (reduced × _) <<< snd <$> wellFormed mainModule (Map.insert "__name__" (VarStatus true) γImp) s
 
-checkImports :: Name -> Cxt -> Map.Map ModuleName Cxt -> List S.Import -> Either String Cxt
-checkImports enclosing base modCxt =
-   foldM (\acc i -> (acc `extendCxtWith` _) <$> importCxt enclosing modCxt i) seed
+-- Import layer × the full in-scope context (implicit builtins base extended by the layer).
+checkImports :: Name -> Cxt -> Map.Map ModuleName Cxt -> List S.Import -> Either String (Cxt × Cxt)
+checkImports enclosing base modCxt is = do
+   layer <- foldM (\acc i -> (acc `extendCxtWith` _) <$> importCxt enclosing modCxt i) Map.empty is
+   pure (layer × (seed `extendCxtWith` layer))
    where
    seed = foldl (\acc q -> acc `Map.union` findWithDefault Map.empty q modCxt) base (predefinedDeps enclosing)
 
@@ -71,7 +76,7 @@ classesOfModule q (S.Module _ ss) =
 
 checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String (Ctx × S.Module (TyResult Ctx))
 checkModule q modCxt base (S.Module imports ss) = do
-   γImp <- checkImports q base modCxt imports
+   _ × γImp <- checkImports q base modCxt imports
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure (Map.singleton "__name__" true × S.Module imports Nil)
       Just s -> wellFormed q (Map.insert "__name__" (VarStatus true) γImp) s <#> \(r × s') ->

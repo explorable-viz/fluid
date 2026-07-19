@@ -36,7 +36,7 @@ import SExpr (desugarModuleFwd)
 import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
-import Util (type (×), throw, throwLeft, whenever, withMsg, (×), (∩))
+import Util (type (×), check, throw, throwLeft, whenever, withMsg, (×), (∩), (⊆))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
 import Util.Set ((∪), empty)
 import Val (class HasModuleStore, modifyStore, val, Env)
@@ -109,7 +109,7 @@ checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Ma
               Just mod@(S.Module imports _) -> do
                  δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q modCxt' baseCxt mod)
                  λ <- classesOfModule q mod
-                 γImp <- checkImports q baseCxt modCxt' imports
+                 _ × γImp <- checkImports q baseCxt modCxt' imports
                  let subs = submodules (Map.keys modules) q
                  let clash = (Map.keys γImp ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
                  when (not Set.isEmpty clash)
@@ -160,7 +160,8 @@ prepConfig primitives fluidSrc = do
          baseCxt =
             constMap (VarStatus true) (keys primitives)
                `Map.union` Map.singleton "__NoArgs" (Class { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil })
-      sty <- either throw pure (checkProgram modCxt baseCxt imports s)
+      γTy × sty <- either throw pure (checkProgram modCxt baseCxt imports s)
+      check (Map.keys γTy ⊆ Set.fromFoldable (keys topLevelEnv)) "reduced context mirrored in top-level environment"
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
       let gconfig = { n, γ: restrict (fv e) topLevelEnv, classCtx: Class <$> fullClassCtx }
