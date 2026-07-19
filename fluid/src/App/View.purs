@@ -34,8 +34,7 @@ import Util.Map (get, mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
 type Views =
-   { fieldIndex :: Name -> FieldName -> Int
-   , decodeBarChart :: Val (SelStates 𝕊) -> BarChart
+   { decodeBarChart :: Val (SelStates 𝕊) -> BarChart
    , decodeLineChart :: Val (SelStates 𝕊) -> LineChart
    , decodeScatterPlot :: Val (SelStates 𝕊) -> ScatterPlot
    , decodeText :: Val (SelStates 𝕊) -> Text
@@ -49,8 +48,7 @@ mkViews fieldIndex = views
    where
    views :: Views
    views =
-      { fieldIndex
-      , decodeBarChart: \v -> unsafePartial (decBarChart v)
+      { decodeBarChart: \v -> unsafePartial (decBarChart v)
       , decodeLineChart: \v -> unsafePartial (decLineChart v)
       , decodeScatterPlot: \v -> unsafePartial (decScatterPlot v)
       , decodeText: \v -> unsafePartial (decText v)
