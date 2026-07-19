@@ -23,7 +23,7 @@ import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), index, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (snd)
-import DataType (FieldName, cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_width, f_x, f_y, f_z)
+import DataType (FieldName, cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_fragments, f_height, f_label, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_text, f_tickLabels, f_value, f_views, f_width, f_x, f_y, f_z)
 import Partial.Unsafe (unsafePartial)
 import Dict (Dict)
 import Link (Link(..))
@@ -34,20 +34,33 @@ import Util.Map (get, mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
 type Views =
-   { decodeBarChart :: Val (SelStates 𝕊) -> BarChart
+   { fieldIndex :: Name -> FieldName -> Int
+   , decodeBarChart :: Val (SelStates 𝕊) -> BarChart
    , decodeLineChart :: Val (SelStates 𝕊) -> LineChart
    , decodeScatterPlot :: Val (SelStates 𝕊) -> ScatterPlot
+   , decodeText :: Val (SelStates 𝕊) -> Text
+   , decodeLink :: Val (SelStates 𝕊) -> Link
+   , decodeMultiView :: Options -> Val (SelStates 𝕊) -> MultiView
+   , decodeParagraph :: Options -> Val (SelStates 𝕊) -> Paragraph
    }
 
 mkViews :: (Name -> FieldName -> Int) -> Views
-mkViews ix =
-   { decodeBarChart: \v -> unsafePartial (decBarChart v)
-   , decodeLineChart: \v -> unsafePartial (decLineChart v)
-   , decodeScatterPlot: \v -> unsafePartial (decScatterPlot v)
-   }
+mkViews fieldIndex = views
    where
+   views :: Views
+   views =
+      { fieldIndex
+      , decodeBarChart: \v -> unsafePartial (decBarChart v)
+      , decodeLineChart: \v -> unsafePartial (decLineChart v)
+      , decodeScatterPlot: \v -> unsafePartial (decScatterPlot v)
+      , decodeText: \v -> unsafePartial (decText v)
+      , decodeLink: \v -> unsafePartial (decLink v)
+      , decodeMultiView: \options v -> unsafePartial (decMultiView options v)
+      , decodeParagraph: \options v -> unsafePartial (decParagraph options v)
+      }
+
    arg :: Name -> FieldName -> List (Val (SelStates 𝕊)) -> Val (SelStates 𝕊)
-   arg c f us = definitely "field index in range" (index us (ix c f))
+   arg c f us = definitely "field index in range" (index us (fieldIndex c f))
 
    decBarChart :: Partial => Val (SelStates 𝕊) -> BarChart
    decBarChart (Val _ _ u) = case u of
@@ -87,13 +100,37 @@ mkViews ix =
          }
       _ -> typeError u "ScatterPlot"
 
+   decText :: Partial => Val (SelStates 𝕊) -> Text
+   decText (Val _ _ u) = case u of
+      Constr c us | c == cText -> case arg cText f_text us of
+         Val α _ (Str s) -> Text (s × α)
+         _ -> typeError u "Text expects string"
+      _ -> typeError u "Text"
+
+   decLink :: Partial => Val (SelStates 𝕊) -> Link
+   decLink (Val _ _ u) = case u of
+      Constr c us | c == cLink -> case arg cLink f_label us of
+         Val α' _ (Str s) -> Link (arg cLink f_value us) (s × α')
+         _ -> typeError u "Link expects string label"
+      _ -> typeError u "Link"
+
+   decMultiView :: Partial => Options -> Val (SelStates 𝕊) -> MultiView
+   decMultiView options (Val _ _ u) = case u of
+      Constr c us | c == cMultiView -> MultiView (view views options "" <$> from (arg cMultiView f_views us))
+      _ -> typeError u "MultiView"
+
+   decParagraph :: Partial => Options -> Val (SelStates 𝕊) -> Paragraph
+   decParagraph options (Val _ _ u) = case u of
+      Constr c us | c == cParagraph -> Paragraph (view views options "" <$> from (arg cParagraph f_fragments us))
+      _ -> typeError u "Paragraph"
+
 -- TODO: merge with 'view' below.
 view' :: Partial => Views -> Options -> String -> Val (SelStates 𝕊) -> View
 view' views options title v@(Val _ v_opt _) =
    pack $ DocView { doc: viewParagraph <$> v_opt, view: view views options title v }
    where
-   viewParagraph (Val _ _ (Constr c (u : Nil))) | c == cParagraph =
-      Paragraph (view views options "" <$> from u)
+   viewParagraph v'@(Val _ _ (Constr c _)) | c == cParagraph =
+      views.decodeParagraph options v'
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- TODO: given the typeError clause, Partial no longer needed
@@ -102,14 +139,11 @@ view views options title v@(Val α _ u') = case u' of
    Int n -> pack (Text (show n × α))
    Float n -> pack (Text (show n × α))
    Str str -> pack (Text (str × α))
-   Constr c (u : Nil)
-      | c == cText -> pack (from u :: Text)
-      | c == cMultiView -> pack (MultiView (view views options "" <$> from u))
-      | c == cParagraph -> pack (Paragraph (view views options "" <$> from u))
-   Constr c (_ : _ : Nil)
-      -- more consistent with other views for Link to take single argument of record type
-      | c == cLink -> pack (from v :: Link)
    Constr c _
+      | c == cText -> pack (views.decodeText v)
+      | c == cMultiView -> pack (views.decodeMultiView options v)
+      | c == cParagraph -> pack (views.decodeParagraph options v)
+      | c == cLink -> pack (views.decodeLink v)
       | c == cBarChart -> pack (views.decodeBarChart v)
       | c == cScatterPlot -> pack (views.decodeScatterPlot v)
       | c == cLineChart -> pack (views.decodeLineChart v)
@@ -189,12 +223,3 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Orientat
       , y: P.unpack orientation (snd (get f_y r))
       }
 
-instance Reflect (Val (SelStates 𝕊)) Text where
-   from (Val α _ v) = case v of
-      Str s -> Text (s × α)
-      _ -> typeError v "Text expects string"
-
-instance Reflect (Val (SelStates 𝕊)) Link where
-   from (Val _ _ u) = case u of
-      (Constr c (v : (Val α' _ (Str s) : Nil))) | c == cLink -> Link v (s × α')
-      _ -> typeError u "Link expects string as second argument"

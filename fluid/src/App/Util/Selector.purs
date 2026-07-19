@@ -66,13 +66,13 @@ type Selectors =
    }
 
 mkSelectors :: (Name -> FieldName -> Int) -> Selectors
-mkSelectors ix =
-   { multiViewEntry: \n -> listElement n >>> constrArg (last cMultiView) (ix cMultiView f_views)
-   , paragraphEntry: \n -> listElement n >>> constrArg (last cParagraph) (ix cParagraph f_fragments)
-   , barChart_stackedBars: \s -> constrArg (last cBarChart) (ix cBarChart f_stackedBars) s
-   , lineChart_plots: \s -> constrArg (last cLineChart) (ix cLineChart f_plots) s
-   , linePoint: \i -> listElement i >>> constrArg (last cLinePlot) (ix cLinePlot f_points)
-   , scatterPlot_points: \s -> constrArg (last cScatterPlot) (ix cScatterPlot f_points) s
+mkSelectors fieldIndex =
+   { multiViewEntry: \n -> listElement n >>> constrArg (last cMultiView) (fieldIndex cMultiView f_views)
+   , paragraphEntry: \n -> listElement n >>> constrArg (last cParagraph) (fieldIndex cParagraph f_fragments)
+   , barChart_stackedBars: \s -> constrArg (last cBarChart) (fieldIndex cBarChart f_stackedBars) s
+   , lineChart_plots: \s -> constrArg (last cLineChart) (fieldIndex cLineChart f_plots) s
+   , linePoint: \i -> listElement i >>> constrArg (last cLinePlot) (fieldIndex cLinePlot f_points)
+   , scatterPlot_points: \s -> constrArg (last cScatterPlot) (fieldIndex cScatterPlot f_points) s
    }
 
 barSegment :: Int -> Int -> SelSetter Val Val

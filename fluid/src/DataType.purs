@@ -142,6 +142,9 @@ cLink = lib_view "Link" :: Name
 -- Field names used internally by rendering layer.
 f_caption = "caption" :: FieldName
 f_fragments = "fragments" :: FieldName
+f_label = "label" :: FieldName
+f_text = "text" :: FieldName
+f_value = "value" :: FieldName
 f_colour = "c" :: FieldName
 f_height = "height" :: FieldName
 f_labels = "labels" :: FieldName
