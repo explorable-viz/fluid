@@ -31,6 +31,7 @@ data Expr a
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
    | DProject (Expr a) (Expr a)
+   | ModMember Name Var -- member x of module q; only arises during desugaring
    | App (Expr a) (Expr a)
    | DocExpr (Expr a) (Expr a)
 
@@ -83,6 +84,7 @@ instance FV (Expr a) where
    fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
    fv (DProject e x) = fv e ∪ fv x
+   fv (ModMember _ _) = empty
    fv (App e1 e2) = fv e1 ∪ fv e2
    fv (DocExpr doc e) = fv doc ∪ fv e
 
@@ -205,6 +207,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
       Matrix (α ∨ α') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
    join (DProject e1 e2) (DProject e1' e2') = DProject (e1 ∨ e1') (e2 ∨ e2')
+   join (ModMember q x) (ModMember q' x') = ModMember (q ≜ q') (x ≜ x')
    join (App e1 e2) (App e1' e2') = App (e1 ∨ e1') (e2 ∨ e2')
    join (DocExpr doc e) (DocExpr doc' e') = DocExpr (doc ∨ doc') (e ∨ e')
    join _ _ = shapeMismatch unit
@@ -221,6 +224,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
       Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
    expand (DProject e1 e2) (DProject e1' e2') = DProject (expand e1 e1') (expand e2 e2')
+   expand (ModMember q x) (ModMember q' x') = ModMember (q ≜ q') (x ≜ x')
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (DocExpr doc e) (DocExpr doc' e') = DocExpr (expand doc doc') (expand e e')
    expand _ _ = shapeMismatch unit
@@ -241,6 +245,7 @@ instance Vertices (Expr Vertex) where
    vertices e@(Matrix α e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
    vertices (DProject e e') = vertices e ∪ vertices e'
+   vertices (ModMember _ _) = empty
    vertices (App e1 e2) = vertices e1 ∪ vertices e2
    vertices (DocExpr e e') = vertices e ∪ vertices e'
 
@@ -307,6 +312,7 @@ instance Apply Expr where
       Matrix (fα α) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
    apply (DProject fd fk) (DProject d k) = DProject (fd <*> d) (fk <*> k)
+   apply (ModMember q x) (ModMember q' x') = ModMember (q ≜ q') (x ≜ x')
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (DocExpr fe fe') (DocExpr e e') = DocExpr (fe <*> e) (fe' <*> e')
    apply _ _ = shapeMismatch unit

@@ -142,6 +142,7 @@ capturesE (S.Matrix _ e (x × y) e') =
 capturesE (S.Lambda (S.LambdaClause (ps × e))) =
    fv e \\ unions (bv <$> ps)
 capturesE (S.Project e _) = capturesE e
+capturesE (S.ModMember _ _) = Set.empty
 capturesE (S.DProject e e') = capturesE e ∪ capturesE e'
 capturesE (S.App e e') = capturesE e ∪ capturesE e'
 capturesE (S.BinaryApp e _ e') = capturesE e ∪ capturesE e'
@@ -296,8 +297,9 @@ wellFormedExpr = wf
          when (not (Map.member y γ'))
             $ throwError
             $ "module " <> dottedName q <> " has no member " <> y
-         pure (S.Project e y)
+         pure (S.ModMember q y)
       _ -> flip S.Project y <$> wf γ e
+   wf _ e@(S.ModMember _ _) = pure e
    wf γ (S.DProject e e') = S.DProject <$> wf γ e <*> wf γ e'
    wf γ (S.Matrix α body (x × y) source) =
       (\source' body' -> S.Matrix α body' (x × y) source') <$> wf γ source <*> wf (assignedIn γ (Set.singleton x ∪ Set.singleton y)) body

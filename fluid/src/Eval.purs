@@ -179,6 +179,11 @@ eval doc_opt γ e0 αs = do
                   withMsg "Module member" $ lookup' x γ_m
                Val _ _ (V.Dictionary _), _ -> throw $ "Found " <> prettyP v' <> ", expected string"
                _, _ -> throw $ "Found " <> prettyP v <> ", expected dict or object"
+         ModMember q x -> do
+            traceWhen (isJust doc_opt) $ "Discarding doc (module member " <> x <> ")"
+            { modEnv } <- getStore
+            γ_q <- Map.lookup q modEnv # orElse ("Module not loaded: " <> dottedName q)
+            withMsg "Module member" $ lookup' x γ_q
          App e e' -> do
             v <- eval Nothing γ e αs
             v' <- eval Nothing γ e' αs
@@ -417,8 +422,8 @@ sliceBwd { g, graph_bwd, inα, outα } out𝔹 =
 graphEval :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classCtx } stmt =
    local (\(FileCxt r) -> FileCxt (r { classCtx = classCtx })) do
-      { modules, builtinsEnv } <- getStore
-      let mαs = Set.unions (vertices <$> Map.values modules) ∪ vertices builtinsEnv
+      { modules, builtinsEnv, modEnv } <- getStore
+      let mαs = Set.unions (vertices <$> Map.values modules) ∪ vertices builtinsEnv ∪ Set.unions (vertices <$> Map.values modEnv)
       _ × _ × g × inα × outα <- flip runAllocT n do
          sα <- alloc stmt
          let inα = EnvStmt γ sα
