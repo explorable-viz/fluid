@@ -80,7 +80,7 @@ linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => HasCxt m => H
 linkedOutputsTest { spec, δ_out, out_expect, inert_expect, file } = do
    fluidSrc <- loadFile spec.fluidSrcPaths (File file)
    fig0 <- loadFig spec fluidSrc
-   let sels = mkSelectors fig0.resolveField
+   let sels = mkSelectors fig0.fieldIndex
    let fig = selectOutput (δ_out sels) fig0
    v <- logTimeWhen timing.selectionResult file \_ ->
       pure (selectionResult fig).v

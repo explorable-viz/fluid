@@ -157,7 +157,7 @@ type Fig =
    , out_view :: Maybe View
    , intermediate_views :: Dict (Maybe View)
    , inerts :: Set DVertex
-   , resolveField :: Name -> FieldName -> Int
+   , fieldIndex :: Name -> FieldName -> Int
    }
 
 -- ======================

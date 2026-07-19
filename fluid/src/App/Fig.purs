@@ -173,8 +173,8 @@ drawFig divId fig@{ spec: options } = do
       drawView sels { divId: prefix, suffix: α, view: unsafePartial $ view' views options str.intermediate (map to𝕊 <$> v) }
          (selectIntermediate (Vertex α) >>> redraw)
    where
-   views = mkViews fig.resolveField
-   sels = mkSelectors fig.resolveField
+   views = mkViews fig.fieldIndex
+   sels = mkSelectors fig.fieldIndex
    { v, γ, ι } = selectionResult fig
    out_view = unsafePartial $ view' views options str.output v
    in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' views options) γ)
@@ -272,7 +272,7 @@ loadFig options@{ inputs, linking } fluidSrc = do
       , intermediate_views: empty
       , in_roots
       , inerts: inertFwd ∩ inertBwd
-      , resolveField: \c f -> definitely "field in class" (fieldIndex gconfig.classCtx c f)
+      , fieldIndex: \c f -> definitely "field in class" (fieldIndex gconfig.classCtx c f)
       }
 
 ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)
