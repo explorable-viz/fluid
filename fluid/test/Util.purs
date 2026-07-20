@@ -29,7 +29,7 @@ import DefiniteAssignment (class HasCxt)
 import SExpr (Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, definitely, log', spyWhen, throw, throwLeft, withMsg, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, log', spyWhen, throw, throwLeft, withMsg, (×))
 import Util.Map (keys, restrict)
 import Val (class HasModuleStore, class Ann, Env, EnvStmt(..), Val)
 
@@ -90,7 +90,7 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
    let EnvStmt γ_raw s_raw = erase graphed.inα
    let inputs' = if Array.null inputs then keys γ_raw else Set.fromFoldable inputs
 
-   let sels = mkSelectors (\c f -> definitely "field in class" (fieldIndex gconfig.classCtx c f))
+   let sels = mkSelectors (fieldIndex gconfig.classCtx)
    let v = map (const top) outα :: Val 𝔹
    let out0 = fst (δv sels (const unselected <$> v)) <#> getPersistent
 

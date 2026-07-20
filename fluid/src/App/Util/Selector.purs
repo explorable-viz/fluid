@@ -10,10 +10,10 @@ import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (FieldName, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cJust, f_fragments, f_plots, f_points, f_segments, f_stackedBars, f_views, f_z)
+import DataType (FieldIndex, FieldName, cCons, cLinePlot, cMultiView, cNil, cParagraph, cJust, f_fragments, f_points, f_segments, f_views, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
-import Util (Endo, absurd, assert, definitely, error, (×))
+import Util (Endo, absurd, assert, definitely', error, (×))
 import Util.Map (get, insert, update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Env, MatrixDim(..), MatrixRep(..), Val(..), matrixGet, matrixPut)
@@ -47,32 +47,22 @@ persist δα = \v -> (over SelStates ((<$>) mapδ) v) × Persistent
    mapδ :: Endo (Selection a)
    mapδ s = s { persistent = (T.fst <<< δα) s.persistent }
 
-fst :: SelSetter Val Val
-fst = constrArg (last cPair) 0
-
-snd :: SelSetter Val Val
-snd = constrArg (last cPair) 1
-
 just :: Setter (Val (SelStates 𝔹)) 𝔹
 just = constr (last cJust)
 
 type Selectors =
-   { multiViewEntry :: Int -> SelSetter Val Val
+   { constrArg :: Name -> FieldName -> SelSetter Val Val
+   , multiViewEntry :: Int -> SelSetter Val Val
    , paragraphEntry :: Int -> SelSetter Val Val
-   , barChart_stackedBars :: SelSetter Val Val
-   , lineChart_plots :: SelSetter Val Val
    , linePoint :: Int -> SelSetter Val Val
-   , scatterPlot_points :: SelSetter Val Val
    }
 
-mkSelectors :: (Name -> FieldName -> Int) -> Selectors
+mkSelectors :: FieldIndex -> Selectors
 mkSelectors fieldIndex =
-   { multiViewEntry: \n -> listElement n >>> constrArg (last cMultiView) (fieldIndex cMultiView f_views)
-   , paragraphEntry: \n -> listElement n >>> constrArg (last cParagraph) (fieldIndex cParagraph f_fragments)
-   , barChart_stackedBars: \s -> constrArg (last cBarChart) (fieldIndex cBarChart f_stackedBars) s
-   , lineChart_plots: \s -> constrArg (last cLineChart) (fieldIndex cLineChart f_plots) s
-   , linePoint: \i -> listElement i >>> constrArg (last cLinePlot) (fieldIndex cLinePlot f_points)
-   , scatterPlot_points: \s -> constrArg (last cScatterPlot) (fieldIndex cScatterPlot f_points) s
+   { constrArg: constrArg fieldIndex
+   , multiViewEntry: \n -> listElement n >>> constrArg fieldIndex cMultiView f_views
+   , paragraphEntry: \n -> listElement n >>> constrArg fieldIndex cParagraph f_fragments
+   , linePoint: \i -> listElement i >>> constrArg fieldIndex cLinePlot f_points
    }
 
 barSegment :: Int -> Int -> SelSetter Val Val
@@ -94,12 +84,14 @@ listElement n δv = unsafePartial $ case _ of
    Val α doc (Constr c (v : u : Nil)) | c == cCons ->
       first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listElement (n - 1) δv u)
 
-constrArg :: Var -> Int -> SelSetter Val Val
-constrArg c n δv = unsafePartial $ case _ of
-   Val α doc (Constr c' us) | c == last c' ->
+constrArg :: FieldIndex -> Name -> FieldName -> SelSetter Val Val
+constrArg fieldIndex c f δv = unsafePartial $ case _ of
+   Val α doc (Constr c' us) | last c == last c' ->
       first (\u' -> Val α doc (Constr c' $ fromJust (updateAt n u' us)))
-         $ definitely "constrArg out of bounds"
+         $ definitely'
          $ δv <$> (us !! n)
+   where
+   n = fieldIndex c f
 
 constr :: Var -> Setter (Val (SelStates 𝔹)) 𝔹
 constr c δα = unsafePartial $ case _ of

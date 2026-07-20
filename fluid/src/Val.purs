@@ -189,7 +189,7 @@ newtype MatrixRep a = MatrixRep (Array2 (Val a) × MatrixDim a × MatrixDim a)
 type Array2 a = Array (Array a)
 
 matrixGet :: forall a. Int -> Int -> MatrixRep a -> Val a
-matrixGet i j (MatrixRep (vss × _ × _)) = definitely "index out of bounds!" $ do
+matrixGet i j (MatrixRep (vss × _ × _)) = definitely "matrix indices within bounds" $ do
    us <- vss !! i
    us !! j
 

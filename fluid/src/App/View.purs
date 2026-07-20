@@ -28,74 +28,9 @@ import Dict (Dict)
 import Link (Link(..))
 import Primitive (boolean, int, string, typeError)
 import Primitive (unpack) as P
-import Util (type (×), definitely, error, (×))
+import Util (type (×), definitely', error, (×))
 import Util.Map (get, mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..))
-
-arg :: FieldIndex -> Name -> FieldName -> List (Val (SelStates 𝕊)) -> Val (SelStates 𝕊)
-arg fieldIndex c f us = definitely "field index in range" (index us (fieldIndex c f))
-
-decodeBarChart :: Partial => FieldIndex -> Val (SelStates 𝕊) -> BarChart
-decodeBarChart fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cBarChart -> BarChart
-      { caption: P.unpack string (arg fieldIndex cBarChart f_caption us)
-      , size: dict from (arg fieldIndex cBarChart f_size us)
-      , tickLabels: dict from (arg fieldIndex cBarChart f_tickLabels us)
-      , stackedBars: dict from <$> from (arg fieldIndex cBarChart f_stackedBars us)
-      , legend: P.unpack boolean (arg fieldIndex cBarChart f_legend us)
-      }
-   _ -> typeError u "BarChart"
-
-decodeLineChart :: Partial => FieldIndex -> Val (SelStates 𝕊) -> LineChart
-decodeLineChart fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cLineChart -> LineChart
-      { size: dict from (arg fieldIndex cLineChart f_size us)
-      , tickLabels: dict from (arg fieldIndex cLineChart f_tickLabels us)
-      , caption: P.unpack string (arg fieldIndex cLineChart f_caption us)
-      , plots: decodeLinePlot fieldIndex <$> (from (arg fieldIndex cLineChart f_plots us) :: Array (Val (SelStates 𝕊)))
-      }
-   _ -> typeError u "LineChart"
-
-decodeLinePlot :: Partial => FieldIndex -> Val (SelStates 𝕊) -> LinePlot
-decodeLinePlot fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cLinePlot -> LinePlot
-      { name: P.unpack string (arg fieldIndex cLinePlot f_name us)
-      , points: dict from <$> from (arg fieldIndex cLinePlot f_points us)
-      }
-   _ -> typeError u "LinePlot"
-
-decodeScatterPlot :: Partial => FieldIndex -> Val (SelStates 𝕊) -> ScatterPlot
-decodeScatterPlot fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cScatterPlot -> ScatterPlot
-      { caption: P.unpack string (arg fieldIndex cScatterPlot f_caption us)
-      , points: dict from <$> from (arg fieldIndex cScatterPlot f_points us)
-      , labels: dict from (arg fieldIndex cScatterPlot f_labels us)
-      }
-   _ -> typeError u "ScatterPlot"
-
-decodeText :: Partial => FieldIndex -> Val (SelStates 𝕊) -> Text
-decodeText fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cText -> case arg fieldIndex cText f_text us of
-      Val α _ (Str s) -> Text (s × α)
-      _ -> typeError u "Text expects string"
-   _ -> typeError u "Text"
-
-decodeLink :: Partial => FieldIndex -> Val (SelStates 𝕊) -> Link
-decodeLink fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cLink -> case arg fieldIndex cLink f_label us of
-      Val α' _ (Str s) -> Link (arg fieldIndex cLink f_value us) (s × α')
-      _ -> typeError u "Link expects string label"
-   _ -> typeError u "Link"
-
-decodeMultiView :: Partial => FieldIndex -> Options -> Val (SelStates 𝕊) -> MultiView
-decodeMultiView fieldIndex options (Val _ _ u) = case u of
-   Constr c us | c == cMultiView -> MultiView (view fieldIndex options "" <$> from (arg fieldIndex cMultiView f_views us))
-   _ -> typeError u "MultiView"
-
-decodeParagraph :: Partial => FieldIndex -> Options -> Val (SelStates 𝕊) -> Paragraph
-decodeParagraph fieldIndex options (Val _ _ u) = case u of
-   Constr c us | c == cParagraph -> Paragraph (view fieldIndex options "" <$> from (arg fieldIndex cParagraph f_fragments us))
-   _ -> typeError u "Paragraph"
 
 -- TODO: merge with 'view' below.
 view' :: Partial => FieldIndex -> Options -> String -> Val (SelStates 𝕊) -> View
@@ -103,7 +38,7 @@ view' fieldIndex options title v@(Val _ v_opt _) =
    pack $ DocView { doc: viewParagraph <$> v_opt, view: view fieldIndex options title v }
    where
    viewParagraph v'@(Val _ _ (Constr c _)) | c == cParagraph =
-      decodeParagraph fieldIndex options v'
+      reflectParagraph fieldIndex options v'
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- TODO: given the typeError clause, Partial no longer needed
@@ -113,13 +48,13 @@ view fieldIndex options title v@(Val α _ u') = case u' of
    Float n -> pack (Text (show n × α))
    Str str -> pack (Text (str × α))
    Constr c _
-      | c == cText -> pack (decodeText fieldIndex v)
-      | c == cMultiView -> pack (decodeMultiView fieldIndex options v)
-      | c == cParagraph -> pack (decodeParagraph fieldIndex options v)
-      | c == cLink -> pack (decodeLink fieldIndex v)
-      | c == cBarChart -> pack (decodeBarChart fieldIndex v)
-      | c == cScatterPlot -> pack (decodeScatterPlot fieldIndex v)
-      | c == cLineChart -> pack (decodeLineChart fieldIndex v)
+      | c == cText -> pack (reflectText fieldIndex v)
+      | c == cMultiView -> pack (reflectMultiView fieldIndex options v)
+      | c == cParagraph -> pack (reflectParagraph fieldIndex options v)
+      | c == cLink -> pack (reflectLink fieldIndex v)
+      | c == cBarChart -> pack (reflectBarChart fieldIndex v)
+      | c == cScatterPlot -> pack (reflectScatterPlot fieldIndex v)
+      | c == cLineChart -> pack (reflectLineChart fieldIndex v)
       | c == cNil || c == cCons ->
            if tableView then
               let
@@ -144,6 +79,71 @@ view fieldIndex options title v@(Val α _ u') = case u' of
    where
    viewDict :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View × View)
    viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view fieldIndex options k v'
+
+arg :: FieldIndex -> Name -> FieldName -> List (Val (SelStates 𝕊)) -> Val (SelStates 𝕊)
+arg fieldIndex c f us = definitely' (index us (fieldIndex c f))
+
+reflectBarChart :: Partial => FieldIndex -> Val (SelStates 𝕊) -> BarChart
+reflectBarChart fieldIndex (Val _ _ u) = case u of
+   Constr c us | c == cBarChart -> BarChart
+      { caption: P.unpack string (arg fieldIndex cBarChart f_caption us)
+      , size: dict from (arg fieldIndex cBarChart f_size us)
+      , tickLabels: dict from (arg fieldIndex cBarChart f_tickLabels us)
+      , stackedBars: dict from <$> from (arg fieldIndex cBarChart f_stackedBars us)
+      , legend: P.unpack boolean (arg fieldIndex cBarChart f_legend us)
+      }
+   _ -> typeError u "BarChart"
+
+reflectLineChart :: Partial => FieldIndex -> Val (SelStates 𝕊) -> LineChart
+reflectLineChart fieldIndex (Val _ _ u) = case u of
+   Constr c us | c == cLineChart -> LineChart
+      { size: dict from (arg fieldIndex cLineChart f_size us)
+      , tickLabels: dict from (arg fieldIndex cLineChart f_tickLabels us)
+      , caption: P.unpack string (arg fieldIndex cLineChart f_caption us)
+      , plots: reflectLinePlot fieldIndex <$> (from (arg fieldIndex cLineChart f_plots us) :: Array (Val (SelStates 𝕊)))
+      }
+   _ -> typeError u "LineChart"
+
+reflectLinePlot :: Partial => FieldIndex -> Val (SelStates 𝕊) -> LinePlot
+reflectLinePlot fieldIndex (Val _ _ u) = case u of
+   Constr c us | c == cLinePlot -> LinePlot
+      { name: P.unpack string (arg fieldIndex cLinePlot f_name us)
+      , points: dict from <$> from (arg fieldIndex cLinePlot f_points us)
+      }
+   _ -> typeError u "LinePlot"
+
+reflectScatterPlot :: Partial => FieldIndex -> Val (SelStates 𝕊) -> ScatterPlot
+reflectScatterPlot fieldIndex (Val _ _ u) = case u of
+   Constr c us | c == cScatterPlot -> ScatterPlot
+      { caption: P.unpack string (arg fieldIndex cScatterPlot f_caption us)
+      , points: dict from <$> from (arg fieldIndex cScatterPlot f_points us)
+      , labels: dict from (arg fieldIndex cScatterPlot f_labels us)
+      }
+   _ -> typeError u "ScatterPlot"
+
+reflectText :: Partial => FieldIndex -> Val (SelStates 𝕊) -> Text
+reflectText fieldIndex (Val _ _ u) = case u of
+   Constr c us | c == cText -> case arg fieldIndex cText f_text us of
+      Val α _ (Str s) -> Text (s × α)
+      _ -> typeError u "Text expects string"
+   _ -> typeError u "Text"
+
+reflectLink :: Partial => FieldIndex -> Val (SelStates 𝕊) -> Link
+reflectLink fieldIndex (Val _ _ u) = case u of
+   Constr c us | c == cLink -> case arg fieldIndex cLink f_label us of
+      Val α' _ (Str s) -> Link (arg fieldIndex cLink f_value us) (s × α')
+      _ -> typeError u "Link expects string label"
+   _ -> typeError u "Link"
+
+reflectMultiView :: Partial => FieldIndex -> Options -> Val (SelStates 𝕊) -> MultiView
+reflectMultiView fieldIndex options (Val _ _ u) = case u of
+   Constr c us | c == cMultiView -> MultiView (view fieldIndex options "" <$> from (arg fieldIndex cMultiView f_views us))
+   _ -> typeError u "MultiView"
+
+reflectParagraph :: Partial => FieldIndex -> Options -> Val (SelStates 𝕊) -> Paragraph
+reflectParagraph fieldIndex options (Val _ _ u) = case u of
+   Constr c us | c == cParagraph -> Paragraph (view fieldIndex options "" <$> from (arg fieldIndex cParagraph f_fragments us))
+   _ -> typeError u "Paragraph"
 
 class Reflect a b where
    from :: Partial => a -> b

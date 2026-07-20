@@ -23,7 +23,7 @@ import Data.String.CodeUnits (charAt)
 import DefiniteAssignment (ClassEntry, Cxt, classFor, classesOf, fields)
 import Dict (Dict, fromFoldable)
 import Effect.Exception (Error)
-import Util (absurd, definitely', error, throw, withMsg, (×))
+import Util (absurd, definitely, definitely', error, throw, withMsg, (×))
 import Util.Map (keys, lookup)
 
 type TypeName = String
@@ -103,11 +103,10 @@ arity γ c = do
    DataType _ sigs <- dataType γ c
    lookup c sigs
 
--- A constructor's fields resolved to their positions by name.
 type FieldIndex = Name -> FieldName -> Int
 
-fieldIndex :: Cxt -> Name -> FieldName -> Maybe Int
-fieldIndex γ c field = do
+fieldIndex :: Cxt -> Name -> FieldName -> Int
+fieldIndex γ c field = definitely "field declared for class" do
    ce <- classFor γ (dottedName c)
    elemIndex field (fields ce)
 
@@ -139,6 +138,7 @@ cPair = lib_builtins "Pair" :: Name -- Pair
 cNothing = lib_builtins "Nothing" :: Name -- Maybe
 cJust = lib_builtins "Just" :: Name
 cNone = lib_builtins "None" :: Name -- NoneType
+cNonEmpty = lib_builtins "NonEmpty" :: Name -- Tree
 cNoArgs = lib_builtins "__NoArgs" :: Name -- internal: zero-arg fn signature/call
 cText = lib_view "Text" :: Name
 cLink = lib_view "Link" :: Name
@@ -149,6 +149,10 @@ f_label = "label" :: FieldName
 f_text = "text" :: FieldName
 f_value = "value" :: FieldName
 f_colour = "c" :: FieldName
+f_fst = "fst" :: FieldName
+f_snd = "snd" :: FieldName
+f_left = "left" :: FieldName
+f_right = "right" :: FieldName
 f_height = "height" :: FieldName
 f_labels = "labels" :: FieldName
 f_legend = "legend" :: FieldName
@@ -164,4 +168,3 @@ f_width = "width" :: FieldName
 f_x = "x" :: FieldName
 f_y = "y" :: FieldName
 f_z = "z" :: FieldName
-

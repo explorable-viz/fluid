@@ -9,6 +9,7 @@ import App.View.Util.D3 (ElementType(..), create, numericXAxis, numericYAxis, sc
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
+import DataType (cScatterPlot, f_points)
 import Data.Array (length, range)
 import Data.Foldable (maximum, minimum)
 import Data.FoldableWithIndex (forWithIndex_)
@@ -119,7 +120,7 @@ instance Viewable ScatterPlot Unit where
          registerMouseListeners (select <<< uncurry (scatterPlotPoint sels) <<< selectionEventData') pointEl
 
 scatterPlotPoint :: Selectors -> ViewSelSetter PointIndex
-scatterPlotPoint sels { i } = listElement i >>> sels.scatterPlot_points
+scatterPlotPoint sels { i } = listElement i >>> sels.constrArg cScatterPlot f_points
 
 pointAttrs :: Array (Point Number) -> PointIndex -> Array (String × String)
 pointAttrs points { i } =

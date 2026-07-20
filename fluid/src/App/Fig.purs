@@ -37,7 +37,7 @@ import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive.Defs (primitives)
 import Test.Util.Debug (tracing)
-import Util (type (×), Endo, absurd, definitely, error, spyWhen, (×), (∩))
+import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (class HasModuleStore, Env(..), EnvStmt(..), Val(..), asVal)
@@ -271,7 +271,7 @@ loadFig options@{ inputs, linking } fluidSrc = do
       , intermediate_views: empty
       , in_roots
       , inerts: inertFwd ∩ inertBwd
-      , fieldIndex: \c f -> definitely "field in class" (fieldIndex gconfig.classCtx c f)
+      , fieldIndex: fieldIndex gconfig.classCtx
       }
 
 ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)

@@ -12,6 +12,7 @@ import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
+import DataType (cBarChart, f_stackedBars)
 import Data.Array (range)
 import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
 import Data.Foldable (length)
@@ -41,7 +42,7 @@ instance Viewable BarChart Unit where
       stackedBars' <- barChart' # selectAll ".stack"
       forWithIndex_ stackedBars' \i stack ->
          setSelection sels props.stackedBarContext (stackedBars ! i)
-            (select <<< sels.barChart_stackedBars <<< listElement i)
+            (select <<< sels.constrArg cBarChart f_stackedBars <<< listElement i)
             stack
 
    createElement :: Unit -> BarChart -> D3.Selection -> Effect D3.Selection

@@ -3,9 +3,9 @@ module Test.Specs.LinkedOutputs where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barSegment, dictVal, fst, listElement, matrixDims, matrixElement, snd, topα, (>.>), select, select')
+import App.Util.Selector (barSegment, dictVal, listElement, matrixDims, matrixElement, topα, (>.>), select, select')
 import Data.Maybe (Maybe(..))
-import DataType (f_y)
+import DataType (cBarChart, cLineChart, cPair, cScatterPlot, f_fst, f_plots, f_points, f_snd, f_stackedBars, f_y)
 import File (Folder(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
 import Util ((×))
@@ -19,11 +19,11 @@ linkedOutputs_spec1 =
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_out: \sels -> sels.multiViewEntry 0 (sels.barChart_stackedBars (barSegment 1 0 select))
+   , δ_out: \sels -> sels.multiViewEntry 0 (sels.constrArg cBarChart f_stackedBars (barSegment 1 0 select))
    , out_expect: \sels ->
-        sels.multiViewEntry 0 (sels.barChart_stackedBars (barSegment 1 0 select))
+        sels.multiViewEntry 0 (sels.constrArg cBarChart f_stackedBars (barSegment 1 0 select))
            >.> sels.multiViewEntry 1
-              ( sels.lineChart_plots
+              ( sels.constrArg cLineChart f_plots
                    ( listElement 0 (sels.linePoint 2 (dictVal f_y select))
                         >.> listElement 1 (sels.linePoint 2 (dictVal f_y select))
                         >.> listElement 2 (sels.linePoint 2 (dictVal f_y select))
@@ -43,11 +43,11 @@ linkedOutputs_spec2 =
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_out: \sels -> sels.multiViewEntry 0 (sels.barChart_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+   , δ_out: \sels -> sels.multiViewEntry 0 (sels.constrArg cBarChart f_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
    , out_expect: \sels ->
-        sels.multiViewEntry 0 (sels.barChart_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+        sels.multiViewEntry 0 (sels.constrArg cBarChart f_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
            >.> sels.multiViewEntry 1
-              ( sels.scatterPlot_points
+              ( sels.constrArg cScatterPlot f_points
                    ( listElement 4 (dictVal f_y select)
                         >.> listElement 6 (dictVal f_y select)
                    )
@@ -80,7 +80,7 @@ linkedOutputs_cases =
           , linking: true
           , rowFilter: Nothing
           }
-     , δ_out: \_ -> snd select
+     , δ_out: \sels -> sels.constrArg cPair f_snd select
      , out_expect: \_ -> select
      , inert_expect: \_ -> Just (identity >>> (_ × Persistent))
      , file: "linked_outputs/pairs.fld"
@@ -93,16 +93,16 @@ linkedOutputs_cases =
           , linking: true
           , rowFilter: Nothing
           }
-     , δ_out: \_ -> fst (matrixElement 1 1 select)
-     , out_expect: \_ ->
-          fst
+     , δ_out: \sels -> sels.constrArg cPair f_fst (matrixElement 1 1 select)
+     , out_expect: \sels ->
+          sels.constrArg cPair f_fst
              ( matrixElement 1 0 select
                   >.> matrixElement 1 1 select
                   >.> matrixElement 1 2 select
                   >.> matrixElement 1 3 select
                   >.> matrixElement 1 4 select
              )
-             >.> snd
+             >.> sels.constrArg cPair f_snd
                 ( matrixElement 0 0 select
                      >.> matrixElement 0 1 select
                      >.> matrixElement 0 2 select
@@ -113,7 +113,7 @@ linkedOutputs_cases =
                      >.> matrixElement 2 1 select
                      >.> matrixElement 2 2 select
                 )
-     , inert_expect: \_ -> Just (topα select' >.> fst (matrixDims select') >.> snd (matrixDims select'))
+     , inert_expect: \sels -> Just (topα select' >.> sels.constrArg cPair f_fst (matrixDims select') >.> sels.constrArg cPair f_snd (matrixDims select'))
      , file: "linked_outputs/convolution.fld"
      }
    , linkedOutputs_spec1

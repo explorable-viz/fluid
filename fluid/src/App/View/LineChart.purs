@@ -10,6 +10,7 @@ import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, dat
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
+import DataType (cLineChart, f_plots)
 import Data.Array (concat, elemIndex, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
 import Data.Foldable (length)
@@ -98,7 +99,7 @@ instance Viewable LineChart Unit where
 
       pointSel :: ViewSelSetter PointCoordinate
       pointSel { i, j } =
-         sels.linePoint j >>> listElement i >>> sels.lineChart_plots
+         sels.linePoint j >>> listElement i >>> sels.constrArg cLineChart f_plots
 
    createElement :: Unit -> LineChart -> D3.Selection -> Effect D3.Selection
    createElement _ (LineChart { size, tickLabels, caption, plots }) parent = do
