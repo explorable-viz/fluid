@@ -4,16 +4,15 @@ import Prelude hiding (absurd)
 
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, getPersistent, selStates)
 import Bind (Name, Var)
-import Data.List (List(..), updateAt, (!!), (:))
+import Data.List (List(..), (:))
 import Data.List.NonEmpty (last)
-import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
 import DataType (FieldIndex, FieldName, cCons, cJust, cNil, f_segments, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
-import Util (Endo, absurd, assert, definitely', error, (×))
+import Util (Endo, absurd, assert, error, unsafeUpdateAt, (!), (×))
 import Util.Map (get, insert, update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Env, MatrixDim(..), MatrixRep(..), Val(..), matrixGet, matrixPut)
@@ -50,9 +49,9 @@ persist δα = \v -> (over SelStates ((<$>) mapδ) v) × Persistent
 just :: Setter (Val (SelStates 𝔹)) 𝔹
 just = constr (last cJust)
 
-type Selectors = Name -> FieldName -> SelSetter Val Val
+type ConstrArg = Name -> FieldName -> SelSetter Val Val
 
-fieldElement :: Selectors -> Name -> FieldName -> Int -> SelSetter Val Val
+fieldElement :: ConstrArg -> Name -> FieldName -> Int -> SelSetter Val Val
 fieldElement sels c f n = listElement n >>> sels c f
 
 barSegment :: Int -> Int -> SelSetter Val Val
@@ -74,12 +73,10 @@ listElement n δv = unsafePartial $ case _ of
    Val α doc (Constr c (v : u : Nil)) | c == cCons ->
       first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listElement (n - 1) δv u)
 
-constrArg :: FieldIndex -> Name -> FieldName -> SelSetter Val Val
+constrArg :: FieldIndex -> ConstrArg
 constrArg fieldIndex c f δv = unsafePartial $ case _ of
    Val α doc (Constr c' us) | last c == last c' ->
-      first (\u' -> Val α doc (Constr c' $ fromJust (updateAt n u' us)))
-         $ definitely'
-         $ δv <$> (us !! n)
+      first (\u' -> Val α doc (Constr c' $ unsafeUpdateAt n u' us)) (δv (us ! n))
    where
    n = fieldIndex c f
 

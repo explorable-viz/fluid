@@ -3,11 +3,11 @@ module App.View.Util where
 import Prelude
 
 import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, classes, selClasses, selClassesFor)
-import App.Util.Selector (Selectors, dictVal)
+import App.Util.Selector (ConstrArg, dictVal)
 import App.View.Util.D3 (create, isEmpty, on, rootSelect, select, setAttrs)
 import App.View.Util.D3 as D3
-import Bind (Name, Var, (↦))
-import DataType (FieldName)
+import Bind (Var, (↦))
+import DataType (FieldIndex)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..))
 import Data.Argonaut.Decode.Decoders (decodeString)
 import Data.Either (Either(..))
@@ -42,7 +42,7 @@ unpack (View vw) k = vw k
 
 class Viewable a b | a -> b where
    createElement :: b -> a -> D3.Selection -> Effect D3.Selection
-   setSelection :: Selectors -> b -> a -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ConstrArg -> b -> a -> Select -> D3.Selection -> Effect Unit
    isLeaf :: a -> Boolean
 
 instance Viewable View Unit where
@@ -65,7 +65,7 @@ instance Viewable (Dict (View × View)) Unit where
          createElement unit view child
       pure rootElement
 
-   setSelection :: Selectors -> Unit -> Dict (View × View) -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ConstrArg -> Unit -> Dict (View × View) -> Select -> D3.Selection -> Effect Unit
    setSelection sels _ views select rootElement =
       sequence_ $
          flip mapWithIndex (toUnfoldable views :: Array _) \i (x × k_view × view) -> do
@@ -77,7 +77,7 @@ instance Viewable (Dict (View × View)) Unit where
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
-draw :: forall a. Viewable a Unit => Selectors -> Renderer a
+draw :: forall a. Viewable a Unit => ConstrArg -> Renderer a
 draw sels _ { divId, suffix, view } select' = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
@@ -90,7 +90,7 @@ draw sels _ { divId, suffix, view } select' = do
            else pure maybeRootElement
       )
 
-drawView :: Selectors -> RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) -> Effect Unit
+drawView :: ConstrArg -> RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) -> Effect Unit
 drawView sels rSpec@{ view: vw } redraw =
    unpack vw (\view -> draw sels uiHelpers (rSpec { view = view }) redraw)
 
@@ -157,7 +157,7 @@ type Fig =
    , out_view :: Maybe View
    , intermediate_views :: Dict (Maybe View)
    , inerts :: Set DVertex
-   , fieldIndex :: Name -> FieldName -> Int
+   , fieldIndex :: FieldIndex
    }
 
 -- ======================

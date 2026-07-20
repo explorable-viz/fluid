@@ -4,7 +4,7 @@ import Prelude
 
 import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
-import App.Util.Selector (Selectors, constrArg, sel𝔹)
+import App.Util.Selector (ConstrArg, constrArg, sel𝔹)
 import App.View.Util (Fig, Options)
 import Bind (Bind)
 import Control.Monad.Error.Class (class MonadError, catchError)
@@ -37,17 +37,17 @@ type TestSpec =
 
 type TestBwdSpec =
    { file :: String
-   , bwd_expect :: Selectors -> Selector Env
-   , δv :: Selectors -> Selector Val
+   , bwd_expect :: ConstrArg -> Selector Env
+   , δv :: ConstrArg -> Selector Val
    , fwd_expect :: String
    , inputs :: Array String
    }
 
 type TestLinkedOutputsSpec =
    { spec :: Options
-   , δ_out :: Selectors -> Selector Val
-   , out_expect :: Selectors -> Selector Val
-   , inert_expect :: Selectors -> Maybe (Selector Val)
+   , δ_out :: ConstrArg -> Selector Val
+   , out_expect :: ConstrArg -> Selector Val
+   , inert_expect :: ConstrArg -> Maybe (Selector Val)
    , file :: String
    }
 

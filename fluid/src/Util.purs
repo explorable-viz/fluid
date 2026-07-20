@@ -231,6 +231,10 @@ instance UnsafeArray NonEmptyArray where
    unsafeIndex xs i = withinBounds (xs NEA.!! i)
    unsafeUpdateAt i x = NEA.updateAt i x >>> withinBounds
 
+instance UnsafeArray List where
+   unsafeIndex xs i = withinBounds (xs L.!! i)
+   unsafeUpdateAt i x = L.updateAt i x >>> withinBounds
+
 infixl 8 unsafeIndex as !
 
 -- Similar to NonEmptyList.appendFoldable but without copying the list

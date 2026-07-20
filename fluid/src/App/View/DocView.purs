@@ -3,7 +3,7 @@ module App.View.DocView where
 import Prelude
 
 import App.View.Paragraph (Paragraph)
-import App.Util.Selector (Selectors)
+import App.Util.Selector (ConstrArg)
 import App.View.Util (class Viewable, Select, View, createElement, isLeaf, setSelection, unpack)
 import App.View.Util.D3 as D3
 import Data.Maybe (Maybe(..))
@@ -27,7 +27,7 @@ instance Viewable DocView Unit where
    createElement _ (DocView { doc: Nothing, view }) parent = do
       unpack view \v -> createElement unit v parent
 
-   setSelection :: Selectors -> Unit -> DocView -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ConstrArg -> Unit -> DocView -> Select -> D3.Selection -> Effect Unit
    setSelection sels _ (DocView { doc: Just doc, view }) select rootElement = do
       viewElem <- rootElement # D3.select (D3.nthChildOf D3.scope 1)
       void $ unpack view \v -> setSelection sels unit v select viewElem

@@ -3,7 +3,7 @@ module App.View.Text where
 import Prelude
 
 import App.Util (Attrs, Selectable, contents, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
-import App.Util.Selector (Selectors, ViewSelSetter)
+import App.Util.Selector (ConstrArg, ViewSelSetter)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setStyles, setText)
 import App.View.Util.D3 as D3
@@ -25,7 +25,7 @@ instance Viewable Text Unit where
       rootElement <- parent # create D3.Span []
       rootElement # setText (contents $ getText text)
 
-   setSelection :: Selectors -> Unit -> Text -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ConstrArg -> Unit -> Text -> Select -> D3.Selection -> Effect Unit
    setSelection _ _ text redraw rootElement = do
       rootElement # setStyles (textAttrs text) >>= registerMouseListeners (redraw <<< uncurry textSelector <<< selectionEventData')
       where

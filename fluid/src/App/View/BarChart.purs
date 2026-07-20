@@ -3,7 +3,7 @@ module App.View.BarChart where
 import Prelude hiding (absurd)
 
 import App.Util (Dimensions(..), Selectable, classes, contents)
-import App.Util.Selector (Selectors, listElement)
+import App.Util.Selector (ConstrArg, listElement)
 import App.View.Segment (Segment(..), Scales, indexCol)
 import App.View.StackedBar (StackedBar(..), StackedBarContext, barHeight)
 import App.View.Util (class Viewable, Select, createElement, setSelection)
@@ -35,7 +35,7 @@ newtype BarChart = BarChart
 instance Viewable BarChart Unit where
    isLeaf = const false
 
-   setSelection :: Selectors -> Unit -> BarChart -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ConstrArg -> Unit -> BarChart -> Select -> D3.Selection -> Effect Unit
    setSelection sels _ chart@(BarChart { stackedBars }) select barChart' = do
       let props = barChartProps chart
       -- more robust to iterate over stackedBars and select ith DOM child instead?

@@ -3,7 +3,7 @@ module Test.Util where
 import Prelude hiding (absurd, compare)
 
 import App.Util (Selector, getPersistent, unselected)
-import App.Util.Selector (Selectors, constrArg, sel𝔹)
+import App.Util.Selector (ConstrArg, constrArg, sel𝔹)
 import DataType (fieldIndex)
 import Data.Array (null) as Array
 import Data.Set as Set
@@ -36,9 +36,9 @@ import Val (class HasModuleStore, class Ann, Env, EnvStmt(..), Val)
 type TestSuite m = Array (String × m Unit)
 
 type SelectionSpec =
-   { δv :: Selectors -> Selector Val
+   { δv :: ConstrArg -> Selector Val
    , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
-   , bwd_expect :: Maybe (Selectors -> Selector Env) -- Nothing for tests that don't perturb output
+   , bwd_expect :: Maybe (ConstrArg -> Selector Env) -- Nothing for tests that don't perturb output
    , inputs :: Array String -- data inputs to slice forward through; [] = all (no restriction)
    }
 

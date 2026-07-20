@@ -2,7 +2,7 @@ module App.View.MultiView where
 
 import Prelude
 
-import App.Util.Selector (Selectors, fieldElement)
+import App.Util.Selector (ConstrArg, fieldElement)
 import App.View.Util (class Viewable, Select, View, createElement, setSelection)
 import App.View.Util.D3 (create)
 import App.View.Util.D3 as D3
@@ -23,7 +23,7 @@ instance Viewable MultiView Unit where
          createElement unit view rootElement
       pure rootElement
 
-   setSelection :: Selectors -> Unit -> MultiView -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ConstrArg -> Unit -> MultiView -> Select -> D3.Selection -> Effect Unit
    setSelection sels _ (MultiView views) select rootElement = do
       sequence_ $ flip mapWithIndex views \i view -> do
          child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))

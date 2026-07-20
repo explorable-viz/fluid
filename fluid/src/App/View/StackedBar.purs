@@ -3,7 +3,7 @@ module App.View.StackedBar where
 import Prelude
 
 import App.Util (Dimensions, Selectable, classes, contents)
-import App.Util.Selector (Selectors, dictVal)
+import App.Util.Selector (ConstrArg, dictVal)
 import App.View.Segment (Scales, Segment(..), SegmentContext)
 import App.View.Util (class Viewable, Select, createElement, setSelection)
 import App.View.Util.D3 (ElementType(..), create, selectAll)
@@ -41,7 +41,7 @@ instance Viewable StackedBar StackedBarContext where
          createElement (segmentContext context stackedBar y_index) segment g
       pure g
 
-   setSelection :: Selectors -> StackedBarContext -> StackedBar -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ConstrArg -> StackedBarContext -> StackedBar -> Select -> D3.Selection -> Effect Unit
    setSelection sels context (stackedBar@(StackedBar { segments })) select root = do
       -- Might be more robust and more consistent with createRootElement to iterate over segments instead
       segments' <- root # selectAll ".bar" -- TODO: .bar -> .segment
