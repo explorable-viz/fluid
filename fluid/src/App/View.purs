@@ -133,12 +133,14 @@ reflectLink fieldIndex (Val _ _ u) = case u of
 
 reflectMultiView :: Partial => FieldIndex -> Options -> Val (SelStates 𝕊) -> MultiView
 reflectMultiView fieldIndex options (Val _ _ u) = case u of
-   Constr c us | c == cMultiView -> MultiView (view fieldIndex options "" <$> from (us ! fieldIndex cMultiView f_views))
+   Constr c us | c == cMultiView ->
+      MultiView (view fieldIndex options "" <$> from (us ! fieldIndex cMultiView f_views))
    _ -> typeError u "MultiView"
 
 reflectParagraph :: Partial => FieldIndex -> Options -> Val (SelStates 𝕊) -> Paragraph
 reflectParagraph fieldIndex options (Val _ _ u) = case u of
-   Constr c us | c == cParagraph -> Paragraph (view fieldIndex options "" <$> from (us ! fieldIndex cParagraph f_fragments))
+   Constr c us | c == cParagraph ->
+      Paragraph (view fieldIndex options "" <$> from (us ! fieldIndex cParagraph f_fragments))
    _ -> typeError u "Paragraph"
 
 class Reflect a b where
@@ -191,4 +193,3 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Orientat
       { x: P.unpack orientation (snd (get f_x r))
       , y: P.unpack orientation (snd (get f_y r))
       }
-
