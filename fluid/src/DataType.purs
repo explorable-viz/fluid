@@ -32,16 +32,16 @@ type Ctr = String -- newtype would require more general Dict keys
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
-isCtrName ∷ Var → Boolean
-isCtrName str = let c = definitely' $ charAt 0 str in isUpper (codePointFromChar c) || c == '_'
+isLeafName ∷ Var → Boolean
+isLeafName str = let c = definitely' $ charAt 0 str in isUpper (codePointFromChar c) || c == '_'
 
-isCtrOp :: String -> Boolean
-isCtrOp str = ':' == (definitely' $ charAt 0 str)
+isLeafOp :: String -> Boolean
+isLeafOp str = ':' == (definitely' $ charAt 0 str)
 
 showCtr :: Var -> String
 showCtr c
-   | isCtrName c = c
-   | isCtrOp c = "(" <> c <> ")"
+   | isLeafName c = c
+   | isLeafOp c = "(" <> c <> ")"
    | otherwise = error absurd
 
 data DataType = DataType TypeName (Dict CtrSig)
@@ -84,18 +84,17 @@ rootClass λ c = case Map.lookup c λ of
    Just cls | Just b <- baseFqn cls -> rootClass λ b
    _ -> c
 
--- Concrete iff a leaf.
-isCtr :: Map.Map Var ClassEntry -> Ctr -> Boolean
-isCtr λ c = Map.member c λ && not (any (\(_ × cls) -> baseFqn cls == Just c) (Map.toUnfoldable λ :: List _))
+isLeaf :: Map.Map Var ClassEntry -> Ctr -> Boolean
+isLeaf λ c = Map.member c λ && not (any (\(_ × cls) -> baseFqn cls == Just c) (Map.toUnfoldable λ :: List _))
 
 dataType :: Cxt -> Ctr -> Maybe DataType
 dataType γ c =
-   if isCtr λ c then Just (DataType r (fromFoldable (sigOf <$> siblings)))
+   if isLeaf λ c then Just (DataType r (fromFoldable (sigOf <$> siblings)))
    else Nothing
    where
    λ = classesOf γ
    r = rootClass λ c
-   siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isCtr λ c' && rootClass λ c' == r)
+   siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isLeaf λ c' && rootClass λ c' == r)
    sigOf (c' × cls) = c' × List.length (fields cls)
 
 arity :: Cxt -> Ctr -> Maybe Int
