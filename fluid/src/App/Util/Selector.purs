@@ -10,7 +10,7 @@ import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (FieldIndex, FieldName, cCons, cLinePlot, cMultiView, cNil, cParagraph, cJust, f_fragments, f_points, f_segments, f_views, f_z)
+import DataType (FieldIndex, FieldName, cCons, cJust, cNil, f_segments, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely', error, (×))
@@ -50,20 +50,10 @@ persist δα = \v -> (over SelStates ((<$>) mapδ) v) × Persistent
 just :: Setter (Val (SelStates 𝔹)) 𝔹
 just = constr (last cJust)
 
-type Selectors =
-   { constrArg :: Name -> FieldName -> SelSetter Val Val
-   , multiViewEntry :: Int -> SelSetter Val Val
-   , paragraphEntry :: Int -> SelSetter Val Val
-   , linePoint :: Int -> SelSetter Val Val
-   }
+type Selectors = Name -> FieldName -> SelSetter Val Val
 
-mkSelectors :: FieldIndex -> Selectors
-mkSelectors fieldIndex =
-   { constrArg: constrArg fieldIndex
-   , multiViewEntry: \n -> listElement n >>> constrArg fieldIndex cMultiView f_views
-   , paragraphEntry: \n -> listElement n >>> constrArg fieldIndex cParagraph f_fragments
-   , linePoint: \i -> listElement i >>> constrArg fieldIndex cLinePlot f_points
-   }
+fieldElement :: Selectors -> Name -> FieldName -> Int -> SelSetter Val Val
+fieldElement sels c f n = listElement n >>> sels c f
 
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =

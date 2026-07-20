@@ -4,7 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
-import App.Util.Selector (envVal, mkSelectors, ViewSetter)
+import App.Util.Selector (constrArg, envVal, ViewSetter)
 import App.View (view')
 import App.View.Util (Direction(..), Fig, Options, HTMLId, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
@@ -173,7 +173,7 @@ drawFig divId fig@{ spec: options } = do
       drawView sels { divId: prefix, suffix: α, view: unsafePartial $ view' fig.fieldIndex options str.intermediate (map to𝕊 <$> v) }
          (selectIntermediate (Vertex α) >>> redraw)
    where
-   sels = mkSelectors fig.fieldIndex
+   sels = constrArg fig.fieldIndex
    { v, γ, ι } = selectionResult fig
    out_view = unsafePartial $ view' fig.fieldIndex options str.output v
    in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' fig.fieldIndex options) γ)

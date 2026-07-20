@@ -42,7 +42,7 @@ instance Viewable BarChart Unit where
       stackedBars' <- barChart' # selectAll ".stack"
       forWithIndex_ stackedBars' \i stack ->
          setSelection sels props.stackedBarContext (stackedBars ! i)
-            (select <<< sels.constrArg cBarChart f_stackedBars <<< listElement i)
+            (select <<< sels cBarChart f_stackedBars <<< listElement i)
             stack
 
    createElement :: Unit -> BarChart -> D3.Selection -> Effect D3.Selection

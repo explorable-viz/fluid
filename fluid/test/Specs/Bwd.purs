@@ -3,8 +3,8 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barSegment, constr, dict, dictKey, dictVal, envVal, listCell, listElement, matrix, matrixElement, select, select', just, topα, (>.>))
-import DataType (cBarChart, cNonEmpty, cPair, f_fst, f_left, f_right, f_snd, f_stackedBars, f_value)
+import App.Util.Selector (barSegment, constr, dict, dictKey, dictVal, envVal, fieldElement, listCell, listElement, matrix, matrixElement, select, select', just, topα, (>.>))
+import DataType (cBarChart, cMultiView, cNonEmpty, cPair, f_fst, f_left, f_right, f_snd, f_stackedBars, f_value, f_views)
 import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
 
@@ -42,7 +42,7 @@ bwd_cases =
      }
    , { file: "output_not_source.fld"
      , bwd_expect: \_ -> envVal "x" select >.> envVal "n" select
-     , δv: \sels -> sels.constrArg cPair f_snd select
+     , δv: \sels -> sels cPair f_snd select
      , inputs: []
      , fwd_expect: "(⸨3⸩, ⸨True⸩)"
      }
@@ -263,7 +263,7 @@ bwd_cases =
                 (matrixElement 0 0 select >.> matrixElement 0 1 select >.> matrixElement 0 2 select)
                 >.> envVal "rightMatrix"
                    (matrixElement 0 0 select >.> matrixElement 1 0 select >.> matrixElement 2 0 select)
-     , δv: \sels -> sels.constrArg cPair f_fst $ matrixElement 0 0 select
+     , δv: \sels -> sels cPair f_fst $ matrixElement 0 0 select
      , inputs: [ "leftMatrix", "rightMatrix" ]
      , fwd_expect:
           """(@doc(Paragraph("Intermediate" :| "matrix" :| [])) ⸨22⸩, ⸨28⸩,
@@ -310,10 +310,10 @@ bwd_cases =
    , { file: "lookup.fld"
      , bwd_expect:
           \sels -> envVal "tree"
-             ( sels.constrArg cNonEmpty f_right
-                  ( sels.constrArg cNonEmpty f_left
+             ( sels cNonEmpty f_right
+                  ( sels cNonEmpty f_left
                        ( constr "NonEmpty" select'
-                            >.> sels.constrArg cNonEmpty f_value
+                            >.> sels cNonEmpty f_value
                                (constr "Pair" select')
                        )
                   )
@@ -330,7 +330,7 @@ bwd_cases =
                   >.> listElement 30 (dictVal "output" select)
                   >.> listElement 31 (dictVal "output" select)
              )
-     , δv: \sels -> sels.multiViewEntry 0 (sels.constrArg cBarChart f_stackedBars (barSegment 1 0 select))
+     , δv: \sels -> fieldElement sels cMultiView f_views 0 (sels cBarChart f_stackedBars (barSegment 1 0 select))
      , inputs: [ "renewables" ]
      , fwd_expect:
           """MultiView(BarChart("Total output by country", { height: 185, width: 275 }, {
@@ -378,7 +378,7 @@ bwd_cases =
                   >.> listElement 54 (dictVal "nuclearOut" select >.> dictVal "gasOut" select >.> dictVal "coalOut" select >.> dictVal "petrolOut" select)
                   >.> listElement 56 (dictVal "nuclearOut" select >.> dictVal "gasOut" select >.> dictVal "coalOut" select >.> dictVal "petrolOut" select)
              )
-     , δv: \sels -> sels.multiViewEntry 0 (sels.constrArg cBarChart f_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+     , δv: \sels -> fieldElement sels cMultiView f_views 0 (sels cBarChart f_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
      , inputs: [ "nonRenewables" ]
      , fwd_expect:
           """MultiView(BarChart("Non-renewables by country", { height: 185, width: 275 }, {

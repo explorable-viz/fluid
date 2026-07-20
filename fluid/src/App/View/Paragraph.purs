@@ -2,11 +2,12 @@ module App.View.Paragraph where
 
 import Prelude
 
-import App.Util.Selector (Selectors)
+import App.Util.Selector (Selectors, fieldElement)
 import App.View.Util (class Viewable, Select, View, createElement, isLeaf, setSelection)
 import App.View.Util.D3 (ElementType(..), create, createText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
+import DataType (cParagraph, f_fragments)
 import Data.Array (mapWithIndex)
 import Data.Foldable (all, sequence_)
 import Effect (Effect)
@@ -28,4 +29,4 @@ instance Viewable Paragraph Unit where
    setSelection sels _ (Paragraph views) select rootElement = do
       sequence_ $ flip mapWithIndex views \i view -> do
          child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
-         setSelection sels unit view (sels.paragraphEntry i >>> select) child
+         setSelection sels unit view (fieldElement sels cParagraph f_fragments i >>> select) child

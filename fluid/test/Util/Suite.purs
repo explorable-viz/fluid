@@ -4,7 +4,7 @@ import Prelude
 
 import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
-import App.Util.Selector (Selectors, mkSelectors, sel𝔹)
+import App.Util.Selector (Selectors, constrArg, sel𝔹)
 import App.View.Util (Fig, Options)
 import Bind (Bind)
 import Control.Monad.Error.Class (class MonadError, catchError)
@@ -80,7 +80,7 @@ linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => HasCxt m => H
 linkedOutputsTest { spec, δ_out, out_expect, inert_expect, file } = do
    fluidSrc <- loadFile spec.fluidSrcPaths (File file)
    fig0 <- loadFig spec fluidSrc
-   let sels = mkSelectors fig0.fieldIndex
+   let sels = constrArg fig0.fieldIndex
    let fig = selectOutput (δ_out sels) fig0
    v <- logTimeWhen timing.selectionResult file \_ ->
       pure (selectionResult fig).v

@@ -3,7 +3,7 @@ module Test.Util where
 import Prelude hiding (absurd, compare)
 
 import App.Util (Selector, getPersistent, unselected)
-import App.Util.Selector (Selectors, mkSelectors, sel𝔹)
+import App.Util.Selector (Selectors, constrArg, sel𝔹)
 import DataType (fieldIndex)
 import Data.Array (null) as Array
 import Data.Set as Set
@@ -90,7 +90,7 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
    let EnvStmt γ_raw s_raw = erase graphed.inα
    let inputs' = if Array.null inputs then keys γ_raw else Set.fromFoldable inputs
 
-   let sels = mkSelectors (fieldIndex gconfig.classCtx)
+   let sels = constrArg (fieldIndex gconfig.classCtx)
    let v = map (const top) outα :: Val 𝔹
    let out0 = fst (δv sels (const unselected <$> v)) <#> getPersistent
 

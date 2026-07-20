@@ -120,7 +120,7 @@ instance Viewable ScatterPlot Unit where
          registerMouseListeners (select <<< uncurry (scatterPlotPoint sels) <<< selectionEventData') pointEl
 
 scatterPlotPoint :: Selectors -> ViewSelSetter PointIndex
-scatterPlotPoint sels { i } = listElement i >>> sels.constrArg cScatterPlot f_points
+scatterPlotPoint sels { i } = listElement i >>> sels cScatterPlot f_points
 
 pointAttrs :: Array (Point Number) -> PointIndex -> Array (String × String)
 pointAttrs points { i } =
