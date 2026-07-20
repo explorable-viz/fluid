@@ -24,7 +24,7 @@ instance Viewable MultiView Unit where
       pure rootElement
 
    setSelection :: ConstrArg -> Unit -> MultiView -> Select -> D3.Selection -> Effect Unit
-   setSelection sels _ (MultiView views) select rootElement = do
+   setSelection arg _ (MultiView views) select rootElement = do
       sequence_ $ flip mapWithIndex views \i view -> do
          child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
-         setSelection sels unit view (listElement i >>> sels cMultiView f_views >>> select) child
+         setSelection arg unit view (listElement i >>> arg cMultiView f_views >>> select) child

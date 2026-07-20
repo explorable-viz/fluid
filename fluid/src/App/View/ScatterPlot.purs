@@ -107,7 +107,7 @@ instance Viewable ScatterPlot Unit where
 
       pure rootElement
 
-   setSelection sels _ (ScatterPlot { points }) select rootElement = do
+   setSelection arg _ (ScatterPlot { points }) select rootElement = do
       pointEls <- D3.selectAll ".scatterplot-point" rootElement
       foreachE pointEls \pointEl -> do
          idx :: PointIndex <- D3.datum pointEl
@@ -117,10 +117,10 @@ instance Viewable ScatterPlot Unit where
          void $ D3.classed selClasses false pointEl
          void $ D3.classed (selClassesFor sel) true pointEl
          void $ D3.attrs pointEl (fromFoldable (pointAttrs points idx))
-         registerMouseListeners (select <<< uncurry (scatterPlotPoint sels) <<< selectionEventData') pointEl
+         registerMouseListeners (select <<< uncurry (scatterPlotPoint arg) <<< selectionEventData') pointEl
 
 scatterPlotPoint :: ConstrArg -> ViewSelSetter PointIndex
-scatterPlotPoint sels { i } = listElement i >>> sels cScatterPlot f_points
+scatterPlotPoint arg { i } = listElement i >>> arg cScatterPlot f_points
 
 pointAttrs :: Array (Point Number) -> PointIndex -> Array (String × String)
 pointAttrs points { i } =

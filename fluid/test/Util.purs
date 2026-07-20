@@ -90,9 +90,9 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
    let EnvStmt γ_raw s_raw = erase graphed.inα
    let inputs' = if Array.null inputs then keys γ_raw else Set.fromFoldable inputs
 
-   let sels = constrArg (fieldIndex gconfig.classCtx)
+   let arg = constrArg (fieldIndex gconfig.classCtx)
    let v = map (const top) outα :: Val 𝔹
-   let out0 = fst (δv sels (const unselected <$> v)) <#> getPersistent
+   let out0 = fst (δv arg (const unselected <$> v)) <#> getPersistent
 
    EnvStmt in_γ _ <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
@@ -103,7 +103,7 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
    case bwd_expect of
       Nothing -> pure unit
       Just sel -> do
-         let expected = sel𝔹 (sel sels) in_γ
+         let expected = sel𝔹 (sel arg) in_γ
          unless (in_γ ≽ expected) $
             throw ("bwd_expect mismatch:\nactual in_γ\n" <> prettyP in_γ <> "\nexpected (sel𝔹)\n" <> prettyP expected)
    unless (null fwd_expect) do

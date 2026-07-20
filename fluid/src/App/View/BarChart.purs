@@ -36,13 +36,13 @@ instance Viewable BarChart Unit where
    isLeaf = const false
 
    setSelection :: ConstrArg -> Unit -> BarChart -> Select -> D3.Selection -> Effect Unit
-   setSelection sels _ chart@(BarChart { stackedBars }) select barChart' = do
+   setSelection arg _ chart@(BarChart { stackedBars }) select barChart' = do
       let props = barChartProps chart
       -- more robust to iterate over stackedBars and select ith DOM child instead?
       stackedBars' <- barChart' # selectAll ".stack"
       forWithIndex_ stackedBars' \i stack ->
-         setSelection sels props.stackedBarContext (stackedBars ! i)
-            (select <<< sels cBarChart f_stackedBars <<< listElement i)
+         setSelection arg props.stackedBarContext (stackedBars ! i)
+            (select <<< arg cBarChart f_stackedBars <<< listElement i)
             stack
 
    createElement :: Unit -> BarChart -> D3.Selection -> Effect D3.Selection

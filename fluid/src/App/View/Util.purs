@@ -48,7 +48,7 @@ class Viewable a b | a -> b where
 instance Viewable View Unit where
    isLeaf view = unpack view \v -> isLeaf v
    createElement _ view parent = unpack view \v -> createElement unit v parent
-   setSelection sels _ view select rootElement = unpack view \v -> setSelection sels unit v select rootElement
+   setSelection arg _ view select rootElement = unpack view \v -> setSelection arg unit v select rootElement
 
 instance Viewable (Dict (View × View)) Unit where
    isLeaf views = size views == 0
@@ -66,24 +66,24 @@ instance Viewable (Dict (View × View)) Unit where
       pure rootElement
 
    setSelection :: ConstrArg -> Unit -> Dict (View × View) -> Select -> D3.Selection -> Effect Unit
-   setSelection sels _ views select rootElement =
+   setSelection arg _ views select rootElement =
       sequence_ $
          flip mapWithIndex (toUnfoldable views :: Array _) \i (x × k_view × view) -> do
             child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
             child1 <- child # D3.select (D3.nthChildOf D3.scope 1)
             child2 <- child # D3.select (D3.nthChildOf D3.scope 2)
-            void $ setSelection sels unit k_view (\_ -> pure unit) child1 -- TODO: revisit!
-            void $ setSelection sels unit view (dictVal x >>> select) child2
+            void $ setSelection arg unit k_view (\_ -> pure unit) child1 -- TODO: revisit!
+            void $ setSelection arg unit view (dictVal x >>> select) child2
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
 draw :: forall a. Viewable a Unit => ConstrArg -> Renderer a
-draw sels _ { divId, suffix, view } select' = do
+draw arg _ { divId, suffix, view } select' = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
    maybeRootElement <- div # select ("#" <> childId)
-   setSelection sels unit view select' =<<
+   setSelection arg unit view select' =<<
       ( isEmpty maybeRootElement >>=
            if _ then
               createElement unit view div <#> D3.setAttrs [ "id" ↦ childId ] # join
@@ -91,8 +91,8 @@ draw sels _ { divId, suffix, view } select' = do
       )
 
 drawView :: ConstrArg -> RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) -> Effect Unit
-drawView sels rSpec@{ view: vw } redraw =
-   unpack vw (\view -> draw sels uiHelpers (rSpec { view = view }) redraw)
+drawView arg rSpec@{ view: vw } redraw =
+   unpack vw (\view -> draw arg uiHelpers (rSpec { view = view }) redraw)
 
 foreign import mouseButton :: Event -> Int
 

@@ -28,10 +28,10 @@ instance Viewable DocView Unit where
       unpack view \v -> createElement unit v parent
 
    setSelection :: ConstrArg -> Unit -> DocView -> Select -> D3.Selection -> Effect Unit
-   setSelection sels _ (DocView { doc: Just doc, view }) select rootElement = do
+   setSelection arg _ (DocView { doc: Just doc, view }) select rootElement = do
       viewElem <- rootElement # D3.select (D3.nthChildOf D3.scope 1)
-      void $ unpack view \v -> setSelection sels unit v select viewElem
+      void $ unpack view \v -> setSelection arg unit v select viewElem
       docElem <- rootElement # D3.select (D3.nthChildOf D3.scope 2)
-      void $ setSelection sels unit doc select docElem
-   setSelection sels _ (DocView { doc: Nothing, view }) select rootElement = do
-      unpack view \v -> setSelection sels unit v select rootElement
+      void $ setSelection arg unit doc select docElem
+   setSelection arg _ (DocView { doc: Nothing, view }) select rootElement = do
+      unpack view \v -> setSelection arg unit v select rootElement

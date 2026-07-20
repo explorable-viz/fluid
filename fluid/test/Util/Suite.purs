@@ -80,12 +80,12 @@ linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => HasCxt m => H
 linkedOutputsTest { spec, δ_out, out_expect, inert_expect, file } = do
    fluidSrc <- loadFile spec.fluidSrcPaths (File file)
    fig0 <- loadFig spec fluidSrc
-   let sels = constrArg fig0.fieldIndex
-   let fig = selectOutput (δ_out sels) fig0
+   let arg = constrArg fig0.fieldIndex
+   let fig = selectOutput (δ_out arg) fig0
    v <- logTimeWhen timing.selectionResult file \_ ->
       pure (selectionResult fig).v
-   checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (fst $ out_expect sels (botOf <$> v))
-   for_ (inert_expect sels) \sel -> checkEq "inert" "inert_expect" (isInert <$> v) (sel𝔹 sel v)
+   checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (fst $ out_expect arg (botOf <$> v))
+   for_ (inert_expect arg) \sel -> checkEq "inert" "inert_expect" (isInert <$> v) (sel𝔹 sel v)
    pure fig
 
 linkedOutputsSuite :: forall m. MonadAff m => MonadError Error m => HasCxt m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array TestLinkedOutputsSpec -> Array (String × m Unit)

@@ -61,7 +61,7 @@ instance Viewable LineChart Unit where
    isLeaf = const false
 
    setSelection :: ConstrArg -> Unit -> LineChart -> Select -> D3.Selection -> Effect Unit
-   setSelection sels _ (LineChart { plots }) redraw rootElement = do
+   setSelection arg _ (LineChart { plots }) redraw rootElement = do
       points <- rootElement # selectAll ".linechart-point"
 
       foreachE points \point -> do
@@ -99,7 +99,7 @@ instance Viewable LineChart Unit where
 
       pointSel :: ViewSelSetter PointCoordinate
       pointSel { i, j } =
-         listElement j >>> sels cLinePlot f_points >>> listElement i >>> sels cLineChart f_plots
+         listElement j >>> arg cLinePlot f_points >>> listElement i >>> arg cLineChart f_plots
 
    createElement :: Unit -> LineChart -> D3.Selection -> Effect D3.Selection
    createElement _ (LineChart { size, tickLabels, caption, plots }) parent = do

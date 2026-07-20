@@ -163,17 +163,17 @@ intermediates { spec, in_roots, inerts } αs =
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig@{ spec: options } = do
-   drawView sels { divId, suffix: str.output, view: out_view } (selectOutput >>> redraw)
+   drawView arg { divId, suffix: str.output, view: out_view } (selectOutput >>> redraw)
 
    sequence_ $ flip mapWithKey in_views \x view ->
-      drawView sels { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x >>> redraw)
+      drawView arg { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x >>> redraw)
 
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
    sequence_ $ flip mapWithKey (unwrap ι) \α v ->
-      drawView sels { divId: prefix, suffix: α, view: unsafePartial $ view' fig.fieldIndex options str.intermediate (map to𝕊 <$> v) }
+      drawView arg { divId: prefix, suffix: α, view: unsafePartial $ view' fig.fieldIndex options str.intermediate (map to𝕊 <$> v) }
          (selectIntermediate (Vertex α) >>> redraw)
    where
-   sels = constrArg fig.fieldIndex
+   arg = constrArg fig.fieldIndex
    { v, γ, ι } = selectionResult fig
    out_view = unsafePartial $ view' fig.fieldIndex options str.output v
    in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' fig.fieldIndex options) γ)

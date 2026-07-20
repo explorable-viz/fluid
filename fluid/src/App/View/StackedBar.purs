@@ -42,11 +42,11 @@ instance Viewable StackedBar StackedBarContext where
       pure g
 
    setSelection :: ConstrArg -> StackedBarContext -> StackedBar -> Select -> D3.Selection -> Effect Unit
-   setSelection sels context (stackedBar@(StackedBar { segments })) select root = do
+   setSelection arg context (stackedBar@(StackedBar { segments })) select root = do
       -- Might be more robust and more consistent with createRootElement to iterate over segments instead
       segments' <- root # selectAll ".bar" -- TODO: .bar -> .segment
       forWithIndex_ segments' \y_index segment ->
-         setSelection sels (segmentContext context stackedBar y_index)
+         setSelection arg (segmentContext context stackedBar y_index)
             (segments ! y_index)
             (select <<< dictVal f_segments)
             segment

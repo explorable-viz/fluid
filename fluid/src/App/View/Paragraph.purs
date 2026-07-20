@@ -26,7 +26,7 @@ instance Viewable Paragraph Unit where
       pure rootElement
 
    setSelection :: ConstrArg -> Unit -> Paragraph -> Select -> D3.Selection -> Effect Unit
-   setSelection sels _ (Paragraph views) select rootElement = do
+   setSelection arg _ (Paragraph views) select rootElement = do
       sequence_ $ flip mapWithIndex views \i view -> do
          child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
-         setSelection sels unit view (listElement i >>> sels cParagraph f_fragments >>> select) child
+         setSelection arg unit view (listElement i >>> arg cParagraph f_fragments >>> select) child
