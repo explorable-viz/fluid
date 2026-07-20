@@ -49,7 +49,7 @@ type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 fqnKeyed :: Map Var ClassEntry -> Map Var ClassEntry
 fqnKeyed m = Map.fromFoldable (reKey <$> (Map.toUnfoldable m :: List _))
    where
-   reKey (name × ce) = dottedName (NEL.snoc ce.mod name) × ce
+   reKey (name × cls) = dottedName (NEL.snoc cls.mod name) × cls
 
 probeModule :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
 probeModule q = do

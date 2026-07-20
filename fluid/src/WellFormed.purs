@@ -242,9 +242,9 @@ wellFormed q γ (S.Dataclass c b xs) = do
    case b of
       Nothing -> pure unit
       Just base -> do
-         ce <- maybe (throwError $ "Unknown class: " <> base) pure (classFor γ base)
-         when (ce.mod /= q) $ throwError $ "Cannot extend imported class: " <> base
-         let clash = Set.intersection (Set.fromFoldable xs) (Set.fromFoldable (fields ce))
+         cls <- maybe (throwError $ "Unknown class: " <> base) pure (classFor γ base)
+         when (cls.mod /= q) $ throwError $ "Cannot extend imported class: " <> base
+         let clash = Set.intersection (Set.fromFoldable xs) (Set.fromFoldable (fields cls))
          when (not Set.isEmpty clash)
             $ throwError
             $ "Class " <> c <> " redeclares inherited field(s): "
@@ -282,16 +282,16 @@ wellFormedExpr = wf
    wf _ e@(S.Float _ _) = pure e
    wf _ e@(S.Str _ _) = pure e
    wf γ (S.Constr α c es) = case resolveName γ c of
-      Just (Class ce) -> do
-         let fs = fields ce
+      Just (Class cls) -> do
+         let fs = fields cls
          when (length es /= length fs)
             $ throwError
             $ dottedName c <> " expects " <> show (length fs) <> " argument(s); got " <> show (length es)
-         S.Constr α (qualified ce c) <$> traverse (wf γ) es
+         S.Constr α (qualified cls c) <$> traverse (wf γ) es
       _ -> throwError $ "Unknown dataclass: " <> dottedName c
    wf γ (S.ConstrKw α c es xes) = case resolveName γ c of
-      Just (Class ce) ->
-         S.ConstrKw α (qualified ce c) <$> traverse (wf γ) es <*> traverse (\(x × e) -> (x × _) <$> wf γ e) xes
+      Just (Class cls) ->
+         S.ConstrKw α (qualified cls c) <$> traverse (wf γ) es <*> traverse (\(x × e) -> (x × _) <$> wf γ e) xes
       _ -> throwError $ "Unknown dataclass: " <> dottedName c
    wf γ (S.App e e') = S.App <$> wf γ e <*> wf γ e'
    wf γ (S.BinaryApp e op e') = S.BinaryApp <$> wf γ e <*> (op <$ var γ op) <*> wf γ e'
@@ -343,7 +343,7 @@ wellFormedExpr = wf
             map (S.ListCompDecl (S.VarDef p' src') : _) <$> qualifiers (assignedIn γ' (bv p)) qs
    wf γ (S.DocExpr e e') = S.DocExpr <$> wf γ e <*> wf γ e'
 
-   qualified ce c = NEL.snoc ce.mod (NEL.last c)
+   qualified cls c = NEL.snoc cls.mod (NEL.last c)
 
 var :: Cxt -> Var -> Either String Unit
 var γ x = case Map.lookup x γ of
@@ -372,6 +372,6 @@ qualifyPattern γ = qualify
    qualifyRest (S.PListNext p lr) = S.PListNext <$> qualify p <*> qualifyRest lr
    qualifyRest lr = pure lr
    fqnOf c = case resolveName γ c of
-      Just (Class ce) -> pure (NEL.snoc ce.mod (NEL.last c))
+      Just (Class cls) -> pure (NEL.snoc cls.mod (NEL.last c))
       _ -> throwError $ "Unknown dataclass: " <> dottedName c
 

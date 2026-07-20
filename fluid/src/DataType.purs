@@ -77,16 +77,16 @@ checkArity γ c n = case arity γ c of
 
 -- A class entry's base, as a fully-qualified name (entries store its simple name).
 baseFqn :: ClassEntry -> Maybe Ctr
-baseFqn ce = (dottedName <<< qual ce.mod) <$> ce.base
+baseFqn cls = (dottedName <<< qual cls.mod) <$> cls.base
 
 rootClass :: Map.Map Var ClassEntry -> Ctr -> Ctr
 rootClass λ c = case Map.lookup c λ of
-   Just ce | Just b <- baseFqn ce -> rootClass λ b
+   Just cls | Just b <- baseFqn cls -> rootClass λ b
    _ -> c
 
 -- Concrete iff a leaf.
 isCtr :: Map.Map Var ClassEntry -> Ctr -> Boolean
-isCtr λ c = Map.member c λ && not (any (\(_ × ce) -> baseFqn ce == Just c) (Map.toUnfoldable λ :: List _))
+isCtr λ c = Map.member c λ && not (any (\(_ × cls) -> baseFqn cls == Just c) (Map.toUnfoldable λ :: List _))
 
 dataType :: Cxt -> Ctr -> Maybe DataType
 dataType γ c =
@@ -96,7 +96,7 @@ dataType γ c =
    λ = classesOf γ
    r = rootClass λ c
    siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isCtr λ c' && rootClass λ c' == r)
-   sigOf (c' × ce) = c' × List.length (fields ce)
+   sigOf (c' × cls) = c' × List.length (fields cls)
 
 arity :: Cxt -> Ctr -> Maybe Int
 arity γ c = do
@@ -107,8 +107,8 @@ type FieldIndex = Name -> FieldName -> Int
 
 fieldIndex :: Cxt -> Name -> FieldName -> Int
 fieldIndex γ c field = definitely "field declared for class" do
-   ce <- classFor γ (dottedName c)
-   elemIndex field (fields ce)
+   cls <- classFor γ (dottedName c)
+   elemIndex field (fields cls)
 
 -- Module paths for the builtin/library constructors (hard-coded for now).
 lib_builtins :: Var -> Name

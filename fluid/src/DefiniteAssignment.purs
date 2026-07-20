@@ -81,21 +81,21 @@ erase = Map.mapMaybe case _ of
 
 classesOf :: Cxt -> Map Var ClassEntry
 classesOf = Map.mapMaybe case _ of
-   Class ce -> Just ce
+   Class cls -> Just cls
    _ -> Nothing
 
 classFor :: Cxt -> Var -> Maybe ClassEntry
 classFor γ c = case Map.lookup c γ of
-   Just (Class ce) -> Just ce
+   Just (Class cls) -> Just cls
    _ -> Nothing
 
 extendCxt :: Cxt -> Ctx -> Cxt
 extendCxt γ δ = Map.union (VarStatus <$> δ) γ
 
 fields :: ClassEntry -> List Var
-fields ce = case ce.base of
-   Nothing -> ce.fields
-   Just b -> fields (definitely "ill-formed class entry" (classFor ce.cxt b)) <> ce.fields
+fields cls = case cls.base of
+   Nothing -> cls.fields
+   Just b -> fields (definitely "ill-formed class entry" (classFor cls.cxt b)) <> cls.fields
 
 unionWith_mergeEq :: Map Var ClassEntry -> Map Var ClassEntry -> Either String (Map Var ClassEntry)
 unionWith_mergeEq a b = do
