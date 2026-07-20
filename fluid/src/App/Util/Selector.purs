@@ -51,9 +51,6 @@ just = constr (last cJust)
 
 type ConstrArg = Name -> FieldName -> SelSetter Val Val
 
-fieldElement :: ConstrArg -> Name -> FieldName -> Int -> SelSetter Val Val
-fieldElement sels c f n = listElement n >>> sels c f
-
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =
    nthSegment j >>> dictVal f_segments >>> listElement i

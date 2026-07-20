@@ -3,7 +3,7 @@ module App.View.LineChart where
 import Prelude hiding (absurd)
 
 import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, contents, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
-import App.Util.Selector (ConstrArg, ViewSelSetter, fieldElement, listElement)
+import App.Util.Selector (ConstrArg, ViewSelSetter, listElement)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.Axes (Orientation, create_xAxis, create_yAxis)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
@@ -99,7 +99,7 @@ instance Viewable LineChart Unit where
 
       pointSel :: ViewSelSetter PointCoordinate
       pointSel { i, j } =
-         fieldElement sels cLinePlot f_points j >>> listElement i >>> sels cLineChart f_plots
+         listElement j >>> sels cLinePlot f_points >>> listElement i >>> sels cLineChart f_plots
 
    createElement :: Unit -> LineChart -> D3.Selection -> Effect D3.Selection
    createElement _ (LineChart { size, tickLabels, caption, plots }) parent = do

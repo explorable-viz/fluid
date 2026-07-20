@@ -3,7 +3,7 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barSegment, constr, dict, dictKey, dictVal, envVal, fieldElement, listCell, listElement, matrix, matrixElement, select, select', just, topα, (>.>))
+import App.Util.Selector (barSegment, constr, dict, dictKey, dictVal, envVal, listCell, listElement, matrix, matrixElement, select, select', just, topα, (>.>))
 import DataType (cBarChart, cMultiView, cNonEmpty, cPair, f_fst, f_left, f_right, f_snd, f_stackedBars, f_value, f_views)
 import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
@@ -330,7 +330,7 @@ bwd_cases =
                   >.> listElement 30 (dictVal "output" select)
                   >.> listElement 31 (dictVal "output" select)
              )
-     , δv: \sels -> fieldElement sels cMultiView f_views 0 (sels cBarChart f_stackedBars (barSegment 1 0 select))
+     , δv: \sels -> sels cMultiView f_views (listElement 0 (sels cBarChart f_stackedBars (barSegment 1 0 select)))
      , inputs: [ "renewables" ]
      , fwd_expect:
           """MultiView(BarChart("Total output by country", { height: 185, width: 275 }, {
@@ -378,7 +378,7 @@ bwd_cases =
                   >.> listElement 54 (dictVal "nuclearOut" select >.> dictVal "gasOut" select >.> dictVal "coalOut" select >.> dictVal "petrolOut" select)
                   >.> listElement 56 (dictVal "nuclearOut" select >.> dictVal "gasOut" select >.> dictVal "coalOut" select >.> dictVal "petrolOut" select)
              )
-     , δv: \sels -> fieldElement sels cMultiView f_views 0 (sels cBarChart f_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+     , δv: \sels -> sels cMultiView f_views (listElement 0 (sels cBarChart f_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select)))
      , inputs: [ "nonRenewables" ]
      , fwd_expect:
           """MultiView(BarChart("Non-renewables by country", { height: 185, width: 275 }, {
