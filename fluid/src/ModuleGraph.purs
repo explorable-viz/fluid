@@ -7,7 +7,7 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map)
 import Data.NonEmpty ((:|))
 import Bind (Name)
-import DefiniteAssignment (Cxt)
+import DataType (ClassTable)
 import Expr (Module)
 
 type ModuleName = Name
@@ -28,7 +28,7 @@ type ModuleCxt a =
    { roots :: List ModuleName
    , graph :: DependencyGraph
    , modules :: Modules a
-   , classCtx :: Cxt
+   , classes :: ClassTable
    }
 
 type DependencyGraph = Map ModuleName (List ModuleName)

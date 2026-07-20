@@ -4,26 +4,32 @@ import Prelude hiding (absurd)
 
 import Bind (Name, Var, dottedName, qual)
 import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Except.Trans (ExceptT)
+import Control.Monad.Reader.Trans (ReaderT)
+import Control.Monad.State.Trans (StateT)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Writer.Trans (WriterT)
 import Data.CodePoint.Unicode (isUpper)
-import Data.Foldable (any, for_)
+import Data.Foldable (for_)
 import Data.Function (on)
 import Data.List (List(..), elemIndex, (:))
 import Data.List as List
-import Data.List (filter) as L
 import Data.List.NonEmpty (NonEmptyList(..)) as NE
 import Data.NonEmpty ((:|))
 import Data.Map as Map
 import Data.Array (last) as A
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (Pattern(..), split)
+import Data.Tuple (snd)
 import Data.Set (Set)
+import Data.Set as Set
 import Data.Set (fromFoldable, map, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
-import DefiniteAssignment (ClassEntry, Cxt, classFor, classesOf, fields)
+import DefiniteAssignment (ClassEntry, fields)
 import Dict (Dict, fromFoldable)
 import Effect.Exception (Error)
-import Util (absurd, definitely, definitely', error, throw, withMsg, (×))
+import Util (type (×), absurd, definitely, definitely', error, throw, withMsg, (×))
 import Util.Map (keys, lookup)
 
 type TypeName = String
@@ -32,16 +38,16 @@ type Ctr = String -- newtype would require more general Dict keys
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
-isLeafName ∷ Var → Boolean
-isLeafName str = let c = definitely' $ charAt 0 str in isUpper (codePointFromChar c) || c == '_'
+isCtrName ∷ Var → Boolean
+isCtrName str = let c = definitely' $ charAt 0 str in isUpper (codePointFromChar c) || c == '_'
 
-isLeafOp :: String -> Boolean
-isLeafOp str = ':' == (definitely' $ charAt 0 str)
+isCtrOp :: String -> Boolean
+isCtrOp str = ':' == (definitely' $ charAt 0 str)
 
 showCtr :: Var -> String
 showCtr c
-   | isLeafName c = c
-   | isLeafOp c = "(" <> c <> ")"
+   | isCtrName c = c
+   | isCtrOp c = "(" <> c <> ")"
    | otherwise = error absurd
 
 data DataType = DataType TypeName (Dict CtrSig)
@@ -59,56 +65,85 @@ instance Show DataType where
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
-consistentWith :: forall m. MonadError Error m => Cxt -> Set Ctr -> Set Ctr -> m Unit
-consistentWith γ cs cs' = case S.toUnfoldable cs' :: List Ctr of
+-- What the class context determines about a class, computed once per program.
+type ClassInfo =
+   { fields :: List Var -- own fields, preceded by those inherited
+   , dataType :: Maybe DataType -- Nothing for a class with subclasses
+   }
+
+type ClassTable = Map.Map Ctr ClassInfo
+
+class HasClasses m where
+   askClasses :: m ClassTable
+
+instance (Monad m, HasClasses m) => HasClasses (StateT s m) where
+   askClasses = lift askClasses
+
+instance (Monad m, HasClasses m) => HasClasses (ReaderT r m) where
+   askClasses = lift askClasses
+
+instance (Monad m, HasClasses m) => HasClasses (ExceptT e m) where
+   askClasses = lift askClasses
+
+instance (Monad m, HasClasses m, Monoid w) => HasClasses (WriterT w m) where
+   askClasses = lift askClasses
+
+classTable :: Map.Map Var ClassEntry -> ClassTable
+classTable λ = Map.fromFoldable (infoFor <$> classes)
+   where
+   classes = Map.toUnfoldable λ :: List (Ctr × ClassEntry)
+   bases = S.fromFoldable (List.mapMaybe (baseOf <<< snd) classes)
+   baseOf cls = (dottedName <<< qual cls.mod) <$> cls.base
+
+   root c = case Map.lookup c λ of
+      Just cls | Just b <- baseOf cls -> root b
+      _ -> c
+
+   sigs = List.foldl addLeaf Map.empty classes
+   addLeaf acc (c × cls)
+      | c `Set.member` bases = acc
+      | otherwise = Map.insertWith (<>) (root c) (List.singleton (c × List.length (fields cls))) acc
+
+   infoFor (c × cls) = c ×
+      { fields: fields cls
+      , dataType:
+           if c `Set.member` bases then Nothing
+           else Just (DataType (root c) (fromFoldable (definitely' (Map.lookup (root c) sigs))))
+      }
+
+dataType :: ClassTable -> Ctr -> Maybe DataType
+dataType λ c = Map.lookup c λ >>= _.dataType
+
+fieldsOf :: ClassTable -> Ctr -> Maybe (List Var)
+fieldsOf λ c = Map.lookup c λ <#> _.fields
+
+arity :: ClassTable -> Ctr -> Maybe Int
+arity λ c = do
+   DataType _ sigs <- dataType λ c
+   lookup c sigs
+
+consistentWith :: forall m. MonadError Error m => ClassTable -> Set Ctr -> Set Ctr -> m Unit
+consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
    Nil -> pure unit
-   c : _ -> case dataType γ c of
+   c : _ -> case dataType λ c of
       Nothing -> throw $ "Unknown dataclass: " <> showCtr (simpleName c)
       Just d -> withMsg ("dataclasses of " <> show d <> " do not include " <> show (S.map (showCtr <<< simpleName) cs))
-         $ for_ (S.toUnfoldable cs :: List Ctr) \c'' -> case dataType γ c'' of
+         $ for_ (S.toUnfoldable cs :: List Ctr) \c'' -> case dataType λ c'' of
               Just d'' | d'' == d -> pure unit
               _ -> throw "mismatch"
 
-checkArity :: forall m. MonadError Error m => Cxt -> Ctr -> Int -> m Unit
-checkArity γ c n = case arity γ c of
+checkArity :: forall m. MonadError Error m => ClassTable -> Ctr -> Int -> m Unit
+checkArity λ c n = case arity λ c of
    Just n' | n' == n -> pure unit
    Just n' -> throw $ showCtr (simpleName c) <> " arity " <> show n' <> "; got " <> show n
    Nothing -> throw $ "Unknown dataclass: " <> showCtr (simpleName c)
 
--- A class entry's base, as a fully-qualified name (entries store its simple name).
-baseFqn :: ClassEntry -> Maybe Ctr
-baseFqn cls = (dottedName <<< qual cls.mod) <$> cls.base
-
-rootClass :: Map.Map Var ClassEntry -> Ctr -> Ctr
-rootClass λ c = case Map.lookup c λ of
-   Just cls | Just b <- baseFqn cls -> rootClass λ b
-   _ -> c
-
-isLeaf :: Map.Map Var ClassEntry -> Ctr -> Boolean
-isLeaf λ c =
-   Map.member c λ && not (any (\(_ × cls) -> baseFqn cls == Just c) (Map.toUnfoldable λ :: List _))
-
-dataType :: Cxt -> Ctr -> Maybe DataType
-dataType γ c =
-   if isLeaf λ c then Just (DataType r (fromFoldable (sigOf <$> siblings)))
-   else Nothing
-   where
-   λ = classesOf γ
-   r = rootClass λ c
-   siblings = Map.toUnfoldable λ # L.filter (\(c' × _) -> isLeaf λ c' && rootClass λ c' == r)
-   sigOf (c' × cls) = c' × List.length (fields cls)
-
-arity :: Cxt -> Ctr -> Maybe Int
-arity γ c = do
-   DataType _ sigs <- dataType γ c
-   lookup c sigs
-
 type FieldIndex = Name -> FieldName -> Int
 
-fieldIndex :: Cxt -> Name -> FieldName -> Int
-fieldIndex γ c field = definitely "field declared for class" do
-   cls <- classFor γ (dottedName c)
-   elemIndex field (fields cls)
+fieldIndex :: ClassTable -> Name -> FieldName -> Int
+fieldIndex λ c field = definitely "field declared for class" do
+   fs <- fieldsOf λ (dottedName c)
+   elemIndex field fs
 
 -- Module paths for the builtin/library constructors (hard-coded for now).
 lib_builtins :: Var -> Name

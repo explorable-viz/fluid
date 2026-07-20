@@ -3,6 +3,7 @@ module Val where
 import Prelude hiding (absurd, append)
 
 import Bind (Name, Var)
+import DataType (class HasClasses)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Except (ExceptT)
@@ -10,7 +11,6 @@ import Control.Monad.Reader (class MonadReader, ReaderT)
 import Control.Monad.State (StateT)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Writer (WriterT)
-import DefiniteAssignment (class HasCxt)
 import Data.Array (concat, (!!))
 import Data.Map (Map)
 import Data.Map as Map
@@ -115,7 +115,7 @@ instance (Monad m, HasModuleStore m, Monoid w) => HasModuleStore (WriterT w m) w
 
 type Op =
    forall m
-    . HasCxt m
+    . HasClasses m
    => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadError Error m

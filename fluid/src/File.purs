@@ -15,14 +15,14 @@ import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
-import DefiniteAssignment (Cxt)
+import DataType (ClassTable)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Util (type (×), (×), debug, orElse)
 
-newtype FileCxt = FileCxt { fluidSrcPaths :: Array Folder, classCtx :: Cxt }
+newtype FileCxt = FileCxt { fluidSrcPaths :: Array Folder, classes :: ClassTable }
 
 class LoadFile m where
    loadFileFromPath :: MonadError Error m => MonadAff m => File -> m (Maybe String)

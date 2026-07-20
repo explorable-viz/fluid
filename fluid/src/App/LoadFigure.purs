@@ -58,7 +58,7 @@ loadFigureSrc options divId fluidSrc = runAffs_ (uncurry drawFig)
         Left err -> error ("JSON decoding failed with " <> show err)
         Right spec -> do
            let figSpec@{ fluidSrcPaths } = optionsFromJson spec
-           (divId × _) <$> runWebT (FileCxt { fluidSrcPaths, classCtx: Map.empty }) (loadFig figSpec fluidSrc)
+           (divId × _) <$> runWebT (FileCxt { fluidSrcPaths, classes: Map.empty }) (loadFig figSpec fluidSrc)
    ]
 
 loadCode :: String -> Effect Unit

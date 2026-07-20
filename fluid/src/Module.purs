@@ -17,7 +17,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DataType (cNoArgs)
+import DataType (class HasClasses, cNoArgs, classTable)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -33,7 +33,7 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName, builtins, predefined, predefinedDeps)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (class HasCxt, ClassEntry, VarCxt, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
+import DefiniteAssignment (ClassEntry, VarCxt, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), check, throw, throwLeft, whenever, withMsg, (×), (∩))
@@ -118,7 +118,7 @@ checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Ma
                  let bindings = (if q == builtins then baseCxt else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
                  pure (Map.insert q bindings modCxt' × Map.insert q qmod qmods')
 
-prepConfig :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
+prepConfig :: forall m. HasClasses m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    pairs <- traverse (importDeps mainModule) imports
@@ -130,8 +130,8 @@ prepConfig primitives fluidSrc = do
    allClasses <- either throw pure (unionWith_mergeEq moduleClasses (fqnKeyed programClasses))
    modCxt × qualModules <- either throw pure
       (checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> importNames))
-   local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> allClasses })) do
-      modules <- local (\(FileCxt r) -> FileCxt (r { classCtx = Class <$> moduleClasses }))
+   local (\(FileCxt r) -> FileCxt (r { classes = classTable allClasses })) do
+      modules <- local (\(FileCxt r) -> FileCxt (r { classes = classTable moduleClasses }))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qualModules
       let
          moduleCxt =
@@ -164,7 +164,7 @@ prepConfig primitives fluidSrc = do
       check (Map.keys γTy == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
-      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classCtx: Class <$> allClasses }
+      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classes: classTable allClasses }
       pure { s, e, gconfig }
 
 -- Desugaring deferred to prepConfig so it runs under a populated class context.

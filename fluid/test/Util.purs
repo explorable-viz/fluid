@@ -4,7 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.Util (Selector, getPersistent, unselected)
 import App.Util.Selector (ConstrArg, constrArg, sel𝔹)
-import DataType (fieldIndex)
+import DataType (class HasClasses, fieldIndex)
 import Data.Array (null) as Array
 import Data.Set as Set
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
@@ -25,7 +25,6 @@ import Module (prepConfig)
 import Parse (parseProgram)
 import Pretty (class Pretty, compare, prettyP)
 import Expr (Stmt) as Expr
-import DefiniteAssignment (class HasCxt)
 import SExpr (Stmt) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (tracing)
@@ -45,7 +44,7 @@ type SelectionSpec =
 fluidSrcPaths :: Array Folder
 fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
-test ∷ forall m. HasCxt m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => File -> Raw Env -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test ∷ forall m. HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => File -> Raw Env -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file primitives spec (n × _) = do
    fluidSrc <- loadFile fluidSrcPaths file
    log' ("**** prepConfig")
@@ -71,7 +70,7 @@ benchNames =
 
 testProperties
    :: forall m
-    . HasCxt m
+    . HasClasses m
    => HasModuleStore m
    => MonadReader FileCxt m
    => LoadFile m
@@ -90,7 +89,7 @@ testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
    let EnvStmt γ_raw s_raw = erase graphed.inα
    let inputs' = if Array.null inputs then keys γ_raw else Set.fromFoldable inputs
 
-   let arg = constrArg (fieldIndex gconfig.classCtx)
+   let arg = constrArg (fieldIndex gconfig.classes)
    let v = map (const top) outα :: Val 𝔹
    let out0 = fst (δv arg (const unselected <$> v)) <#> getPersistent
 

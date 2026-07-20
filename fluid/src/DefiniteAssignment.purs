@@ -4,11 +4,6 @@ import Prelude
 
 import Bind (Name, Var)
 import Control.Monad.Error.Class (throwError)
-import Control.Monad.Except.Trans (ExceptT)
-import Control.Monad.Reader.Trans (ReaderT)
-import Control.Monad.State.Trans (StateT)
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Writer.Trans (WriterT)
 import Data.Foldable (foldl, for_)
 import Data.Either (Either)
 import Data.List (List)
@@ -17,7 +12,6 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
-import Util (definitely)
 
 type VarCxt = Map Var Boolean
 
@@ -35,9 +29,6 @@ data Entry
    | ModLoaded Name Cxt
 
 type Cxt = Map Var Entry
-
-class HasCxt m where
-   askCxt :: m Cxt
 
 data TyResult a = Returns | Assigns a
 
@@ -79,11 +70,6 @@ erase = Map.mapMaybe case _ of
    VarStatus b -> Just b
    _ -> Nothing
 
-classesOf :: Cxt -> Map Var ClassEntry
-classesOf = Map.mapMaybe case _ of
-   Class cls -> Just cls
-   _ -> Nothing
-
 classFor :: Cxt -> Var -> Maybe ClassEntry
 classFor γ c = case Map.lookup c γ of
    Just (Class cls) -> Just cls
@@ -92,10 +78,11 @@ classFor γ c = case Map.lookup c γ of
 extendCxt :: Cxt -> VarCxt -> Cxt
 extendCxt γ δ = Map.union (VarStatus <$> δ) γ
 
+-- An unresolvable base contributes nothing; well-formedness reports it separately.
 fields :: ClassEntry -> List Var
-fields cls = case cls.base of
+fields cls = case cls.base >>= classFor cls.cxt of
    Nothing -> cls.fields
-   Just b -> fields (definitely "ill-formed class entry" (classFor cls.cxt b)) <> cls.fields
+   Just cls' -> fields cls' <> cls.fields
 
 unionWith_mergeEq :: Map Var ClassEntry -> Map Var ClassEntry -> Either String (Map Var ClassEntry)
 unionWith_mergeEq a b = do
@@ -114,14 +101,3 @@ derive instance Functor TyResult
 derive instance Eq a => Eq (TyResult a)
 derive instance Eq Entry
 
-instance (Monad m, HasCxt m) => HasCxt (StateT s m) where
-   askCxt = lift askCxt
-
-instance (Monad m, HasCxt m) => HasCxt (ReaderT r m) where
-   askCxt = lift askCxt
-
-instance (Monad m, HasCxt m) => HasCxt (ExceptT e m) where
-   askCxt = lift askCxt
-
-instance (Monad m, HasCxt m, Monoid w) => HasCxt (WriterT w m) where
-   askCxt = lift askCxt

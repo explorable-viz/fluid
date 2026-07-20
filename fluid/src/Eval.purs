@@ -5,7 +5,6 @@ import Prelude hiding (absurd, apply)
 import Bind (Var, dottedName, prefixOf, varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader, local)
-import DefiniteAssignment (class HasCxt, Cxt, askCxt, classFor, fields)
 import Data.Array ((..))
 import Data.List (List(..), find, foldM, length, snoc, unzip, zip, (:))
 import Data.List.NonEmpty (head, snoc, unsnoc, fromList) as NEL
@@ -18,7 +17,7 @@ import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, snd)
-import DataType (arity, checkArity, consistentWith, dataType, showCtr, simpleName)
+import DataType (class HasClasses, ClassTable, arity, askClasses, checkArity, consistentWith, dataType, fieldsOf, showCtr, simpleName)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -45,24 +44,24 @@ import Val (class HasModuleStore, getStore, modifyStore, BaseVal, DictRep(..), E
 type GraphConfig =
    { n :: Int
    , γ :: Env Vertex
-   , classCtx :: Cxt
+   , classes :: ClassTable
    }
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall m. HasCxt m => MonadWithGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
+match :: forall m. HasClasses m => MonadWithGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × empty)
    | otherwise = pure (maplet x v × κ × empty)
 match (Val α _ (V.Constr c vs)) (ElimConstr m) = do
-   λ <- askCxt
+   λ <- askClasses
    withMsg "Pattern mismatch" $ consistentWith λ (Set.singleton (dottedName c)) (keys m)
    κ <- lookup (dottedName c) m # orElse ("Incomplete patterns: no branch for " <> showCtr (last c))
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
 match v (ElimConstr m) = do
-   λ <- askCxt
+   λ <- askClasses
    d <- case Set.toUnfoldable (keys m) :: List _ of
       c : _ -> maybe (throw $ "Unknown dataclass: " <> showCtr (simpleName c)) pure (dataType λ c)
       Nil -> throw "Pattern matched empty ElimConstr"
@@ -76,7 +75,7 @@ match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    pure $ γ × κ' × (insert α αs)
 match v (ElimDict xs _) = throw (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall m. HasCxt m => MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
+matchMany :: forall m. HasClasses m => MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 matchMany Nil κ = pure (empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
@@ -85,7 +84,7 @@ matchMany (v : vs) (ContElim σ) = do
 matchMany (_ : vs) (ContStmt _) = throw $
    show (length vs + 1) <> " extra argument(s) to dataclass/dictionary; did you forget parentheses in lambda pattern?"
 
-closeDefs :: forall m. HasCxt m => MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
+closeDefs :: forall m. HasClasses m => MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    Env <$> for ρ \σ ->
       let
@@ -95,7 +94,7 @@ closeDefs γ ρ αs =
 
 apply
    :: forall m
-    . HasCxt m
+    . HasClasses m
    => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadReader FileCxt m
@@ -123,7 +122,7 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
-   n <- askCxt >>= \λ -> maybe (throw $ "Unknown dataclass: " <> showCtr (last c)) pure (arity λ (dottedName c))
+   n <- askClasses >>= \λ -> maybe (throw $ "Unknown dataclass: " <> showCtr (last c)) pure (arity λ (dottedName c))
    check (length vs < n) ("Too many arguments to " <> showCtr (last c))
    let
       v' =
@@ -143,7 +142,7 @@ lookupVar x γ = case lookup x γ of
 
 eval
    :: forall m
-    . HasCxt m
+    . HasClasses m
    => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadReader FileCxt m
@@ -171,7 +170,7 @@ eval doc_opt γ e0 αs = do
             v <- eval Nothing γ e αs
             case v of
                Val _ _ (V.Constr c vs) -> do
-                  xs <- askCxt >>= \λ -> maybe (throw $ "Ill-formed value: unknown dataclass " <> dottedName c) (pure <<< fields) (classFor λ (dottedName c))
+                  xs <- askClasses >>= \λ -> maybe (throw $ "Ill-formed value: unknown dataclass " <> dottedName c) pure (fieldsOf λ (dottedName c))
                   find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (dottedName c <> " has no field " <> x)
                _ -> throw $ "Found " <> prettyP (unit <$ v) <> ", expected object"
          DProject e e' -> do
@@ -206,7 +205,7 @@ eval doc_opt γ e0 αs = do
 
 evalStmt
    :: forall m
-    . HasCxt m
+    . HasClasses m
    => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadReader FileCxt m
@@ -246,7 +245,7 @@ evalStmt doc_opt γ s αs = case s of
 
 evalVal
    :: forall m
-    . HasCxt m
+    . HasClasses m
    => HasModuleStore m
    => MonadWithGraphAlloc m
    => MonadReader FileCxt m
@@ -269,7 +268,7 @@ evalVal γ (Dictionary α ees) αs = do
       d = D.fromFoldable $ zip ss (zip βs us)
    pure $ Just (α × V.Dictionary (DictRep d))
 evalVal γ (Constr α c es) αs = do
-   askCxt >>= \λ -> checkArity λ (dottedName c) (length es)
+   askClasses >>= \λ -> checkArity λ (dottedName c) (length es)
    vs <- traverse (flip (eval Nothing γ) αs) es
    pure $ Just (α × V.Constr c vs)
 evalVal γ (Matrix α e (x × y) e') αs = do
@@ -289,7 +288,7 @@ evalVal γ (Lambda α σ) _ =
    pure $ Just (α × V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
 evalVal _ _ _ = pure Nothing
 
-eval_module :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ0 q (Module is ss0) αs0 = do
    base <- foldM (evalImport q) γ0 is
    vName <- val Nothing empty (V.Str (dottedName q))
@@ -304,7 +303,7 @@ eval_module γ0 q (Module is ss0) αs0 = do
          Returns _ -> throw "Module body cannot return"
 
 -- Bind imported value members; delete bindings for names that now denote modules.
-evalImport :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> Import -> m (Env Vertex)
+evalImport :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> Import -> m (Env Vertex)
 evalImport _ γ (Import q Nothing) = do
    _ <- load q
    loadAncestors Nothing q
@@ -314,14 +313,14 @@ evalImport enclosing γ (Import q (Just xs)) = do
    loadAncestors (Just enclosing) q
    importsFrom q γ_q γ xs
 
-loadAncestors :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Maybe ModuleName -> ModuleName -> m Unit
+loadAncestors :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Maybe ModuleName -> ModuleName -> m Unit
 loadAncestors bound q = case NEL.fromList (NEL.unsnoc q).init of
    Nothing -> pure unit
    Just q'
       | maybe false (q' `prefixOf` _) bound -> pure unit
       | otherwise -> void (load q') *> loadAncestors bound q'
 
-importsFrom :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> Env Vertex -> List Var -> m (Env Vertex)
+importsFrom :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> Env Vertex -> List Var -> m (Env Vertex)
 importsFrom q γ_q = foldM step
    where
    step γ x = case lookup x γ_q of
@@ -331,10 +330,10 @@ importsFrom q γ_q = foldM step
          when (Map.member (NEL.snoc q x) modules) (void (load (NEL.snoc q x)))
          pure (delete x γ)
 
-importInto :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
+importInto :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
 importInto γ q = (γ <+> _) <$> load q
 
-load :: forall m. HasCxt m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m (Env Vertex)
+load :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m (Env Vertex)
 load q = do
    { primitives, modules, modEnv } <- getStore
    case Map.lookup q modEnv of
@@ -391,9 +390,9 @@ sliceBwd { g, graph_bwd, inα, outα } out𝔹 =
    in
       select𝔹s inα (vertices g') × g'
 
-graphEval :: forall m. HasCxt m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
-graphEval { n, γ, classCtx } stmt =
-   local (\(FileCxt r) -> FileCxt (r { classCtx = classCtx })) do
+graphEval :: forall m. HasClasses m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
+graphEval { n, γ, classes } stmt =
+   local (\(FileCxt r) -> FileCxt (r { classes = classes })) do
       { modules, builtinsEnv, modEnv } <- getStore
       let mαs = Set.unions (vertices <$> Map.values modules) ∪ vertices builtinsEnv ∪ Set.unions (vertices <$> Map.values modEnv)
       _ × _ × g × inα × outα <- flip runAllocT n do
