@@ -16,7 +16,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (ClassEntry, Ctx, Entry(..), Cxt, TyResult(..), classFor, erase, extendCxt, extendCxtWith, fields, mergeRes, overrideRes, unionWith_mergeEq)
+import DefiniteAssignment (ClassEntry, VarCxt, Entry(..), Cxt, TyResult(..), classFor, erase, extendCxt, extendCxtWith, fields, mergeRes, overrideRes, unionWith_mergeEq)
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
@@ -26,7 +26,7 @@ import Util.Set ((\\), (∪))
 
 -- Also return the reduced context (the import layer, erased); the desugared
 -- program is a term over it, with module and class entries resolved away.
-checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (Ctx × S.Stmt (TyResult Ctx))
+checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (VarCxt × S.Stmt (TyResult VarCxt))
 checkProgram modCxt baseCxt imports s = do
    layer × γImp <- checkImports mainModule baseCxt modCxt imports
    let reduced = Map.insert "__name__" true (erase layer)
@@ -74,7 +74,7 @@ classesOfModule q (S.Module _ ss) =
       Nothing -> pure Map.empty
       Just s -> classes q s
 
-checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String (Ctx × S.Module (TyResult Ctx))
+checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String (VarCxt × S.Module (TyResult VarCxt))
 checkModule q modCxt base (S.Module imports ss) = do
    _ × γImp <- checkImports q base modCxt imports
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
@@ -166,7 +166,7 @@ capturesE (S.ListEnum e1 e2) = capturesE e1 ∪ capturesE e2
 capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
-wellFormed :: forall a. Name -> Cxt -> S.Stmt a -> Either String (TyResult Ctx × S.Stmt (TyResult Ctx))
+wellFormed :: forall a. Name -> Cxt -> S.Stmt a -> Either String (TyResult VarCxt × S.Stmt (TyResult VarCxt))
 wellFormed _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
 wellFormed _ γ (S.Return e) = do
    e' <- wellFormedExpr γ e

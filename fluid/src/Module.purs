@@ -33,7 +33,7 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName, builtins, predefined, predefinedDeps)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (class HasCxt, ClassEntry, Ctx, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
+import DefiniteAssignment (class HasCxt, ClassEntry, VarCxt, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), check, throw, throwLeft, whenever, withMsg, (×), (∩))
@@ -89,7 +89,7 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
       | q `elem` path = Left ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
 
-type CheckedModules = Map ModuleName Cxt × Map ModuleName (S.Module (TyResult Ctx))
+type CheckedModules = Map ModuleName Cxt × Map ModuleName (S.Module (TyResult VarCxt))
 
 checkModules
    :: DependencyGraph

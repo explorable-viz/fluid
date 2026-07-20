@@ -19,7 +19,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Util (definitely)
 
-type Ctx = Map Var Boolean
+type VarCxt = Map Var Boolean
 
 type ClassEntry =
    { cxt :: Cxt -- declaring context (resolves the base class)
@@ -50,11 +50,11 @@ extendEntry (Mod q) θ'@(ModLoaded q' _) | q == q' = θ'
 extendEntry θ@(ModLoaded q _) (Mod q') | q == q' = θ
 extendEntry _ θ' = θ'
 
-overrideCtx :: Ctx -> Ctx -> Ctx
-overrideCtx = flip Map.union
+overrideVarCxt :: VarCxt -> VarCxt -> VarCxt
+overrideVarCxt = flip Map.union
 
-mergeCtx :: Ctx -> Ctx -> Ctx
-mergeCtx γ1 γ2 =
+mergeVarCxt :: VarCxt -> VarCxt -> VarCxt
+mergeVarCxt γ1 γ2 =
    foldl (\acc k -> Map.insert k (mergedAt k) acc) Map.empty allKeys
    where
    allKeys :: Set Var
@@ -63,18 +63,18 @@ mergeCtx γ1 γ2 =
       Just a, Just b -> a && b
       _, _ -> false
 
-overrideRes :: TyResult Ctx -> TyResult Ctx -> TyResult Ctx
+overrideRes :: TyResult VarCxt -> TyResult VarCxt -> TyResult VarCxt
 overrideRes _ Returns = Returns
 overrideRes Returns _ = Returns
-overrideRes (Assigns a) (Assigns b) = Assigns (overrideCtx a b)
+overrideRes (Assigns a) (Assigns b) = Assigns (overrideVarCxt a b)
 
-mergeRes :: TyResult Ctx -> TyResult Ctx -> TyResult Ctx
+mergeRes :: TyResult VarCxt -> TyResult VarCxt -> TyResult VarCxt
 mergeRes Returns r = r
 mergeRes r Returns = r
-mergeRes (Assigns a) (Assigns b) = Assigns (mergeCtx a b)
+mergeRes (Assigns a) (Assigns b) = Assigns (mergeVarCxt a b)
 
 -- The runtime environment's static counterpart.
-erase :: Cxt -> Ctx
+erase :: Cxt -> VarCxt
 erase = Map.mapMaybe case _ of
    VarStatus b -> Just b
    _ -> Nothing
@@ -89,7 +89,7 @@ classFor γ c = case Map.lookup c γ of
    Just (Class cls) -> Just cls
    _ -> Nothing
 
-extendCxt :: Cxt -> Ctx -> Cxt
+extendCxt :: Cxt -> VarCxt -> Cxt
 extendCxt γ δ = Map.union (VarStatus <$> δ) γ
 
 fields :: ClassEntry -> List Var

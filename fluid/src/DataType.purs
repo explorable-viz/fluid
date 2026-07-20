@@ -85,7 +85,8 @@ rootClass λ c = case Map.lookup c λ of
    _ -> c
 
 isLeaf :: Map.Map Var ClassEntry -> Ctr -> Boolean
-isLeaf λ c = Map.member c λ && not (any (\(_ × cls) -> baseFqn cls == Just c) (Map.toUnfoldable λ :: List _))
+isLeaf λ c =
+   Map.member c λ && not (any (\(_ × cls) -> baseFqn cls == Just c) (Map.toUnfoldable λ :: List _))
 
 dataType :: Cxt -> Ctr -> Maybe DataType
 dataType γ c =
