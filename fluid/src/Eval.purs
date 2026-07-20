@@ -9,6 +9,7 @@ import DefiniteAssignment (class HasCxt, Cxt, askCxt, classFor, fields)
 import Data.Array ((..))
 import Data.List (List(..), find, foldM, length, snoc, unzip, zip, (:))
 import Data.List.NonEmpty (head, snoc, unsnoc, fromList) as NEL
+import Data.List.NonEmpty (last)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (unwrap)
@@ -17,7 +18,7 @@ import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, snd)
-import DataType (arity, checkArity, consistentWith, dataType, showCtr)
+import DataType (arity, checkArity, consistentWith, dataType, showCtr, simpleName)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -57,13 +58,13 @@ match v (ElimVar x κ)
 match (Val α _ (V.Constr c vs)) (ElimConstr m) = do
    λ <- askCxt
    withMsg "Pattern mismatch" $ consistentWith λ (Set.singleton (dottedName c)) (keys m)
-   κ <- lookup (dottedName c) m # orElse ("Incomplete patterns: no branch for " <> showCtr (dottedName c))
+   κ <- lookup (dottedName c) m # orElse ("Incomplete patterns: no branch for " <> showCtr (last c))
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
 match v (ElimConstr m) = do
    λ <- askCxt
    d <- case Set.toUnfoldable (keys m) :: List _ of
-      c : _ -> maybe (throw $ "Unknown dataclass: " <> showCtr c) pure (dataType λ c)
+      c : _ -> maybe (throw $ "Unknown dataclass: " <> showCtr (simpleName c)) pure (dataType λ c)
       Nil -> throw "Pattern matched empty ElimConstr"
    throw $ patternMismatch (prettyP v) (show d)
 match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
@@ -122,8 +123,8 @@ apply doc_opt (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
-   n <- askCxt >>= \λ -> maybe (throw $ "Unknown dataclass: " <> showCtr (dottedName c)) pure (arity λ (dottedName c))
-   check (length vs < n) ("Too many arguments to " <> showCtr (dottedName c))
+   n <- askCxt >>= \λ -> maybe (throw $ "Unknown dataclass: " <> showCtr (last c)) pure (arity λ (dottedName c))
+   check (length vs < n) ("Too many arguments to " <> showCtr (last c))
    let
       v' =
          if length vs < n - 1 then

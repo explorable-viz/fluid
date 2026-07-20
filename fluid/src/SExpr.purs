@@ -97,9 +97,6 @@ showPattern :: Pattern + ListRestPattern -> String
 showPattern (Left p') = show p'
 showPattern (Right p') = show p'
 
-ctrName :: Name -> Ctr
-ctrName = last
-
 ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
 ctrFor (Left (PVar _)) = Nothing
 ctrFor (Left (PConstr c _)) = pure (dottedName c)

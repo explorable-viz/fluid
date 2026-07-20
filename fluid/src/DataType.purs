@@ -38,10 +38,10 @@ isCtrName str = let c = definitely' $ charAt 0 str in isUpper (codePointFromChar
 isCtrOp :: String -> Boolean
 isCtrOp str = ':' == (definitely' $ charAt 0 str)
 
-showCtr :: Ctr -> String
+showCtr :: Var -> String
 showCtr c
-   | isCtrName (simpleName c) = simpleName c
-   | isCtrOp (simpleName c) = "(" <> simpleName c <> ")"
+   | isCtrName c = c
+   | isCtrOp c = "(" <> c <> ")"
    | otherwise = error absurd
 
 data DataType = DataType TypeName (Dict CtrSig)
@@ -63,8 +63,8 @@ consistentWith :: forall m. MonadError Error m => Cxt -> Set Ctr -> Set Ctr -> m
 consistentWith γ cs cs' = case S.toUnfoldable cs' :: List Ctr of
    Nil -> pure unit
    c : _ -> case dataType γ c of
-      Nothing -> throw $ "Unknown dataclass: " <> showCtr c
-      Just d -> withMsg ("dataclasses of " <> show d <> " do not include " <> show (S.map showCtr cs))
+      Nothing -> throw $ "Unknown dataclass: " <> showCtr (simpleName c)
+      Just d -> withMsg ("dataclasses of " <> show d <> " do not include " <> show (S.map (showCtr <<< simpleName) cs))
          $ for_ (S.toUnfoldable cs :: List Ctr) \c'' -> case dataType γ c'' of
               Just d'' | d'' == d -> pure unit
               _ -> throw "mismatch"
@@ -72,8 +72,8 @@ consistentWith γ cs cs' = case S.toUnfoldable cs' :: List Ctr of
 checkArity :: forall m. MonadError Error m => Cxt -> Ctr -> Int -> m Unit
 checkArity γ c n = case arity γ c of
    Just n' | n' == n -> pure unit
-   Just n' -> throw $ showCtr c <> " arity " <> show n' <> "; got " <> show n
-   Nothing -> throw $ "Unknown dataclass: " <> showCtr c
+   Just n' -> throw $ showCtr (simpleName c) <> " arity " <> show n' <> "; got " <> show n
+   Nothing -> throw $ "Unknown dataclass: " <> showCtr (simpleName c)
 
 -- A class entry's base, as a fully-qualified name (entries store its simple name).
 baseFqn :: ClassEntry -> Maybe Ctr
