@@ -29,7 +29,7 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Elim, Module, Stmt, fv)
 import File (class LoadFile, FileCxt)
-import ModuleGraph (DependencyGraph, ModuleName)
+import ModuleGraph (ModuleName)
 import Foreign.Object (foldMap)
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
 import Graph.WithGraph (class MonadWithGraphAlloc, new)
@@ -86,12 +86,11 @@ type ModuleStore =
    { primitives :: Env Vertex
    , builtinsEnv :: Env Vertex
    , modules :: Map ModuleName (Module Vertex)
-   , graph :: DependencyGraph
    , modEnv :: Map ModuleName (Env Vertex)
    }
 
 emptyStore :: ModuleStore
-emptyStore = { primitives: empty, builtinsEnv: empty, modules: Map.empty, graph: Map.empty, modEnv: Map.empty }
+emptyStore = { primitives: empty, builtinsEnv: empty, modules: Map.empty, modEnv: Map.empty }
 
 class Monad m <= HasModuleStore m where
    getStore :: m ModuleStore

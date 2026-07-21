@@ -156,7 +156,7 @@ prepConfig primitives fluidSrc = do
          _ × γ <-
             runWithGraphT_spy
                ( do
-                    modifyStore (\st -> st { primitives = primitives', modules = modules', graph = moduleGraph.graph })
+                    modifyStore (\st -> st { primitives = primitives', modules = modules' })
                     γ0 <- foldM importInto primitives' predefined
                     modifyStore (_ { builtinsEnv = γ0 })
                     γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
