@@ -6,17 +6,15 @@ import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask, local)
 import Bind (Var, dottedName, pathName, prefixOf)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
-import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Foldable (foldM, foldl, intercalate)
-import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
+import Data.List (List(..), catMaybes, elem, filter, reverse, takeWhile, (:))
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Maybe (Maybe(..), isJust)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
-import Data.Tuple (snd)
 import DataType (class HasClasses, ClassTable, cNoArgs, classTable)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
@@ -33,10 +31,10 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName, builtins, predefined, predefinedDeps)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (ClassEntry, VarCxt, Cxt, Entry(..), WfResult(..), unionWith_mergeEq)
-import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfModule, mainModule)
+import DefiniteAssignment (ClassEntry, Cxt, Entry(..), WfResult(..), unionWith_mergeEq)
+import WellFormed (checkProgram, classes, mainModule)
 import SExpr as S
-import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×), (∩))
+import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
 import Util.Set ((∪), empty)
 import Val (class HasModuleStore, modifyStore, val, Env)
@@ -75,11 +73,6 @@ importDeps enclosing (S.Import q f) = do
    where
    probeAll = map catMaybes <<< traverse (\m' -> probeModule m' <#> \b -> whenever b m')
 
-submodules :: Set ModuleName -> ModuleName -> Cxt
-submodules known q = Map.fromFoldable (mapMaybe sub (Set.toUnfoldable known))
-   where
-   sub m = let { init, last: x } = NEL.unsnoc m in whenever (NEL.fromList init == Just q) (x × Mod m)
-
 checkAcyclic :: DependencyGraph -> List ModuleName -> Either String Unit
 checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
    where
@@ -88,36 +81,6 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
       | Set.member q done = pure done
       | q `elem` path = Left ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
-
-type LoadedModules = Map ModuleName Cxt × Map ModuleName (S.Module (WfResult VarCxt))
-
-loadModules
-   :: Map ModuleName (Raw S.Module)
-   -> Cxt
-   -> Either String LoadedModules
-loadModules modules baseCxt = foldM (loadModule Set.empty) (Map.empty × Map.empty) (Set.toUnfoldable (Map.keys modules) :: List ModuleName)
-   where
-   loadModule :: Set ModuleName -> LoadedModules -> ModuleName -> Either String LoadedModules
-   loadModule visiting acc@(modCxt × _) q
-      -- not a cycle: a package reaching its own submodule mid-load
-      | Map.member q modCxt || Set.member q visiting = pure acc
-      | otherwise = case Map.lookup q modules of
-           Nothing -> pure (Map.insert q Map.empty modCxt × snd acc)
-           Just mod@(S.Module imports _) -> do
-              modCxt' × qmods' <- foldM (loadModule (Set.insert q visiting)) acc (predefinedDeps q <> (imports >>= importTargets))
-              δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q modCxt' baseCxt mod)
-              λ <- classesOfModule q mod
-              _ × γ_imp <- checkImports q baseCxt modCxt' imports
-              let subs = submodules (Map.keys modules) q
-              let clash = (Map.keys γ_imp ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
-              when (not Set.isEmpty clash)
-                 $ Left
-                 $ "Submodule name clash in module " <> dottedName q <> ": " <> intercalate ", " (Set.toUnfoldable clash :: List Var)
-              let bindings = (if q == builtins then baseCxt else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
-              pure (Map.insert q bindings modCxt' × Map.insert q qmod qmods')
-
-   importTargets :: S.Import -> List ModuleName
-   importTargets (S.Import q f) = (q : parents q) <> maybe Nil (map (NEL.snoc q)) f
 
 noArgsClass :: ClassEntry
 noArgsClass = { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil }
@@ -177,20 +140,18 @@ prepConfig
    -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   let primCxt = constMap (VarStatus true) (keys primitives)
-   parsedModules <- parseModules imports
-   allClasses × modCxt × qmods <- orThrow do
-      modCxt × qmods <- loadModules parsedModules primCxt
+   let baseCxt = constMap (VarStatus true) (keys primitives) `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
+   modules <- parseModules imports
+   { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram modules baseCxt imports s)
+   let modClasses = moduleClasses (_.cxt <$> loaded)
+   allClasses <- orThrow do
       programClasses <- classes mainModule s
-      allClasses <- unionWith_mergeEq (moduleClasses modCxt) (fqnKeyed programClasses)
-      pure (allClasses × modCxt × qmods)
+      unionWith_mergeEq modClasses (fqnKeyed programClasses)
    let allClassTable = classTable allClasses
    withClasses allClassTable do
-      modules <- withClasses (classTable (moduleClasses modCxt))
-         $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qmods
-      n × topLevelEnv <- allocTopLevel primitives modules imports
-      let baseCxt = primCxt `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
-      γ_wf × s_wf <- orThrow (checkProgram modCxt baseCxt imports s)
+      coreModules <- withClasses (classTable modClasses)
+         $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (_.mod <$> loaded)
+      n × topLevelEnv <- allocTopLevel primitives coreModules imports
       check (Map.keys γ_wf == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
       e_wf <- desug s_wf
       let e = (unit <$ e_wf) :: Raw Stmt
@@ -210,7 +171,9 @@ parseModules imports = do
    let roots = predefined <> (imported >>= _.load)
    importGraph × modules <- collectModules Set.empty Map.empty Map.empty roots
    orThrow (checkAcyclic importGraph (imported >>= _.edges))
-   pure modules
+   -- prefix-closed: a package with no source file of its own is an empty module
+   let ancestors = Set.fromFoldable ((Set.toUnfoldable (Map.keys modules) :: List ModuleName) >>= parents)
+   pure (modules `Map.union` constMap (S.Module Nil Nil) ancestors)
 
    where
 

@@ -2,14 +2,17 @@ module WellFormed where
 
 import Prelude
 
-import Bind (Name, Var, dottedName, properPrefixOf)
+import Bind (Name, Var, dottedName, prefixOf, properPrefixOf)
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.State (StateT, get, mapStateT, modify_, runStateT)
+import Control.Monad.Trans.Class (lift)
+import Data.Bifunctor (lmap)
 import Data.Either (Either)
-import Data.Foldable (foldl, foldM, foldr, for_)
+import Data.Foldable (foldM, foldr, for_, intercalate)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
-import Data.List (List(..), length, nub, (:))
-import ModuleGraph (ModuleName, predefinedDeps)
+import Data.List (List(..), length, mapMaybe, nub, (:))
+import ModuleGraph (ModuleName, builtins, predefinedDeps)
 import Data.List.NonEmpty as NEL
 import Data.Semigroup.Foldable (foldl1)
 import Data.Set (Set, unions)
@@ -17,56 +20,111 @@ import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
 import DefiniteAssignment (ClassEntry, VarCxt, Entry(..), Cxt, WfResult(..), classFor, erase, extendCxt, extendCxtWith, fields, mergeRes, overrideRes, unionWith_mergeEq)
-import Util.Map (constMap, findWithDefault)
+import Util.Map (constMap)
 import Expr (bv, fv)
 import Lattice (Raw)
 import SExpr (Clause(..), DictEntry(..), Expr(..), Import(..), LambdaClause(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), Stmt(..), VarDef(..)) as S
-import Util (type (×), singleton, (×))
+import Util (type (×), singleton, whenever, (×), (∩))
 import Util.Set ((\\), (∪))
 
+-- Member context and checked statements of a loaded module. The table of
+-- loaded modules memoises the load judgement, which the spec re-derives
+-- freely (loading is pure, so needs no cache).
+type LoadedModule = { cxt :: Cxt, mod :: S.Module (WfResult VarCxt) }
+
+type LoadM = StateT (Map.Map ModuleName LoadedModule) (Either String)
+
+-- Check the program, loading each module on demand as its import is checked.
 -- Also return the reduced context (the import layer, erased); the desugared
 -- program is a term over it, with module and class entries resolved away.
-checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (VarCxt × S.Stmt (WfResult VarCxt))
-checkProgram modCxt baseCxt imports s = do
-   layer × γ_imp <- checkImports mainModule baseCxt modCxt imports
-   let reduced = Map.insert "__name__" true (erase layer)
-   (reduced × _) <<< snd <$> wellFormed mainModule (Map.insert "__name__" (VarStatus true) γ_imp) s
-
--- Import layer × the full in-scope context (implicit builtins base extended by the layer).
-checkImports :: Name -> Cxt -> Map.Map ModuleName Cxt -> List S.Import -> Either String (Cxt × Cxt)
-checkImports enclosing base modCxt is = do
-   layer <- foldM (\acc i -> (acc `extendCxtWith` _) <$> importCxt enclosing modCxt i) Map.empty is
-   pure (layer × (seed `extendCxtWith` layer))
+-- Loading recurses without a guard; it terminates because the module
+-- dependency graph is checked acyclic at parse time.
+checkProgram
+   :: Map.Map ModuleName (Raw S.Module)
+   -> Cxt
+   -> List S.Import
+   -> Raw S.Stmt
+   -> Either String { γ :: VarCxt, s :: S.Stmt (WfResult VarCxt), loaded :: Map.Map ModuleName LoadedModule }
+checkProgram modules base imports s =
+   runStateT program Map.empty <#> \((γ × s') × loaded) -> { γ, s: s', loaded }
    where
-   seed = foldl (\acc q -> acc `Map.union` findWithDefault Map.empty q modCxt) base (predefinedDeps enclosing)
+   program :: LoadM (VarCxt × S.Stmt (WfResult VarCxt))
+   program = do
+      layer × γ_imp <- checkImports mainModule imports
+      _ × s' <- lift (wellFormed mainModule (Map.insert "__name__" (VarStatus true) γ_imp) s)
+      pure (Map.insert "__name__" true (erase layer) × s')
 
-importCxt :: Name -> Map.Map ModuleName Cxt -> S.Import -> Either String Cxt
-importCxt enclosing modCxt (S.Import q Nothing) = do
-   when (enclosing `properPrefixOf` q)
-      $ throwError
-      $ "Module " <> dottedName enclosing <> " cannot import its own descendant " <> dottedName q
-   pure (Map.singleton (NEL.head q) (loadsTo modCxt q (ModLoaded q (findWithDefault Map.empty q modCxt))))
-importCxt _ modCxt (S.Import q (Just xs)) = importFrom modCxt q xs
+   -- Member context of module q; memoised.
+   loadModule :: ModuleName -> LoadM Cxt
+   loadModule q = get >>= \loaded -> case Map.lookup q loaded of
+      Just { cxt } -> pure cxt
+      Nothing -> checking q do
+         mod@(S.Module is _) <- maybe (throwError ("Module not parsed: " <> dottedName q)) pure (Map.lookup q modules)
+         layer × γ_imp <- checkImports q is
+         δ × mod' <- lift (checkStatements q γ_imp mod)
+         λ <- lift (classesOfModule q mod)
+         let subs = submodules (Map.keys modules) q
+         let clash = (Map.keys layer ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
+         when (not Set.isEmpty clash)
+            $ throwError
+            $ "Submodule name clash in module " <> dottedName q <> ": " <> intercalate ", " (Set.toUnfoldable clash :: List Var)
+         let cxt = (if q == builtins then base else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
+         modify_ (Map.insert q { cxt, mod: mod' })
+         pure cxt
 
-loadsTo :: Map.Map ModuleName Cxt -> ModuleName -> Entry -> Entry
-loadsTo modCxt q θ = case NEL.fromList init of
-   Nothing -> θ
-   Just q' -> loadsTo modCxt q' (ModLoaded q' (findWithDefault Map.empty q' modCxt `extendCxtWith` Map.singleton x θ))
-   where
-   { init, last: x } = NEL.unsnoc q
+   checking :: forall a. ModuleName -> LoadM a -> LoadM a
+   checking q = mapStateT (lmap (_ <> "\nChecking module " <> dottedName q))
 
-importFrom :: Map.Map ModuleName Cxt -> ModuleName -> List Var -> Either String Cxt
-importFrom modCxt q = go
-   where
-   γ = findWithDefault Map.empty q modCxt
-   go Nil = pure Map.empty
-   go (x : xs) = do
-      rest <- go xs
+   -- Import layer × the full in-scope context (implicit predefined base extended by the layer).
+   checkImports :: ModuleName -> List S.Import -> LoadM (Cxt × Cxt)
+   checkImports enclosing is = do
+      seed <- foldM (\acc q -> (acc `Map.union` _) <$> loadModule q) base (predefinedDeps enclosing)
+      layer <- foldM (\acc i -> (acc `extendCxtWith` _) <$> importBindings enclosing i) Map.empty is
+      pure (layer × (seed `extendCxtWith` layer))
+
+   -- Bindings contributed by one import of the enclosing module.
+   importBindings :: ModuleName -> S.Import -> LoadM Cxt
+   importBindings enclosing (S.Import q Nothing) = do
+      when (enclosing `properPrefixOf` q)
+         $ throwError
+         $ "Module " <> dottedName enclosing <> " cannot import its own descendant " <> dottedName q
+      θ <- ModLoaded q <$> loadModule q
+      Map.singleton (NEL.head q) <$> loadsTo Nothing q θ
+   importBindings enclosing (S.Import q (Just xs)) = do
+      γ <- loadModule q
+      _ <- loadsTo (Just enclosing) q (ModLoaded q γ) -- loads q's ancestors; contributes no bindings
+      importedMembers q γ xs
+
+   -- Wrap the reference for module q in loaded references for its proper
+   -- prefixes, loading each; prefixes of the bound (the enclosing module,
+   -- for a from-import) are exempt.
+   loadsTo :: Maybe ModuleName -> ModuleName -> Entry -> LoadM Entry
+   loadsTo bound q θ = case NEL.fromList init of
+      Nothing -> pure θ
+      Just q'
+         | maybe false (q' `prefixOf` _) bound -> pure θ
+         | otherwise -> do
+              γ <- loadModule q'
+              loadsTo bound q' (ModLoaded q' (γ `extendCxtWith` Map.singleton x θ))
+      where
+      { init, last: x } = NEL.unsnoc q
+
+   -- Bindings for names imported from module q with member context γ.
+   importedMembers :: ModuleName -> Cxt -> List Var -> LoadM Cxt
+   importedMembers _ _ Nil = pure Map.empty
+   importedMembers q γ (x : xs) = do
+      rest <- importedMembers q γ xs
       case Map.lookup x γ of
-         Just (Mod q') -> pure (Map.insert x (ModLoaded q' (findWithDefault Map.empty q' modCxt)) rest)
+         Just (Mod q') -> loadModule q' <#> \γ' -> Map.insert x (ModLoaded q' γ') rest
          Just (VarStatus false) -> throwError $ "Not definitely assigned: " <> x
          Just θ -> pure (Map.insert x θ rest)
          Nothing -> throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
+
+-- Stubs for the immediate submodules of q among the program's modules.
+submodules :: Set ModuleName -> ModuleName -> Cxt
+submodules known q = Map.fromFoldable (mapMaybe sub (Set.toUnfoldable known))
+   where
+   sub m = let { init, last: x } = NEL.unsnoc m in whenever (NEL.fromList init == Just q) (x × Mod m)
 
 classesOfModule :: forall a. Name -> S.Module a -> Either String (Map.Map Var ClassEntry)
 classesOfModule q (S.Module _ ss) =
@@ -74,9 +132,8 @@ classesOfModule q (S.Module _ ss) =
       Nothing -> pure Map.empty
       Just s -> classes q s
 
-checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String (VarCxt × S.Module (WfResult VarCxt))
-checkModule q modCxt base (S.Module imports ss) = do
-   _ × γ_imp <- checkImports q base modCxt imports
+checkStatements :: Name -> Cxt -> Raw S.Module -> Either String (VarCxt × S.Module (WfResult VarCxt))
+checkStatements q γ_imp (S.Module imports ss) =
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure (Map.singleton "__name__" true × S.Module imports Nil)
       Just s -> wellFormed q (Map.insert "__name__" (VarStatus true) γ_imp) s <#> \(r × s') ->

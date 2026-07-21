@@ -64,7 +64,7 @@ illFormed_cases =
    , { file: "own_descendant_import.fld", expected_error: "Module module.od_pkg cannot import its own descendant module.od_pkg.sub\nChecking module module.od_pkg" }
    , { file: "reexport_from_import.fld", expected_error: "Cannot import name foo from module module.reexport_mid" }
    , { file: "reexport_import_alias.fld", expected_error: "Cannot import name attr_lib from module module.alias_mid" }
-   , { file: "submodule_name_clash.fld", expected_error: "Submodule name clash in module module.clash_pkg: sub" }
+   , { file: "submodule_name_clash.fld", expected_error: "Submodule name clash in module module.clash_pkg: sub\nChecking module module.clash_pkg" }
    , { file: "submodule_self_import.fld", expected_error: "import cycle: module.ssi.b -> module.ssi.b" }
    , { file: "use_before_import.fld", expected_error: "\"ParseError on line 2, column 6:\\nimports must precede statements\"\nLoading module use_before_import_mod" }
    ]
