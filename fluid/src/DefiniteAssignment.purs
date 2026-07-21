@@ -30,7 +30,7 @@ data Entry
 
 type Cxt = Map Var Entry
 
-data TyResult a = Returns | Assigns a
+data WfResult a = Returns | Assigns a
 
 extendCxtWith :: Cxt -> Cxt -> Cxt
 extendCxtWith γ γ' = Map.unionWith extendEntry γ γ'
@@ -54,12 +54,12 @@ mergeVarCxt γ1 γ2 =
       Just a, Just b -> a && b
       _, _ -> false
 
-overrideRes :: TyResult VarCxt -> TyResult VarCxt -> TyResult VarCxt
+overrideRes :: WfResult VarCxt -> WfResult VarCxt -> WfResult VarCxt
 overrideRes _ Returns = Returns
 overrideRes Returns _ = Returns
 overrideRes (Assigns a) (Assigns b) = Assigns (overrideVarCxt a b)
 
-mergeRes :: TyResult VarCxt -> TyResult VarCxt -> TyResult VarCxt
+mergeRes :: WfResult VarCxt -> WfResult VarCxt -> WfResult VarCxt
 mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns a) (Assigns b) = Assigns (mergeVarCxt a b)
@@ -97,7 +97,7 @@ unionWith_mergeEq a b = do
 -- ======================
 -- boilerplate
 -- ======================
-derive instance Functor TyResult
-derive instance Eq a => Eq (TyResult a)
+derive instance Functor WfResult
+derive instance Eq a => Eq (WfResult a)
 derive instance Eq Entry
 

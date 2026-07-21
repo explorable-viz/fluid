@@ -33,7 +33,7 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName, builtins, predefined, predefinedDeps)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (ClassEntry, VarCxt, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
+import DefiniteAssignment (ClassEntry, VarCxt, Cxt, Entry(..), WfResult(..), unionWith_mergeEq)
 import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
 import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×), (∩))
@@ -89,7 +89,7 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
       | q `elem` path = Left ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
 
-type CheckedModules = Map ModuleName Cxt × Map ModuleName (S.Module (TyResult VarCxt))
+type CheckedModules = Map ModuleName Cxt × Map ModuleName (S.Module (WfResult VarCxt))
 
 checkModules
    :: DependencyGraph
@@ -109,9 +109,9 @@ checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Ma
               Just mod@(S.Module imports _) -> do
                  δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q modCxt' baseCxt mod)
                  λ <- classesOfModule q mod
-                 _ × γImp <- checkImports q baseCxt modCxt' imports
+                 _ × γ_imp <- checkImports q baseCxt modCxt' imports
                  let subs = submodules (Map.keys modules) q
-                 let clash = (Map.keys γImp ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
+                 let clash = (Map.keys γ_imp ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
                  when (not Set.isEmpty clash)
                     $ Left
                     $ "Submodule name clash in module " <> dottedName q <> ": " <> intercalate ", " (Set.toUnfoldable clash :: List Var)
@@ -174,10 +174,10 @@ prepConfig primitives fluidSrc = do
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure γ
       let baseCxt = primCxt `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
-      γTy × sty <- orThrow (checkProgram modCxt baseCxt imports s)
-      check (Map.keys γTy == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
-      eTy <- desug sty
-      let e = (unit <$ eTy) :: Raw Stmt
+      γ_wf × s_wf <- orThrow (checkProgram modCxt baseCxt imports s)
+      check (Map.keys γ_wf == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
+      e_wf <- desug s_wf
+      let e = (unit <$ e_wf) :: Raw Stmt
       let gconfig = { n, γ: restrict (fv e) topLevelEnv, classes: allClassTable }
       pure { s, e, gconfig }
 

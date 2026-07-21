@@ -16,7 +16,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (ClassEntry, VarCxt, Entry(..), Cxt, TyResult(..), classFor, erase, extendCxt, extendCxtWith, fields, mergeRes, overrideRes, unionWith_mergeEq)
+import DefiniteAssignment (ClassEntry, VarCxt, Entry(..), Cxt, WfResult(..), classFor, erase, extendCxt, extendCxtWith, fields, mergeRes, overrideRes, unionWith_mergeEq)
 import Util.Map (constMap, findWithDefault)
 import Expr (bv, fv)
 import Lattice (Raw)
@@ -26,11 +26,11 @@ import Util.Set ((\\), (∪))
 
 -- Also return the reduced context (the import layer, erased); the desugared
 -- program is a term over it, with module and class entries resolved away.
-checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (VarCxt × S.Stmt (TyResult VarCxt))
+checkProgram :: Map.Map ModuleName Cxt -> Cxt -> List S.Import -> Raw S.Stmt -> Either String (VarCxt × S.Stmt (WfResult VarCxt))
 checkProgram modCxt baseCxt imports s = do
-   layer × γImp <- checkImports mainModule baseCxt modCxt imports
+   layer × γ_imp <- checkImports mainModule baseCxt modCxt imports
    let reduced = Map.insert "__name__" true (erase layer)
-   (reduced × _) <<< snd <$> wellFormed mainModule (Map.insert "__name__" (VarStatus true) γImp) s
+   (reduced × _) <<< snd <$> wellFormed mainModule (Map.insert "__name__" (VarStatus true) γ_imp) s
 
 -- Import layer × the full in-scope context (implicit builtins base extended by the layer).
 checkImports :: Name -> Cxt -> Map.Map ModuleName Cxt -> List S.Import -> Either String (Cxt × Cxt)
@@ -74,12 +74,12 @@ classesOfModule q (S.Module _ ss) =
       Nothing -> pure Map.empty
       Just s -> classes q s
 
-checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String (VarCxt × S.Module (TyResult VarCxt))
+checkModule :: Name -> Map.Map ModuleName Cxt -> Cxt -> Raw S.Module -> Either String (VarCxt × S.Module (WfResult VarCxt))
 checkModule q modCxt base (S.Module imports ss) = do
-   _ × γImp <- checkImports q base modCxt imports
+   _ × γ_imp <- checkImports q base modCxt imports
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure (Map.singleton "__name__" true × S.Module imports Nil)
-      Just s -> wellFormed q (Map.insert "__name__" (VarStatus true) γImp) s <#> \(r × s') ->
+      Just s -> wellFormed q (Map.insert "__name__" (VarStatus true) γ_imp) s <#> \(r × s') ->
          Map.insert "__name__" true (delta r) × S.Module imports (unSeq s')
    where
    delta (Assigns δ) = δ
@@ -166,7 +166,7 @@ capturesE (S.ListEnum e1 e2) = capturesE e1 ∪ capturesE e2
 capturesE (S.ListComp _ e _) = capturesE e
 capturesE (S.DocExpr e e') = capturesE e ∪ capturesE e'
 
-wellFormed :: forall a. Name -> Cxt -> S.Stmt a -> Either String (TyResult VarCxt × S.Stmt (TyResult VarCxt))
+wellFormed :: forall a. Name -> Cxt -> S.Stmt a -> Either String (WfResult VarCxt × S.Stmt (WfResult VarCxt))
 wellFormed _ _ S.Pass = pure (Assigns Map.empty × S.Pass)
 wellFormed _ γ (S.Return e) = do
    e' <- wellFormedExpr γ e
