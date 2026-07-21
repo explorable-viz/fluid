@@ -12,6 +12,7 @@ import Control.Monad.Writer.Trans (WriterT)
 import Data.CodePoint.Unicode (isUpper)
 import Data.Foldable (for_)
 import Data.Function (on)
+import Data.FunctorWithIndex (mapWithIndex)
 import Data.List (List(..), elemIndex, (:))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..)) as NE
@@ -88,7 +89,7 @@ instance (Monad m, HasClasses m, Monoid w) => HasClasses (WriterT w m) where
    askClasses = lift askClasses
 
 classTable :: Map.Map Var ClassEntry -> ClassTable
-classTable λ = Map.fromFoldable (infoFor <$> classes)
+classTable λ = mapWithIndex infoFor λ
    where
    classes = Map.toUnfoldable λ :: List (Ctr × ClassEntry)
    bases = S.fromFoldable (List.mapMaybe (baseOf <<< snd) classes)
@@ -103,7 +104,7 @@ classTable λ = Map.fromFoldable (infoFor <$> classes)
       | c `Set.member` bases = acc
       | otherwise = Map.insertWith (<>) (root c) (List.singleton (c × List.length (fields cls))) acc
 
-   infoFor (c × cls) = c ×
+   infoFor c cls =
       { fields: fields cls
       , dataType:
            if c `Set.member` bases then Nothing
