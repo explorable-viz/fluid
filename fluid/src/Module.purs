@@ -178,10 +178,8 @@ prepConfig
    -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   imported <- traverse (importDeps mainModule) imports
-   let roots = predefined <> (imported >>= _.load)
    let primCxt = constMap (VarStatus true) (keys primitives)
-   parsedModules <- parseModules roots (imported >>= _.edges)
+   parsedModules × roots <- parseModules imports
    allClasses × modCxt × qmods <- orThrow do
       modCxt × qmods <- loadModules parsedModules primCxt roots
       programClasses <- classes mainModule s
@@ -206,13 +204,14 @@ parseModules
    => MonadError Error m
    => MonadReader FileCxt m
    => LoadFile m
-   => List ModuleName
-   -> List ModuleName
-   -> m (Map ModuleName (Raw S.Module))
-parseModules roots programEdges = do
+   => List S.Import
+   -> m (Map ModuleName (Raw S.Module) × List ModuleName)
+parseModules imports = do
+   imported <- traverse (importDeps mainModule) imports
+   let roots = predefined <> (imported >>= _.load)
    importGraph × modules <- collectModules Set.empty Map.empty Map.empty roots
-   orThrow (checkAcyclic importGraph programEdges)
-   pure modules
+   orThrow (checkAcyclic importGraph (imported >>= _.edges))
+   pure (modules × roots)
 
    where
 
