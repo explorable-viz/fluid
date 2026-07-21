@@ -89,16 +89,16 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
       | q `elem` path = Left ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
 
-type CheckedModules = Map ModuleName Cxt × Map ModuleName (S.Module (WfResult VarCxt))
+type LoadedModules = Map ModuleName Cxt × Map ModuleName (S.Module (WfResult VarCxt))
 
-checkModules
+loadModules
    :: Map ModuleName (Raw S.Module)
    -> Cxt
    -> List ModuleName
-   -> Either String CheckedModules
-checkModules modules baseCxt roots = foldM (loadModule Set.empty) (Map.empty × Map.empty) roots
+   -> Either String LoadedModules
+loadModules modules baseCxt roots = foldM (loadModule Set.empty) (Map.empty × Map.empty) roots
    where
-   loadModule :: Set ModuleName -> CheckedModules -> ModuleName -> Either String CheckedModules
+   loadModule :: Set ModuleName -> LoadedModules -> ModuleName -> Either String LoadedModules
    loadModule visiting acc@(modCxt × _) q
       | Map.member q modCxt || Set.member q visiting = pure acc
       | otherwise = case Map.lookup q modules of
@@ -144,7 +144,7 @@ prepConfig primitives fluidSrc = do
       let moduleClasses = Map.insert (dottedName cNoArgs) noArgsClass moduleGraph.classCtx
       programClasses <- classes mainModule s
       allClasses <- unionWith_mergeEq moduleClasses (fqnKeyed programClasses)
-      modCxt × qmods <- checkModules moduleGraph.modules primCxt roots
+      modCxt × qmods <- loadModules moduleGraph.modules primCxt roots
       pure (moduleClasses × allClasses × modCxt × qmods)
    let allClassTable = classTable allClasses
    local (\(FileCxt r) -> FileCxt (r { classes = allClassTable })) do
