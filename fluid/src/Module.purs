@@ -16,7 +16,7 @@ import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
-import Data.Tuple (fst, snd)
+import Data.Tuple (snd)
 import DataType (class HasClasses, ClassTable, cNoArgs, classTable)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
@@ -61,7 +61,7 @@ parents q = case NEL.fromList (NEL.unsnoc q).init of
    Nothing -> Nil
    Just q' -> parents q' <> (q' : Nil)
 
-importDeps :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> S.Import -> m (List ModuleName × List ModuleName)
+importDeps :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> S.Import -> m { edges :: List ModuleName, load :: List ModuleName }
 importDeps enclosing (S.Import q f) = do
    ps <- probeAll (parents q)
    subs <- case f of
@@ -71,7 +71,7 @@ importDeps enclosing (S.Import q f) = do
       prefixEdges = case f of
          Nothing -> filter (_ /= enclosing) (parents q)
          Just _ -> filter (\p -> not (p `prefixOf` enclosing)) (parents q)
-   pure (((q : subs) <> prefixEdges) × (ps <> (q : subs)))
+   pure { edges: (q : subs) <> prefixEdges, load: ps <> (q : subs) }
    where
    probeAll = map catMaybes <<< traverse (\m' -> probeModule m' <#> \b -> whenever b m')
 
@@ -178,11 +178,10 @@ prepConfig
    -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   pairs <- traverse (importDeps mainModule) imports
-   let importNames = pairs >>= snd
-   let roots = predefined <> importNames
+   imported <- traverse (importDeps mainModule) imports
+   let roots = predefined <> (imported >>= _.load)
    let primCxt = constMap (VarStatus true) (keys primitives)
-   parsedModules <- parseModules roots (pairs >>= fst)
+   parsedModules <- parseModules roots (imported >>= _.edges)
    allClasses × modCxt × qmods <- orThrow do
       modCxt × qmods <- loadModules parsedModules primCxt roots
       programClasses <- classes mainModule s
@@ -229,19 +228,19 @@ parseModules roots programEdges = do
          if Set.member mod visited then
             collectModules visited importGraph modules rest
          else do
-            mod' × edges × deps <- parseAndCollect mod
+            mod' × edges × toLoad <- parseAndCollect mod
             collectModules
                (Set.insert mod visited)
                (Map.insert mod edges importGraph)
                (Map.insert mod mod' modules)
-               (deps <> rest)
+               (toLoad <> rest)
 
    parseAndCollect :: ModuleName -> m (Raw S.Module × List ModuleName × List ModuleName)
    parseAndCollect path = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (pathName path <> fluidExtension))
       mod × _ <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
-      pairs <- case mod of S.Module is _ -> traverse (importDeps path) is
-      let edges = pairs >>= fst
-      let deps = predefinedDeps path <> (pairs >>= snd)
-      pure $ mod × edges × deps
+      imported <- case mod of S.Module is _ -> traverse (importDeps path) is
+      let edges = imported >>= _.edges
+      let toLoad = predefinedDeps path <> (imported >>= _.load)
+      pure $ mod × edges × toLoad
