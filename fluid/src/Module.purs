@@ -94,9 +94,8 @@ type LoadedModules = Map ModuleName Cxt × Map ModuleName (S.Module (WfResult Va
 loadModules
    :: Map ModuleName (Raw S.Module)
    -> Cxt
-   -> List ModuleName
    -> Either String LoadedModules
-loadModules modules baseCxt roots = foldM (loadModule Set.empty) (Map.empty × Map.empty) roots
+loadModules modules baseCxt = foldM (loadModule Set.empty) (Map.empty × Map.empty) (Set.toUnfoldable (Map.keys modules) :: List ModuleName)
    where
    loadModule :: Set ModuleName -> LoadedModules -> ModuleName -> Either String LoadedModules
    loadModule visiting acc@(modCxt × _) q
@@ -179,9 +178,9 @@ prepConfig
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    let primCxt = constMap (VarStatus true) (keys primitives)
-   parsedModules × roots <- parseModules imports
+   parsedModules <- parseModules imports
    allClasses × modCxt × qmods <- orThrow do
-      modCxt × qmods <- loadModules parsedModules primCxt roots
+      modCxt × qmods <- loadModules parsedModules primCxt
       programClasses <- classes mainModule s
       allClasses <- unionWith_mergeEq (moduleClasses modCxt) (fqnKeyed programClasses)
       pure (allClasses × modCxt × qmods)
@@ -205,13 +204,13 @@ parseModules
    => MonadReader FileCxt m
    => LoadFile m
    => List S.Import
-   -> m (Map ModuleName (Raw S.Module) × List ModuleName)
+   -> m (Map ModuleName (Raw S.Module))
 parseModules imports = do
    imported <- traverse (importDeps mainModule) imports
    let roots = predefined <> (imported >>= _.load)
    importGraph × modules <- collectModules Set.empty Map.empty Map.empty roots
    orThrow (checkAcyclic importGraph (imported >>= _.edges))
-   pure (modules × roots)
+   pure modules
 
    where
 
@@ -221,7 +220,7 @@ parseModules imports = do
       -> Map ModuleName (Raw S.Module)
       -> List ModuleName
       -> m (DependencyGraph × Map ModuleName (Raw S.Module))
-   collectModules visited importGraph modules imports = case imports of
+   collectModules visited importGraph modules pending = case pending of
       Nil -> pure $ (importGraph × modules)
       mod : rest ->
          if Set.member mod visited then
