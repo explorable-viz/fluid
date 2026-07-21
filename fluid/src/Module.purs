@@ -138,9 +138,8 @@ prepConfig primitives fluidSrc = do
    let importNames = pairs >>= snd
    let roots = predefined <> importNames
    let primCxt = constMap (VarStatus true) (keys primitives)
-   moduleGraph <- parseModuleGraph roots
+   moduleGraph <- parseModuleGraph roots (pairs >>= fst)
    moduleClasses × allClasses × modCxt × qmods <- orThrow do
-      checkAcyclic moduleGraph.importGraph (pairs >>= fst)
       let moduleClasses = Map.insert (dottedName cNoArgs) noArgsClass moduleGraph.classCtx
       programClasses <- classes mainModule s
       allClasses <- unionWith_mergeEq moduleClasses (fqnKeyed programClasses)
@@ -176,7 +175,6 @@ prepConfig primitives fluidSrc = do
 
 type ModuleGraph =
    { graph :: DependencyGraph
-   , importGraph :: DependencyGraph
    , modules :: Map ModuleName (Raw S.Module)
    , classCtx :: Map Var ClassEntry
    }
@@ -188,10 +186,12 @@ parseModuleGraph
    => MonadReader FileCxt m
    => LoadFile m
    => List ModuleName
+   -> List ModuleName
    -> m ModuleGraph
-parseModuleGraph roots = do
+parseModuleGraph roots programEdges = do
    graph × importGraph × modules × classCtx <- collectModules Set.empty Map.empty Map.empty Map.empty Map.empty roots
-   pure { graph, importGraph, modules, classCtx }
+   orThrow (checkAcyclic importGraph programEdges)
+   pure { graph, modules, classCtx }
 
    where
 
