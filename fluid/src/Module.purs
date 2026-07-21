@@ -100,7 +100,7 @@ loadModules modules baseCxt roots = foldM (loadModule Set.empty) (Map.empty × M
    where
    loadModule :: Set ModuleName -> LoadedModules -> ModuleName -> Either String LoadedModules
    loadModule visiting acc@(modCxt × _) q
-      -- a package importing its own submodule reaches itself mid-load
+      -- not a cycle: a package reaching its own submodule mid-load
       | Map.member q modCxt || Set.member q visiting = pure acc
       | otherwise = case Map.lookup q modules of
            Nothing -> pure (Map.insert q Map.empty modCxt × snd acc)
