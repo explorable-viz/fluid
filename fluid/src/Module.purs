@@ -7,7 +7,7 @@ import Control.Monad.Reader (class MonadReader, ask, local)
 import Bind (Var, dottedName, pathName, prefixOf)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Foldable (foldM, intercalate)
 import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
 import Data.Map (Map)
@@ -36,7 +36,7 @@ import SExpr (desugarModuleFwd)
 import DefiniteAssignment (ClassEntry, VarCxt, Cxt, Entry(..), TyResult(..), unionWith_mergeEq)
 import WellFormed (checkImports, checkModule, checkProgram, classes, classesOfModule, mainModule)
 import SExpr as S
-import Util (type (×), check, throw, throwLeft, whenever, withMsg, (×), (∩))
+import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×), (∩))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
 import Util.Set ((∪), empty)
 import Val (class HasModuleStore, modifyStore, val, Env)
@@ -118,21 +118,32 @@ checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Ma
                  let bindings = (if q == builtins then baseCxt else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
                  pure (Map.insert q bindings modCxt' × Map.insert q qmod qmods')
 
-prepConfig :: forall m. HasClasses m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
+prepConfig
+   :: forall m
+    . HasClasses m
+   => HasModuleStore m
+   => MonadAff m
+   => MonadError Error m
+   => MonadReader FileCxt m
+   => LoadFile m
+   => Raw Env
+   -> String
+   -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    pairs <- traverse (importDeps mainModule) imports
    let importNames = pairs >>= snd
    sCxt <- parseModuleGraph (predefined <> importNames)
-   either throw pure (checkAcyclic sCxt.importGraph (pairs >>= fst))
-   let moduleClasses = Map.insert (dottedName cNoArgs) { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
-   programClasses <- either throw pure (classes mainModule s)
-   allClasses <- either throw pure (unionWith_mergeEq moduleClasses (fqnKeyed programClasses))
-   modCxt × qualModules <- either throw pure
-      (checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> importNames))
+   moduleClasses × allClasses × modCxt × qmods <- orThrow do
+      checkAcyclic sCxt.importGraph (pairs >>= fst)
+      let moduleClasses = Map.insert (dottedName cNoArgs) { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
+      programClasses <- classes mainModule s
+      allClasses <- unionWith_mergeEq moduleClasses (fqnKeyed programClasses)
+      modCxt × qmods <- checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> importNames)
+      pure (moduleClasses × allClasses × modCxt × qmods)
    local (\(FileCxt r) -> FileCxt (r { classes = classTable allClasses })) do
       modules <- local (\(FileCxt r) -> FileCxt (r { classes = classTable moduleClasses }))
-         $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qualModules
+         $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qmods
       let
          moduleCxt =
             { roots: sCxt.roots
@@ -160,7 +171,7 @@ prepConfig primitives fluidSrc = do
          baseCxt =
             constMap (VarStatus true) (keys primitives)
                `Map.union` Map.singleton "__NoArgs" (Class { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil })
-      γTy × sty <- either throw pure (checkProgram modCxt baseCxt imports s)
+      γTy × sty <- orThrow (checkProgram modCxt baseCxt imports s)
       check (Map.keys γTy == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
@@ -205,7 +216,7 @@ parseModuleGraph roots = do
             collectModules visited graph importGraph modules classCtx rest
          else do
             mod' × λ × edges × deps <- parseAndCollect mod
-            classCtx' <- either throw pure (unionWith_mergeEq classCtx (fqnKeyed λ))
+            classCtx' <- orThrow (unionWith_mergeEq classCtx (fqnKeyed λ))
             collectModules
                (Set.insert mod visited)
                (Map.insert mod deps graph)
@@ -219,7 +230,7 @@ parseModuleGraph roots = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (pathName path <> fluidExtension))
       mod × _ <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
-      λ <- either throw pure (classesOfModule path mod)
+      λ <- orThrow (classesOfModule path mod)
       pairs <- case mod of S.Module is _ -> traverse (importDeps path) is
       let edges = pairs >>= fst
       let deps = predefinedDeps path <> (pairs >>= snd)
