@@ -65,7 +65,6 @@ instance Show DataType where
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
--- What the class context determines about a class, computed once per program.
 type ClassInfo =
    { fields :: List Var -- own fields, preceded by those inherited
    , dataType :: Maybe DataType -- Nothing for a class with subclasses
