@@ -12,7 +12,7 @@ import Data.Foldable (foldM, intercalate)
 import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
@@ -92,31 +92,32 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
 type CheckedModules = Map ModuleName Cxt × Map ModuleName (S.Module (WfResult VarCxt))
 
 checkModules
-   :: DependencyGraph
-   -> Map ModuleName (Raw S.Module)
+   :: Map ModuleName (Raw S.Module)
    -> Cxt
    -> List ModuleName
    -> Either String CheckedModules
-checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Map.empty) roots
+checkModules modules baseCxt roots = foldM (loadModule Set.empty) (Map.empty × Map.empty) roots
    where
-   go :: Set ModuleName -> CheckedModules -> ModuleName -> Either String CheckedModules
-   go visiting acc@(modCxt × _) q
+   loadModule :: Set ModuleName -> CheckedModules -> ModuleName -> Either String CheckedModules
+   loadModule visiting acc@(modCxt × _) q
       | Map.member q modCxt || Set.member q visiting = pure acc
-      | otherwise = do
-           modCxt' × qmods' <- foldM (go (Set.insert q visiting)) acc (findWithDefault Nil q graph)
-           case Map.lookup q modules of
-              Nothing -> pure (Map.insert q Map.empty modCxt' × qmods')
-              Just mod@(S.Module imports _) -> do
-                 δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q modCxt' baseCxt mod)
-                 λ <- classesOfModule q mod
-                 _ × γ_imp <- checkImports q baseCxt modCxt' imports
-                 let subs = submodules (Map.keys modules) q
-                 let clash = (Map.keys γ_imp ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
-                 when (not Set.isEmpty clash)
-                    $ Left
-                    $ "Submodule name clash in module " <> dottedName q <> ": " <> intercalate ", " (Set.toUnfoldable clash :: List Var)
-                 let bindings = (if q == builtins then baseCxt else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
-                 pure (Map.insert q bindings modCxt' × Map.insert q qmod qmods')
+      | otherwise = case Map.lookup q modules of
+           Nothing -> pure (Map.insert q Map.empty modCxt × snd acc)
+           Just mod@(S.Module imports _) -> do
+              modCxt' × qmods' <- foldM (loadModule (Set.insert q visiting)) acc (predefinedDeps q <> (imports >>= importTargets))
+              δ × qmod <- lmap (_ <> "\nChecking module " <> dottedName q) (checkModule q modCxt' baseCxt mod)
+              λ <- classesOfModule q mod
+              _ × γ_imp <- checkImports q baseCxt modCxt' imports
+              let subs = submodules (Map.keys modules) q
+              let clash = (Map.keys γ_imp ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
+              when (not Set.isEmpty clash)
+                 $ Left
+                 $ "Submodule name clash in module " <> dottedName q <> ": " <> intercalate ", " (Set.toUnfoldable clash :: List Var)
+              let bindings = (if q == builtins then baseCxt else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
+              pure (Map.insert q bindings modCxt' × Map.insert q qmod qmods')
+
+   importTargets :: S.Import -> List ModuleName
+   importTargets (S.Import q f) = (q : parents q) <> maybe Nil (map (NEL.snoc q)) f
 
 noArgsClass :: ClassEntry
 noArgsClass = { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil }
@@ -143,7 +144,7 @@ prepConfig primitives fluidSrc = do
       let moduleClasses = Map.insert (dottedName cNoArgs) noArgsClass moduleGraph.classCtx
       programClasses <- classes mainModule s
       allClasses <- unionWith_mergeEq moduleClasses (fqnKeyed programClasses)
-      modCxt × qmods <- checkModules moduleGraph.graph moduleGraph.modules primCxt roots
+      modCxt × qmods <- checkModules moduleGraph.modules primCxt roots
       pure (moduleClasses × allClasses × modCxt × qmods)
    let allClassTable = classTable allClasses
    local (\(FileCxt r) -> FileCxt (r { classes = allClassTable })) do
@@ -174,8 +175,7 @@ prepConfig primitives fluidSrc = do
       pure { s, e, gconfig }
 
 type ModuleGraph =
-   { graph :: DependencyGraph
-   , modules :: Map ModuleName (Raw S.Module)
+   { modules :: Map ModuleName (Raw S.Module)
    , classCtx :: Map Var ClassEntry
    }
 
@@ -189,31 +189,29 @@ parseModuleGraph
    -> List ModuleName
    -> m ModuleGraph
 parseModuleGraph roots programEdges = do
-   graph × importGraph × modules × classCtx <- collectModules Set.empty Map.empty Map.empty Map.empty Map.empty roots
+   importGraph × modules × classCtx <- collectModules Set.empty Map.empty Map.empty Map.empty roots
    orThrow (checkAcyclic importGraph programEdges)
-   pure { graph, modules, classCtx }
+   pure { modules, classCtx }
 
    where
 
    collectModules
       :: Set ModuleName
       -> DependencyGraph
-      -> DependencyGraph
       -> Map ModuleName (Raw S.Module)
       -> Map Var ClassEntry
       -> List ModuleName
-      -> m (DependencyGraph × DependencyGraph × Map ModuleName (Raw S.Module) × Map Var ClassEntry)
-   collectModules visited graph importGraph modules classCtx imports = case imports of
-      Nil -> pure $ (graph × importGraph × modules × classCtx)
+      -> m (DependencyGraph × Map ModuleName (Raw S.Module) × Map Var ClassEntry)
+   collectModules visited importGraph modules classCtx imports = case imports of
+      Nil -> pure $ (importGraph × modules × classCtx)
       mod : rest ->
          if Set.member mod visited then
-            collectModules visited graph importGraph modules classCtx rest
+            collectModules visited importGraph modules classCtx rest
          else do
             mod' × λ × edges × deps <- parseAndCollect mod
             classCtx' <- orThrow (unionWith_mergeEq classCtx (fqnKeyed λ))
             collectModules
                (Set.insert mod visited)
-               (Map.insert mod deps graph)
                (Map.insert mod edges importGraph)
                (Map.insert mod mod' modules)
                classCtx'
