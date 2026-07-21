@@ -122,8 +122,9 @@ loadModules modules baseCxt roots = foldM (loadModule Set.empty) (Map.empty × M
 noArgsClass :: ClassEntry
 noArgsClass = { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil }
 
-moduleClassTable :: Map ModuleName Cxt -> Map Var ClassEntry
-moduleClassTable modCxt = foldl Map.union Map.empty (fqnKeyed <<< classesOf <$> Map.values modCxt)
+moduleClasses :: Map ModuleName Cxt -> Map Var ClassEntry
+moduleClasses modCxt =
+   Map.insert (dottedName cNoArgs) noArgsClass (foldl Map.union Map.empty (fqnKeyed <<< classesOf <$> Map.values modCxt))
    where
    classesOf = Map.mapMaybe case _ of
       Class cls -> Just cls
@@ -147,15 +148,14 @@ prepConfig primitives fluidSrc = do
    let roots = predefined <> importNames
    let primCxt = constMap (VarStatus true) (keys primitives)
    parsedModules <- parseModules roots (pairs >>= fst)
-   moduleClasses × allClasses × modCxt × qmods <- orThrow do
+   allClasses × modCxt × qmods <- orThrow do
       modCxt × qmods <- loadModules parsedModules primCxt roots
-      let moduleClasses = Map.insert (dottedName cNoArgs) noArgsClass (moduleClassTable modCxt)
       programClasses <- classes mainModule s
-      allClasses <- unionWith_mergeEq moduleClasses (fqnKeyed programClasses)
-      pure (moduleClasses × allClasses × modCxt × qmods)
+      allClasses <- unionWith_mergeEq (moduleClasses modCxt) (fqnKeyed programClasses)
+      pure (allClasses × modCxt × qmods)
    let allClassTable = classTable allClasses
    local (\(FileCxt r) -> FileCxt (r { classes = allClassTable })) do
-      modules <- local (\(FileCxt r) -> FileCxt (r { classes = classTable moduleClasses }))
+      modules <- local (\(FileCxt r) -> FileCxt (r { classes = classTable (moduleClasses modCxt) }))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qmods
       n × _ × topLevelEnv <- flip runAllocT 0 do
          primitives' <- alloc primitives
