@@ -17,16 +17,16 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DataType (class HasClasses, cNoArgs, classTable)
+import DataType (class HasClasses, ClassTable, cNoArgs, classTable)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Eval (GraphConfig, evalImport, importInto)
 import Expr (Import(..)) as E
-import Expr (Stmt, fv)
+import Expr (Module, Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile, loadFileMaybe)
 
-import Graph (vertices)
+import Graph (Vertex, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
@@ -131,6 +131,40 @@ moduleClasses modCxt =
       Class cls -> Just cls
       _ -> Nothing
 
+withClasses :: forall m a. MonadReader FileCxt m => ClassTable -> m a -> m a
+withClasses classes = local (\(FileCxt r) -> FileCxt (r { classes = classes }))
+
+allocTopLevel
+   :: forall m
+    . HasClasses m
+   => HasModuleStore m
+   => MonadAff m
+   => MonadError Error m
+   => MonadReader FileCxt m
+   => LoadFile m
+   => Raw Env
+   -> Map ModuleName (Raw Module)
+   -> List S.Import
+   -> m (Int × Env Vertex)
+allocTopLevel primitives modules imports = do
+   n × _ × topLevelEnv <- flip runAllocT 0 do
+      primitives' <- alloc primitives
+      modules' <- traverse alloc modules
+      let mαs = Set.unions (vertices <$> Map.values modules')
+      _ × γ <-
+         runWithGraphT_spy
+            ( do
+                 modifyStore (\st -> st { primitives = primitives', modules = modules' })
+                 γ0 <- foldM importInto primitives' predefined
+                 modifyStore (_ { builtinsEnv = γ0 })
+                 γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
+                 vName <- val Nothing Set.empty (V.Str "__main__")
+                 pure (γ1 <+> maplet "__name__" vName)
+            )
+            (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
+      pure γ
+   pure (n × topLevelEnv)
+
 prepConfig
    :: forall m
     . HasClasses m
@@ -155,25 +189,10 @@ prepConfig primitives fluidSrc = do
       allClasses <- unionWith_mergeEq (moduleClasses modCxt) (fqnKeyed programClasses)
       pure (allClasses × modCxt × qmods)
    let allClassTable = classTable allClasses
-   local (\(FileCxt r) -> FileCxt (r { classes = allClassTable })) do
-      modules <- local (\(FileCxt r) -> FileCxt (r { classes = classTable (moduleClasses modCxt) }))
+   withClasses allClassTable do
+      modules <- withClasses (classTable (moduleClasses modCxt))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qmods
-      n × _ × topLevelEnv <- flip runAllocT 0 do
-         primitives' <- alloc primitives
-         modules' <- traverse alloc modules
-         let mαs = Set.unions (vertices <$> Map.values modules')
-         _ × γ <-
-            runWithGraphT_spy
-               ( do
-                    modifyStore (\st -> st { primitives = primitives', modules = modules' })
-                    γ0 <- foldM importInto primitives' predefined
-                    modifyStore (_ { builtinsEnv = γ0 })
-                    γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
-                    vName <- val Nothing Set.empty (V.Str "__main__")
-                    pure (γ1 <+> maplet "__name__" vName)
-               )
-               (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
-         pure γ
+      n × topLevelEnv <- allocTopLevel primitives modules imports
       let baseCxt = primCxt `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
       γ_wf × s_wf <- orThrow (checkProgram modCxt baseCxt imports s)
       check (Map.keys γ_wf == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
