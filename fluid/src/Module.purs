@@ -8,7 +8,7 @@ import Bind (Var, dottedName, pathName, prefixOf)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.Foldable (foldM, intercalate)
+import Data.Foldable (foldM, foldl, intercalate)
 import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
 import Data.Map (Map)
 import Data.Map as Map
@@ -122,6 +122,13 @@ loadModules modules baseCxt roots = foldM (loadModule Set.empty) (Map.empty × M
 noArgsClass :: ClassEntry
 noArgsClass = { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil }
 
+moduleClassTable :: Map ModuleName Cxt -> Map Var ClassEntry
+moduleClassTable modCxt = foldl Map.union Map.empty (fqnKeyed <<< classesOf <$> Map.values modCxt)
+   where
+   classesOf = Map.mapMaybe case _ of
+      Class cls -> Just cls
+      _ -> Nothing
+
 prepConfig
    :: forall m
     . HasClasses m
@@ -139,12 +146,12 @@ prepConfig primitives fluidSrc = do
    let importNames = pairs >>= snd
    let roots = predefined <> importNames
    let primCxt = constMap (VarStatus true) (keys primitives)
-   moduleGraph <- parseModuleGraph roots (pairs >>= fst)
+   parsedModules <- parseModules roots (pairs >>= fst)
    moduleClasses × allClasses × modCxt × qmods <- orThrow do
-      let moduleClasses = Map.insert (dottedName cNoArgs) noArgsClass moduleGraph.classCtx
+      modCxt × qmods <- loadModules parsedModules primCxt roots
+      let moduleClasses = Map.insert (dottedName cNoArgs) noArgsClass (moduleClassTable modCxt)
       programClasses <- classes mainModule s
       allClasses <- unionWith_mergeEq moduleClasses (fqnKeyed programClasses)
-      modCxt × qmods <- loadModules moduleGraph.modules primCxt roots
       pure (moduleClasses × allClasses × modCxt × qmods)
    let allClassTable = classTable allClasses
    local (\(FileCxt r) -> FileCxt (r { classes = allClassTable })) do
@@ -174,12 +181,7 @@ prepConfig primitives fluidSrc = do
       let gconfig = { n, γ: restrict (fv e) topLevelEnv, classes: allClassTable }
       pure { s, e, gconfig }
 
-type ModuleGraph =
-   { modules :: Map ModuleName (Raw S.Module)
-   , classCtx :: Map Var ClassEntry
-   }
-
-parseModuleGraph
+parseModules
    :: forall m
     . MonadAff m
    => MonadError Error m
@@ -187,11 +189,11 @@ parseModuleGraph
    => LoadFile m
    => List ModuleName
    -> List ModuleName
-   -> m ModuleGraph
-parseModuleGraph roots programEdges = do
-   importGraph × modules × classCtx <- collectModules Set.empty Map.empty Map.empty Map.empty roots
+   -> m (Map ModuleName (Raw S.Module))
+parseModules roots programEdges = do
+   importGraph × modules <- collectModules Set.empty Map.empty Map.empty roots
    orThrow (checkAcyclic importGraph programEdges)
-   pure { modules, classCtx }
+   pure modules
 
    where
 
@@ -199,31 +201,27 @@ parseModuleGraph roots programEdges = do
       :: Set ModuleName
       -> DependencyGraph
       -> Map ModuleName (Raw S.Module)
-      -> Map Var ClassEntry
       -> List ModuleName
-      -> m (DependencyGraph × Map ModuleName (Raw S.Module) × Map Var ClassEntry)
-   collectModules visited importGraph modules classCtx imports = case imports of
-      Nil -> pure $ (importGraph × modules × classCtx)
+      -> m (DependencyGraph × Map ModuleName (Raw S.Module))
+   collectModules visited importGraph modules imports = case imports of
+      Nil -> pure $ (importGraph × modules)
       mod : rest ->
          if Set.member mod visited then
-            collectModules visited importGraph modules classCtx rest
+            collectModules visited importGraph modules rest
          else do
-            mod' × λ × edges × deps <- parseAndCollect mod
-            classCtx' <- orThrow (unionWith_mergeEq classCtx (fqnKeyed λ))
+            mod' × edges × deps <- parseAndCollect mod
             collectModules
                (Set.insert mod visited)
                (Map.insert mod edges importGraph)
                (Map.insert mod mod' modules)
-               classCtx'
                (deps <> rest)
 
-   parseAndCollect :: ModuleName -> m (Raw S.Module × Map Var ClassEntry × List ModuleName × List ModuleName)
+   parseAndCollect :: ModuleName -> m (Raw S.Module × List ModuleName × List ModuleName)
    parseAndCollect path = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (pathName path <> fluidExtension))
       mod × _ <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
-      λ <- orThrow (classesOfModule path mod)
       pairs <- case mod of S.Module is _ -> traverse (importDeps path) is
       let edges = pairs >>= fst
       let deps = predefinedDeps path <> (pairs >>= snd)
-      pure $ mod × λ × edges × deps
+      pure $ mod × edges × deps
