@@ -118,6 +118,9 @@ checkModules graph modules baseCxt roots = foldM (go Set.empty) (Map.empty × Ma
                  let bindings = (if q == builtins then baseCxt else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
                  pure (Map.insert q bindings modCxt' × Map.insert q qmod qmods')
 
+noArgsClass :: ClassEntry
+noArgsClass = { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil }
+
 prepConfig
    :: forall m
     . HasClasses m
@@ -133,15 +136,18 @@ prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    pairs <- traverse (importDeps mainModule) imports
    let importNames = pairs >>= snd
-   sCxt <- parseModuleGraph (predefined <> importNames)
+   let roots = predefined <> importNames
+   let primCxt = constMap (VarStatus true) (keys primitives)
+   sCxt <- parseModuleGraph roots
    moduleClasses × allClasses × modCxt × qmods <- orThrow do
       checkAcyclic sCxt.importGraph (pairs >>= fst)
-      let moduleClasses = Map.insert (dottedName cNoArgs) { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil } sCxt.classCtx
+      let moduleClasses = Map.insert (dottedName cNoArgs) noArgsClass sCxt.classCtx
       programClasses <- classes mainModule s
       allClasses <- unionWith_mergeEq moduleClasses (fqnKeyed programClasses)
-      modCxt × qmods <- checkModules sCxt.graph sCxt.modules (constMap (VarStatus true) (keys primitives)) (predefined <> importNames)
+      modCxt × qmods <- checkModules sCxt.graph sCxt.modules primCxt roots
       pure (moduleClasses × allClasses × modCxt × qmods)
-   local (\(FileCxt r) -> FileCxt (r { classes = classTable allClasses })) do
+   let allClassTable = classTable allClasses
+   local (\(FileCxt r) -> FileCxt (r { classes = allClassTable })) do
       modules <- local (\(FileCxt r) -> FileCxt (r { classes = classTable moduleClasses }))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qmods
       let
@@ -167,15 +173,12 @@ prepConfig primitives fluidSrc = do
                )
                (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
          pure γ
-      let
-         baseCxt =
-            constMap (VarStatus true) (keys primitives)
-               `Map.union` Map.singleton "__NoArgs" (Class { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil })
+      let baseCxt = primCxt `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
       γTy × sty <- orThrow (checkProgram modCxt baseCxt imports s)
       check (Map.keys γTy == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
       eTy <- desug sty
       let e = (unit <$ eTy) :: Raw Stmt
-      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classes: classTable allClasses }
+      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classes: allClassTable }
       pure { s, e, gconfig }
 
 -- Desugaring deferred to prepConfig so it runs under a populated class context.
