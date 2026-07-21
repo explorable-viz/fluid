@@ -138,33 +138,26 @@ prepConfig primitives fluidSrc = do
    let importNames = pairs >>= snd
    let roots = predefined <> importNames
    let primCxt = constMap (VarStatus true) (keys primitives)
-   sCxt <- parseModuleGraph roots
+   moduleGraph <- parseModuleGraph roots
    moduleClasses × allClasses × modCxt × qmods <- orThrow do
-      checkAcyclic sCxt.importGraph (pairs >>= fst)
-      let moduleClasses = Map.insert (dottedName cNoArgs) noArgsClass sCxt.classCtx
+      checkAcyclic moduleGraph.importGraph (pairs >>= fst)
+      let moduleClasses = Map.insert (dottedName cNoArgs) noArgsClass moduleGraph.classCtx
       programClasses <- classes mainModule s
       allClasses <- unionWith_mergeEq moduleClasses (fqnKeyed programClasses)
-      modCxt × qmods <- checkModules sCxt.graph sCxt.modules primCxt roots
+      modCxt × qmods <- checkModules moduleGraph.graph moduleGraph.modules primCxt roots
       pure (moduleClasses × allClasses × modCxt × qmods)
    let allClassTable = classTable allClasses
    local (\(FileCxt r) -> FileCxt (r { classes = allClassTable })) do
       modules <- local (\(FileCxt r) -> FileCxt (r { classes = classTable moduleClasses }))
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) qmods
-      let
-         moduleCxt =
-            { roots: sCxt.roots
-            , graph: sCxt.graph
-            , modules
-            , classCtx: moduleClasses
-            }
       n × _ × topLevelEnv <- flip runAllocT 0 do
          primitives' <- alloc primitives
-         modules' <- traverse alloc moduleCxt.modules
+         modules' <- traverse alloc modules
          let mαs = Set.unions (vertices <$> Map.values modules')
          _ × γ <-
             runWithGraphT_spy
                ( do
-                    modifyStore (\st -> st { primitives = primitives', modules = modules', graph = sCxt.graph })
+                    modifyStore (\st -> st { primitives = primitives', modules = modules', graph = moduleGraph.graph })
                     γ0 <- foldM importInto primitives' predefined
                     modifyStore (_ { builtinsEnv = γ0 })
                     γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
@@ -181,10 +174,8 @@ prepConfig primitives fluidSrc = do
       let gconfig = { n, γ: restrict (fv e) topLevelEnv, classes: allClassTable }
       pure { s, e, gconfig }
 
--- Desugaring deferred to prepConfig so it runs under a populated class context.
-type SModuleCxt =
-   { roots :: List ModuleName
-   , graph :: DependencyGraph
+type ModuleGraph =
+   { graph :: DependencyGraph
    , importGraph :: DependencyGraph
    , modules :: Map ModuleName (Raw S.Module)
    , classCtx :: Map Var ClassEntry
@@ -197,10 +188,10 @@ parseModuleGraph
    => MonadReader FileCxt m
    => LoadFile m
    => List ModuleName
-   -> m SModuleCxt
+   -> m ModuleGraph
 parseModuleGraph roots = do
    graph × importGraph × modules × classCtx <- collectModules Set.empty Map.empty Map.empty Map.empty Map.empty roots
-   pure $ { roots, graph, importGraph, modules, classCtx }
+   pure { graph, importGraph, modules, classCtx }
 
    where
 
