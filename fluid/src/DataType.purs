@@ -68,7 +68,7 @@ ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
 type ClassInfo =
    { fields :: List Var -- own fields, preceded by those inherited
-   , dataType :: Maybe DataType -- Nothing for a class with subclasses
+   , dataType :: Maybe DataType -- Nothing for a non-leaf class; only leaves are constructable/matchable (#1530)
    }
 
 type ClassTable = Map.Map Ctr ClassInfo
