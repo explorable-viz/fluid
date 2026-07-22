@@ -11,7 +11,7 @@ purepy_cases =
    , { file: "purepy/cond_partial_def.fld", expected_error: "Not definitely assigned: x" }
    , { file: "purepy/constr_bad_keyword.fld", expected_error: "Class Coord keyword fields mismatch: expected (\"y\" : Nil), got (\"z\" : Nil)" }
    , { file: "purepy/construct_arity.fld", expected_error: "Point expects 2 argument(s); got 3" }
-   , { file: "purepy/dataclass_dup_class.fld", expected_error: "Conflicting class declarations: Point" }
+   , { file: "purepy/dataclass_dup_class.fld", expected_error: "Duplicate class declaration: Point" }
    , { file: "purepy/dataclass_dup_field.fld", expected_error: "Duplicate field names in class: Point" }
    , { file: "purepy/dataclass_field_default.fld", expected_error: "\"ParseError on line 3, column 10:\\nExpected EOF\"" }
    , { file: "purepy/dataclass_inherited_field_clash.fld", expected_error: "Class Sub redeclares inherited field(s): (\"x\" : Nil)" }

@@ -19,7 +19,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (ClassEntry, VarCxt, Entry(..), Cxt, WfResult(..), classFor, erase, extendCxt, extendCxtWith, fields, mergeRes, overrideRes, unionWith_mergeEq)
+import DefiniteAssignment (ClassEntry, VarCxt, Entry(..), Cxt, WfResult(..), classFor, erase, extendCxt, extendCxtWith, fields, mergeRes, overrideRes)
 import Util.Map (constMap)
 import Expr (bv, fv)
 import Lattice (Raw)
@@ -154,8 +154,9 @@ mainModule = pure "__main__"
 classes :: forall a. Name -> S.Stmt a -> Either String (Map.Map Var ClassEntry)
 classes q = go Map.empty
    where
-   go acc (S.Dataclass c b xs) =
-      unionWith_mergeEq acc (Map.singleton c { cxt: Class <$> acc, mod: q, base: b, fields: xs })
+   go acc (S.Dataclass c b xs)
+      | Map.member c acc = throwError $ "Duplicate class declaration: " <> c
+      | otherwise = pure (Map.insert c { cxt: Class <$> acc, mod: q, base: b, fields: xs } acc)
    go acc (S.Seq s1 s2) = go acc s1 >>= \acc' -> go acc' s2
    go acc _ = pure acc
 
