@@ -33,7 +33,7 @@ import ModuleGraph (ModuleName, builtins, predefined, predefinedDeps)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, absurd, check, definitely', error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
+import Util (type (×), Endo, absurd, check, definitely, definitely', error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
 import Util.Map (unionWith_never, delete, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
@@ -185,7 +185,7 @@ eval doc_opt γ e0 αs = do
          ModMember q x -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (module member " <> x <> ")"
             { modEnv } <- getStore
-            let γ_q = definitely' (Map.lookup q modEnv)
+            let γ_q = definitely "module loaded" (Map.lookup q modEnv)
             withMsg "Module member" $ lookup' x γ_q
          App e e' -> do
             v <- eval Nothing γ e αs
