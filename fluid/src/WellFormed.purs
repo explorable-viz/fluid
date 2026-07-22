@@ -51,6 +51,8 @@ checkProgram modules base imports s =
    program :: LoadM (VarCxt × S.Stmt (WfResult VarCxt))
    program = do
       layer × γ_imp <- checkImports mainModule imports
+      -- Unlike a module (checkStatements), the program may return: a top-level return yields
+      -- its result value. The spec forbids this, treating __main__ as a module; Fluid does not.
       _ × s' <- lift (wellFormed mainModule (Map.insert "__name__" (VarStatus true) γ_imp) s)
       pure (Map.insert "__name__" true (erase layer) × s')
 
