@@ -15,7 +15,7 @@ import Data.Maybe (Maybe(..), isJust)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
-import DataType (class HasClasses, ClassTable, cNoArgs, classTable)
+import DataType (class HasClasses, ClassTable, cNoArgs)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -147,15 +147,14 @@ prepConfig primitives fluidSrc = do
    allClasses <- orThrow do
       programClasses <- classes mainModule s
       unionWith_mergeEq modClasses (fqnKeyed programClasses)
-   let allClassTable = classTable allClasses
-   withClasses allClassTable do
-      coreModules <- withClasses (classTable modClasses)
+   withClasses allClasses do
+      coreModules <- withClasses modClasses
          $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (_.mod <$> loaded)
       n × topLevelEnv <- allocTopLevel primitives coreModules imports
       check (Map.keys γ_wf == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
       e_wf <- desug s_wf
       let e = (unit <$ e_wf) :: Raw Stmt
-      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classes: allClassTable }
+      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classes: allClasses }
       pure { s, e, gconfig }
 
 parseModules

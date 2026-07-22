@@ -12,7 +12,6 @@ import Control.Monad.Writer.Trans (WriterT)
 import Data.CodePoint.Unicode (isUpper)
 import Data.Foldable (for_)
 import Data.Function (on)
-import Data.FunctorWithIndex (mapWithIndex)
 import Data.List (List(..), elemIndex, (:))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..)) as NE
@@ -21,7 +20,6 @@ import Data.Map as Map
 import Data.Array (last) as A
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.String (Pattern(..), split)
-import Data.Tuple (snd)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Set (fromFoldable, map, toUnfoldable) as S
@@ -30,8 +28,8 @@ import Data.String.CodeUnits (charAt)
 import DefiniteAssignment (ClassEntry, fields)
 import Dict (Dict, fromFoldable)
 import Effect.Exception (Error)
-import Util (type (×), absurd, definitely, definitely', error, throw, withMsg, (×))
-import Util.Map (keys, lookup)
+import Util (type (×), absurd, definitely, definitely', error, throw, whenever, withMsg, (×))
+import Util.Map (keys)
 
 type TypeName = String
 type FieldName = String
@@ -66,14 +64,7 @@ instance Show DataType where
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
--- A datatype is a dataclass hierarchy, named by its root; every class belongs to the datatype of its
--- hierarchy. Its constructors are the leaves: non-leaf classes are not constructable/matchable (#1530).
-type ClassInfo =
-   { fields :: List Var -- own fields, preceded by those inherited
-   , dataType :: DataType
-   }
-
-type ClassTable = Map.Map Ctr ClassInfo
+type ClassTable = Map.Map Ctr ClassEntry -- keyed by fully-qualified name
 
 class HasClasses m where
    askClasses :: m ClassTable
@@ -90,37 +81,38 @@ instance (Monad m, HasClasses m) => HasClasses (ExceptT e m) where
 instance (Monad m, HasClasses m, Monoid w) => HasClasses (WriterT w m) where
    askClasses = lift askClasses
 
-classTable :: Map.Map Var ClassEntry -> ClassTable
-classTable λ = mapWithIndex infoFor λ
-   where
-   classes = Map.toUnfoldable λ :: List (Ctr × ClassEntry)
-   bases = S.fromFoldable (List.mapMaybe (baseOf <<< snd) classes)
-   baseOf cls = (dottedName <<< qual cls.mod) <$> cls.base
+-- FQN of the base of a class, which shares its defining module.
+baseOf :: ClassEntry -> Maybe Ctr
+baseOf cls = (dottedName <<< qual cls.mod) <$> cls.base
 
-   root c = case Map.lookup c λ of
-      Just cls | Just b <- baseOf cls -> root b
-      _ -> c
+-- Root of the hierarchy containing c.
+rootOf :: ClassTable -> Ctr -> Ctr
+rootOf λ c = case Map.lookup c λ >>= baseOf of
+   Just b -> rootOf λ b
+   Nothing -> c
 
-   sigs = List.foldl addLeaf Map.empty classes
-   addLeaf acc (c × cls)
-      | c `Set.member` bases = acc
-      | otherwise = Map.insertWith (<>) (root c) (List.singleton (c × List.length (fields cls))) acc
+-- Classes that are some class's base.
+bases :: ClassTable -> Set Ctr
+bases λ = S.fromFoldable (List.mapMaybe baseOf (Map.values λ))
 
-   infoFor c cls =
-      { fields: fields cls
-      , dataType: DataType (root c) (fromFoldable (definitely' (Map.lookup (root c) sigs)))
-      }
-
+-- A datatype is a dataclass hierarchy, named by its root; every class belongs to the datatype of its
+-- hierarchy. Its constructors are the leaves: non-leaf classes are not constructable/matchable (#1530).
 dataType :: ClassTable -> Ctr -> Maybe DataType
-dataType λ c = Map.lookup c λ <#> _.dataType
+dataType λ c = Map.lookup c λ $> DataType root (fromFoldable sigs)
+   where
+   root = rootOf λ c
+   bs = bases λ
+   sigs = (Map.toUnfoldable λ :: List (Ctr × ClassEntry)) # List.mapMaybe
+      \(c' × cls) -> whenever (rootOf λ c' == root && not (c' `Set.member` bs)) (c' × List.length (fields cls))
 
 fieldsOf :: ClassTable -> Ctr -> Maybe (List Var)
-fieldsOf λ c = Map.lookup c λ <#> _.fields
+fieldsOf λ c = Map.lookup c λ <#> fields
 
+-- Arity of c as a constructor of its datatype; Nothing for a non-leaf class.
 arity :: ClassTable -> Ctr -> Maybe Int
 arity λ c = do
-   DataType _ sigs <- dataType λ c
-   lookup c sigs
+   cls <- Map.lookup c λ
+   whenever (not (c `Set.member` bases λ)) (List.length (fields cls))
 
 consistentWith :: forall m. MonadError Error m => ClassTable -> Set Ctr -> Set Ctr -> m Unit
 consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
