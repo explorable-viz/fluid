@@ -1,2 +1,16 @@
 {
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./script/integrity-session-hook.sh",
+            "timeout": 60,
+            "statusMessage": "Checking project integrity"
+          }
+        ]
+      }
+    ]
+  }
 }
