@@ -136,11 +136,12 @@ checkStatements :: Name -> Cxt -> Raw S.Module -> Either String (VarCxt × S.Mod
 checkStatements q γ_imp (S.Module imports ss) =
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure (Map.singleton "__name__" true × S.Module imports Nil)
-      Just s -> wellFormed q (Map.insert "__name__" (VarStatus true) γ_imp) s <#> \(r × s') ->
-         Map.insert "__name__" true (delta r) × S.Module imports (unSeq s')
+      Just s -> do
+         r × s' <- wellFormed q (Map.insert "__name__" (VarStatus true) γ_imp) s
+         case r of
+            Returns -> throwError "Module body cannot return"
+            Assigns δ -> pure (Map.insert "__name__" true δ × S.Module imports (unSeq s'))
    where
-   delta (Assigns δ) = δ
-   delta Returns = Map.empty
    unSeq (S.Seq s1 s2) = s1 : unSeq s2
    unSeq s = s : Nil
 
