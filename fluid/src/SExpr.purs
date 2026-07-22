@@ -12,7 +12,7 @@ import Data.Foldable (for_, length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, find, take, unzip, zip, zipWith, (:))
-import Data.List (difference) as L
+import Data.List (mapMaybe) as L
 import Data.List.NonEmpty (NonEmptyList(..), foldr, groupBy, head, last, toList)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap)
@@ -23,7 +23,7 @@ import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (replicate)
-import DataType (class HasClasses, ClassTable, Ctr, DataType, arity, askClasses, checkLeaf, fieldsOf, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataType)
+import DataType (class HasClasses, ClassTable, Ctr, DataType(..), askClasses, ctrSig, fieldsOf, cCons, cNone, cParagraph, cFalse, cNil, cTrue, dataType)
 import Data.Map as Map
 import DefiniteAssignment (VarCxt, WfResult(..))
 import Lattice (class JoinSemilattice)
@@ -34,7 +34,8 @@ import Expr (class BV, class FV, Cont(..), Elim(..), asElim, bv, fv)
 import Expr (Expr(..), Import(..), Module(..), RecDefs(..), Stmt(..), VarDef(..)) as E
 import Util.Set ((\\), (∪))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, definitely, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, definitely, error, shapeMismatch, singleton, throw, unimplemented, whenever, (×), (≜))
+import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
 
 -- Surface language expressions.
@@ -255,11 +256,11 @@ exprFwd (Str α s) =
    pure $ E.Str α s
 exprFwd (Constr α c ss) = do
    λ <- askClasses
-   checkLeaf λ "construct" (dottedName c)
+   _ <- ctrSig λ "construct" (dottedName c)
    E.Constr α c <$> traverse desug ss
 exprFwd (ConstrKw α c es xes) = do
    λ <- askClasses
-   checkLeaf λ "construct" (dottedName c)
+   _ <- ctrSig λ "construct" (dottedName c)
    reordered <- reorderKw λ c (length es) xes
    E.Constr α c <$> traverse desug (es <> reordered)
 exprFwd (Dictionary α sss) = do
@@ -381,10 +382,8 @@ popConstrFwd :: forall m. HasClasses m => MonadError Error m => DataType -> Clau
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
 popConstrFwd d (((p : π') × π'' × s) : ks) = do
    λ <- askClasses
-   checkLeaf λ "match" c
-   n <- maybe (throw $ "Unknown dataclass: " <> c) pure (arity λ c)
-   dt <- maybe (throw $ "Unknown dataclass: " <> c) pure (dataType λ c)
-   assert (length π == n && dt == d) $
+   d' × n <- ctrSig λ "match" c
+   assert (length π == n && d' == d) $
       forConstrFwd c ((π <> π') × π'' × s) <$> popConstrFwd d ks
    where
    π = subpatts p
@@ -465,8 +464,8 @@ clausesStateFwd' ks = case ks of
    ((p : _) × _) : _ -> do
       λ <- askClasses
       let c = definitely ("clausesStateFwd ctrFor failed for: " <> showPattern p) (ctrFor p)
-      dt <- maybe (throw $ "Unknown dataclass: " <> c) pure (dataType λ c)
-      kss <- popConstrFwd dt ks
+      d <- maybe (throw $ "Unknown dataclass: " <> c) pure (dataType λ c)
+      kss <- popConstrFwd d ks
       ContElim <$> ElimConstr <$> D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
@@ -479,15 +478,12 @@ unless _ (Left (PRecord _)) = Nil
 unless λ (Left (PConstr c _)) =
    let
       c0 = dottedName c
-      dt = case dataType λ c0 of
+      DataType _ sigs = case dataType λ c0 of
          Just d -> d
          Nothing -> error $ "Unknown dataclass: " <> c0
-      arityOf c' = case arity λ c' of
-         Just n -> n
-         Nothing -> error $ "Unknown dataclass: " <> c'
    in
-      (S.toUnfoldable (ctrs dt) `L.difference` singleton c0)
-         <#> \c' -> Left (PConstr (singleton c') (replicate (arityOf c') pVarAnon))
+      (toUnfoldable sigs :: List _) # L.mapMaybe
+         \(c' × n) -> whenever (c' /= c0) (Left (PConstr (singleton c') (replicate n pVarAnon)))
 unless _ (Left PListEmpty) = Left (PConstr cCons (replicate 2 pVarAnon)) : Nil
 unless _ (Left (PListNonEmpty _ _)) = Left PListEmpty : Nil
 unless _ (Right (PListVar _)) = Nil

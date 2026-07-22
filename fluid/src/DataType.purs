@@ -18,7 +18,7 @@ import Data.List.NonEmpty (NonEmptyList(..)) as NE
 import Data.NonEmpty ((:|))
 import Data.Map as Map
 import Data.Array (last) as A
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.String (Pattern(..), split)
 import Data.Set (Set)
 import Data.Set (fromFoldable, map, toUnfoldable) as S
@@ -28,7 +28,7 @@ import DefiniteAssignment (ClassEntry, fields)
 import Dict (Dict, fromFoldable)
 import Effect.Exception (Error)
 import Util (type (×), absurd, definitely, definitely', error, throw, whenever, withMsg, (×))
-import Util.Map (keys)
+import Util.Map (keys, lookup)
 
 type TypeName = String
 type FieldName = String
@@ -118,18 +118,17 @@ consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
               Just d'' | d'' == d -> pure unit
               _ -> throw "mismatch"
 
--- Reject a known class that is not a constructor of its datatype (#1530).
-checkLeaf :: forall m. MonadError Error m => ClassTable -> String -> Ctr -> m Unit
-checkLeaf λ verb c = case Map.lookup c λ of
-   Just _ | not (isLeaf λ c) -> throw $ "Cannot " <> verb <> " non-leaf class: " <> showCtr (simpleName c)
-   _ -> pure unit
+-- Datatype of c and c's signature within it; a non-leaf class has no signature (#1530).
+ctrSig :: forall m. MonadError Error m => ClassTable -> String -> Ctr -> m (DataType × CtrSig)
+ctrSig λ verb c = do
+   d@(DataType _ sigs) <- maybe (throw $ "Unknown dataclass: " <> showCtr (simpleName c)) pure (dataType λ c)
+   n <- maybe (throw $ "Cannot " <> verb <> " non-leaf class: " <> showCtr (simpleName c)) pure (lookup c sigs)
+   pure (d × n)
 
 checkArity :: forall m. MonadError Error m => ClassTable -> Ctr -> Int -> m Unit
-checkArity λ c n = case arity λ c of
-   Nothing -> throw $ "Unknown dataclass: " <> showCtr (simpleName c)
-   Just n' -> do
-      checkLeaf λ "construct" c
-      when (n' /= n) $ throw $ showCtr (simpleName c) <> " arity " <> show n' <> "; got " <> show n
+checkArity λ c n = do
+   _ × n' <- ctrSig λ "construct" c
+   when (n' /= n) $ throw $ showCtr (simpleName c) <> " arity " <> show n' <> "; got " <> show n
 
 type FieldIndex = Name -> FieldName -> Int
 
