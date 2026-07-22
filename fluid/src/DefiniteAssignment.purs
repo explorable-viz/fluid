@@ -12,7 +12,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
-import Util (definitely)
+import Util (definitely')
 
 type VarCxt = Map Var Boolean
 
@@ -82,7 +82,7 @@ extendCxt γ δ = Map.union (VarStatus <$> δ) γ
 fields :: ClassEntry -> List Var
 fields cls = case cls.base of
    Nothing -> cls.fields
-   Just b -> fields (definitely "base resolves in declaring context" (classFor cls.cxt b)) <> cls.fields
+   Just b -> fields (definitely' (classFor cls.cxt b)) <> cls.fields
 
 unionWith_mergeEq :: Map Var ClassEntry -> Map Var ClassEntry -> Either String (Map Var ClassEntry)
 unionWith_mergeEq a b = do
