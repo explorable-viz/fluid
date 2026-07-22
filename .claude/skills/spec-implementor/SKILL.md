@@ -51,9 +51,9 @@ particular output when run. Nothing else is observable.
 
 ## Defensive coding
 
-Where an invariant makes a case impossible, fail loudly there (`definitely`, or
-the reference's `assert`) rather than returning a default that would hide a
-later breakage far from its cause.
+Where an invariant makes a case impossible, fail loudly there with `definitely`
+rather than returning a default. A silent default hides a later breakage far
+from its cause.
 
 ## Comments
 
