@@ -17,7 +17,7 @@ import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, snd)
-import DataType (class HasClasses, ClassTable, arity, askClasses, checkArity, consistentWith, dataType, fieldsOf, showCtr, simpleName)
+import DataType (class HasClasses, ClassTable, arity, askClasses, checkArity, consistentWith, dataType, fieldsOf, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -62,9 +62,10 @@ match (Val α _ (V.Constr c vs)) (ElimConstr m) = do
    pure (γ × κ' × (insert α αs))
 match v (ElimConstr m) = do
    λ <- askClasses
-   d <- case Set.toUnfoldable (keys m) :: List _ of
-      c : _ -> maybe (throw $ "Unknown dataclass: " <> showCtr (simpleName c)) pure (dataType λ c)
-      Nil -> error absurd
+   let
+      d = case Set.toUnfoldable (keys m) :: List _ of
+         c : _ -> definitely' (dataType λ c)
+         Nil -> error absurd
    throw $ patternMismatch (prettyP v) (show d)
 match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    check (Set.subset xs (Set.fromFoldable $ keys xvs))
