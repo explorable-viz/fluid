@@ -265,14 +265,14 @@ expr = context "expr" $ ternary <?> "expression"
                k <- try do
                   delim '.'
                   variable
-               chain (Project e k)
+               chain (Attribute e k)
 
             dproject :: Parser (Raw Expr)
             dproject = do
                delim '['
                k <- ternary
                close ']'
-               chain (DProject e k)
+               chain (Subscript e k)
 
             app :: Parser (Raw Expr)
             app = do

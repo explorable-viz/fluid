@@ -206,9 +206,9 @@ capturesE (S.Matrix _ e (x × y) e') =
    (capturesE e \\ (Set.singleton x ∪ Set.singleton y)) ∪ capturesE e'
 capturesE (S.Lambda (S.LambdaClause (ps × e))) =
    fv e \\ unions (bv <$> ps)
-capturesE (S.Project e _) = capturesE e
+capturesE (S.Attribute e _) = capturesE e
 capturesE (S.ModMember _ _) = Set.empty
-capturesE (S.DProject e e') = capturesE e ∪ capturesE e'
+capturesE (S.Subscript e e') = capturesE e ∪ capturesE e'
 capturesE (S.App e e') = capturesE e ∪ capturesE e'
 capturesE (S.BinaryApp e _ e') = capturesE e ∪ capturesE e'
 capturesE (S.UnaryPrefixApp _ e) = capturesE e
@@ -313,7 +313,7 @@ wellFormed q γ (S.Dataclass c b xs) = do
 
 asName :: forall a. S.Expr a -> Maybe Name
 asName (S.Var x) = Just (singleton x)
-asName (S.Project e y) = asName e <#> (_ <> singleton y)
+asName (S.Attribute e y) = asName e <#> (_ <> singleton y)
 asName _ = Nothing
 
 resolveName :: Cxt -> Name -> Maybe Entry
@@ -357,15 +357,15 @@ wellFormedExpr = wf
    wf γ (S.BinaryApp e op e') = S.BinaryApp <$> wf γ e <*> (op <$ var γ op) <*> wf γ e'
    wf γ (S.UnaryPrefixApp op e) = var γ op *> (S.UnaryPrefixApp op <$> wf γ e)
    wf γ (S.Ternary c e e') = S.Ternary <$> wf γ c <*> wf γ e <*> wf γ e'
-   wf γ (S.Project e y) = case resolveName γ =<< asName e of
+   wf γ (S.Attribute e y) = case resolveName γ =<< asName e of
       Just (ModLoaded q γ') -> do
          when (not (Map.member y γ'))
             $ throwError
             $ "module " <> dottedName q <> " has no member " <> y
          pure (S.ModMember q y)
-      _ -> flip S.Project y <$> wf γ e
+      _ -> flip S.Attribute y <$> wf γ e
    wf _ e@(S.ModMember _ _) = pure e
-   wf γ (S.DProject e e') = S.DProject <$> wf γ e <*> wf γ e'
+   wf γ (S.Subscript e e') = S.Subscript <$> wf γ e <*> wf γ e'
    wf γ (S.Matrix α body (x × y) source) =
       (\source' body' -> S.Matrix α body' (x × y) source') <$> wf γ source <*> wf (assignedIn γ (Set.singleton x ∪ Set.singleton y)) body
    wf γ (S.Lambda (S.LambdaClause (ps × e))) = do

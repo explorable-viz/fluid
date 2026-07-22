@@ -166,7 +166,7 @@ eval doc_opt γ e0 αs = do
          Op op -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (operator " <> op <> ")"
             withMsg "Variable lookup" $ lookupVar op γ
-         Project e x -> do
+         Attribute e x -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (attribute access)"
             v <- eval Nothing γ e αs
             case v of
@@ -174,7 +174,7 @@ eval doc_opt γ e0 αs = do
                   xs <- askClasses <#> \λ -> definitely' (fieldsOf λ (dottedName c))
                   find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (dottedName c <> " has no field " <> x)
                _ -> throw $ "Found " <> prettyP (unit <$ v) <> ", expected object"
-         DProject e e' -> do
+         Subscript e e' -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (projection)"
             v <- eval Nothing γ e αs
             v' <- eval Nothing γ e' αs

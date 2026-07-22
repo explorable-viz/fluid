@@ -51,9 +51,9 @@ data Expr a
    | Dictionary a (List (DictEntry a × Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (LambdaClause a)
-   | Project (Expr a) Var
-   | ModMember Name Var -- member x of module q; not parseable, produced by well-formedness from Project
-   | DProject (Expr a) (Expr a)
+   | Attribute (Expr a) Var
+   | ModMember Name Var -- member x of module q; not parseable, produced by well-formedness from Attribute
+   | Subscript (Expr a) (Expr a)
    | App (Expr a) (Expr a)
    | BinaryApp (Expr a) Var (Expr a)
    | UnaryPrefixApp Var (Expr a)
@@ -272,12 +272,12 @@ exprFwd (Matrix α s (x × y) s') =
    E.Matrix α <$> desug s <@> x × y <*> desug s'
 exprFwd (Lambda μ) =
    E.Lambda Returns <$> desug μ
-exprFwd (Project s x) =
-   E.Project <$> desug s <@> x
+exprFwd (Attribute s x) =
+   E.Attribute <$> desug s <@> x
 exprFwd (ModMember q x) =
    pure $ E.ModMember q x
-exprFwd (DProject s x) =
-   E.DProject <$> desug s <*> desug x
+exprFwd (Subscript s x) =
+   E.Subscript <$> desug s <*> desug x
 exprFwd (App s1 s2) =
    E.App <$> desug s1 <*> desug s2
 exprFwd (BinaryApp s1 op s2) =
@@ -646,9 +646,9 @@ instance FV (Expr a) where
    fv (Dictionary _ entries) = Set.unions ((\(k × v) -> fv k ∪ fv v) <$> entries)
    fv (Matrix _ body (x × y) source) = (fv body \\ (Set.singleton x ∪ Set.singleton y)) ∪ fv source
    fv (Lambda lc) = fv lc
-   fv (Project e _) = fv e
+   fv (Attribute e _) = fv e
    fv (ModMember _ _) = Set.empty
-   fv (DProject e e') = fv e ∪ fv e'
+   fv (Subscript e e') = fv e ∪ fv e'
    fv (App e e') = fv e ∪ fv e'
    fv (BinaryApp e op e') = fv e ∪ Set.singleton op ∪ fv e'
    fv (UnaryPrefixApp op e) = Set.singleton op ∪ fv e

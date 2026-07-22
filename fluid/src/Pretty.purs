@@ -137,9 +137,9 @@ instance Ann a => Pretty (Expr a) where
    pretty (Matrix α e (x × y) e') =
       highlightIf α (expr $ matrix (pretty e <+> text "for" <+> pair text x y <+> text "in" <+> pretty e'))
    pretty (Lambda c) = pretty c
-   pretty (Project s x) = expr $ prettySimple s <> text "." <> text x
+   pretty (Attribute s x) = expr $ prettySimple s <> text "." <> text x
    pretty (ModMember q x) = expr $ text (dottedName q) <> text "." <> text x
-   pretty (DProject e k) = expr $ prettySimple e <> brackets (expr $ pretty k)
+   pretty (Subscript e k) = expr $ prettySimple e <> brackets (expr $ pretty k)
    pretty (App s s') = expr $ prettyAppChain (App s s') Nil
    pretty (BinaryApp s op s') = expr $ operatorApp 0 (BinaryApp s op s')
    pretty (UnaryPrefixApp op s) = expr $ operatorApp 0 (UnaryPrefixApp op s)
@@ -317,8 +317,8 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Matrix a e1 (i × j) e2) =
       highlightIf a $ matrix (pretty e1 <+> text "for" <+> pair text i j <+> text "in" <+> pretty e2)
    pretty (E.Lambda a o) = highlightIf a (text "lambda") <+> pretty o -- really?
-   pretty (E.Project e x) = pretty e <> text "." <> text x
-   pretty (E.DProject e x) = pretty e <> brackets (pretty x)
+   pretty (E.Attribute e x) = pretty e <> text "." <> text x
+   pretty (E.Subscript e x) = pretty e <> brackets (pretty x)
    pretty (E.ModMember q x) = text (dottedName q) <> text "." <> text x
    pretty (E.App e e') = pretty e <> parens (pretty e') -- TODO
    pretty (E.DocExpr p e) = text "@doc" <> parens (pretty p) <+> pretty e
