@@ -50,6 +50,8 @@ illFormed_cases =
    , { file: "subscript_non_dict.fld", expected_error: "Found Point(1, 2), expected dict" }
    , { file: "from_import_selective.fld", expected_error: "Unbound name: bar" }
    , { file: "extend_imported_class.fld", expected_error: "Cannot extend imported class: Base" }
+   , { file: "construct_non_leaf.fld", expected_error: "Cannot construct non-leaf class: Base" }
+   , { file: "match_non_leaf.fld", expected_error: "Cannot match non-leaf class: Base" }
    , { file: "from_import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
    , { file: "from_import_arity.fld", expected_error: "Derived expects 2 argument(s); got 1" }
    , { file: "from_import_loads_ancestor.fld", expected_error: "AssertionError" }

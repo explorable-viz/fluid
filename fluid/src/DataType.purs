@@ -19,7 +19,7 @@ import Data.List.NonEmpty (NonEmptyList(..)) as NE
 import Data.NonEmpty ((:|))
 import Data.Map as Map
 import Data.Array (last) as A
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.String (Pattern(..), split)
 import Data.Tuple (snd)
 import Data.Set (Set)
@@ -66,9 +66,11 @@ instance Show DataType where
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
+-- A datatype is a dataclass hierarchy, named by its root; every class belongs to the datatype of its
+-- hierarchy. Its constructors are the leaves: non-leaf classes are not constructable/matchable (#1530).
 type ClassInfo =
    { fields :: List Var -- own fields, preceded by those inherited
-   , dataType :: Maybe DataType -- Nothing for a non-leaf class; only leaves are constructable/matchable (#1530)
+   , dataType :: DataType
    }
 
 type ClassTable = Map.Map Ctr ClassInfo
@@ -106,13 +108,11 @@ classTable λ = mapWithIndex infoFor λ
 
    infoFor c cls =
       { fields: fields cls
-      , dataType:
-           if c `Set.member` bases then Nothing
-           else Just (DataType (root c) (fromFoldable (definitely' (Map.lookup (root c) sigs))))
+      , dataType: DataType (root c) (fromFoldable (definitely' (Map.lookup (root c) sigs)))
       }
 
 dataType :: ClassTable -> Ctr -> Maybe DataType
-dataType λ c = Map.lookup c λ >>= _.dataType
+dataType λ c = Map.lookup c λ <#> _.dataType
 
 fieldsOf :: ClassTable -> Ctr -> Maybe (List Var)
 fieldsOf λ c = Map.lookup c λ <#> _.fields
@@ -132,11 +132,19 @@ consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
               Just d'' | d'' == d -> pure unit
               _ -> throw "mismatch"
 
+-- Reject a known class that is not a constructor of its datatype (#1530).
+checkLeaf :: forall m. MonadError Error m => ClassTable -> String -> Ctr -> m Unit
+checkLeaf λ verb c = case Map.lookup c λ of
+   Just _ | isNothing (arity λ c) -> throw $ "Cannot " <> verb <> " non-leaf class: " <> showCtr (simpleName c)
+   _ -> pure unit
+
 checkArity :: forall m. MonadError Error m => ClassTable -> Ctr -> Int -> m Unit
-checkArity λ c n = case arity λ c of
-   Just n' | n' == n -> pure unit
-   Just n' -> throw $ showCtr (simpleName c) <> " arity " <> show n' <> "; got " <> show n
+checkArity λ c n = case Map.lookup c λ of
    Nothing -> throw $ "Unknown dataclass: " <> showCtr (simpleName c)
+   Just _ -> case arity λ c of
+      Nothing -> throw $ "Cannot construct non-leaf class: " <> showCtr (simpleName c)
+      Just n' | n' == n -> pure unit
+      Just n' -> throw $ showCtr (simpleName c) <> " arity " <> show n' <> "; got " <> show n
 
 type FieldIndex = Name -> FieldName -> Int
 

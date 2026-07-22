@@ -23,7 +23,7 @@ import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (replicate)
-import DataType (class HasClasses, ClassTable, Ctr, DataType, arity, askClasses, fieldsOf, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataType)
+import DataType (class HasClasses, ClassTable, Ctr, DataType, arity, askClasses, checkLeaf, fieldsOf, cCons, cNone, cParagraph, cFalse, cNil, cTrue, ctrs, dataType, showCtr, simpleName)
 import Data.Map as Map
 import DefiniteAssignment (VarCxt, WfResult(..))
 import Lattice (class JoinSemilattice)
@@ -253,10 +253,13 @@ exprFwd (Float α n) =
    pure $ (E.Float α n)
 exprFwd (Str α s) =
    pure $ E.Str α s
-exprFwd (Constr α c ss) =
+exprFwd (Constr α c ss) = do
+   λ <- askClasses
+   checkLeaf λ "construct" (dottedName c)
    E.Constr α c <$> traverse desug ss
 exprFwd (ConstrKw α c es xes) = do
    λ <- askClasses
+   checkLeaf λ "construct" (dottedName c)
    reordered <- reorderKw λ c (length es) xes
    E.Constr α c <$> traverse desug (es <> reordered)
 exprFwd (Dictionary α sss) = do
@@ -378,8 +381,8 @@ popConstrFwd :: forall m. HasClasses m => MonadError Error m => DataType -> Clau
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
 popConstrFwd d (((p : π') × π'' × s) : ks) = do
    λ <- askClasses
-   n <- maybe (throw $ "Unknown dataclass: " <> c) pure (arity λ c)
    dt <- maybe (throw $ "Unknown dataclass: " <> c) pure (dataType λ c)
+   n <- maybe (throw $ "Cannot match non-leaf class: " <> showCtr (simpleName c)) pure (arity λ c)
    assert (length π == n && dt == d) $
       forConstrFwd c ((π <> π') × π'' × s) <$> popConstrFwd d ks
    where
