@@ -51,11 +51,9 @@ particular output when run. Nothing else is observable.
 
 ## Defensive coding
 
-When an invariant makes a case impossible, fail loudly on it rather than
-returning a benign default. A silent fallback hides the breakage if the
-invariant later fails, surfacing it far from the cause. Use `definitely` (or
-the spec reference's `assert`) at the impossible case, and drop the comment
-that would have excused the default.
+Where an invariant makes a case impossible, fail loudly there (`definitely`, or
+the reference's `assert`) rather than returning a default that would hide a
+later breakage far from its cause.
 
 ## Comments
 
