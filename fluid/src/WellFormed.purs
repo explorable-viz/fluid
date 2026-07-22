@@ -169,7 +169,7 @@ assigns (S.If es s) = unions (assigns <$> (snd <$> es)) ∪ maybe Set.empty assi
 assigns (S.Match _ ps) = unions (assigns <$> (snd <$> ps))
 assigns (S.DefRec ds) = unions (Set.singleton <<< fst <$> ds)
 assigns (S.Seq s1 s2) = assigns s1 ∪ assigns s2
-assigns (S.Dataclass _ _ _) = Set.empty
+assigns (S.Dataclass c _ _) = Set.singleton c
 
 captures :: forall a. S.Stmt a -> Set Var
 captures S.Pass = Set.empty

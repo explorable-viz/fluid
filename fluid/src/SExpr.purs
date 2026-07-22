@@ -641,11 +641,11 @@ instance FV (Expr a) where
    fv (Int _ _) = Set.empty
    fv (Float _ _) = Set.empty
    fv (Str _ _) = Set.empty
-   fv (Constr _ _ es) = Set.unions (fv <$> es)
-   fv (ConstrKw _ _ es xes) = Set.unions (fv <$> es) ∪ Set.unions ((fv <<< snd) <$> xes)
+   fv (Constr _ c es) = Set.singleton (head c) ∪ Set.unions (fv <$> es)
+   fv (ConstrKw _ c es xes) = Set.singleton (head c) ∪ Set.unions (fv <$> es) ∪ Set.unions ((fv <<< snd) <$> xes)
    fv (Dictionary _ entries) = Set.unions ((\(k × v) -> fv k ∪ fv v) <$> entries)
    fv (Matrix _ body (x × y) source) = (fv body \\ (Set.singleton x ∪ Set.singleton y)) ∪ fv source
-   fv (Lambda lc) = fv lc
+   fv (Lambda clause) = fv clause
    fv (Attribute e _) = fv e
    fv (ModMember _ _) = Set.empty
    fv (Subscript e e') = fv e ∪ fv e'
