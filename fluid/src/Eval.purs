@@ -64,7 +64,7 @@ match v (ElimConstr m) = do
    λ <- askClasses
    d <- case Set.toUnfoldable (keys m) :: List _ of
       c : _ -> maybe (throw $ "Unknown dataclass: " <> showCtr (simpleName c)) pure (dataType λ c)
-      Nil -> throw "Pattern matched empty ElimConstr"
+      Nil -> error absurd
    throw $ patternMismatch (prettyP v) (show d)
 match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    check (Set.subset xs (Set.fromFoldable $ keys xvs))
