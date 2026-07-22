@@ -33,7 +33,7 @@ import ModuleGraph (ModuleName, builtins, predefined, predefinedDeps)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, absurd, check, error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
+import Util (type (×), Endo, absurd, check, definitely', error, orElse, singleton, spyFunWhen, throw, traceWhen, withMsg, (×), (⊆))
 import Util.Map (unionWith_never, delete, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
@@ -170,7 +170,7 @@ eval doc_opt γ e0 αs = do
             v <- eval Nothing γ e αs
             case v of
                Val _ _ (V.Constr c vs) -> do
-                  xs <- askClasses >>= \λ -> maybe (throw $ "Ill-formed value: unknown dataclass " <> dottedName c) pure (fieldsOf λ (dottedName c))
+                  xs <- askClasses <#> \λ -> definitely' (fieldsOf λ (dottedName c))
                   find (\(k × _) -> k == x) (zip xs vs) <#> snd # orElse (dottedName c <> " has no field " <> x)
                _ -> throw $ "Found " <> prettyP (unit <$ v) <> ", expected object"
          DProject e e' -> do
