@@ -42,8 +42,8 @@ import Val (BaseVal(..)) as V
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
--- The class context is keyed by fully-qualified name (defining module then
--- class), matching the FQNs the desugar bakes into constructors.
+-- Re-key by fully-qualified name (defining module then class), matching the
+-- FQNs well-formedness bakes into constructors.
 fqnKeyed :: Map Var ClassEntry -> Map Var ClassEntry
 fqnKeyed m = Map.fromFoldable (reKey <$> (Map.toUnfoldable m :: List _))
    where
