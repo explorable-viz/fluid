@@ -290,9 +290,9 @@ evalVal _ _ _ = pure Nothing
 
 eval_module :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ0 q (Module is ss0) αs0 = do
-   base <- foldM (evalImport q) γ0 is
-   vName <- val Nothing empty (V.Str (dottedName q))
-   go base (maplet "__name__" vName) ss0 αs0
+   γ_imp <- foldM (evalImport q) γ0 is
+   v_name <- val Nothing empty (V.Str (dottedName q))
+   go γ_imp (maplet "__name__" v_name) ss0 αs0
    where
    go :: Env Vertex -> Env Vertex -> List (Stmt Vertex) -> Set Vertex -> m (Env Vertex)
    go _ γ' Nil _ = pure γ'
