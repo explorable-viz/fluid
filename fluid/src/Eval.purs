@@ -339,13 +339,13 @@ load q = do
    case Map.lookup q modEnv of
       Just γ' -> pure γ'
       Nothing -> do
-         γ_q <-
+         γ_base <-
             if q `Set.member` Set.fromFoldable predefined then foldM importInto primitives (predefinedDeps q)
             else pure empty
-         γ' <- maybe (pure empty) (\defs' -> eval_module γ_q q defs' empty) (Map.lookup q modules)
-         let loaded = (if q == builtins then primitives else empty) <+> γ'
-         modifyStore (\s -> s { modEnv = Map.insert q loaded s.modEnv })
-         pure loaded
+         γ' <- maybe (pure empty) (\defs' -> eval_module γ_base q defs' empty) (Map.lookup q modules)
+         let γ_q = (if q == builtins then primitives else empty) <+> γ'
+         modifyStore (\s -> s { modEnv = Map.insert q γ_q s.modEnv })
+         pure γ_q
 
 type GraphEval g s t =
    { g :: g
