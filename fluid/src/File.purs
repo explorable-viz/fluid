@@ -8,6 +8,7 @@ import Affjax.ResponseFormat (string)
 import Affjax.StatusCode (StatusCode(..))
 import Affjax.Web (defaultRequest, request)
 import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT)
+import Control.Monad.Reader (class MonadReader, local)
 import Control.Monad.State (StateT)
 import Control.Monad.Writer (WriterT, lift)
 import Data.Array (foldM)
@@ -23,6 +24,9 @@ import Effect.Exception (Error)
 import Util (type (×), (×), debug, orElse)
 
 newtype FileCxt = FileCxt { fluidSrcPaths :: Array Folder, classes :: ClassTable }
+
+withClasses :: forall m a. MonadReader FileCxt m => ClassTable -> m a -> m a
+withClasses classes = local (\(FileCxt r) -> FileCxt (r { classes = classes }))
 
 class LoadFile m where
    loadFileFromPath :: MonadError Error m => MonadAff m => File -> m (Maybe String)

@@ -4,7 +4,7 @@ import Prelude hiding (absurd, apply)
 
 import Bind (Var, dottedName, prefixOf, varAnon)
 import Control.Monad.Error.Class (class MonadError)
-import Control.Monad.Reader (class MonadReader, local)
+import Control.Monad.Reader (class MonadReader)
 import Data.Array ((..))
 import Data.List (List(..), find, foldM, length, snoc, unzip, zip, (:))
 import Data.List.NonEmpty (head, snoc, unsnoc, fromList) as NEL
@@ -23,7 +23,7 @@ import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Import(..), Module(..), RecDefs(..), Stmt(..), VarDef(..), asStmt, fv)
-import File (class LoadFile, FileCxt(..))
+import File (class LoadFile, FileCxt, withClasses)
 import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
@@ -392,7 +392,7 @@ sliceBwd { g, graph_bwd, inα, outα } out𝔹 =
 
 graphEval :: forall m. HasClasses m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classes } stmt =
-   local (\(FileCxt r) -> FileCxt (r { classes = classes })) do
+   withClasses classes do
       { modules, builtinsEnv, modEnv } <- getStore
       let mαs = Set.unions (vertices <$> Map.values modules) ∪ vertices builtinsEnv ∪ Set.unions (vertices <$> Map.values modEnv)
       _ × _ × g × inα × outα <- flip runAllocT n do

@@ -3,7 +3,7 @@ module Module where
 import Prelude
 
 import Control.Monad.Except (class MonadError)
-import Control.Monad.Reader (class MonadReader, ask, local)
+import Control.Monad.Reader (class MonadReader, ask)
 import Bind (Var, dottedName, pathName, prefixOf)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Either (Either(..))
@@ -15,14 +15,14 @@ import Data.Maybe (Maybe(..), isJust)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
-import DataType (class HasClasses, ClassTable, cNoArgs)
+import DataType (class HasClasses, cNoArgs)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Eval (GraphConfig, evalImport, importInto)
 import Expr (Import(..)) as E
 import Expr (Module, Stmt, fv)
-import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile, loadFileMaybe)
+import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile, loadFileMaybe, withClasses)
 
 import Graph (Vertex, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -92,9 +92,6 @@ moduleClasses modCxt =
    classesOf = Map.mapMaybe case _ of
       Class cls -> Just cls
       _ -> Nothing
-
-withClasses :: forall m a. MonadReader FileCxt m => ClassTable -> m a -> m a
-withClasses classes = local (\(FileCxt r) -> FileCxt (r { classes = classes }))
 
 allocTopLevel
    :: forall m
