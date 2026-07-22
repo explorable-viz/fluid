@@ -140,13 +140,11 @@ prepConfig primitives fluidSrc = do
    let baseCxt = constMap (VarStatus true) (keys primitives) `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
    modules <- parseModules imports
    { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram modules baseCxt imports s)
-   let modClasses = moduleClasses (_.cxt <$> loaded)
    allClasses <- orThrow do
       programClasses <- classes mainModule s
-      unionWith_mergeEq modClasses (fqnKeyed programClasses)
+      unionWith_mergeEq (moduleClasses (_.cxt <$> loaded)) (fqnKeyed programClasses)
    withClasses allClasses do
-      coreModules <- withClasses modClasses
-         $ traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (_.mod <$> loaded)
+      coreModules <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (_.mod <$> loaded)
       n × topLevelEnv <- allocTopLevel primitives coreModules imports
       check (Map.keys γ_wf == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
       e_wf <- desug s_wf
