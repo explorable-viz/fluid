@@ -185,7 +185,7 @@ eval doc_opt γ e0 αs = do
          ModMember q x -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (module member " <> x <> ")"
             { modEnv } <- getStore
-            γ_q <- Map.lookup q modEnv # orElse ("Module not loaded: " <> dottedName q)
+            let γ_q = definitely' (Map.lookup q modEnv)
             withMsg "Module member" $ lookup' x γ_q
          App e e' -> do
             v <- eval Nothing γ e αs
