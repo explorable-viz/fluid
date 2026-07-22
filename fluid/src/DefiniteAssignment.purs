@@ -12,6 +12,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
+import Util (definitely)
 
 type VarCxt = Map Var Boolean
 
@@ -78,11 +79,10 @@ classFor γ c = case Map.lookup c γ of
 extendCxt :: Cxt -> VarCxt -> Cxt
 extendCxt γ δ = Map.union (VarStatus <$> δ) γ
 
--- An unresolvable base contributes nothing; well-formedness reports it separately.
 fields :: ClassEntry -> List Var
-fields cls = case cls.base >>= classFor cls.cxt of
+fields cls = case cls.base of
    Nothing -> cls.fields
-   Just cls' -> fields cls' <> cls.fields
+   Just b -> fields (definitely "base resolves in declaring context" (classFor cls.cxt b)) <> cls.fields
 
 unionWith_mergeEq :: Map Var ClassEntry -> Map Var ClassEntry -> Either String (Map Var ClassEntry)
 unionWith_mergeEq a b = do

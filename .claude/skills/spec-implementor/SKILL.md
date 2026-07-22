@@ -49,6 +49,14 @@ particular output when run. Nothing else is observable.
   written. Audit the suite by mutation: weaken the implementation and confirm a
   test fails.
 
+## Defensive coding
+
+When an invariant makes a case impossible, fail loudly on it rather than
+returning a benign default. A silent fallback hides the breakage if the
+invariant later fails, surfacing it far from the cause. Use `definitely` (or
+the spec reference's `assert`) at the impossible case, and drop the comment
+that would have excused the default.
+
 ## Comments
 
 Avoid comments unless they have substantial marginal value over the code.
