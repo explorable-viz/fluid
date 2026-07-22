@@ -18,10 +18,9 @@ import Data.List.NonEmpty (NonEmptyList(..)) as NE
 import Data.NonEmpty ((:|))
 import Data.Map as Map
 import Data.Array (last) as A
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (Pattern(..), split)
 import Data.Set (Set)
-import Data.Set as Set
 import Data.Set (fromFoldable, map, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
@@ -91,9 +90,8 @@ rootOf λ c = case Map.lookup c λ >>= baseOf of
    Just b -> rootOf λ b
    Nothing -> c
 
--- Classes that are some class's base.
-bases :: ClassTable -> Set Ctr
-bases λ = S.fromFoldable (List.mapMaybe baseOf (Map.values λ))
+isLeaf :: ClassTable -> Ctr -> Boolean
+isLeaf λ c = List.all (\cls -> baseOf cls /= Just c) (Map.values λ)
 
 -- A datatype is a dataclass hierarchy, named by its root; every class belongs to the datatype of its
 -- hierarchy. Its constructors are the leaves: non-leaf classes are not constructable/matchable (#1530).
@@ -101,18 +99,14 @@ dataType :: ClassTable -> Ctr -> Maybe DataType
 dataType λ c = Map.lookup c λ $> DataType root (fromFoldable sigs)
    where
    root = rootOf λ c
-   bs = bases λ
    sigs = (Map.toUnfoldable λ :: List (Ctr × ClassEntry)) # List.mapMaybe
-      \(c' × cls) -> whenever (rootOf λ c' == root && not (c' `Set.member` bs)) (c' × List.length (fields cls))
+      \(c' × cls) -> whenever (rootOf λ c' == root && isLeaf λ c') (c' × List.length (fields cls))
 
 fieldsOf :: ClassTable -> Ctr -> Maybe (List Var)
 fieldsOf λ c = Map.lookup c λ <#> fields
 
--- Arity of c as a constructor of its datatype; Nothing for a non-leaf class.
 arity :: ClassTable -> Ctr -> Maybe Int
-arity λ c = do
-   cls <- Map.lookup c λ
-   whenever (not (c `Set.member` bases λ)) (List.length (fields cls))
+arity λ c = Map.lookup c λ <#> (fields >>> List.length)
 
 consistentWith :: forall m. MonadError Error m => ClassTable -> Set Ctr -> Set Ctr -> m Unit
 consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
@@ -127,16 +121,15 @@ consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
 -- Reject a known class that is not a constructor of its datatype (#1530).
 checkLeaf :: forall m. MonadError Error m => ClassTable -> String -> Ctr -> m Unit
 checkLeaf λ verb c = case Map.lookup c λ of
-   Just _ | isNothing (arity λ c) -> throw $ "Cannot " <> verb <> " non-leaf class: " <> showCtr (simpleName c)
+   Just _ | not (isLeaf λ c) -> throw $ "Cannot " <> verb <> " non-leaf class: " <> showCtr (simpleName c)
    _ -> pure unit
 
 checkArity :: forall m. MonadError Error m => ClassTable -> Ctr -> Int -> m Unit
-checkArity λ c n = case Map.lookup c λ of
+checkArity λ c n = case arity λ c of
    Nothing -> throw $ "Unknown dataclass: " <> showCtr (simpleName c)
-   Just _ -> case arity λ c of
-      Nothing -> throw $ "Cannot construct non-leaf class: " <> showCtr (simpleName c)
-      Just n' | n' == n -> pure unit
-      Just n' -> throw $ showCtr (simpleName c) <> " arity " <> show n' <> "; got " <> show n
+   Just n' -> do
+      checkLeaf λ "construct" c
+      when (n' /= n) $ throw $ showCtr (simpleName c) <> " arity " <> show n' <> "; got " <> show n
 
 type FieldIndex = Name -> FieldName -> Int
 
