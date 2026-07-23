@@ -73,7 +73,7 @@ disjointUnion_inv :: forall a k b. Ord k => Map a k b => Set k -> a -> a × a
 disjointUnion_inv ks m = filterKeys (_ ∈ ks) m × filterKeys (_ `not <<< (∈)` ks) m
 
 lookup' :: forall m a k b. MonadThrow Error m => Show k => Map a k b => k -> a -> m b
-lookup' k γ = lookup k γ # orElse (keyExists k)
+lookup' k = lookup k >>> orElse (keyExists k)
 
 keyExists :: forall k. Show k => k -> String
 keyExists k = "Key " <> show k <> " exists in map"
@@ -91,7 +91,7 @@ append = unionWith (const identity)
 infixl 5 append as <+>
 
 append_inv :: forall a k b. Ord k => Map a k b => Set k -> a -> a × a
-append_inv xs γ = filterKeys (_ `not <<< (∈)` xs) γ × restrict xs γ
+append_inv xs m = filterKeys (_ `not <<< (∈)` xs) m × restrict xs m
 
 alter :: forall a k b. Map a k b => (Endo (Maybe b)) -> k -> Endo a
 alter f k m = case f (lookup k m) of
