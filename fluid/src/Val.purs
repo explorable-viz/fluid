@@ -84,7 +84,7 @@ instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 type ModuleStore =
    { primitives :: Env Vertex
-   , γ0 :: Env Vertex -- predefined base environment: primitives and the predefined modules
+   , γ0 :: Env Vertex -- base environment: primitives and the members of the predefined modules (lib.builtins, lib.prelude)
    , moduleBody :: Map ModuleName (Module Vertex)
    , moduleEnv :: Map ModuleName (Env Vertex)
    }
