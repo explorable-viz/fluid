@@ -84,7 +84,7 @@ instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 type ModuleStore =
    { primitives :: Env Vertex
-   , γ0 :: Env Vertex -- predefined base environment (primitives and predefined modules); the name-lookup fallback
+   , γ0 :: Env Vertex -- predefined base environment: primitives and the predefined modules
    , moduleBody :: Map ModuleName (Module Vertex)
    , moduleEnv :: Map ModuleName (Env Vertex)
    }
