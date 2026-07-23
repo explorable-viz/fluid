@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 
-import Bind (Var, dottedName, prefixOf, varAnon)
+import Bind (dottedName, prefixOf, varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Array ((..))
@@ -342,27 +342,14 @@ evalImport enclosing γ = case _ of
          | maybe false (q' `prefixOf` _) bound -> pure unit
          | otherwise -> void (load q') *> loadAncestors bound q'
 
-importsFrom
-   :: forall m
-    . HasClasses m
-   => HasModuleStore m
-   => MonadWithGraphAlloc m
-   => MonadReader FileCxt m
-   => MonadAff m
-   => LoadFile m
-   => ModuleName
-   -> Env Vertex
-   -> Env Vertex
-   -> List Var
-   -> m (Env Vertex)
-importsFrom q γ_q = foldM step
-   where
-   step γ x = case lookup x γ_q of
-      Just v -> pure (γ <+> maplet x v)
-      Nothing -> do
-         { moduleBody } <- moduleStore
-         when (Map.member (NEL.snoc q x) moduleBody) (void (load (NEL.snoc q x)))
-         pure (delete x γ)
+   importsFrom q γ_q = foldM step
+      where
+      step γ' x = case lookup x γ_q of
+         Just v -> pure (γ' <+> maplet x v)
+         Nothing -> do
+            { moduleBody } <- moduleStore
+            when (Map.member (NEL.snoc q x) moduleBody) (void (load (NEL.snoc q x)))
+            pure (delete x γ')
 
 -- Load a predefined module over base γ and extend γ with its members. builtins exposes
 -- the injected primitives (its base) as members; the others expose only their own.
