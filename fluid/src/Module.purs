@@ -113,7 +113,7 @@ allocTopLevel primitives modules imports = do
             ( do
                  modifyStore (\st -> st { primitives = primitives', moduleBody = modules' })
                  γ0 <- foldM importInto primitives' predefined
-                 modifyStore (_ { builtins = γ0 })
+                 modifyStore (_ { γ0 = γ0 })
                  γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
                  vName <- val Nothing Set.empty (V.Str "__main__")
                  pure (γ1 <+> maplet "__name__" vName)

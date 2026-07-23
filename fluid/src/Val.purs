@@ -84,13 +84,13 @@ instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 type ModuleStore =
    { primitives :: Env Vertex
-   , builtins :: Env Vertex
+   , γ0 :: Env Vertex -- predefined base environment (primitives and predefined modules); the name-lookup fallback
    , moduleBody :: Map ModuleName (Module Vertex)
    , moduleEnv :: Map ModuleName (Env Vertex)
    }
 
 emptyStore :: ModuleStore
-emptyStore = { primitives: empty, builtins: empty, moduleBody: Map.empty, moduleEnv: Map.empty }
+emptyStore = { primitives: empty, γ0: empty, moduleBody: Map.empty, moduleEnv: Map.empty }
 
 class Monad m <= HasModuleStore m where
    getStore :: m ModuleStore

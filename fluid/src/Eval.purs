@@ -137,8 +137,8 @@ lookupVar :: forall m. HasModuleStore m => MonadError Error m => Var -> Env Vert
 lookupVar x γ = case lookup x γ of
    Just v -> pure v
    Nothing -> do
-      { builtins } <- getStore
-      lookup x builtins # orElse ("Unbound name: " <> x)
+      { γ0 } <- getStore
+      lookup x γ0 # orElse ("Unbound name: " <> x)
 
 eval
    :: forall m
@@ -424,8 +424,8 @@ sliceBwd { g, graph_bwd, inα, outα } out𝔹 =
 graphEval :: forall m. HasClasses m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classes } stmt =
    withClasses classes do
-      { moduleBody, builtins, moduleEnv } <- getStore
-      let mαs = Set.unions (vertices <$> Map.values moduleBody) ∪ vertices builtins ∪ Set.unions (vertices <$> Map.values moduleEnv)
+      { moduleBody, γ0, moduleEnv } <- getStore
+      let mαs = Set.unions (vertices <$> Map.values moduleBody) ∪ vertices γ0 ∪ Set.unions (vertices <$> Map.values moduleEnv)
       _ × _ × g × inα × outα <- flip runAllocT n do
          sα <- alloc stmt
          let inα = EnvStmt γ sα
