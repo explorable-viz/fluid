@@ -1,6 +1,6 @@
 module Module where
 
-import Prelude
+import Prelude hiding (absurd)
 
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
@@ -34,7 +34,7 @@ import SExpr (desugarModuleFwd)
 import DefiniteAssignment (ClassEntry, Cxt, Entry(..), WfResult(..))
 import WellFormed (checkProgram, classes, mainModule)
 import SExpr as S
-import Util (type (×), check, error, orThrow, throwLeft, whenever, withMsg, (×))
+import Util (type (×), absurd, check, error, orThrow, throwLeft, whenever, withMsg, (×))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
 import Util.Set ((∪), empty)
 import Val (class HasModuleStore, modifyStore, val, Env)
@@ -56,7 +56,15 @@ parents q = case NEL.fromList (NEL.unsnoc q).init of
    Nothing -> Nil
    Just q' -> parents q' <> (q' : Nil)
 
-importDeps :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> S.Import -> m { edges :: List ModuleName, load :: List ModuleName }
+importDeps
+   :: forall m
+    . MonadAff m
+   => MonadError Error m
+   => MonadReader FileCxt m
+   => LoadFile m
+   => ModuleName
+   -> S.Import
+   -> m { edges :: List ModuleName, load :: List ModuleName }
 importDeps enclosing (S.Import q f) = do
    ps <- probeAll (parents q)
    subs <- case f of
@@ -76,7 +84,8 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
    go :: List ModuleName -> Set ModuleName -> ModuleName -> Either String (Set ModuleName)
    go path done q
       | Set.member q done = pure done
-      | q `elem` path = Left ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
+      | q `elem` path = Left
+           ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
 
 noArgsClass :: ClassEntry
@@ -139,8 +148,9 @@ prepConfig primitives fluidSrc = do
    modules <- parseModules imports
    { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram modules baseCxt imports s)
    programClasses <- orThrow (classes mainModule s)
-   -- Module and program FQNs are disjoint, so the union is total.
-   let allClasses = Map.unionWith (\_ _ -> error "class table not disjoint") (moduleClasses (_.cxt <$> loaded)) (keyByFqn (Map.values programClasses))
+   let
+      allClasses =
+         Map.unionWith (\_ _ -> error absurd) (moduleClasses (_.cxt <$> loaded)) (keyByFqn (Map.values programClasses))
    withClasses allClasses do
       coreModules <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (_.mod <$> loaded)
       n × topLevelEnv <- allocTopLevel primitives coreModules imports

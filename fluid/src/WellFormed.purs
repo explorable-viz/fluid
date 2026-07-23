@@ -68,7 +68,9 @@ checkProgram modules base imports s =
          when (not Set.isEmpty clash)
             $ throwError
             $ "Submodule name clash in module " <> dottedName q <> ": " <> intercalate ", " (Set.toUnfoldable clash :: List Var)
-         let cxt = (if q == builtins then base else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union` (VarStatus <$> δ)
+         let
+            cxt = (if q == builtins then base else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union`
+               (VarStatus <$> δ)
          modify_ (Map.insert q { cxt, mod: mod' })
          pure cxt
 
@@ -366,7 +368,9 @@ wellFormedExpr = wf
    wf _ e@(S.ModMember _ _) = pure e
    wf γ (S.Subscript e e') = S.Subscript <$> wf γ e <*> wf γ e'
    wf γ (S.Matrix α body (x × y) source) =
-      (\source' body' -> S.Matrix α body' (x × y) source') <$> wf γ source <*> wf (assignedIn γ (Set.singleton x ∪ Set.singleton y)) body
+      (\source' body' -> S.Matrix α body' (x × y) source') <$> wf γ source <*> wf
+         (assignedIn γ (Set.singleton x ∪ Set.singleton y))
+         body
    wf γ (S.Lambda (S.LambdaClause (ps × e))) = do
       ps' <- traverse (qualifyPattern γ) ps
       e' <- wf (assignedIn γ (unions (bv <$> ps))) e

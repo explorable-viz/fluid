@@ -198,7 +198,8 @@ moduleFwd (Module is ss) = E.Module (importFwd <$> is) <$> traverse stmtFwd ss
 -- in evaluation.
 varDefFwd :: forall m. HasClasses m => MonadError Error m => VarDef (WfResult VarCxt) -> m (E.VarDef (WfResult VarCxt))
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause (Assigns Map.empty) (singleton p × Return (Dictionary Returns Nil))))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause (Assigns Map.empty) (singleton p × Return (Dictionary Returns Nil))))) <*> desug
+      s
 
 recDefsFwd :: forall m. HasClasses m => MonadError Error m => RecDefs (WfResult VarCxt) -> m (E.RecDefs (WfResult VarCxt))
 recDefsFwd xcs = do
@@ -222,7 +223,8 @@ recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (close <<< sn
    close (Clause Returns body) = Clause Returns body
    close (Clause (Assigns δ) (ps × s)) = Clause (Assigns δ) (ps × Seq s (Return (Constr Returns cNone Nil)))
 
-paragraphFwd :: forall m. HasClasses m => MonadError Error m => List (ParagraphElem (WfResult VarCxt)) -> m (E.Expr (WfResult VarCxt))
+paragraphFwd
+   :: forall m. HasClasses m => MonadError Error m => List (ParagraphElem (WfResult VarCxt)) -> m (E.Expr (WfResult VarCxt))
 paragraphFwd elems = do
    es <- paragraphElemsFwd elems
    pure (E.Constr (Assigns Map.empty) cParagraph (es : Nil))
@@ -337,7 +339,12 @@ ifElseFwd (sss × s) =
       pure $ E.Match cond (elimBool (ContStmt b') (ContStmt e3'))
 
 -- List Qualifier × Expr
-listCompFwd :: forall m. HasClasses m => MonadError Error m => (WfResult VarCxt) × List (Qualifier (WfResult VarCxt)) × Expr (WfResult VarCxt) -> m (E.Expr (WfResult VarCxt))
+listCompFwd
+   :: forall m
+    . HasClasses m
+   => MonadError Error m
+   => (WfResult VarCxt) × List (Qualifier (WfResult VarCxt)) × Expr (WfResult VarCxt)
+   -> m (E.Expr (WfResult VarCxt))
 listCompFwd (α × Nil × s) =
    econs α <$> desug s <@> enil α
 listCompFwd (α × (ListCompGuard s : qs) × s') = do
@@ -363,22 +370,41 @@ toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
 type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Stmt a
 type ClausesState' a = List (ClauseState' a)
 
-popArgFwd :: forall m. HasClasses m => MonadError Error m => ClausesState' (WfResult VarCxt) -> m (ClausesState' (WfResult VarCxt))
+popArgFwd
+   :: forall m. HasClasses m => MonadError Error m => ClausesState' (WfResult VarCxt) -> m (ClausesState' (WfResult VarCxt))
 popArgFwd ((Nil × (p : π) × s) : ks) = (((Left p : Nil) × π × s) : _) <$> popArgFwd ks
 popArgFwd Nil = pure Nil
 popArgFwd _ = throw (shapeMismatch unit)
 
-popVarFwd :: forall m. HasClasses m => MonadError Error m => Var -> ClausesState' (WfResult VarCxt) -> m (ClausesState' (WfResult VarCxt))
+popVarFwd
+   :: forall m
+    . HasClasses m
+   => MonadError Error m
+   => Var
+   -> ClausesState' (WfResult VarCxt)
+   -> m (ClausesState' (WfResult VarCxt))
 popVarFwd x (((Left (PVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVarFwd (x ≜ x') ks
 popVarFwd _ Nil = pure Nil
 popVarFwd _ _ = throw (shapeMismatch unit)
 
-popListVarFwd :: forall m. HasClasses m => MonadError Error m => Var -> ClausesState' (WfResult VarCxt) -> m (ClausesState' (WfResult VarCxt))
+popListVarFwd
+   :: forall m
+    . HasClasses m
+   => MonadError Error m
+   => Var
+   -> ClausesState' (WfResult VarCxt)
+   -> m (ClausesState' (WfResult VarCxt))
 popListVarFwd x (((Right (PListVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popListVarFwd (x ≜ x') ks
 popListVarFwd _ Nil = pure Nil
 popListVarFwd _ _ = throw (shapeMismatch unit)
 
-popConstrFwd :: forall m. HasClasses m => MonadError Error m => DataType -> ClausesState' (WfResult VarCxt) -> m (List (Ctr × ClausesState' (WfResult VarCxt)))
+popConstrFwd
+   :: forall m
+    . HasClasses m
+   => MonadError Error m
+   => DataType
+   -> ClausesState' (WfResult VarCxt)
+   -> m (List (Ctr × ClausesState' (WfResult VarCxt)))
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
 popConstrFwd d (((p : π') × π'' × s) : ks) = do
    λ <- askClasses
@@ -396,7 +422,13 @@ forConstrFwd c k ((c' × ks') : cks)
    | c == c' = (c' × (k : ks')) : cks
    | otherwise = (c' × ks') : forConstrFwd c k cks
 
-popRecordFwd :: forall m. HasClasses m => MonadError Error m => List Var -> ClausesState' (WfResult VarCxt) -> m (ClausesState' (WfResult VarCxt))
+popRecordFwd
+   :: forall m
+    . HasClasses m
+   => MonadError Error m
+   => List Var
+   -> ClausesState' (WfResult VarCxt)
+   -> m (ClausesState' (WfResult VarCxt))
 popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
    assert ((xps <#> fst) == xs) $ ((((xps <#> snd >>> Left) <> π) × π' × s) : _) <$> popRecordFwd xs ks
 popRecordFwd _ Nil = pure Nil

@@ -75,7 +75,13 @@ match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    pure $ γ × κ' × (insert α αs)
 match v (ElimDict xs _) = throw (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall m. HasClasses m => MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
+matchMany
+   :: forall m
+    . HasClasses m
+   => MonadWithGraphAlloc m
+   => List (Val Vertex)
+   -> Cont Vertex
+   -> m (Env Vertex × Cont Vertex × Set Vertex)
 matchMany Nil κ = pure (empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
@@ -288,7 +294,19 @@ evalVal γ (Lambda α σ) _ =
    pure $ Just (α × V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
 evalVal _ _ _ = pure Nothing
 
-eval_module :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module
+   :: forall m
+    . HasClasses m
+   => HasModuleStore m
+   => MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => Env Vertex
+   -> ModuleName
+   -> Module Vertex
+   -> Set Vertex
+   -> m (Env Vertex)
 eval_module γ0 q (Module is ss0) αs0 = do
    γ_imp <- foldM (evalImport q) γ0 is
    v_name <- val Nothing empty (V.Str (dottedName q))
@@ -303,7 +321,18 @@ eval_module γ0 q (Module is ss0) αs0 = do
          Returns _ -> error "module body cannot return"
 
 -- Bind imported value members; delete bindings for names that now denote modules.
-evalImport :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> Import -> m (Env Vertex)
+evalImport
+   :: forall m
+    . HasClasses m
+   => HasModuleStore m
+   => MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => ModuleName
+   -> Env Vertex
+   -> Import
+   -> m (Env Vertex)
 evalImport _ γ (Import q Nothing) = do
    _ <- load q
    loadAncestors Nothing q
@@ -313,7 +342,17 @@ evalImport enclosing γ (Import q (Just xs)) = do
    loadAncestors (Just enclosing) q
    importsFrom q γ_q γ xs
 
-loadAncestors :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Maybe ModuleName -> ModuleName -> m Unit
+loadAncestors
+   :: forall m
+    . HasClasses m
+   => HasModuleStore m
+   => MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => Maybe ModuleName
+   -> ModuleName
+   -> m Unit
 loadAncestors bound q = case NEL.fromList (NEL.unsnoc q).init of
    Nothing -> pure unit
    Just q'
@@ -423,7 +462,17 @@ sliceBwd { g, graph_bwd, inα, outα } out𝔹 =
    in
       select𝔹s inα (vertices g') × g'
 
-graphEval :: forall m. HasClasses m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
+graphEval
+   :: forall m
+    . HasClasses m
+   => HasModuleStore m
+   => MonadAff m
+   => MonadReader FileCxt m
+   => LoadFile m
+   => MonadError Error m
+   => GraphConfig
+   -> Raw Stmt
+   -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classes } stmt =
    withClasses classes do
       { moduleBody, γ0, moduleEnv } <- getStore
