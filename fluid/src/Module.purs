@@ -1,6 +1,6 @@
 module Module where
 
-import Prelude hiding (absurd)
+import Prelude
 
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
@@ -34,7 +34,7 @@ import SExpr (desugarModuleFwd)
 import DefiniteAssignment (ClassEntry, Cxt, Entry(..), WfResult(..))
 import WellFormed (checkProgram, classes, mainModule)
 import SExpr as S
-import Util (type (×), absurd, check, error, orThrow, throwLeft, whenever, withMsg, (×))
+import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
 import Util.Set ((∪), empty)
 import Val (class HasModuleStore, modifyStore, val, Env)
@@ -92,8 +92,7 @@ noArgsClass :: ClassEntry
 noArgsClass = { cxt: Map.empty, name: cNoArgs, base: Nothing, fields: Nil }
 
 moduleClasses :: Map ModuleName Cxt -> Map Var ClassEntry
-moduleClasses modCxt =
-   Map.insert (dottedName cNoArgs) noArgsClass (keyByFqn (Map.values modCxt >>= classValues))
+moduleClasses modCxt = keyByFqn (Map.values modCxt >>= classValues)
    where
    classValues cxt = mapMaybe classOf (Map.values cxt)
    classOf = case _ of
@@ -148,9 +147,7 @@ prepConfig primitives fluidSrc = do
    modules <- parseModules imports
    { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram modules baseCxt imports s)
    programClasses <- orThrow (classes mainModule s)
-   let
-      allClasses =
-         Map.unionWith (\_ _ -> error absurd) (moduleClasses (_.cxt <$> loaded)) (keyByFqn (Map.values programClasses))
+   let allClasses = moduleClasses (Map.insert mainModule (Class <$> programClasses) (_.cxt <$> loaded))
    withClasses allClasses do
       coreModules <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (_.mod <$> loaded)
       n × topLevelEnv <- allocTopLevel primitives coreModules imports
