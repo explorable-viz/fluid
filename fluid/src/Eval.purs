@@ -326,31 +326,21 @@ evalImport
    -> Env Vertex
    -> Import
    -> m (Env Vertex)
-evalImport _ γ (Import q Nothing) = do
-   _ <- load q
-   loadAncestors Nothing q
-   pure (delete (NEL.head q) γ)
-evalImport enclosing γ (Import q (Just xs)) = do
-   γ_q <- load q
-   loadAncestors (Just enclosing) q
-   importsFrom q γ_q γ xs
-
-loadAncestors
-   :: forall m
-    . HasClasses m
-   => HasModuleStore m
-   => MonadWithGraphAlloc m
-   => MonadReader FileCxt m
-   => MonadAff m
-   => LoadFile m
-   => Maybe ModuleName
-   -> ModuleName
-   -> m Unit
-loadAncestors bound q = case NEL.fromList (NEL.unsnoc q).init of
-   Nothing -> pure unit
-   Just q'
-      | maybe false (q' `prefixOf` _) bound -> pure unit
-      | otherwise -> void (load q') *> loadAncestors bound q'
+evalImport enclosing γ = case _ of
+   Import q Nothing -> do
+      _ <- load q
+      loadAncestors Nothing q
+      pure (delete (NEL.head q) γ)
+   Import q (Just xs) -> do
+      γ_q <- load q
+      loadAncestors (Just enclosing) q
+      importsFrom q γ_q γ xs
+   where
+   loadAncestors bound q = case NEL.fromList (NEL.unsnoc q).init of
+      Nothing -> pure unit
+      Just q'
+         | maybe false (q' `prefixOf` _) bound -> pure unit
+         | otherwise -> void (load q') *> loadAncestors bound q'
 
 importsFrom
    :: forall m
