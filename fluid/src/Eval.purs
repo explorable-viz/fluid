@@ -62,11 +62,10 @@ match (Val α _ (V.Constr c vs)) (ElimConstr m) = do
    pure (γ × κ' × (insert α αs))
 match v (ElimConstr m) = do
    λ <- askClasses
-   let
-      d = case Set.toUnfoldable (keys m) :: List _ of
-         c : _ -> definitely' (dataType λ c)
-         Nil -> error absurd
-   throw $ patternMismatch (prettyP v) (show d)
+   throw (patternMismatch (prettyP v) (show (expected λ)))
+   where
+   -- Any branch names the datatype; the eliminator is non-empty and its constructors are known.
+   expected λ = definitely' (Set.findMin (keys m) >>= dataType λ)
 match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    check (Set.subset xs (Set.fromFoldable $ keys xvs))
       $ patternMismatch (show (keys xvs)) (show xs)
