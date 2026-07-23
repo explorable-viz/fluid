@@ -82,7 +82,7 @@ matchMany (v : vs) (ContElim σ) = do
    γ' × κ' × βs <- matchMany vs κ
    pure $ γ `unionWith_never` γ' × κ' × (αs ∪ βs)
 matchMany (_ : vs) (ContStmt _) = throw $
-   show (length vs + 1) <> " extra argument(s) to dataclass/dictionary; did you forget parentheses in lambda pattern?"
+   show (length vs + 1) <> " extra argument(s); did you forget parentheses in a lambda pattern?"
 
 closeDefs :: forall m. HasClasses m => MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
