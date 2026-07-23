@@ -111,9 +111,9 @@ allocTopLevel primitives modules imports = do
       _ × γ <-
          runWithGraphT_spy
             ( do
-                 modifyStore (\st -> st { primitives = primitives', modules = modules' })
+                 modifyStore (\st -> st { primitives = primitives', moduleBody = modules' })
                  γ0 <- foldM importInto primitives' predefined
-                 modifyStore (_ { builtinsEnv = γ0 })
+                 modifyStore (_ { builtins = γ0 })
                  γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
                  vName <- val Nothing Set.empty (V.Str "__main__")
                  pure (γ1 <+> maplet "__name__" vName)

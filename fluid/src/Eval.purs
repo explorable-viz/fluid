@@ -137,8 +137,8 @@ lookupVar :: forall m. HasModuleStore m => MonadError Error m => Var -> Env Vert
 lookupVar x γ = case lookup x γ of
    Just v -> pure v
    Nothing -> do
-      { builtinsEnv } <- getStore
-      lookup x builtinsEnv # orElse ("Unbound name: " <> x)
+      { builtins } <- getStore
+      lookup x builtins # orElse ("Unbound name: " <> x)
 
 eval
    :: forall m
@@ -184,8 +184,8 @@ eval doc_opt γ e0 αs = do
                _, _ -> throw $ "Found " <> prettyP (unit <$ v) <> ", expected dict"
          ModMember q x -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (module member " <> x <> ")"
-            { modEnv } <- getStore
-            let γ_q = definitely "module loaded" (Map.lookup q modEnv)
+            { moduleEnv } <- getStore
+            let γ_q = definitely "module loaded" (Map.lookup q moduleEnv)
             withMsg "Module member" $ lookup' x γ_q
          App e e' -> do
             v <- eval Nothing γ e αs
@@ -326,8 +326,8 @@ importsFrom q γ_q = foldM step
    step γ x = case lookup x γ_q of
       Just v -> pure (γ <+> maplet x v)
       Nothing -> do
-         { modules } <- getStore
-         when (Map.member (NEL.snoc q x) modules) (void (load (NEL.snoc q x)))
+         { moduleBody } <- getStore
+         when (Map.member (NEL.snoc q x) moduleBody) (void (load (NEL.snoc q x)))
          pure (delete x γ)
 
 importInto :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
@@ -335,16 +335,16 @@ importInto γ q = (γ <+> _) <$> load q
 
 load :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m (Env Vertex)
 load q = do
-   { primitives, modules, modEnv } <- getStore
-   case Map.lookup q modEnv of
+   { primitives, moduleBody, moduleEnv } <- getStore
+   case Map.lookup q moduleEnv of
       Just γ' -> pure γ'
       Nothing -> do
          γ_base <-
             if q `Set.member` Set.fromFoldable predefined then foldM importInto primitives (predefinedDeps q)
             else pure empty
-         γ' <- maybe (pure empty) (\defs' -> eval_module γ_base q defs' empty) (Map.lookup q modules)
+         γ' <- maybe (pure empty) (\defs' -> eval_module γ_base q defs' empty) (Map.lookup q moduleBody)
          let γ_q = (if q == builtins then primitives else empty) <+> γ'
-         modifyStore (\s -> s { modEnv = Map.insert q γ_q s.modEnv })
+         modifyStore (\s -> s { moduleEnv = Map.insert q γ_q s.moduleEnv })
          pure γ_q
 
 type GraphEval g s t =
@@ -393,8 +393,8 @@ sliceBwd { g, graph_bwd, inα, outα } out𝔹 =
 graphEval :: forall m. HasClasses m => HasModuleStore m => MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Stmt -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classes } stmt =
    withClasses classes do
-      { modules, builtinsEnv, modEnv } <- getStore
-      let mαs = Set.unions (vertices <$> Map.values modules) ∪ vertices builtinsEnv ∪ Set.unions (vertices <$> Map.values modEnv)
+      { moduleBody, builtins, moduleEnv } <- getStore
+      let mαs = Set.unions (vertices <$> Map.values moduleBody) ∪ vertices builtins ∪ Set.unions (vertices <$> Map.values moduleEnv)
       _ × _ × g × inα × outα <- flip runAllocT n do
          sα <- alloc stmt
          let inα = EnvStmt γ sα
