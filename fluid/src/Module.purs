@@ -36,7 +36,7 @@ import WellFormed (checkProgram, mainModule)
 import SExpr as S
 import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
-import Util.Set ((∪), empty)
+import Util.Set ((∪))
 import Val (class HasModuleStore, modifyModuleStore, val, Env)
 import Val (BaseVal(..)) as V
 
@@ -119,7 +119,7 @@ allocTopLevel primitives mods imports = do
                  modifyModuleStore (_ { moduleBody = mods' })
                  γ0 <- foldM loadPredefined primitives' predefined
                  modifyModuleStore (_ { γ0 = γ0 })
-                 γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
+                 γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) γ0 imports
                  vName <- val Nothing Set.empty (V.Str "__main__")
                  pure (γ1 <+> maplet "__name__" vName)
             )

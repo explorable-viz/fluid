@@ -49,13 +49,13 @@ checkProgram mods base imports s =
    where
    program :: LoadM (VarCxt × S.Stmt (WfResult VarCxt))
    program = do
-      layer × cxt_imp <- checkImports mainModule imports
+      _ × cxt_imp <- checkImports mainModule imports
       -- Unlike a module (checkStatements), the program may return: a top-level return yields
       -- its result value. The spec forbids this, treating __main__ as a module; Fluid does not.
       _ × s' <- lift (wellFormed mainModule (Map.insert "__name__" (VarStatus true) cxt_imp) s)
       λ <- lift (classes mainModule s)
       modify_ (Map.insert mainModule { cxt: Class <$> λ, mod: Nothing })
-      pure (Map.insert "__name__" true (erase layer) × s')
+      pure (Map.insert "__name__" true (erase cxt_imp) × s')
 
    -- Member context of module q; memoised.
    loadModule :: ModuleName -> LoadM Cxt

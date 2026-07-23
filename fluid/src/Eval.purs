@@ -139,13 +139,6 @@ apply doc_opt (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    val doc_opt (singleton α) v'
 apply _ _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-lookupVar :: forall m. HasModuleStore m => MonadError Error m => Var -> Env Vertex -> m (Val Vertex)
-lookupVar x γ = case lookup x γ of
-   Just v -> pure v
-   Nothing -> do
-      { γ0 } <- moduleStore
-      lookup x γ0 # orElse ("Unbound name: " <> x)
-
 eval
    :: forall m
     . HasClasses m
@@ -167,10 +160,10 @@ eval doc_opt γ e0 αs = do
       Nothing -> case e0 of
          Var x -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (variable " <> x <> ")"
-            withMsg "Variable lookup" $ lookupVar x γ
+            pure (definitely' (lookup x γ))
          Op op -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (operator " <> op <> ")"
-            withMsg "Variable lookup" $ lookupVar op γ
+            pure (definitely' (lookup op γ))
          Attribute e x -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (attribute access)"
             v <- eval Nothing γ e αs
@@ -411,11 +404,11 @@ load
    => ModuleName
    -> m (Env Vertex)
 load q = do
-   { moduleBody, moduleEnv } <- moduleStore
+   { moduleBody, moduleEnv, γ0 } <- moduleStore
    case Map.lookup q moduleEnv of
       Just γ -> pure γ
       Nothing -> do
-         γ_q <- maybe (pure empty) (\body -> eval_module empty q body empty) (Map.lookup q moduleBody)
+         γ_q <- maybe (pure empty) (\body -> eval_module γ0 q body empty) (Map.lookup q moduleBody)
          modifyModuleStore (\s -> s { moduleEnv = Map.insert q γ_q s.moduleEnv })
          pure γ_q
 
