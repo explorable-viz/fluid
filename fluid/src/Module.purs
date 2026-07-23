@@ -7,7 +7,7 @@ import Control.Monad.Reader (class MonadReader, ask)
 import Bind (dottedName, pathName, prefixOf)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Either (Either(..))
-import Data.Foldable (foldM, intercalate)
+import Data.Foldable (foldM, for_, intercalate)
 import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
 import Data.Map (Map)
 import Data.Map as Map
@@ -31,13 +31,13 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName, predefined, predefinedDeps)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (ClassEntry, Cxt, Entry(..), WfResult(..))
-import WellFormed (checkProgram, mainModule)
+import DefiniteAssignment (ClassEntry, Cxt, Entry(..), WfResult(..), erase)
+import WellFormed (LoadedModule, checkProgram, mainModule)
 import SExpr as S
 import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
-import Util.Set ((∪))
-import Val (class HasModuleStore, modifyModuleStore, val, Env)
+import Util.Set (empty, (∪))
+import Val (class HasModuleStore, moduleStore, modifyModuleStore, val, Env)
 import Val (BaseVal(..)) as V
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
@@ -117,7 +117,7 @@ allocTopLevel primitives mods imports = do
          runWithGraphT_spy
             ( do
                  modifyModuleStore (_ { moduleBody = mods' })
-                 γ0 <- foldM loadPredefined primitives' predefined
+                 γ0 <- foldM (loadPredefined primitives') empty predefined
                  modifyModuleStore (_ { γ0 = γ0 })
                  γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) γ0 imports
                  vName <- val Nothing Set.empty (V.Str "__main__")
@@ -140,14 +140,19 @@ prepConfig
    -> m Config
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   let baseCxt = constMap (VarStatus true) (keys primitives) `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
+   let nativeBuiltins = constMap (VarStatus true) (keys primitives) `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
    mods <- parseModules imports
-   { cxt: cxt_wf, s: s_wf, loaded } <- orThrow (checkProgram mods baseCxt imports s)
+   { cxt: cxt_wf, s: s_wf, loaded } <- orThrow (checkProgram mods nativeBuiltins imports s)
    let classes = classTable (_.cxt <$> loaded)
    withClasses classes do
       desugaredMods <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (Map.mapMaybe _.mod loaded)
       n × γ <- allocTopLevel primitives desugaredMods imports
       check (Map.keys cxt_wf == Set.fromFoldable (keys γ)) "reduced context matches top-level environment"
+      { moduleEnv } <- moduleStore
+      for_ (Map.toUnfoldable loaded :: List (ModuleName × LoadedModule)) \(q × { cxt, mod }) ->
+         when (isJust mod) $ for_ (Map.lookup q moduleEnv) \γ_q ->
+            check (Map.keys (erase cxt) == Set.fromFoldable (keys γ_q))
+               ("module " <> dottedName q <> ": members match its environment")
       e_wf <- desug s_wf
       let e = (unit <$ e_wf) :: Raw Stmt
       let gconfig = { n, γ: restrict (fv e) γ, classes }

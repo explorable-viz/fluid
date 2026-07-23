@@ -44,7 +44,7 @@ checkProgram
    -> List S.Import
    -> Raw S.Stmt
    -> Either String { cxt :: VarCxt, s :: S.Stmt (WfResult VarCxt), loaded :: Map.Map ModuleName LoadedModule }
-checkProgram mods base imports s =
+checkProgram mods nativeBuiltins imports s =
    runStateT program Map.empty <#> \((cxt × s') × loaded) -> { cxt, s: s', loaded }
    where
    program :: LoadM (VarCxt × S.Stmt (WfResult VarCxt))
@@ -71,8 +71,13 @@ checkProgram mods base imports s =
          when (not Set.isEmpty clash)
             $ throwError
             $ "Submodule name clash in module " <> dottedName q <> ": " <> intercalate ", " (Set.toUnfoldable clash :: List Var)
+         when (q == builtins) do
+            let nativeClash = Map.keys nativeBuiltins ∩ (Map.keys δ ∪ Map.keys λ ∪ Map.keys subs)
+            when (not (Set.isEmpty nativeClash))
+               $ throwError
+               $ "builtins' primitives clash with its source members: " <> intercalate ", " (Set.toUnfoldable nativeClash :: List Var)
          let
-            cxt = (if q == builtins then base else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union`
+            cxt = (if q == builtins then nativeBuiltins else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union`
                (VarStatus <$> δ)
          modify_ (Map.insert q { cxt, mod: Just mod' })
          pure cxt
@@ -80,10 +85,9 @@ checkProgram mods base imports s =
    checking :: forall a. ModuleName -> LoadM a -> LoadM a
    checking q = mapStateT (lmap (_ <> "\nChecking module " <> dottedName q))
 
-   -- Import layer × the full in-scope context (implicit predefined base extended by the layer).
    checkImports :: ModuleName -> List S.Import -> LoadM (Cxt × Cxt)
    checkImports enclosing is = do
-      seed <- foldM (\acc q -> (acc `Map.union` _) <$> loadModule q) base (predefinedDeps enclosing)
+      seed <- foldM (\acc q -> (acc `Map.union` _) <$> loadModule q) Map.empty (predefinedDeps enclosing)
       layer <- foldM (\acc i -> (acc `extendCxtWith` _) <$> importBindings enclosing i) Map.empty is
       pure (layer × (seed `extendCxtWith` layer))
 

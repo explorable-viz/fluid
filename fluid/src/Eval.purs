@@ -351,8 +351,6 @@ evalImport enclosing γ = case _ of
             when (Map.member (NEL.snoc q x) moduleBody) (void (load (NEL.snoc q x)))
             pure (delete x γ')
 
--- Load a predefined module over base γ and extend γ with its members. builtins exposes
--- the injected primitives (its base) as members; the others expose only their own.
 loadPredefined
    :: forall m
     . HasClasses m
@@ -362,13 +360,16 @@ loadPredefined
    => MonadAff m
    => LoadFile m
    => Env Vertex
+   -> Env Vertex
    -> ModuleName
    -> m (Env Vertex)
-loadPredefined γ q = do
+loadPredefined primitives γ q = do
    { moduleBody } <- moduleStore
-   γ' <- maybe (pure empty) (\body -> eval_module γ q body empty) (Map.lookup q moduleBody)
-   modifyModuleStore (\s -> s { moduleEnv = Map.insert q (if q == builtins then γ <+> γ' else γ') s.moduleEnv })
-   pure (γ <+> γ')
+   let native = if q == builtins then primitives else empty
+   γ' <- maybe (pure empty) (\body -> eval_module (γ <+> native) q body empty) (Map.lookup q moduleBody)
+   let members = native <+> γ'
+   modifyModuleStore (\s -> s { moduleEnv = Map.insert q members s.moduleEnv })
+   pure (γ <+> members)
 
 load
    :: forall m
