@@ -38,7 +38,7 @@ import Util.Map (unionWith_never, delete, get, keys, lookup, lookup', maplet, re
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class HasModuleStore, getStore, modifyStore, BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, forDefs, val)
+import Val (class HasModuleStore, moduleStore, modifyModuleStore, BaseVal, DictRep(..), Env(..), EnvStmt(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Result(..), Val(..), asReturns, forDefs, val)
 
 -- Needs a better name.
 type GraphConfig =
@@ -143,7 +143,7 @@ lookupVar :: forall m. HasModuleStore m => MonadError Error m => Var -> Env Vert
 lookupVar x γ = case lookup x γ of
    Just v -> pure v
    Nothing -> do
-      { γ0 } <- getStore
+      { γ0 } <- moduleStore
       lookup x γ0 # orElse ("Unbound name: " <> x)
 
 eval
@@ -190,7 +190,7 @@ eval doc_opt γ e0 αs = do
                _, _ -> throw $ "Found " <> prettyP (unit <$ v) <> ", expected dict"
          ModMember q x -> do
             traceWhen (isJust doc_opt) $ "Discarding doc (module member " <> x <> ")"
-            { moduleEnv } <- getStore
+            { moduleEnv } <- moduleStore
             let γ_q = definitely "module loaded" (Map.lookup q moduleEnv)
             withMsg "Module member" $ lookup' x γ_q
          App e e' -> do
@@ -377,7 +377,7 @@ importsFrom q γ_q = foldM step
    step γ x = case lookup x γ_q of
       Just v -> pure (γ <+> maplet x v)
       Nothing -> do
-         { moduleBody } <- getStore
+         { moduleBody } <- moduleStore
          when (Map.member (NEL.snoc q x) moduleBody) (void (load (NEL.snoc q x)))
          pure (delete x γ)
 
@@ -395,9 +395,9 @@ loadPredefined
    -> ModuleName
    -> m (Env Vertex)
 loadPredefined γ q = do
-   { moduleBody } <- getStore
+   { moduleBody } <- moduleStore
    γ' <- maybe (pure empty) (\body -> eval_module γ q body empty) (Map.lookup q moduleBody)
-   modifyStore (\s -> s { moduleEnv = Map.insert q (if q == builtins then γ <+> γ' else γ') s.moduleEnv })
+   modifyModuleStore (\s -> s { moduleEnv = Map.insert q (if q == builtins then γ <+> γ' else γ') s.moduleEnv })
    pure (γ <+> γ')
 
 load
@@ -411,12 +411,12 @@ load
    => ModuleName
    -> m (Env Vertex)
 load q = do
-   { moduleBody, moduleEnv } <- getStore
+   { moduleBody, moduleEnv } <- moduleStore
    case Map.lookup q moduleEnv of
       Just γ -> pure γ
       Nothing -> do
          γ_q <- maybe (pure empty) (\body -> eval_module empty q body empty) (Map.lookup q moduleBody)
-         modifyStore (\s -> s { moduleEnv = Map.insert q γ_q s.moduleEnv })
+         modifyModuleStore (\s -> s { moduleEnv = Map.insert q γ_q s.moduleEnv })
          pure γ_q
 
 type GraphEval g s t =
@@ -475,7 +475,7 @@ graphEval
    -> m (GraphEval GraphImpl EnvStmt Val)
 graphEval { n, γ, classes } stmt =
    withClasses classes do
-      { moduleBody, γ0, moduleEnv } <- getStore
+      { moduleBody, γ0, moduleEnv } <- moduleStore
       let mαs = Set.unions (vertices <$> Map.values moduleBody) ∪ vertices γ0 ∪ Set.unions (vertices <$> Map.values moduleEnv)
       _ × _ × g × inα × outα <- flip runAllocT n do
          sα <- alloc stmt

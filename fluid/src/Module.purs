@@ -37,7 +37,7 @@ import SExpr as S
 import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
 import Util.Set ((∪), empty)
-import Val (class HasModuleStore, modifyStore, val, Env)
+import Val (class HasModuleStore, modifyModuleStore, val, Env)
 import Val (BaseVal(..)) as V
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
@@ -116,9 +116,9 @@ allocTopLevel primitives mods imports = do
       _ × γ <-
          runWithGraphT_spy
             ( do
-                 modifyStore (_ { moduleBody = mods' })
+                 modifyModuleStore (_ { moduleBody = mods' })
                  γ0 <- foldM loadPredefined primitives' predefined
-                 modifyStore (_ { γ0 = γ0 })
+                 modifyModuleStore (_ { γ0 = γ0 })
                  γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
                  vName <- val Nothing Set.empty (V.Str "__main__")
                  pure (γ1 <+> maplet "__name__" vName)

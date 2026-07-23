@@ -9,7 +9,7 @@ import Control.Monad.State (StateT, evalStateT, get, modify_)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import DataType (class HasClasses)
-import Val (class HasModuleStore, ModuleStore, emptyStore)
+import Val (class HasModuleStore, ModuleStore, emptyModuleStore)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
@@ -28,7 +28,7 @@ instance Monad m => LoadFile (NodeT m) where
 newtype NodeT m a = NodeT (ReaderT FileCxt (StateT ModuleStore m) a)
 
 runNodeT :: forall m a. Monad m => FileCxt -> NodeT m a -> m a
-runNodeT fileCxt (NodeT x) = evalStateT (runReaderT x fileCxt) emptyStore
+runNodeT fileCxt (NodeT x) = evalStateT (runReaderT x fileCxt) emptyModuleStore
 
 -- ======================
 -- boilerplate
@@ -53,5 +53,5 @@ instance Monad m => HasClasses (NodeT m) where
    askClasses = NodeT (ask <#> \(FileCxt { classes }) -> classes)
 
 instance Monad m => HasModuleStore (NodeT m) where
-   getStore = NodeT (lift get)
-   modifyStore f = NodeT (lift (modify_ f))
+   moduleStore = NodeT (lift get)
+   modifyModuleStore f = NodeT (lift (modify_ f))

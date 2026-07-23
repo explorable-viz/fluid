@@ -88,28 +88,28 @@ type ModuleStore =
    , moduleEnv :: Map ModuleName (Env Vertex)
    }
 
-emptyStore :: ModuleStore
-emptyStore = { γ0: empty, moduleBody: Map.empty, moduleEnv: Map.empty }
+emptyModuleStore :: ModuleStore
+emptyModuleStore = { γ0: empty, moduleBody: Map.empty, moduleEnv: Map.empty }
 
 class Monad m <= HasModuleStore m where
-   getStore :: m ModuleStore
-   modifyStore :: (ModuleStore -> ModuleStore) -> m Unit
+   moduleStore :: m ModuleStore
+   modifyModuleStore :: (ModuleStore -> ModuleStore) -> m Unit
 
 instance (Monad m, HasModuleStore m) => HasModuleStore (StateT s m) where
-   getStore = lift getStore
-   modifyStore = lift <<< modifyStore
+   moduleStore = lift moduleStore
+   modifyModuleStore = lift <<< modifyModuleStore
 
 instance (Monad m, HasModuleStore m) => HasModuleStore (ReaderT r m) where
-   getStore = lift getStore
-   modifyStore = lift <<< modifyStore
+   moduleStore = lift moduleStore
+   modifyModuleStore = lift <<< modifyModuleStore
 
 instance (Monad m, HasModuleStore m) => HasModuleStore (ExceptT e m) where
-   getStore = lift getStore
-   modifyStore = lift <<< modifyStore
+   moduleStore = lift moduleStore
+   modifyModuleStore = lift <<< modifyModuleStore
 
 instance (Monad m, HasModuleStore m, Monoid w) => HasModuleStore (WriterT w m) where
-   getStore = lift getStore
-   modifyStore = lift <<< modifyStore
+   moduleStore = lift moduleStore
+   modifyModuleStore = lift <<< modifyModuleStore
 
 type Op =
    forall m
