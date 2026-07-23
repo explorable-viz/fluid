@@ -32,10 +32,10 @@ type Cxt = Map Var Entry
 data WfResult a = Returns | Assigns a
 
 extendCxtWith :: Cxt -> Cxt -> Cxt
-extendCxtWith γ γ' = Map.unionWith extendEntry γ γ'
+extendCxtWith cxt cxt' = Map.unionWith extendEntry cxt cxt'
 
 extendEntry :: Entry -> Entry -> Entry
-extendEntry (ModLoaded q γ) (ModLoaded q' γ') | q == q' = ModLoaded q (γ `extendCxtWith` γ')
+extendEntry (ModLoaded q cxt) (ModLoaded q' cxt') | q == q' = ModLoaded q (cxt `extendCxtWith` cxt')
 extendEntry (Mod q) θ'@(ModLoaded q' _) | q == q' = θ'
 extendEntry θ@(ModLoaded q _) (Mod q') | q == q' = θ
 extendEntry _ θ' = θ'
@@ -44,12 +44,12 @@ overrideVarCxt :: VarCxt -> VarCxt -> VarCxt
 overrideVarCxt = flip Map.union
 
 mergeVarCxt :: VarCxt -> VarCxt -> VarCxt
-mergeVarCxt γ1 γ2 =
+mergeVarCxt cxt1 cxt2 =
    foldl (\acc k -> Map.insert k (mergedAt k) acc) Map.empty allKeys
    where
    allKeys :: Set Var
-   allKeys = Set.fromFoldable (Map.keys γ1) `Set.union` Set.fromFoldable (Map.keys γ2)
-   mergedAt k = case Map.lookup k γ1, Map.lookup k γ2 of
+   allKeys = Set.fromFoldable (Map.keys cxt1) `Set.union` Set.fromFoldable (Map.keys cxt2)
+   mergedAt k = case Map.lookup k cxt1, Map.lookup k cxt2 of
       Just a, Just b -> a && b
       _, _ -> false
 
@@ -70,12 +70,12 @@ erase = Map.mapMaybe case _ of
    _ -> Nothing
 
 classFor :: Cxt -> Var -> Maybe ClassEntry
-classFor γ c = case Map.lookup c γ of
+classFor cxt c = case Map.lookup c cxt of
    Just (Class cls) -> Just cls
    _ -> Nothing
 
 extendCxt :: Cxt -> VarCxt -> Cxt
-extendCxt γ δ = Map.union (VarStatus <$> δ) γ
+extendCxt cxt δ = Map.union (VarStatus <$> δ) cxt
 
 fields :: ClassEntry -> List Var
 fields cls = case cls.base of

@@ -142,12 +142,12 @@ prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    let baseCxt = constMap (VarStatus true) (keys primitives) `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
    mods <- parseModules imports
-   { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram mods baseCxt imports s)
+   { cxt: cxt_wf, s: s_wf, loaded } <- orThrow (checkProgram mods baseCxt imports s)
    let classes = classTable (_.cxt <$> loaded)
    withClasses classes do
       desugaredMods <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (Map.mapMaybe _.mod loaded)
       n × γ <- allocTopLevel primitives desugaredMods imports
-      check (Map.keys γ_wf == Set.fromFoldable (keys γ)) "reduced context matches top-level environment"
+      check (Map.keys cxt_wf == Set.fromFoldable (keys γ)) "reduced context matches top-level environment"
       e_wf <- desug s_wf
       let e = (unit <$ e_wf) :: Raw Stmt
       let gconfig = { n, γ: restrict (fv e) γ, classes }
