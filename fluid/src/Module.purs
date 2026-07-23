@@ -42,10 +42,6 @@ import Val (BaseVal(..)) as V
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
--- Index class entries by their own fully-qualified name.
-keyByFqn :: List ClassEntry -> Map Var ClassEntry
-keyByFqn = Map.fromFoldable <<< map (\cls -> dottedName cls.name × cls)
-
 probeModule :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
 probeModule q = do
    FileCxt { fluidSrcPaths } <- ask
@@ -91,8 +87,11 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
 noArgsClass :: ClassEntry
 noArgsClass = { cxt: Map.empty, name: cNoArgs, base: Nothing, fields: Nil }
 
+-- The class table: every loaded context's class entries, keyed by their own
+-- fully-qualified name.
 moduleClasses :: Map ModuleName Cxt -> Map Var ClassEntry
-moduleClasses modCxt = keyByFqn (Map.values modCxt >>= classValues)
+moduleClasses modCxt =
+   Map.fromFoldable (map (\cls -> dottedName cls.name × cls) (Map.values modCxt >>= classValues))
    where
    classValues cxt = mapMaybe classOf (Map.values cxt)
    classOf = case _ of
