@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
-import Bind (Var, dottedName, pathName, prefixOf)
+import Bind (dottedName, pathName, prefixOf)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Either (Either(..))
 import Data.Foldable (foldM, intercalate)
@@ -15,7 +15,7 @@ import Data.Maybe (Maybe(..), isJust)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
-import DataType (class HasClasses, cNoArgs)
+import DataType (class HasClasses, ClassTable, cNoArgs)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -87,10 +87,8 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
 noArgsClass :: ClassEntry
 noArgsClass = { cxt: Map.empty, name: cNoArgs, base: Nothing, fields: Nil }
 
--- The class table: every loaded context's class entries, keyed by their own
--- fully-qualified name.
-moduleClasses :: Map ModuleName Cxt -> Map Var ClassEntry
-moduleClasses modCxt =
+classTable :: Map ModuleName Cxt -> ClassTable
+classTable modCxt =
    Map.fromFoldable (map (\cls -> dottedName cls.name × cls) (Map.values modCxt >>= classValues))
    where
    classValues cxt = mapMaybe classOf (Map.values cxt)
@@ -145,7 +143,7 @@ prepConfig primitives fluidSrc = do
    let baseCxt = constMap (VarStatus true) (keys primitives) `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
    mods <- parseModules imports
    { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram mods baseCxt imports s)
-   let classes = moduleClasses (_.cxt <$> loaded)
+   let classes = classTable (_.cxt <$> loaded)
    withClasses classes do
       desugaredMods <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (Map.mapMaybe _.mod loaded)
       n × γ <- allocTopLevel primitives desugaredMods imports
