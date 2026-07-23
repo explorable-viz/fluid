@@ -24,7 +24,7 @@ import Data.Set (Set)
 import Data.Set (fromFoldable, map, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
-import DefiniteAssignment (ClassEntry, fields)
+import DefiniteAssignment (ClassEntry, classFor, fields)
 import Dict (Dict, fromFoldable)
 import Effect.Exception (Error)
 import Util (type (×), absurd, definitely, definitely', error, throw, whenever, withMsg, (×))
@@ -80,9 +80,9 @@ instance (Monad m, HasClasses m) => HasClasses (ExceptT e m) where
 instance (Monad m, HasClasses m, Monoid w) => HasClasses (WriterT w m) where
    askClasses = lift askClasses
 
--- FQN of the base of a class, which shares its defining module.
+-- FQN of the base of a class, resolved through its declaring context.
 baseOf :: ClassEntry -> Maybe Ctr
-baseOf cls = (dottedName <<< qual cls.mod) <$> cls.base
+baseOf cls = (dottedName <<< _.name) <$> (cls.base >>= classFor cls.cxt)
 
 -- Root of the hierarchy containing c.
 rootOf :: ClassTable -> Ctr -> Ctr

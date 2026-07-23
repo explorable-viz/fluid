@@ -156,7 +156,7 @@ classes q = go Map.empty
    where
    go acc (S.Dataclass c b xs)
       | Map.member c acc = throwError $ "Duplicate class declaration: " <> c
-      | otherwise = pure (Map.insert c { cxt: Class <$> acc, mod: q, base: b, fields: xs } acc)
+      | otherwise = pure (Map.insert c { cxt: Class <$> acc, name: NEL.snoc q c, base: b, fields: xs } acc)
    go acc (S.Seq s1 s2) = go acc s1 >>= \acc' -> go acc' s2
    go acc _ = pure acc
 
@@ -304,7 +304,7 @@ wellFormed q γ (S.Dataclass c b xs) = do
       Nothing -> pure unit
       Just base -> do
          cls <- maybe (throwError $ "Unknown class: " <> base) pure (classFor γ base)
-         when (cls.mod /= q) $ throwError $ "Cannot extend imported class: " <> base
+         when (cls.name /= NEL.snoc q base) $ throwError $ "Cannot extend imported class: " <> base
          let clash = Set.intersection (Set.fromFoldable xs) (Set.fromFoldable (fields cls))
          when (not Set.isEmpty clash)
             $ throwError
@@ -404,7 +404,7 @@ wellFormedExpr = wf
             map (S.ListCompDecl (S.VarDef p' src') : _) <$> qualifiers (assignedIn γ' (bv p)) qs
    wf γ (S.DocExpr e e') = S.DocExpr <$> wf γ e <*> wf γ e'
 
-   qualified cls c = NEL.snoc cls.mod (NEL.last c)
+   qualified cls _ = cls.name
 
 var :: Cxt -> Var -> Either String Unit
 var γ x = case Map.lookup x γ of
@@ -433,6 +433,6 @@ qualifyPattern γ = qualify
    qualifyRest (S.PListNext p lr) = S.PListNext <$> qualify p <*> qualifyRest lr
    qualifyRest lr = pure lr
    fqnOf c = case resolveName γ c of
-      Just (Class cls) -> pure (NEL.snoc cls.mod (NEL.last c))
+      Just (Class cls) -> pure cls.name
       _ -> throwError $ "Unknown dataclass: " <> dottedName c
 

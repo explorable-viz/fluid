@@ -18,7 +18,7 @@ type VarCxt = Map Var Boolean
 
 type ClassEntry =
    { cxt :: Cxt -- declaring context (resolves the base class)
-   , mod :: Name -- defining module
+   , name :: Name -- fully-qualified name, the class's identity
    , base :: Maybe Var -- base class, if any
    , fields :: List Var -- own field names, distinct
    }
@@ -92,7 +92,7 @@ unionWith_mergeEq a b = do
       _, _ -> pure unit
    pure (Map.union a b)
    where
-   differ ce1 ce2 = ce1.mod /= ce2.mod || ce1.base /= ce2.base || ce1.fields /= ce2.fields
+   differ ce1 ce2 = ce1.name /= ce2.name || ce1.base /= ce2.base || ce1.fields /= ce2.fields
 
 -- ======================
 -- boilerplate

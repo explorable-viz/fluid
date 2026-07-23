@@ -7,8 +7,8 @@ import Control.Monad.Reader (class MonadReader, ask)
 import Bind (Var, dottedName, pathName, prefixOf)
 import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
 import Data.Either (Either(..))
-import Data.Foldable (foldM, foldl, intercalate)
-import Data.List (List(..), catMaybes, elem, filter, reverse, takeWhile, (:))
+import Data.Foldable (foldM, intercalate)
+import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), isJust)
@@ -28,7 +28,7 @@ import Graph (Vertex, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
-import ModuleGraph (DependencyGraph, ModuleName, builtins, predefined, predefinedDeps)
+import ModuleGraph (DependencyGraph, ModuleName, predefined, predefinedDeps)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import DefiniteAssignment (ClassEntry, Cxt, Entry(..), WfResult(..), unionWith_mergeEq)
@@ -42,12 +42,9 @@ import Val (BaseVal(..)) as V
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
--- Re-key by fully-qualified name (defining module then class), matching the
--- FQNs well-formedness bakes into constructors.
-fqnKeyed :: Map Var ClassEntry -> Map Var ClassEntry
-fqnKeyed m = Map.fromFoldable (reKey <$> (Map.toUnfoldable m :: List _))
-   where
-   reKey (name × cls) = dottedName (NEL.snoc cls.mod name) × cls
+-- Index class entries by their own fully-qualified name.
+keyByFqn :: List ClassEntry -> Map Var ClassEntry
+keyByFqn = Map.fromFoldable <<< map (\cls -> dottedName cls.name × cls)
 
 probeModule :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
 probeModule q = do
@@ -83,13 +80,14 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
 
 noArgsClass :: ClassEntry
-noArgsClass = { cxt: Map.empty, mod: builtins, base: Nothing, fields: Nil }
+noArgsClass = { cxt: Map.empty, name: cNoArgs, base: Nothing, fields: Nil }
 
 moduleClasses :: Map ModuleName Cxt -> Map Var ClassEntry
 moduleClasses modCxt =
-   Map.insert (dottedName cNoArgs) noArgsClass (foldl Map.union Map.empty (fqnKeyed <<< classesOf <$> Map.values modCxt))
+   Map.insert (dottedName cNoArgs) noArgsClass (keyByFqn (Map.values modCxt >>= classValues))
    where
-   classesOf = Map.mapMaybe case _ of
+   classValues cxt = mapMaybe classOf (Map.values cxt)
+   classOf = case _ of
       Class cls -> Just cls
       _ -> Nothing
 
@@ -142,7 +140,7 @@ prepConfig primitives fluidSrc = do
    { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram modules baseCxt imports s)
    allClasses <- orThrow do
       programClasses <- classes mainModule s
-      unionWith_mergeEq (moduleClasses (_.cxt <$> loaded)) (fqnKeyed programClasses)
+      unionWith_mergeEq (moduleClasses (_.cxt <$> loaded)) (keyByFqn (Map.values programClasses))
    withClasses allClasses do
       coreModules <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (_.mod <$> loaded)
       n × topLevelEnv <- allocTopLevel primitives coreModules imports
