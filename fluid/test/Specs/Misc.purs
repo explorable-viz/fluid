@@ -41,16 +41,16 @@ misc_cases =
    , { file: "module/attr_access.fld", fwd_expect: "42" }
    , { file: "module/child_after_parent.fld", fwd_expect: "5" }
    , { file: "module/dotted_attr_access.fld", fwd_expect: "1" }
-   , { file: "module/from_import_multi.fld", fwd_expect: "3" }
-   , { file: "module/from_import_submodule.fld", fwd_expect: "1" }
-   , { file: "module/from_import_subclass.fld", fwd_expect: "6" }
    , { file: "module/from_import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
-   , { file: "module/from_import_view.fld", fwd_expect: "MultiView(1 :| 2 :| [])" }
+   , { file: "module/from_import_multi.fld", fwd_expect: "3" }
+   , { file: "module/from_import_subclass.fld", fwd_expect: "6" }
+   , { file: "module/from_import_submodule.fld", fwd_expect: "1" }
    , { file: "module/from_import_value.fld", fwd_expect: "1" }
+   , { file: "module/from_import_view.fld", fwd_expect: "MultiView(1 :| 2 :| [])" }
+   , { file: "module/import_absolute_shadow.fld", fwd_expect: "2" }
    , { file: "module/import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "module/import_modules.fld", fwd_expect: "84" }
    , { file: "module/import_simple.fld", fwd_expect: "84" }
-   , { file: "module/import_absolute_shadow.fld", fwd_expect: "2" }
    , { file: "module/import_simple_unused.fld", fwd_expect: "84" }
    , { file: "module/import_twice.fld", fwd_expect: "1" }
    , { file: "module/name_member.fld", fwd_expect: "\"attr_lib\"" }
@@ -62,11 +62,11 @@ misc_cases =
    , { file: "module/parent_uses_child.fld", fwd_expect: "6" }
    , { file: "module/predefined_imports.fld", fwd_expect: "5" }
    , { file: "module/qualified_construct.fld", fwd_expect: "Coord(3, 4)" }
+   , { file: "module/qualified_pattern.fld", fwd_expect: "7" }
    , { file: "module/same_name_classes.fld", fwd_expect: "8" }
    , { file: "module/sibling_submodules.fld", fwd_expect: "3" }
-   , { file: "module/submodule_attr.fld", fwd_expect: "5" }
    , { file: "module/sibling_submodules_swapped.fld", fwd_expect: "3" }
-   , { file: "module/qualified_pattern.fld", fwd_expect: "7" }
+   , { file: "module/submodule_attr.fld", fwd_expect: "5" }
    , { file: "normalise.fld", fwd_expect: "(33, 66)" }
    , { file: "not_parens_op.fld", fwd_expect: """@doc("hello") -42""" }
    , { file: "nub.fld", fwd_expect: "1 :| 2 :| 3 :| 4 :| []" }
