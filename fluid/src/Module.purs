@@ -111,15 +111,15 @@ allocTopLevel
    -> Map ModuleName (Raw Module)
    -> List S.Import
    -> m (Int × Env Vertex)
-allocTopLevel primitives modules imports = do
-   n × _ × topLevelEnv <- flip runAllocT 0 do
+allocTopLevel primitives mods imports = do
+   n × _ × γ <- flip runAllocT 0 do
       primitives' <- alloc primitives
-      modules' <- traverse alloc modules
-      let mαs = Set.unions (vertices <$> Map.values modules')
+      mods' <- traverse alloc mods
+      let mαs = Set.unions (vertices <$> Map.values mods')
       _ × γ <-
          runWithGraphT_spy
             ( do
-                 modifyStore (_ { moduleBody = modules' })
+                 modifyStore (_ { moduleBody = mods' })
                  γ0 <- foldM loadPredefined primitives' predefined
                  modifyStore (_ { γ0 = γ0 })
                  γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
@@ -128,7 +128,7 @@ allocTopLevel primitives modules imports = do
             )
             (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
       pure γ
-   pure (n × topLevelEnv)
+   pure (n × γ)
 
 prepConfig
    :: forall m
@@ -144,16 +144,16 @@ prepConfig
 prepConfig primitives fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
    let baseCxt = constMap (VarStatus true) (keys primitives) `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
-   modules <- parseModules imports
-   { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram modules baseCxt imports s)
+   mods <- parseModules imports
+   { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram mods baseCxt imports s)
    let classes = moduleClasses (_.cxt <$> loaded)
    withClasses classes do
-      coreModules <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (Map.mapMaybe _.mod loaded)
-      n × topLevelEnv <- allocTopLevel primitives coreModules imports
-      check (Map.keys γ_wf == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
+      desugaredMods <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (Map.mapMaybe _.mod loaded)
+      n × γ <- allocTopLevel primitives desugaredMods imports
+      check (Map.keys γ_wf == Set.fromFoldable (keys γ)) "reduced context matches top-level environment"
       e_wf <- desug s_wf
       let e = (unit <$ e_wf) :: Raw Stmt
-      let gconfig = { n, γ: restrict (fv e) topLevelEnv, classes }
+      let gconfig = { n, γ: restrict (fv e) γ, classes }
       pure { s, e, gconfig }
 
 parseModules
@@ -167,11 +167,11 @@ parseModules
 parseModules imports = do
    imported <- traverse (importDeps mainModule) imports
    let roots = predefined <> (imported >>= _.load)
-   importGraph × modules <- collectModules Set.empty Map.empty Map.empty roots
+   importGraph × mods <- collectModules Set.empty Map.empty Map.empty roots
    orThrow (checkAcyclic importGraph (imported >>= _.edges))
    -- prefix-closed: a package with no source file of its own is an empty module
-   let ancestors = Set.fromFoldable ((Set.toUnfoldable (Map.keys modules) :: List ModuleName) >>= parents)
-   pure (modules `Map.union` constMap (S.Module Nil Nil) ancestors)
+   let ancestors = Set.fromFoldable ((Set.toUnfoldable (Map.keys mods) :: List ModuleName) >>= parents)
+   pure (mods `Map.union` constMap (S.Module Nil Nil) ancestors)
 
    where
 
@@ -181,17 +181,17 @@ parseModules imports = do
       -> Map ModuleName (Raw S.Module)
       -> List ModuleName
       -> m (DependencyGraph × Map ModuleName (Raw S.Module))
-   collectModules visited importGraph modules pending = case pending of
-      Nil -> pure $ (importGraph × modules)
+   collectModules visited importGraph mods pending = case pending of
+      Nil -> pure $ (importGraph × mods)
       mod : rest ->
          if Set.member mod visited then
-            collectModules visited importGraph modules rest
+            collectModules visited importGraph mods rest
          else do
             mod' × edges × toLoad <- parseAndCollect mod
             collectModules
                (Set.insert mod visited)
                (Map.insert mod edges importGraph)
-               (Map.insert mod mod' modules)
+               (Map.insert mod mod' mods)
                (toLoad <> rest)
 
    parseAndCollect :: ModuleName -> m (Raw S.Module × List ModuleName × List ModuleName)

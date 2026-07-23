@@ -44,7 +44,7 @@ checkProgram
    -> List S.Import
    -> Raw S.Stmt
    -> Either String { γ :: VarCxt, s :: S.Stmt (WfResult VarCxt), loaded :: Map.Map ModuleName LoadedModule }
-checkProgram modules base imports s =
+checkProgram mods base imports s =
    runStateT program Map.empty <#> \((γ × s') × loaded) -> { γ, s: s', loaded }
    where
    program :: LoadM (VarCxt × S.Stmt (WfResult VarCxt))
@@ -62,11 +62,11 @@ checkProgram modules base imports s =
    loadModule q = get >>= \loaded -> case Map.lookup q loaded of
       Just { cxt } -> pure cxt
       Nothing -> checking q do
-         mod@(S.Module is _) <- maybe (throwError ("Module not parsed: " <> dottedName q)) pure (Map.lookup q modules)
+         mod@(S.Module is _) <- maybe (throwError ("Module not parsed: " <> dottedName q)) pure (Map.lookup q mods)
          layer × γ_imp <- checkImports q is
          δ × mod' <- lift (checkStatements q γ_imp mod)
          λ <- lift (classesOfModule q mod)
-         let subs = submodules (Map.keys modules) q
+         let subs = submodules (Map.keys mods) q
          let clash = (Map.keys layer ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
          when (not Set.isEmpty clash)
             $ throwError
