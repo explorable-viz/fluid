@@ -25,7 +25,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Eval (ConjugatePair, graphCP, graphEval, withOp)
+import Eval (ConjugatePair, depsOf, graphEval, withOp)
 import File (class LoadFile, File(..), FileCxt)
 import Graph (class Graph, DVertex, DVertex', Vertex(..), VertexData, dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -207,19 +207,19 @@ loadFig options@{ inputs, linking } fluidSrc = do
       Env γ_restricted = restrict inputs' γα
       in_roots = Set.fromFoldable $ (\(Val α _ _) -> α) <$> γ_restricted
 
-      cp = graphCP eval
+      deps = depsOf eval
 
       io :: ConjugatePair GraphImpl Env Val
       io =
-         { fwd: \γ -> cp.fwd (EnvStmt γ (botOf s'))
-         , bwd: \v -> first (\(EnvStmt γ _) -> restrict inputs' γ) (cp.bwd v)
+         { fwd: \γ -> deps.fwd (EnvStmt γ (botOf s'))
+         , bwd: \v -> first (\(EnvStmt γ _) -> restrict inputs' γ) (deps.bwd v)
          }
 
       in_views = const Nothing <$> γ_restricted
       unselected = { γ: botOf γα, v: botOf outα } :: IO 𝔹
 
       inertBwd = vertices g0 \\ (vertices $ snd $ io.bwd $ topOf outα)
-      inertFwd = vertices g0 \\ (vertices $ snd $ cp.fwd (EnvStmt (topOf γα) (botOf s')))
+      inertFwd = vertices g0 \\ (vertices $ snd $ deps.fwd (EnvStmt (topOf γα) (botOf s')))
 
       inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
       inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
