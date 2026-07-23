@@ -34,11 +34,9 @@ type LoadedModule = { cxt :: Cxt, mod :: S.Module (WfResult VarCxt) }
 
 type LoadM = StateT (Map.Map ModuleName LoadedModule) (Either String)
 
--- Check the program, loading each module on demand as its import is checked.
--- Also return the reduced context (the import layer, erased); the desugared
--- program is a term over it, with module and class entries resolved away.
--- Loading recurses without a guard; it terminates because the module
--- dependency graph is checked acyclic at parse time.
+-- Load each module on demand as its import is checked. The recursion has no
+-- cycle guard; it terminates because the dependency graph is acyclic (checked
+-- at parse time).
 checkProgram
    :: Map.Map ModuleName (Raw S.Module)
    -> Cxt
