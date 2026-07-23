@@ -42,8 +42,8 @@ import Val (BaseVal(..)) as V
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
-probeModule :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
-probeModule q = do
+hasSourceFile :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
+hasSourceFile q = do
    FileCxt { fluidSrcPaths } <- ask
    isJust <$> loadFileMaybe fluidSrcPaths (File (pathName q <> fluidExtension))
 
@@ -62,17 +62,17 @@ importDeps
    -> S.Import
    -> m { edges :: List ModuleName, load :: List ModuleName }
 importDeps enclosing (S.Import q f) = do
-   ps <- probeAll (parents q)
+   ps <- existing (parents q)
    subs <- case f of
       Nothing -> pure Nil
-      Just xs -> probeAll ((NEL.snoc q) <$> xs)
+      Just xs -> existing ((NEL.snoc q) <$> xs)
    let
       prefixEdges = case f of
          Nothing -> filter (_ /= enclosing) (parents q)
          Just _ -> filter (\p -> not (p `prefixOf` enclosing)) (parents q)
    pure { edges: (q : subs) <> prefixEdges, load: ps <> (q : subs) }
    where
-   probeAll = map catMaybes <<< traverse (\m' -> probeModule m' <#> \b -> whenever b m')
+   existing = map catMaybes <<< traverse (\m' -> hasSourceFile m' <#> \b -> whenever b m')
 
 checkAcyclic :: DependencyGraph -> List ModuleName -> Either String Unit
 checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
