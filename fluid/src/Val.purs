@@ -83,14 +83,13 @@ instance Highlightable a => Highlightable (a × b) where
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 type ModuleStore =
-   { primitives :: Env Vertex
-   , γ0 :: Env Vertex -- base environment: primitives and the members of the predefined modules (lib.builtins, lib.prelude)
+   { γ0 :: Env Vertex -- base environment: primitives and the members of the predefined modules (lib.builtins, lib.prelude)
    , moduleBody :: Map ModuleName (Module Vertex)
    , moduleEnv :: Map ModuleName (Env Vertex)
    }
 
 emptyStore :: ModuleStore
-emptyStore = { primitives: empty, γ0: empty, moduleBody: Map.empty, moduleEnv: Map.empty }
+emptyStore = { γ0: empty, moduleBody: Map.empty, moduleEnv: Map.empty }
 
 class Monad m <= HasModuleStore m where
    getStore :: m ModuleStore

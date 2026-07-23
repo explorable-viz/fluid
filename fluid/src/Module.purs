@@ -19,7 +19,7 @@ import DataType (class HasClasses, cNoArgs)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Eval (GraphConfig, evalImport, importInto)
+import Eval (GraphConfig, evalImport, loadPredefined)
 import Expr (Import(..)) as E
 import Expr (Module, Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile, loadFileMaybe, withClasses)
@@ -111,8 +111,8 @@ allocTopLevel primitives modules imports = do
       _ × γ <-
          runWithGraphT_spy
             ( do
-                 modifyStore (\st -> st { primitives = primitives', moduleBody = modules' })
-                 γ0 <- foldM importInto primitives' predefined
+                 modifyStore (_ { moduleBody = modules' })
+                 γ0 <- foldM loadPredefined primitives' predefined
                  modifyStore (_ { γ0 = γ0 })
                  γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) empty imports
                  vName <- val Nothing Set.empty (V.Str "__main__")

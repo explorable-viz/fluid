@@ -29,7 +29,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
-import ModuleGraph (ModuleName, builtins, predefined, predefinedDeps)
+import ModuleGraph (ModuleName, builtins)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Test.Util.Debug (checking, tracing)
@@ -342,7 +342,9 @@ importsFrom q γ_q = foldM step
          when (Map.member (NEL.snoc q x) moduleBody) (void (load (NEL.snoc q x)))
          pure (delete x γ)
 
-importInto
+-- Load a predefined module over base γ and extend γ with its members. builtins exposes
+-- the injected primitives (its base) as members; the others expose only their own.
+loadPredefined
    :: forall m
     . HasClasses m
    => HasModuleStore m
@@ -353,7 +355,11 @@ importInto
    => Env Vertex
    -> ModuleName
    -> m (Env Vertex)
-importInto γ q = (γ <+> _) <$> load q
+loadPredefined γ q = do
+   { moduleBody } <- getStore
+   γ' <- maybe (pure empty) (\body -> eval_module γ q body empty) (Map.lookup q moduleBody)
+   modifyStore (\s -> s { moduleEnv = Map.insert q (if q == builtins then γ <+> γ' else γ') s.moduleEnv })
+   pure (γ <+> γ')
 
 load
    :: forall m
@@ -366,15 +372,11 @@ load
    => ModuleName
    -> m (Env Vertex)
 load q = do
-   { primitives, moduleBody, moduleEnv } <- getStore
+   { moduleBody, moduleEnv } <- getStore
    case Map.lookup q moduleEnv of
       Just γ -> pure γ
       Nothing -> do
-         γ_base <-
-            if q `Set.member` Set.fromFoldable predefined then foldM importInto primitives (predefinedDeps q)
-            else pure empty
-         γ' <- maybe (pure empty) (\defs' -> eval_module γ_base q defs' empty) (Map.lookup q moduleBody)
-         let γ_q = (if q == builtins then primitives else empty) <+> γ'
+         γ_q <- maybe (pure empty) (\body -> eval_module empty q body empty) (Map.lookup q moduleBody)
          modifyStore (\s -> s { moduleEnv = Map.insert q γ_q s.moduleEnv })
          pure γ_q
 
