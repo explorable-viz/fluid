@@ -22,7 +22,7 @@ import Effect.Exception (Error)
 import Eval (GraphConfig, evalImport, loadPredefined)
 import Expr (Import(..)) as E
 import Expr (Module, Stmt, fv)
-import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile, loadFileMaybe, withClasses)
+import File (class LoadFile, File(..), FileCxt(..), fluidExtension, hasDirectory, loadFile, loadFileMaybe, withClasses)
 
 import Graph (Vertex, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -47,6 +47,11 @@ hasSourceFile q = do
    FileCxt { fluidSrcPaths } <- ask
    isJust <$> loadFileMaybe fluidSrcPaths (File (pathName q <> fluidExtension))
 
+hasSourceDir :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
+hasSourceDir q = do
+   FileCxt { fluidSrcPaths } <- ask
+   hasDirectory fluidSrcPaths (File (pathName q))
+
 parents :: ModuleName -> List ModuleName
 parents q = case NEL.fromList (NEL.unsnoc q).init of
    Nothing -> Nil
@@ -62,17 +67,18 @@ importDeps
    -> S.Import
    -> m { edges :: List ModuleName, load :: List ModuleName }
 importDeps enclosing (S.Import q f) = do
-   ps <- existing (parents q)
+   ps <- keepModules hasSourceFile (parents q)
    subs <- case f of
       Nothing -> pure Nil
-      Just xs -> existing ((NEL.snoc q) <$> xs)
+      Just xs -> keepModules isModule ((NEL.snoc q) <$> xs)
    let
       prefixEdges = case f of
          Nothing -> filter (_ /= enclosing) (parents q)
          Just _ -> filter (\p -> not (p `prefixOf` enclosing)) (parents q)
    pure { edges: (q : subs) <> prefixEdges, load: ps <> (q : subs) }
    where
-   existing = map catMaybes <<< traverse (\m' -> hasSourceFile m' <#> \b -> whenever b m')
+   isModule m' = (||) <$> hasSourceFile m' <*> hasSourceDir m'
+   keepModules p = map catMaybes <<< traverse (\m' -> p m' <#> \b -> whenever b m')
 
 checkAcyclic :: DependencyGraph -> List ModuleName -> Either String Unit
 checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
@@ -199,9 +205,14 @@ parseModules imports = do
    parseAndCollect :: ModuleName -> m (Raw S.Module × List ModuleName × List ModuleName)
    parseAndCollect path = do
       FileCxt { fluidSrcPaths } <- ask
-      src <- loadFile fluidSrcPaths (File (pathName path <> fluidExtension))
-      mod × _ <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
-      imported <- case mod of S.Module is _ -> traverse (importDeps path) is
-      let edges = imported >>= _.edges
-      let toLoad = predefinedDeps path <> (imported >>= _.load)
-      pure $ mod × edges × toLoad
+      let file = File (pathName path <> fluidExtension)
+      loadFileMaybe fluidSrcPaths file >>= case _ of
+         Just src -> do
+            mod × _ <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
+            imported <- case mod of S.Module is _ -> traverse (importDeps path) is
+            let edges = imported >>= _.edges
+            let toLoad = predefinedDeps path <> (imported >>= _.load)
+            pure $ mod × edges × toLoad
+         Nothing -> hasSourceDir path >>= case _ of
+            true -> pure (S.Module Nil Nil × Nil × Nil)
+            false -> loadFile fluidSrcPaths file *> pure (S.Module Nil Nil × Nil × Nil)

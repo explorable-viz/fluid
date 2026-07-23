@@ -10,11 +10,12 @@ import DataType (class HasClasses)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
-import File (class LoadFile, FileCxt(..), loadFileFromPath)
+import File (class LoadFile, FileCxt(..), isDirectoryPath, loadFileFromPath)
 import Val (class HasModuleStore, ModuleStore, emptyModuleStore)
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (WebT m) where
    loadFileFromPath = lift <<< loadFileFromPath
+   isDirectoryPath = lift <<< isDirectoryPath
 
 newtype WebT m a = WebT (ReaderT FileCxt (StateT ModuleStore m) a)
 

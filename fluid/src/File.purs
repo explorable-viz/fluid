@@ -30,12 +30,15 @@ withClasses classes = local (\(FileCxt r) -> FileCxt (r { classes = classes }))
 
 class LoadFile m where
    loadFileFromPath :: MonadError Error m => MonadAff m => File -> m (Maybe String)
+   isDirectoryPath :: MonadError Error m => MonadAff m => File -> m Boolean
 
 instance (Monoid w, MonadError Error m, MonadAff m, LoadFile m) => LoadFile (WriterT w m) where
    loadFileFromPath = lift <<< loadFileFromPath
+   isDirectoryPath = lift <<< isDirectoryPath
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (StateT s m) where
    loadFileFromPath = lift <<< loadFileFromPath
+   isDirectoryPath = lift <<< isDirectoryPath
 
 instance LoadFile Aff where
    loadFileFromPath (File path) = do
@@ -52,6 +55,10 @@ instance LoadFile Aff where
             Right resp' | resp'.status == StatusCode 200 -> Right (resp' × path)
             Right _ -> Left A.RequestFailedError
             Left err -> Left err
+
+   -- HTTP cannot probe for a directory, so a package directory with no same-named .fld is
+   -- invisible here; it enters scope only via prefix-closure of a loaded descendant.
+   isDirectoryPath _ = pure false
 
 newtype File = File String
 newtype Folder = Folder String
@@ -87,3 +94,10 @@ loadFileMaybe folders file = foldM step Nothing (searchPaths folders file)
 loadFile :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m String
 loadFile folders file =
    loadFileMaybe folders file >>= orElse ("File not found in any path: " <> show (searchPaths folders file))
+
+hasDirectory :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m Boolean
+hasDirectory folders file = foldM step false (searchPaths folders file)
+   where
+   step :: Boolean -> File -> m Boolean
+   step true _ = pure true
+   step false path = isDirectoryPath path

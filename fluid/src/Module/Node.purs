@@ -16,7 +16,7 @@ import Effect.Exception (Error)
 import File (class LoadFile, File(..), FileCxt(..))
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)
-import Node.FS.Stats (isFile)
+import Node.FS.Stats (isDirectory, isFile)
 
 instance Monad m => LoadFile (NodeT m) where
    loadFileFromPath (File path) = do
@@ -24,6 +24,11 @@ instance Monad m => LoadFile (NodeT m) where
       case stats of
          Right s | isFile s -> Just <$> liftAff (readTextFile UTF8 path)
          _ -> pure Nothing
+   isDirectoryPath (File path) = do
+      stats <- liftAff $ try (stat path)
+      pure case stats of
+         Right s | isDirectory s -> true
+         _ -> false
 
 newtype NodeT m a = NodeT (ReaderT FileCxt (StateT ModuleStore m) a)
 
