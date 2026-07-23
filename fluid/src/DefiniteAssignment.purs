@@ -3,9 +3,7 @@ module DefiniteAssignment where
 import Prelude
 
 import Bind (Name, Var)
-import Control.Monad.Error.Class (throwError)
-import Data.Foldable (foldl, for_)
-import Data.Either (Either)
+import Data.Foldable (foldl)
 import Data.List (List)
 import Data.Map (Map)
 import Data.Map as Map
@@ -83,16 +81,6 @@ fields :: ClassEntry -> List Var
 fields cls = case cls.base of
    Nothing -> cls.fields
    Just b -> fields (definitely' (classFor cls.cxt b)) <> cls.fields
-
-unionWith_mergeEq :: Map Var ClassEntry -> Map Var ClassEntry -> Either String (Map Var ClassEntry)
-unionWith_mergeEq a b = do
-   let dups = Set.toUnfoldable (Set.intersection (Map.keys a # Set.fromFoldable) (Map.keys b # Set.fromFoldable)) :: List Var
-   for_ dups \k -> case Map.lookup k a, Map.lookup k b of
-      Just ce1, Just ce2 | differ ce1 ce2 -> throwError $ "Conflicting class declarations: " <> k
-      _, _ -> pure unit
-   pure (Map.union a b)
-   where
-   differ ce1 ce2 = ce1.name /= ce2.name || ce1.base /= ce2.base || ce1.fields /= ce2.fields
 
 -- ======================
 -- boilerplate

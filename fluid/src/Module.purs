@@ -31,10 +31,10 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName, predefined, predefinedDeps)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
-import DefiniteAssignment (ClassEntry, Cxt, Entry(..), WfResult(..), unionWith_mergeEq)
+import DefiniteAssignment (ClassEntry, Cxt, Entry(..), WfResult(..))
 import WellFormed (checkProgram, classes, mainModule)
 import SExpr as S
-import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×))
+import Util (type (×), check, error, orThrow, throwLeft, whenever, withMsg, (×))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
 import Util.Set ((∪), empty)
 import Val (class HasModuleStore, modifyStore, val, Env)
@@ -138,9 +138,9 @@ prepConfig primitives fluidSrc = do
    let baseCxt = constMap (VarStatus true) (keys primitives) `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
    modules <- parseModules imports
    { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram modules baseCxt imports s)
-   allClasses <- orThrow do
-      programClasses <- classes mainModule s
-      unionWith_mergeEq (moduleClasses (_.cxt <$> loaded)) (keyByFqn (Map.values programClasses))
+   programClasses <- orThrow (classes mainModule s)
+   -- Module and program FQNs are disjoint, so the union is total.
+   let allClasses = Map.unionWith (\_ _ -> error "class table not disjoint") (moduleClasses (_.cxt <$> loaded)) (keyByFqn (Map.values programClasses))
    withClasses allClasses do
       coreModules <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (_.mod <$> loaded)
       n × topLevelEnv <- allocTopLevel primitives coreModules imports
