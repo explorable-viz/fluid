@@ -320,7 +320,19 @@ loadAncestors bound q = case NEL.fromList (NEL.unsnoc q).init of
       | maybe false (q' `prefixOf` _) bound -> pure unit
       | otherwise -> void (load q') *> loadAncestors bound q'
 
-importsFrom :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> Env Vertex -> Env Vertex -> List Var -> m (Env Vertex)
+importsFrom
+   :: forall m
+    . HasClasses m
+   => HasModuleStore m
+   => MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => ModuleName
+   -> Env Vertex
+   -> Env Vertex
+   -> List Var
+   -> m (Env Vertex)
 importsFrom q γ_q = foldM step
    where
    step γ x = case lookup x γ_q of
@@ -330,14 +342,33 @@ importsFrom q γ_q = foldM step
          when (Map.member (NEL.snoc q x) moduleBody) (void (load (NEL.snoc q x)))
          pure (delete x γ)
 
-importInto :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> ModuleName -> m (Env Vertex)
+importInto
+   :: forall m
+    . HasClasses m
+   => HasModuleStore m
+   => MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => Env Vertex
+   -> ModuleName
+   -> m (Env Vertex)
 importInto γ q = (γ <+> _) <$> load q
 
-load :: forall m. HasClasses m => HasModuleStore m => MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => ModuleName -> m (Env Vertex)
+load
+   :: forall m
+    . HasClasses m
+   => HasModuleStore m
+   => MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => MonadAff m
+   => LoadFile m
+   => ModuleName
+   -> m (Env Vertex)
 load q = do
    { primitives, moduleBody, moduleEnv } <- getStore
    case Map.lookup q moduleEnv of
-      Just γ' -> pure γ'
+      Just γ -> pure γ
       Nothing -> do
          γ_base <-
             if q `Set.member` Set.fromFoldable predefined then foldM importInto primitives (predefinedDeps q)
