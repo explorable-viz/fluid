@@ -27,10 +27,11 @@ import SExpr (Clause(..), DictEntry(..), Expr(..), Import(..), LambdaClause(..),
 import Util (type (×), singleton, whenever, (×), (∩))
 import Util.Set ((\\), (∪))
 
--- Member context and checked statements of a loaded module. The table of
--- loaded modules memoises the load judgement, which the spec re-derives
--- freely (loading is pure, so needs no cache).
-type LoadedModule = { cxt :: Cxt, mod :: S.Module (WfResult VarCxt) }
+-- Member context of a loaded module and its checked body. The program is
+-- recorded too, under __main__, with no body: it is checked separately and
+-- may return, so it has no S.Module. The table memoises the load judgement;
+-- loading is pure, so the spec re-derives freely.
+type LoadedModule = { cxt :: Cxt, mod :: Maybe (S.Module (WfResult VarCxt)) }
 
 type LoadM = StateT (Map.Map ModuleName LoadedModule) (Either String)
 
@@ -52,6 +53,8 @@ checkProgram modules base imports s =
       -- Unlike a module (checkStatements), the program may return: a top-level return yields
       -- its result value. The spec forbids this, treating __main__ as a module; Fluid does not.
       _ × s' <- lift (wellFormed mainModule (Map.insert "__name__" (VarStatus true) γ_imp) s)
+      λ <- lift (classes mainModule s)
+      modify_ (Map.insert mainModule { cxt: Class <$> λ, mod: Nothing })
       pure (Map.insert "__name__" true (erase layer) × s')
 
    -- Member context of module q; memoised.
@@ -71,7 +74,7 @@ checkProgram modules base imports s =
          let
             cxt = (if q == builtins then base else Map.empty) `Map.union` subs `Map.union` (Class <$> λ) `Map.union`
                (VarStatus <$> δ)
-         modify_ (Map.insert q { cxt, mod: mod' })
+         modify_ (Map.insert q { cxt, mod: Just mod' })
          pure cxt
 
    checking :: forall a. ModuleName -> LoadM a -> LoadM a

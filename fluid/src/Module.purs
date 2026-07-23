@@ -32,7 +32,7 @@ import ModuleGraph (DependencyGraph, ModuleName, predefined, predefinedDeps)
 import Parse (parseModule, parseProgram)
 import SExpr (desugarModuleFwd)
 import DefiniteAssignment (ClassEntry, Cxt, Entry(..), WfResult(..))
-import WellFormed (checkProgram, classes, mainModule)
+import WellFormed (checkProgram, mainModule)
 import SExpr as S
 import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×))
 import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
@@ -146,10 +146,9 @@ prepConfig primitives fluidSrc = do
    let baseCxt = constMap (VarStatus true) (keys primitives) `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
    modules <- parseModules imports
    { γ: γ_wf, s: s_wf, loaded } <- orThrow (checkProgram modules baseCxt imports s)
-   programClasses <- orThrow (classes mainModule s)
-   let allClasses = moduleClasses (Map.insert mainModule (Class <$> programClasses) (_.cxt <$> loaded))
+   let allClasses = moduleClasses (_.cxt <$> loaded)
    withClasses allClasses do
-      coreModules <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (_.mod <$> loaded)
+      coreModules <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (Map.mapMaybe _.mod loaded)
       n × topLevelEnv <- allocTopLevel primitives coreModules imports
       check (Map.keys γ_wf == Set.fromFoldable (keys topLevelEnv)) "reduced context matches top-level environment"
       e_wf <- desug s_wf
