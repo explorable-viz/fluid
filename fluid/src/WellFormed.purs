@@ -59,7 +59,7 @@ checkProgram mods nativeBuiltins imports s =
    loadModule :: ModuleName -> LoadM Cxt
    loadModule q = get >>= \loaded -> case Map.lookup q loaded of
       Just { cxt } -> pure cxt
-      Nothing -> checking q do
+      Nothing -> mapStateT (lmap (_ <> "\nChecking module " <> dottedName q)) do
          mod@(S.Module is _) <- maybe (throwError ("Module not parsed: " <> dottedName q)) pure (Map.lookup q mods)
          importCxt × cxt_imp <- checkImports q is
          δ × mod' <- lift (checkStatements q cxt_imp mod)
@@ -79,9 +79,6 @@ checkProgram mods nativeBuiltins imports s =
                (VarStatus <$> δ)
          modify_ (Map.insert q { cxt, mod: Just mod' })
          pure cxt
-
-   checking :: forall a. ModuleName -> LoadM a -> LoadM a
-   checking q = mapStateT (lmap (_ <> "\nChecking module " <> dottedName q))
 
    checkImports :: ModuleName -> List S.Import -> LoadM (Cxt × Cxt)
    checkImports enclosing is = do

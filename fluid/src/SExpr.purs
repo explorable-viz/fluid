@@ -6,7 +6,7 @@ import Bind (Bind, Name, Var, dottedName, varAnon, (↦))
 import Bind (keys) as B
 import Data.Set (Set, empty, insert, member, singleton, unions) as Set
 import Control.Monad.Error.Class (class MonadError)
-import Data.Bitraversable (rtraverse)
+import Data.Bitraversable (ltraverse, rtraverse)
 import Data.Either (Either(..))
 import Data.Foldable (for_, length)
 import Data.Function (on)
@@ -457,20 +457,10 @@ expandKw p = do
    goRest λ (PListNext p' l) = PListNext <$> go λ p' <*> goRest λ l
    goRest _ p' = pure p'
 
-expandClause :: forall m a. HasClasses m => MonadError Error m => ClauseState' a -> m (ClauseState' a)
-expandClause (π × π' × b) = do
-   π'' <- traverse
-      ( case _ of
-           Left p -> Left <$> expandKw p
-           r -> pure r
-      )
-      π
-   pure (π'' × π' × b)
-
 -- Implementing Desugarable would require another newtype
 clausesStateFwd :: forall m. HasClasses m => MonadError Error m => ClausesState' (WfResult VarCxt) -> m (Cont (WfResult VarCxt))
 clausesStateFwd ks0 = do
-   ks <- traverse expandClause ks0
+   ks <- traverse (\(π × π' × b) -> (\π'' -> π'' × π' × b) <$> traverse (ltraverse expandKw) π) ks0
    clausesStateFwd' ks
 
 clausesStateFwd' :: forall m. HasClasses m => MonadError Error m => ClausesState' (WfResult VarCxt) -> m (Cont (WfResult VarCxt))
