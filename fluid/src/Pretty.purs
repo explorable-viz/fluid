@@ -42,11 +42,11 @@ class RootOp (e :: Type) where
    rootOp :: e -> Maybe String
 
 instance RootOp Pattern where
-   rootOp (PConstr c _) | last c == last cCons = Just ":"
+   rootOp (PConstr c _ _) | last c == last cCons = Just ":"
    rootOp _ = Nothing
 
 instance Ann a => RootOp (Expr a) where
-   rootOp (Constr _ c _) | last c == last cCons = Just ":"
+   rootOp (Constr _ c _ _) | last c == last cCons = Just ":"
    rootOp (BinaryApp _ op _) = Just op
    rootOp (UnaryPrefixApp op _) = Just op
    rootOp _ = Nothing
@@ -69,7 +69,7 @@ class IsSimple (e :: Type) where
 instance Ann a => IsSimple (Expr a) where
    isSimple (BinaryApp _ _ _) = false
    isSimple (UnaryPrefixApp _ _) = false
-   isSimple (Constr _ c _) | last c == last cCons = false
+   isSimple (Constr _ c _ _) | last c == last cCons = false
    isSimple (Lambda _) = false
    isSimple (Ternary _ _ _) = false
    isSimple _ = true
@@ -127,10 +127,10 @@ instance Ann a => Pretty (Expr a) where
    pretty (Int α n) = highlightIf α (number n)
    pretty (Float α n) = highlightIf α (number n)
    pretty (Str α str) = highlightIf α (string str)
-   pretty (Constr _ c Nil) | last c == "__NoArgs" = text "()"
-   pretty (Constr α c Nil) = highlightIf α (text (dottedName c))
-   pretty (Constr α c as) = highlightIf α (expr $ prettyConstr (dottedName c) as)
-   pretty (ConstrKw α c es xes) =
+   pretty (Constr _ c Nil Nil) | last c == "__NoArgs" = text "()"
+   pretty (Constr α c Nil Nil) = highlightIf α (text (dottedName c))
+   pretty (Constr α c as Nil) = highlightIf α (expr $ prettyConstr (dottedName c) as)
+   pretty (Constr α c es xes) =
       highlightIf α (text (dottedName c) <> parens (commas ((pretty <$> es) <> ((\(x ↦ e) -> text x <> text "=" <> pretty e) <$> xes))))
    pretty (Dictionary α Nil) = highlightIf α (text "{}")
    pretty (Dictionary α es) = highlightIf α (expr $ record $ map pretty es)
@@ -179,10 +179,10 @@ instance Ann a => Pretty (Pattern × Stmt a) where
 instance Pretty Pattern where
    pretty (PVar x) = text x
    pretty (PRecord xps) = record $ map pretty xps
-   pretty (PConstr c Nil) | last c == "__NoArgs" = text "()"
-   pretty (PConstr c Nil) = text (dottedName c)
-   pretty (PConstr c ps) = prettyConstr (dottedName c) ps
-   pretty (PConstrKw c ps xps) =
+   pretty (PConstr c Nil Nil) | last c == "__NoArgs" = text "()"
+   pretty (PConstr c Nil Nil) = text (dottedName c)
+   pretty (PConstr c ps Nil) = prettyConstr (dottedName c) ps
+   pretty (PConstr c ps xps) =
       text (dottedName c) <> parens (commas ((pretty <$> ps) <> ((\(x ↦ p) -> text x <> text "=" <> pretty p) <$> xps)))
    pretty (PListEmpty) = text "[]"
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
@@ -241,7 +241,7 @@ instance Ann a => Pretty (RecDefs a) where
    pretty bs = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> bs))
 
 instance Ann a => Pretty (Branch a) where
-   pretty (v × Clause _ (NonEmptyList (PConstr (NonEmptyList ("__NoArgs" :| Nil)) Nil :| Nil) × b)) =
+   pretty (v × Clause _ (NonEmptyList (PConstr (NonEmptyList ("__NoArgs" :| Nil)) Nil Nil :| Nil) × b)) =
       text "def" <+> text v <> text "()" <> block (pretty b)
    pretty (v × Clause _ (ps × b)) =
       text "def"
@@ -281,7 +281,7 @@ prettyConsArg e lhs = case rootOp e of
    Just op -> if (if lhs then (<=) else (<)) (getPrec op) (getPrec ":") then parens (pretty e) else pretty e
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
-prettyAppChain (App f (Constr _ c Nil)) as | last c == "__NoArgs" =
+prettyAppChain (App f (Constr _ c Nil Nil)) as | last c == "__NoArgs" =
    prettyAppChain f Nil <> text "()" <> renderArgs as
    where
    renderArgs Nil = mempty

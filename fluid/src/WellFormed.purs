@@ -61,11 +61,11 @@ checkProgram mods nativeBuiltins imports s =
       Just { cxt } -> pure cxt
       Nothing -> checking q do
          mod@(S.Module is _) <- maybe (throwError ("Module not parsed: " <> dottedName q)) pure (Map.lookup q mods)
-         layer × cxt_imp <- checkImports q is
+         importCxt × cxt_imp <- checkImports q is
          δ × mod' <- lift (checkStatements q cxt_imp mod)
          λ <- lift (classesOfModule q mod)
          let subs = submodules (Map.keys mods) q
-         let clash = (Map.keys layer ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
+         let clash = (Map.keys importCxt ∪ Map.keys δ ∪ Map.keys λ) ∩ Map.keys subs
          when (not Set.isEmpty clash)
             $ throwError
             $ "Submodule name clash in module " <> dottedName q <> ": " <> intercalate ", " (Set.toUnfoldable clash :: List Var)
@@ -85,9 +85,9 @@ checkProgram mods nativeBuiltins imports s =
 
    checkImports :: ModuleName -> List S.Import -> LoadM (Cxt × Cxt)
    checkImports enclosing is = do
-      seed <- foldM (\acc q -> (acc `Map.union` _) <$> loadModule q) Map.empty (predefinedDeps enclosing)
-      layer <- foldM (\acc i -> (acc `extendCxtWith` _) <$> importBindings enclosing i) Map.empty is
-      pure (layer × (seed `extendCxtWith` layer))
+      predefinedCxt <- foldM (\acc q -> (acc `Map.union` _) <$> loadModule q) Map.empty (predefinedDeps enclosing)
+      importCxt <- foldM (\acc i -> (acc `extendCxtWith` _) <$> importBindings enclosing i) Map.empty is
+      pure (importCxt × (predefinedCxt `extendCxtWith` importCxt))
 
    -- Bindings contributed by one import of the enclosing module.
    importBindings :: ModuleName -> S.Import -> LoadM Cxt
@@ -120,16 +120,16 @@ checkProgram mods nativeBuiltins imports s =
    importedMembers :: ModuleName -> Cxt -> List Var -> LoadM Cxt
    importedMembers _ _ Nil = pure Map.empty
    importedMembers q cxt (x : xs) = do
-      rest <- importedMembers q cxt xs
+      othersCxt <- importedMembers q cxt xs
       case Map.lookup x cxt of
-         Just (Mod q') -> loadModule q' <#> \cxt' -> Map.insert x (ModLoaded q' cxt') rest
+         Just (Mod q') -> loadModule q' <#> \cxt' -> Map.insert x (ModLoaded q' cxt') othersCxt
          Just (VarStatus false) -> throwError $ "Not definitely assigned: " <> x
-         Just θ -> pure (Map.insert x θ rest)
+         Just θ -> pure (Map.insert x θ othersCxt)
          Nothing -> throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
 
--- Stubs for the immediate submodules of q among the program's modules.
+-- Stubs for the immediate submodules of q in the module table.
 submodules :: Set ModuleName -> ModuleName -> Cxt
-submodules known q = Map.fromFoldable (mapMaybe sub (Set.toUnfoldable known))
+submodules modules q = Map.fromFoldable (mapMaybe sub (Set.toUnfoldable modules))
    where
    sub m = let { init, last: x } = NEL.unsnoc m in whenever (NEL.fromList init == Just q) (x × Mod m)
 
@@ -201,8 +201,7 @@ capturesE (S.Op _) = Set.empty
 capturesE (S.Int _ _) = Set.empty
 capturesE (S.Float _ _) = Set.empty
 capturesE (S.Str _ _) = Set.empty
-capturesE (S.Constr _ _ es) = unions (capturesE <$> es)
-capturesE (S.ConstrKw _ _ es xes) = unions (capturesE <$> es) ∪ unions ((capturesE <<< snd) <$> xes)
+capturesE (S.Constr _ _ es xes) = unions (capturesE <$> es) ∪ unions ((capturesE <<< snd) <$> xes)
 capturesE (S.Dictionary _ es) =
    unions ((\(k × v) -> capturesEntry k ∪ capturesE v) <$> es)
    where
@@ -347,17 +346,17 @@ wellFormedExpr = wf
    wf _ e@(S.Int _ _) = pure e
    wf _ e@(S.Float _ _) = pure e
    wf _ e@(S.Str _ _) = pure e
-   wf cxt (S.Constr α c es) = case resolveName cxt c of
+   wf cxt (S.Constr α c es Nil) = case resolveName cxt c of
       Just (Class cls) -> do
          let fs = fields cls
          when (length es /= length fs)
             $ throwError
             $ dottedName c <> " expects " <> show (length fs) <> " argument(s); got " <> show (length es)
-         S.Constr α (qualified cls c) <$> traverse (wf cxt) es
+         (\es' -> S.Constr α (qualified cls c) es' Nil) <$> traverse (wf cxt) es
       _ -> throwError $ "Unknown dataclass: " <> dottedName c
-   wf cxt (S.ConstrKw α c es xes) = case resolveName cxt c of
+   wf cxt (S.Constr α c es xes) = case resolveName cxt c of
       Just (Class cls) ->
-         S.ConstrKw α (qualified cls c) <$> traverse (wf cxt) es <*> traverse (\(x × e) -> (x × _) <$> wf cxt e) xes
+         S.Constr α (qualified cls c) <$> traverse (wf cxt) es <*> traverse (\(x × e) -> (x × _) <$> wf cxt e) xes
       _ -> throwError $ "Unknown dataclass: " <> dottedName c
    wf cxt (S.App e e') = S.App <$> wf cxt e <*> wf cxt e'
    wf cxt (S.BinaryApp e op e') = S.BinaryApp <$> wf cxt e <*> (op <$ var cxt op) <*> wf cxt e'
@@ -428,12 +427,9 @@ assignedIn cxt xs = cxt `extendCxt` constMap true xs
 qualifyPattern :: Cxt -> S.Pattern -> Either String S.Pattern
 qualifyPattern cxt = qualify
    where
-   qualify (S.PConstr c ps) = do
+   qualify (S.PConstr c ps xps) = do
       fqn <- fqnOf c
-      S.PConstr fqn <$> traverse qualify ps
-   qualify (S.PConstrKw c ps xps) = do
-      fqn <- fqnOf c
-      S.PConstrKw fqn <$> traverse qualify ps <*> traverse (traverse qualify) xps
+      S.PConstr fqn <$> traverse qualify ps <*> traverse (traverse qualify) xps
    qualify (S.PRecord xps) = S.PRecord <$> traverse (traverse qualify) xps
    qualify (S.PListNonEmpty p lr) = S.PListNonEmpty <$> qualify p <*> qualifyRest lr
    qualify p = pure p

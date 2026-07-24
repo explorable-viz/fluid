@@ -45,8 +45,7 @@ data Expr a
    | Int a Int
    | Float a Number
    | Str a String
-   | Constr a Name (List (Expr a))
-   | ConstrKw a Name (List (Expr a)) (List (Bind (Expr a)))
+   | Constr a Name (List (Expr a)) (List (Bind (Expr a)))
    | Dictionary a (List (DictEntry a × Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (LambdaClause a)
@@ -72,8 +71,7 @@ data ListRest a
 
 data Pattern
    = PVar Var
-   | PConstr Name (List Pattern)
-   | PConstrKw Name (List Pattern) (List (Bind Pattern))
+   | PConstr Name (List Pattern) (List (Bind Pattern))
    | PRecord (List (Bind Pattern))
    | PListEmpty
    | PListNonEmpty Pattern ListRestPattern
@@ -98,8 +96,7 @@ showPattern (Right p') = show p'
 
 ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
 ctrFor (Left (PVar _)) = Nothing
-ctrFor (Left (PConstr c _)) = pure (dottedName c)
-ctrFor (Left (PConstrKw c _ _)) = pure (dottedName c)
+ctrFor (Left (PConstr c _ _)) = pure (dottedName c)
 ctrFor (Left (PRecord _)) = Nothing
 ctrFor (Left PListEmpty) = pure (dottedName cNil)
 ctrFor (Left (PListNonEmpty _ _)) = pure (dottedName cCons)
@@ -109,8 +106,7 @@ ctrFor (Right (PListNext _ _)) = pure (dottedName cCons)
 
 subpatts :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 subpatts (Left (PVar _)) = Nil
-subpatts (Left (PConstr _ ps)) = Left <$> ps
-subpatts (Left (PConstrKw _ ps xps)) = Left <$> (ps <> (xps <#> snd))
+subpatts (Left (PConstr _ ps xps)) = Left <$> (ps <> (xps <#> snd))
 subpatts (Left (PRecord xps)) = Left <$> (xps <#> snd)
 subpatts (Left PListEmpty) = Nil
 subpatts (Left (PListNonEmpty p o)) = Left p : Right o : Nil
@@ -220,7 +216,7 @@ recDefFwd :: forall m. HasClasses m => MonadError Error m => RecDef (WfResult Va
 recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (close <<< snd <$> unwrap xcs))
    where
    close (Clause Returns body) = Clause Returns body
-   close (Clause (Assigns δ) (ps × s)) = Clause (Assigns δ) (ps × Seq s (Return (Constr Returns cNone Nil)))
+   close (Clause (Assigns δ) (ps × s)) = Clause (Assigns δ) (ps × Seq s (Return (Constr Returns cNone Nil Nil)))
 
 paragraphFwd
    :: forall m. HasClasses m => MonadError Error m => List (ParagraphElem (WfResult VarCxt)) -> m (E.Expr (WfResult VarCxt))
@@ -255,11 +251,11 @@ exprFwd (Float α n) =
    pure $ (E.Float α n)
 exprFwd (Str α s) =
    pure $ E.Str α s
-exprFwd (Constr α c ss) = do
+exprFwd (Constr α c es Nil) = do
    λ <- askClasses
    _ <- ctrSig λ "construct" (dottedName c)
-   E.Constr α c <$> traverse desug ss
-exprFwd (ConstrKw α c es xes) = do
+   E.Constr α c <$> traverse desug es
+exprFwd (Constr α c es xes) = do
    λ <- askClasses
    _ <- ctrSig λ "construct" (dottedName c)
    reordered <- positionaliseKw λ c (length es) xes
@@ -449,10 +445,10 @@ expandKw p = do
    λ <- askClasses
    go λ p
    where
-   go λ (PConstrKw c ps xps) = do
+   go λ (PConstr c ps Nil) = (\ps' -> PConstr c ps' Nil) <$> traverse (go λ) ps
+   go λ (PConstr c ps xps) = do
       reordered <- positionaliseKw λ c (length ps) xps
-      PConstr c <$> traverse (go λ) (ps <> reordered)
-   go λ (PConstr c ps) = PConstr c <$> traverse (go λ) ps
+      (\ps' -> PConstr c ps' Nil) <$> traverse (go λ) (ps <> reordered)
    go λ (PRecord xps) = PRecord <$> traverse (traverse (go λ)) xps
    go λ (PListNonEmpty p' l) = PListNonEmpty <$> go λ p' <*> goRest λ l
    go _ p' = pure p'
@@ -504,7 +500,7 @@ type ClauseState a = List (Pattern + ListRestPattern) × Stmt a
 unless :: ClassTable -> Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 unless _ (Left (PVar _)) = Nil
 unless _ (Left (PRecord _)) = Nil
-unless λ (Left (PConstr c _)) =
+unless λ (Left (PConstr c _ _)) =
    let
       c0 = dottedName c
       DataType _ sigs = case dataType λ c0 of
@@ -512,13 +508,12 @@ unless λ (Left (PConstr c _)) =
          Nothing -> error $ "Unknown dataclass: " <> c0
    in
       (toUnfoldable sigs :: List _) # L.mapMaybe
-         \(c' × n) -> whenever (c' /= c0) (Left (PConstr (singleton c') (replicate n pVarAnon)))
-unless _ (Left PListEmpty) = Left (PConstr cCons (replicate 2 pVarAnon)) : Nil
+         \(c' × n) -> whenever (c' /= c0) (Left (PConstr (singleton c') (replicate n pVarAnon) Nil))
+unless _ (Left PListEmpty) = Left (PConstr cCons (replicate 2 pVarAnon) Nil) : Nil
 unless _ (Left (PListNonEmpty _ _)) = Left PListEmpty : Nil
 unless _ (Right (PListVar _)) = Nil
 unless _ (Right (PListNext _ _)) = Right PListEnd : Nil
 unless _ (Right PListEnd) = Right (PListNext pVarAnon pListVarAnon) : Nil
-unless λ (Left (PConstrKw c ps xps)) = unless λ (Left (PConstr c (ps <> (xps <#> snd))))
 
 orElseFwd :: forall a. ClassTable -> a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd λ α = case _ of
@@ -541,8 +536,8 @@ orElseFwd λ α = case _ of
       pushPatt (Left (PVar x)) k
    pushPattFor (Left (PRecord xps)) = \(π × k) ->
       pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p) -> p) <$> π)))) k
-   pushPattFor (Left (PConstr c _)) = \(π × k) ->
-      pushPatt (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> π))) k
+   pushPattFor (Left (PConstr c _ _)) = \(π × k) ->
+      pushPatt (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> π) Nil)) k
    pushPattFor (Left PListEmpty) = \(_ × k) ->
       pushPatt (Left PListEmpty) k
    pushPattFor (Left (PListNonEmpty _ _)) = unsafePartial \((Left p : Right o : Nil) × k) ->
@@ -553,7 +548,6 @@ orElseFwd λ α = case _ of
       pushPatt (Right (PListNext p o)) k
    pushPattFor (Right PListEnd) = \(_ × k) ->
       pushPatt (Right PListEnd) k
-   pushPattFor (Left (PConstrKw _ _ _)) = \_ -> error absurd -- expanded upstream
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left pVarAnon
@@ -653,8 +647,7 @@ instance Show a => Show (ParagraphElem a) where
 
 instance BV Pattern where
    bv (PVar x) = Set.singleton x
-   bv (PConstr _ ps) = Set.unions (bv <$> ps)
-   bv (PConstrKw _ ps xps) = Set.unions (bv <$> ps) ∪ Set.unions ((bv <<< snd) <$> xps)
+   bv (PConstr _ ps xps) = Set.unions (bv <$> ps) ∪ Set.unions ((bv <<< snd) <$> xps)
    bv (PRecord xps) = Set.unions ((bv <<< snd) <$> xps)
    bv PListEmpty = Set.empty
    bv (PListNonEmpty p lr) = bv p ∪ bv lr
@@ -670,8 +663,7 @@ instance FV (Expr a) where
    fv (Int _ _) = Set.empty
    fv (Float _ _) = Set.empty
    fv (Str _ _) = Set.empty
-   fv (Constr _ c es) = Set.singleton (head c) ∪ Set.unions (fv <$> es)
-   fv (ConstrKw _ c es xes) = Set.singleton (head c) ∪ Set.unions (fv <$> es) ∪ Set.unions ((fv <<< snd) <$> xes)
+   fv (Constr _ c es xes) = Set.singleton (head c) ∪ Set.unions (fv <$> es) ∪ Set.unions ((fv <<< snd) <$> xes)
    fv (Dictionary _ entries) = Set.unions ((\(k × v) -> fv k ∪ fv v) <$> entries)
    fv (Matrix _ body (x × y) source) = (fv body \\ (Set.singleton x ∪ Set.singleton y)) ∪ fv source
    fv (Lambda clause) = fv clause
