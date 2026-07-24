@@ -47,6 +47,7 @@ illFormed_cases :: Array IllFormedSpec
 illFormed_cases =
    [ { file: "bare_module.fld", expected_error: "module qual_lib is not a value" }
    , { file: "capture_redefined_class.fld", expected_error: "Captured variable reassigned: C" }
+   , { file: "constr_dup_keyword.fld", expected_error: "Class Coord keyword fields mismatch: expected (\"x\" : \"y\" : Nil), got (\"x\" : \"x\" : \"y\" : Nil)" }
    , { file: "construct_non_leaf.fld", expected_error: "Cannot construct non-leaf class: Base" }
    , { file: "dict_attr.fld", expected_error: "Found { a: 1 }, expected object" }
    , { file: "extend_imported_class.fld", expected_error: "Cannot extend imported class: Base" }

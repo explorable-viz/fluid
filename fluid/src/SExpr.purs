@@ -4,21 +4,20 @@ import Prelude hiding (absurd, top, unless)
 
 import Bind (Bind, Name, Var, dottedName, varAnon, (↦))
 import Bind (keys) as B
-import Data.Set (Set, empty, fromFoldable, insert, member, singleton, unions) as Set
+import Data.Set (Set, empty, insert, member, singleton, unions) as Set
 import Control.Monad.Error.Class (class MonadError)
 import Data.Bitraversable (rtraverse)
 import Data.Either (Either(..))
 import Data.Foldable (for_, length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, find, take, unzip, zip, zipWith, (:))
+import Data.List (List(..), drop, find, sort, take, unzip, zip, zipWith, (:))
 import Data.List (mapMaybe) as L
 import Data.List.NonEmpty (NonEmptyList(..), foldr, groupBy, head, last, toList)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, second)
-import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
@@ -263,7 +262,7 @@ exprFwd (Constr α c ss) = do
 exprFwd (ConstrKw α c es xes) = do
    λ <- askClasses
    _ <- ctrSig λ "construct" (dottedName c)
-   reordered <- reorderKw λ c (length es) xes
+   reordered <- positionaliseKw λ c (length es) xes
    E.Constr α c <$> traverse desug (es <> reordered)
 exprFwd (Dictionary α sss) = do
    let ks × ss = unzip sss
@@ -434,16 +433,14 @@ popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
 popRecordFwd _ Nil = pure Nil
 popRecordFwd _ _ = throw (shapeMismatch unit)
 
-reorderKw :: forall m b. MonadError Error m => ClassTable -> Name -> Int -> List (Bind b) -> m (List b)
-reorderKw λ c n xbs = do
+positionaliseKw :: forall m b. MonadError Error m => ClassTable -> Name -> Int -> List (Bind b) -> m (List b)
+positionaliseKw λ c n xbs = do
    fs <- maybe (throw $ "Unknown dataclass: " <> dottedName c) pure (fieldsOf λ (dottedName c))
-   let expected = Set.fromFoldable (drop n fs)
-   let provided = Set.fromFoldable (xbs <#> fst)
-   when (expected /= provided) $ throw $
-      "Class " <> last c <> " keyword fields mismatch: expected " <> show (S.toUnfoldable expected :: List Var)
-         <> ", got "
-         <> show (S.toUnfoldable provided :: List Var)
-   pure $ drop n fs <#> \f ->
+   let remaining = drop n fs
+   let provided = xbs <#> fst
+   when (sort provided /= sort remaining) $ throw $
+      "Class " <> last c <> " keyword fields mismatch: expected " <> show remaining <> ", got " <> show provided
+   pure $ remaining <#> \f ->
       unsafePartial $ case find (\(k ↦ _) -> k == f) xbs of
          Just (_ ↦ b) -> b
 
@@ -453,7 +450,7 @@ expandKw p = do
    go λ p
    where
    go λ (PConstrKw c ps xps) = do
-      reordered <- reorderKw λ c (length ps) xps
+      reordered <- positionaliseKw λ c (length ps) xps
       PConstr c <$> traverse (go λ) (ps <> reordered)
    go λ (PConstr c ps) = PConstr c <$> traverse (go λ) ps
    go λ (PRecord xps) = PRecord <$> traverse (traverse (go λ)) xps
