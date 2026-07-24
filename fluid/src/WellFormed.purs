@@ -29,15 +29,13 @@ import Util.Set ((\\), (∪))
 
 -- Member context of a loaded module and its checked body. The program is
 -- recorded too, under __main__, with no body: it is checked separately and
--- may return, so it has no S.Module. The table memoises the load judgement;
--- loading is pure, so the spec re-derives freely.
+-- may return, so it has no S.Module. The table memoises the load judgement.
 type LoadedModule = { cxt :: Cxt, mod :: Maybe (S.Module (WfResult VarCxt)) }
 
 type LoadM = StateT (Map.Map ModuleName LoadedModule) (Either String)
 
 -- Load each module on demand as its import is checked. The recursion has no
--- cycle guard; it terminates because the dependency graph is acyclic (checked
--- at parse time).
+-- cycle guard; it terminates because the dependency graph is acyclic.
 checkProgram
    :: Map.Map ModuleName (Raw S.Module)
    -> Cxt
