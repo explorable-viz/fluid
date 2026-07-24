@@ -56,8 +56,7 @@ instance LoadFile Aff where
             Right _ -> Left A.RequestFailedError
             Left err -> Left err
 
-   -- HTTP cannot probe for a directory, so a package directory with no same-named .fld is
-   -- invisible here; it enters scope only via prefix-closure of a loaded descendant.
+   -- No reliable directory check over HTTP.
    isDirectoryPath _ = pure false
 
 newtype File = File String

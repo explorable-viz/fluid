@@ -23,7 +23,6 @@ import Eval (GraphConfig, evalImport, loadPredefined)
 import Expr (Import(..)) as E
 import Expr (Module, Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, hasDirectory, loadFile, loadFileMaybe, withClasses)
-
 import Graph (Vertex, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
@@ -169,10 +168,10 @@ parseModules
    => List S.Import
    -> m (Map ModuleName (Raw S.Module))
 parseModules imports = do
-   imported <- traverse (importDeps mainModule) imports
-   let roots = predefined <> (imported >>= _.load)
-   importGraph × mods <- collectModules Set.empty Map.empty Map.empty roots
-   orThrow (checkAcyclic importGraph (imported >>= _.edges))
+   deps <- traverse (importDeps mainModule) imports
+   let roots = predefined <> (deps >>= _.load)
+   depGraph × mods <- collectModules Set.empty Map.empty Map.empty roots
+   orThrow (checkAcyclic depGraph (deps >>= _.edges))
    -- prefix-closed: a package with no source file of its own is an empty module
    let ancestors = Set.fromFoldable ((Set.toUnfoldable (Map.keys mods) :: List ModuleName) >>= parents)
    pure (mods `Map.union` constMap (S.Module Nil Nil) ancestors)
@@ -185,16 +184,16 @@ parseModules imports = do
       -> Map ModuleName (Raw S.Module)
       -> List ModuleName
       -> m (DependencyGraph × Map ModuleName (Raw S.Module))
-   collectModules visited importGraph mods pending = case pending of
-      Nil -> pure $ (importGraph × mods)
+   collectModules visited depGraph mods pending = case pending of
+      Nil -> pure $ (depGraph × mods)
       mod : rest ->
          if Set.member mod visited then
-            collectModules visited importGraph mods rest
+            collectModules visited depGraph mods rest
          else do
             mod' × edges × toLoad <- parseAndCollect mod
             collectModules
                (Set.insert mod visited)
-               (Map.insert mod edges importGraph)
+               (Map.insert mod edges depGraph)
                (Map.insert mod mod' mods)
                (toLoad <> rest)
 
@@ -205,9 +204,9 @@ parseModules imports = do
       loadFileMaybe fluidSrcPaths file >>= case _ of
          Just src -> do
             mod × _ <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
-            imported <- case mod of S.Module is _ -> traverse (importDeps path) is
-            let edges = imported >>= _.edges
-            let toLoad = predefinedDeps path <> (imported >>= _.load)
+            deps <- case mod of S.Module is _ -> traverse (importDeps path) is
+            let edges = deps >>= _.edges
+            let toLoad = predefinedDeps path <> (deps >>= _.load)
             pure $ mod × edges × toLoad
          Nothing -> hasDirectory fluidSrcPaths (File (pathName path)) >>= case _ of
             true -> pure (S.Module Nil Nil × Nil × Nil)
