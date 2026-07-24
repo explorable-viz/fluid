@@ -42,15 +42,12 @@ import Val (BaseVal(..)) as V
 
 type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
 
-hasSourceFile :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
-hasSourceFile q = do
+isModule :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
+isModule q = do
    FileCxt { fluidSrcPaths } <- ask
-   isJust <$> loadFileMaybe fluidSrcPaths (File (pathName q <> fluidExtension))
-
-hasSourceDir :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
-hasSourceDir q = do
-   FileCxt { fluidSrcPaths } <- ask
-   hasDirectory fluidSrcPaths (File (pathName q))
+   loadFileMaybe fluidSrcPaths (File (pathName q <> fluidExtension)) >>= case _ of
+      Just _ -> pure true
+      Nothing -> hasDirectory fluidSrcPaths (File (pathName q))
 
 parents :: ModuleName -> List ModuleName
 parents q = case NEL.fromList (NEL.unsnoc q).init of
@@ -67,18 +64,17 @@ importDeps
    -> S.Import
    -> m { edges :: List ModuleName, load :: List ModuleName }
 importDeps enclosing (S.Import q f) = do
-   ps <- keepModules hasSourceFile (parents q)
+   ps <- keepModules (parents q)
    subs <- case f of
       Nothing -> pure Nil
-      Just xs -> keepModules isModule ((NEL.snoc q) <$> xs)
+      Just xs -> keepModules ((NEL.snoc q) <$> xs)
    let
       prefixEdges = case f of
          Nothing -> filter (_ /= enclosing) (parents q)
          Just _ -> filter (\p -> not (p `prefixOf` enclosing)) (parents q)
    pure { edges: (q : subs) <> prefixEdges, load: ps <> (q : subs) }
    where
-   isModule m' = (||) <$> hasSourceFile m' <*> hasSourceDir m'
-   keepModules p = map catMaybes <<< traverse (\m' -> p m' <#> \b -> whenever b m')
+   keepModules = map catMaybes <<< traverse (\m' -> isModule m' <#> \b -> whenever b m')
 
 checkAcyclic :: DependencyGraph -> List ModuleName -> Either String Unit
 checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
@@ -213,6 +209,6 @@ parseModules imports = do
             let edges = imported >>= _.edges
             let toLoad = predefinedDeps path <> (imported >>= _.load)
             pure $ mod × edges × toLoad
-         Nothing -> hasSourceDir path >>= case _ of
+         Nothing -> hasDirectory fluidSrcPaths (File (pathName path)) >>= case _ of
             true -> pure (S.Module Nil Nil × Nil × Nil)
             false -> loadFile fluidSrcPaths file *> pure (S.Module Nil Nil × Nil × Nil)
