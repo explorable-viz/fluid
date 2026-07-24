@@ -5,6 +5,7 @@ import Prelude hiding (between)
 import Bind (Bind, (↦))
 import Data.Array (filter)
 import Data.Either (Either(..))
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split, stripPrefix, stripSuffix, trim)
 import Data.String as String
@@ -96,7 +97,7 @@ fluidLibraryPath = "node_modules/@fluid-org/fluid"
 evaluate :: EvalArgs -> Aff (Val Unit)
 evaluate (EvalArgs { local, fileName, fluidSrcPath }) = do
    let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
-   runNodeT (FileCxt { fluidSrcPaths }) $ do
+   runNodeT (FileCxt { fluidSrcPaths, classes: Map.empty }) $ do
       fluidSrc <- loadFile fluidSrcPaths (File fileName)
       { e, gconfig } <- prepConfig primitives fluidSrc
       { outα } <- graphEval gconfig e
@@ -105,7 +106,7 @@ evaluate (EvalArgs { local, fileName, fluidSrcPath }) = do
 parse :: EvalArgs -> Aff String
 parse (EvalArgs { local, fileName, fluidSrcPath }) = do
    let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
-   runNodeT (FileCxt { fluidSrcPaths }) $ do
+   runNodeT (FileCxt { fluidSrcPaths, classes: Map.empty }) $ do
       fluidSrc <- loadFile fluidSrcPaths (File fileName)
       case (parseProgram fluidSrc) of
          Left err -> pure err

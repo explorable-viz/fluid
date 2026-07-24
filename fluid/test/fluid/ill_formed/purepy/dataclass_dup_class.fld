@@ -1,0 +1,9 @@
+@dataclass
+class Point:
+  x: Any
+
+@dataclass
+class Point:
+  y: Any
+
+return 0

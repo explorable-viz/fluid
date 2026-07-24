@@ -1,3 +1,5 @@
+from lib.view import Paragraph, Text
+
 name = "Alice"
 
 # Mix of implicit and explicit coercions

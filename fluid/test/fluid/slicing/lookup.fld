@@ -1,4 +1,4 @@
-import slicing.lookup_inputs
+from slicing.lookup_inputs import k, tree
 
 def lookup(k, Empty):
   return Nothing

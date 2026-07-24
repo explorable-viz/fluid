@@ -1,13 +1,15 @@
-import dataset.energy_data
+from dataset.energy_data import renewables, nonRenewables
+
+from lib.view import ScatterPlot
 
 def sumNonRenewables(x):
-  return ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
+  return ((x["nuclearCap"] + x["petrolCap"]) + x["gasCap"]) + x["coalCap"]
 
 def country_check(name, x):
-  return name == x.country
+  return name == x["country"]
 
 def year_check(year, x):
-  return year == x.year
+  return year == x["year"]
 
 def energy(year, c_names):
   rens2018 = filter(year_check(year), renewables)
@@ -16,26 +18,26 @@ def energy(year, c_names):
   def energy_per_country(c_name):
     filteredRen = filter(country_check(c_name), rens2018)
     non_ren_x = head(filter(country_check(c_name), nonrens2018))
-    rensOut = sum(map(lambda x: x.output, filteredRen))
-    rensCap = sum(map(lambda x: x.capacity, filteredRen))
+    rensOut = sum(map(lambda x: x["output"], filteredRen))
+    rensCap = sum(map(lambda x: x["capacity"], filteredRen))
     nonRensCap = sumNonRenewables(non_ren_x)
     return {
       name: c_name,
       totalCap: rensCap + nonRensCap,
       nonRenewables: nonRensCap,
-      renCapFactor: (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
+      renCapFactor: (rensOut + non_ren_x["nuclearOut"]) / (rensCap + non_ren_x["nuclearCap"])
     }
 
   return map(energy_per_country, c_names)
 
-ScatterPlot({
-  caption: "Clean energy efficiency against proportion of renewable energy cap",
-  points: [{
-    x: country.nonRenewables / country.totalCap,
-    y: country.renCapFactor
+ScatterPlot(
+  caption="Clean energy efficiency against proportion of renewable energy cap",
+  points=[{
+    x: country["nonRenewables"] / country["totalCap"],
+    y: country["renCapFactor"]
   } for country in energy(2018, ["USA"])],
-  labels: {
+  labels={
     x: "Renewables/TotalEnergyCap",
     y: "Clean Capacity Factor"
   }
-})
+)

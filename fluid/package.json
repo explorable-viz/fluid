@@ -30,6 +30,7 @@
     "build": "./script/build.sh",
     "build-prod": "BUILD_ENV=prod ./script/build.sh",
     "build-publish": "./script/build-publish.sh",
+    "build-strict": "./script/build-strict.sh",
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
     "fluid": "node ./dist/fluid/shared/fluid.mjs",

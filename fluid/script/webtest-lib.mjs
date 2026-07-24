@@ -22,7 +22,25 @@ async function launchBrowser(browserName) {
       browser: browserName,
       headless: HEADLESS,
       defaultViewport: VIEWPORT,
+      protocolTimeout: 300000,
    })
+}
+
+// Relaunching a browser fails intermittently.
+const browsers = {}
+
+async function getBrowser(browserName) {
+   if (!browsers[browserName]) {
+      browsers[browserName] = await launchBrowser(browserName)
+   }
+   return browsers[browserName]
+}
+
+export async function closeBrowsers() {
+   for (const name of Object.keys(browsers)) {
+      await browsers[name].close()
+      delete browsers[name]
+   }
 }
 
 export async function waitFor(page, selector, { visible = true } = {}) {
@@ -117,6 +135,7 @@ export async function checkWidthApprox(page, selector, expected, tolerance = 5) 
 }
 
 export async function clickToggle(page) {
+   await waitFor(page, "body.app-ready")
    await waitFor(page, "#grid.data-pane-hidden")
    const toggle = "button[title='Show data pane']"
    await waitFor(page, toggle)
@@ -127,14 +146,21 @@ export async function clickToggle(page) {
 async function browserTests(url, browserName, viewport, tests) {
    const label = viewport === MOBILE ? "mobile" : "desktop"
    log(`browserTests: ${browserName} (${label})`)
-   const browser = await launchBrowser(browserName)
+   const browser = await getBrowser(browserName)
    const page = await browser.newPage()
+   const browserErrors = []
+   const noteError = e => { log(`[browser error] ${e}`); browserErrors.push(e) }
+   // Fluid surfaces uncaught errors via console.log ("Error: ..."), so match on
+   // text, not level (this also skips the benign 404 resource-load console.errors).
+   page.on("console", msg => { const t = msg.text(); if (t.startsWith("Error:")) noteError(t) })
+   page.on("pageerror", err => { if (!/Permission denied to access property/.test(err.message)) noteError(err.message) })
    await page.setViewport(viewport)
    for (const test of tests) {
       await page.goto(url)
       await test(page)
    }
-   await browser.close()
+   await page.close()
+   if (browserErrors.length) testOutcome(false, `browser error(s): ${browserErrors.join("; ")}`)
 }
 
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:8080"

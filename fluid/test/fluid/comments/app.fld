@@ -1,1 +1,3 @@
+import lib.view
+
 @doc(f"""This function application returns the length of a list.""") length([1, 2])

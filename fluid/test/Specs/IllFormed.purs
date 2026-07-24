@@ -6,26 +6,70 @@ import Test.Util.Suite (IllFormedSpec)
 -- pure-py-spec/test/ill-formed/semantic.
 purepy_cases :: Array IllFormedSpec
 purepy_cases =
-   [ { file: "purepy/unreachable.fld", expected_error: "Unreachable statement" }
-   , { file: "purepy/mutual_split.fld", expected_error: "Unbound name: odd" }
+   [ { file: "purepy/attr_non_object.fld", expected_error: "Found 5, expected object" }
+   , { file: "purepy/attr_unknown_member.fld", expected_error: "module qual_lib has no member unknown" }
    , { file: "purepy/cond_partial_def.fld", expected_error: "Not definitely assigned: x" }
+   , { file: "purepy/constr_bad_keyword.fld", expected_error: "Class Coord keyword fields mismatch: expected (\"y\" : Nil), got (\"z\" : Nil)" }
+   , { file: "purepy/construct_arity.fld", expected_error: "Point expects 2 argument(s); got 3" }
+   , { file: "purepy/dataclass_dup_class.fld", expected_error: "Duplicate class declaration: Point" }
+   , { file: "purepy/dataclass_dup_field.fld", expected_error: "Duplicate field names in class: Point" }
+   , { file: "purepy/dataclass_field_default.fld", expected_error: "\"ParseError on line 3, column 10:\\nExpected EOF\"" }
+   , { file: "purepy/dataclass_inherited_field_clash.fld", expected_error: "Class Sub redeclares inherited field(s): (\"x\" : Nil)" }
+   , { file: "purepy/dataclass_int_field.fld", expected_error: "\"ParseError on line 3, column 6:\\nExpected uppercase letter\"" }
+   , { file: "purepy/dataclass_two_bases.fld", expected_error: "\"ParseError on line 10, column 10:\\nExpected ')'\"" }
+   , { file: "purepy/dataclass_unknown_base.fld", expected_error: "Unknown class: Unknown" }
+   , { file: "purepy/duplicate_def_in_region.fld", expected_error: "Shape mismatch" }
+   , { file: "purepy/forward_class_in_def.fld", expected_error: "Unknown dataclass: Point" }
+   , { file: "purepy/forward_class_top.fld", expected_error: "Unknown dataclass: Point" }
+   , { file: "purepy/from_import_unknown_member.fld", expected_error: "Cannot import name baz from module module.two_vals_lib" }
+   , { file: "purepy/import_in_def.fld", expected_error: "\"ParseError on line 2, column 10:\\nimports must precede statements\"" }
+   , { file: "purepy/import_in_if.fld", expected_error: "\"ParseError on line 2, column 10:\\nimports must precede statements\"" }
+   , { file: "purepy/import_in_match_case.fld", expected_error: "\"ParseError on line 3, column 12:\\nimports must precede statements\"" }
+   , { file: "purepy/match_var_leak.fld", expected_error: "Not definitely assigned: x" }
+   , { file: "purepy/mutual_def_block_local.fld", expected_error: "Not definitely assigned: g" }
+   , { file: "purepy/mutual_split.fld", expected_error: "Unbound name: odd" }
+   , { file: "purepy/mutual_split_by_assign.fld", expected_error: "Unbound name: g" }
    , { file: "purepy/no_else.fld", expected_error: "Not definitely assigned: x" }
+   , { file: "purepy/pat_class_arity.fld", expected_error: "Assertion failure: " }
+   , { file: "purepy/pat_class_bad_keyword.fld", expected_error: "Class Coord keyword fields mismatch: expected (\"y\" : Nil), got (\"z\" : Nil)" }
+   , { file: "purepy/pat_class_unknown.fld", expected_error: "Unknown dataclass: NotAClass" }
+   , { file: "purepy/self_capture.fld", expected_error: "Variable captured by its own definition: x" }
+   , { file: "purepy/self_capture_lambda.fld", expected_error: "Variable captured by its own definition: f" }
    , { file: "purepy/shadow_captured.fld", expected_error: "Captured variable reassigned: x" }
    , { file: "purepy/shadow_captured_global.fld", expected_error: "Captured variable reassigned: x" }
    , { file: "purepy/shadow_captured_mutual.fld", expected_error: "Captured variable reassigned: g" }
-   , { file: "purepy/self_capture.fld", expected_error: "Variable captured by its own definition: x" }
-   , { file: "purepy/self_capture_lambda.fld", expected_error: "Variable captured by its own definition: f" }
    , { file: "purepy/unbound_local.fld", expected_error: "Not definitely assigned: y" }
-   , { file: "purepy/duplicate_def_in_region.fld", expected_error: "Shape mismatch" }
-   , { file: "purepy/mutual_split_by_assign.fld", expected_error: "Unbound name: g" }
-   , { file: "purepy/mutual_def_block_local.fld", expected_error: "Not definitely assigned: g" }
-   , { file: "purepy/match_var_leak.fld", expected_error: "Not definitely assigned: x" }
+   , { file: "purepy/unreachable.fld", expected_error: "Unreachable statement" }
    ]
 
 -- Fluid-specific ill-formed cases (no PurePy correspondent).
 illFormed_cases :: Array IllFormedSpec
 illFormed_cases =
-   [ { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }
-   , { file: "match_partial_def.fld", expected_error: "Not definitely assigned: result" }
+   [ { file: "bare_module.fld", expected_error: "module qual_lib is not a value" }
+   , { file: "capture_redefined_class.fld", expected_error: "Captured variable reassigned: C" }
+   , { file: "constr_dup_keyword.fld", expected_error: "Class Coord keyword fields mismatch: expected (\"x\" : \"y\" : Nil), got (\"x\" : \"x\" : \"y\" : Nil)" }
+   , { file: "construct_non_leaf.fld", expected_error: "Cannot construct non-leaf class: Base" }
+   , { file: "dict_attr.fld", expected_error: "Found { a: 1 }, expected object" }
+   , { file: "extend_imported_class.fld", expected_error: "Cannot extend imported class: Base" }
+   , { file: "from_import_arity.fld", expected_error: "Derived expects 2 argument(s); got 1" }
+   , { file: "from_import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
+   , { file: "from_import_loads_ancestor.fld", expected_error: "AssertionError" }
+   , { file: "from_import_selective.fld", expected_error: "Unbound name: bar" }
+   , { file: "from_import_unassigned.fld", expected_error: "Not definitely assigned: x" }
+   , { file: "import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module module.bad_pkg" }
+   , { file: "import_cycle.fld", expected_error: "import cycle: module.cyc_a -> module.cyc_b -> module.cyc_a" }
    , { file: "match_exhaustive_assign.fld", expected_error: "Not definitely assigned: result" }
+   , { file: "match_non_leaf.fld", expected_error: "Cannot match non-leaf class: Base" }
+   , { file: "match_partial_def.fld", expected_error: "Not definitely assigned: result" }
+   , { file: "module_returns.fld", expected_error: "Module body cannot return\nChecking module module.return_mod" }
+   , { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }
+   , { file: "own_descendant_import.fld", expected_error: "Module module.od_pkg cannot import its own descendant module.od_pkg.sub\nChecking module module.od_pkg" }
+   , { file: "qualified_class_unknown.fld", expected_error: "Unknown dataclass: module.shape_lib.Missing" }
+   , { file: "reexport_from_import.fld", expected_error: "Cannot import name foo from module module.reexport_mid" }
+   , { file: "reexport_import_alias.fld", expected_error: "Cannot import name attr_lib from module module.alias_mid" }
+   , { file: "self_import.fld", expected_error: "import cycle: module.selfy -> module.selfy" }
+   , { file: "submodule_name_clash.fld", expected_error: "Submodule name clash in module module.clash_pkg: sub\nChecking module module.clash_pkg" }
+   , { file: "submodule_self_import.fld", expected_error: "import cycle: module.ssi.b -> module.ssi.b" }
+   , { file: "subscript_non_dict.fld", expected_error: "Found Point(1, 2), expected dict" }
+   , { file: "use_before_import.fld", expected_error: "\"ParseError on line 2, column 6:\\nimports must precede statements\"\nLoading module use_before_import_mod" }
    ]

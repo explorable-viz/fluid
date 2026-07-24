@@ -70,7 +70,7 @@ runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVert
 runWithGraphT m αs = do
    g × a <- freezeGraph m αs
    -- only check one direction for now
-   assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList mempty (toEdgeList g)) $
+   assertWhen checking.edgeListGC "edgeListGC" (\_ -> showGraph g == showGraph (fromEdgeList mempty (toEdgeList g) :: g)) $
       pure (g × a)
 
 freezeGraph :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)

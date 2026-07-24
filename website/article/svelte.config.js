@@ -7,6 +7,9 @@ const config = {
 
 	kit: {
 		adapter: adapter(),
+		alias: {
+			$shared: '../src/lib'
+		},
 		paths: {
 			base: process.env.BASE_PATH || ''
 		}

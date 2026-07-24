@@ -8,6 +8,7 @@ import Affjax.ResponseFormat (string)
 import Affjax.StatusCode (StatusCode(..))
 import Affjax.Web (defaultRequest, request)
 import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT)
+import Control.Monad.Reader (class MonadReader, local)
 import Control.Monad.State (StateT)
 import Control.Monad.Writer (WriterT, lift)
 import Data.Array (foldM)
@@ -15,22 +16,29 @@ import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
+import DataType (ClassTable)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import Util (type (×), (×), debug, error)
+import Util (type (×), (×), debug, orElse)
 
-newtype FileCxt = FileCxt { fluidSrcPaths :: Array Folder }
+newtype FileCxt = FileCxt { fluidSrcPaths :: Array Folder, classes :: ClassTable }
+
+withClasses :: forall m a. MonadReader FileCxt m => ClassTable -> m a -> m a
+withClasses classes = local (\(FileCxt r) -> FileCxt (r { classes = classes }))
 
 class LoadFile m where
    loadFileFromPath :: MonadError Error m => MonadAff m => File -> m (Maybe String)
+   isDirectoryPath :: MonadError Error m => MonadAff m => File -> m Boolean
 
 instance (Monoid w, MonadError Error m, MonadAff m, LoadFile m) => LoadFile (WriterT w m) where
    loadFileFromPath = lift <<< loadFileFromPath
+   isDirectoryPath = lift <<< isDirectoryPath
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (StateT s m) where
    loadFileFromPath = lift <<< loadFileFromPath
+   isDirectoryPath = lift <<< isDirectoryPath
 
 instance LoadFile Aff where
    loadFileFromPath (File path) = do
@@ -47,6 +55,9 @@ instance LoadFile Aff where
             Right resp' | resp'.status == StatusCode 200 -> Right (resp' × path)
             Right _ -> Left A.RequestFailedError
             Left err -> Left err
+
+   -- No reliable directory check over HTTP.
+   isDirectoryPath _ = pure false
 
 newtype File = File String
 newtype Folder = Folder String
@@ -69,14 +80,23 @@ infixr 5 prependFolder as </>
 fluidExtension :: String
 fluidExtension = ".fld"
 
-loadFile :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m String
-loadFile folders file = do
-   let paths = prependFolder <$> folders <*> [ file ]
-   result <- foldM step Nothing paths
-   case result of
-      Just contents -> pure contents
-      Nothing -> error ("File not found in any path: " <> show paths)
+searchPaths :: Array Folder -> File -> Array File
+searchPaths folders file = prependFolder <$> folders <*> [ file ]
+
+loadFileMaybe :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m (Maybe String)
+loadFileMaybe folders file = foldM step Nothing (searchPaths folders file)
    where
    step :: Maybe String -> File -> m (Maybe String)
    step (Just contents) _ = pure (Just contents)
    step Nothing path = loadFileFromPath path
+
+loadFile :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m String
+loadFile folders file =
+   loadFileMaybe folders file >>= orElse ("File not found in any path: " <> show (searchPaths folders file))
+
+hasDirectory :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m Boolean
+hasDirectory folders file = foldM step false (searchPaths folders file)
+   where
+   step :: Boolean -> File -> m Boolean
+   step true _ = pure true
+   step false path = isDirectoryPath path

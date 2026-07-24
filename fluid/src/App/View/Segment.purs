@@ -3,7 +3,7 @@ module App.View.Segment where
 import Prelude
 
 import App.Util (Attrs, Dimensions(..), Selectable, 𝕊(..), classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
-import App.Util.Selector (nthSegment)
+import App.Util.Selector (ConstrArg, nthSegment)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), bandwidth, colorScale, create, setAttrs)
 import App.View.Util.D3 as D3
@@ -45,8 +45,8 @@ instance Viewable Segment SegmentContext where
               , classes [ "bar" ]
               ]
 
-   setSelection :: SegmentContext -> Segment -> Select -> D3.Selection -> Effect Unit
-   setSelection { y_index } (Segment { z }) select segment = do
+   setSelection :: ConstrArg -> SegmentContext -> Segment -> Select -> D3.Selection -> Effect Unit
+   setSelection _ { y_index } (Segment { z }) select segment = do
       segment # setAttrs attrs >>= registerMouseListeners (select <<< uncurry (\_ -> nthSegment y_index) <<< selectionEventData')
       where
       attrs :: Attrs

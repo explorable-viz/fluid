@@ -15,7 +15,7 @@ import Foreign.Object (Object)
 import Foreign.Object as Object
 import Util (type (×), Endo, assert, definitely, error, orElse, (×))
 import Util.Set (class Set, (∈), size)
-import Data.Map (Map) as M
+import Data.Map (Map, lookup) as M
 import Data.Set as DSet
 
 -- Generalises Map but also supports a fixed key type, like Dict. Doesn't support transforming element type.
@@ -66,20 +66,23 @@ restrict xs = filterKeys (_ ∈ xs)
 intersection :: forall f a k b. MapF f k => f a -> f b -> f a
 intersection = intersectionWith const
 
-disjointUnion :: forall a k b. Map a k b => a -> Endo a
-disjointUnion = unionWith (\_ _ -> error "not disjoint")
+unionWith_never :: forall a k b. Map a k b => a -> Endo a
+unionWith_never = unionWith (\_ _ -> error "not disjoint")
 
 disjointUnion_inv :: forall a k b. Ord k => Map a k b => Set k -> a -> a × a
 disjointUnion_inv ks m = filterKeys (_ ∈ ks) m × filterKeys (_ `not <<< (∈)` ks) m
 
 lookup' :: forall m a k b. MonadThrow Error m => Show k => Map a k b => k -> a -> m b
-lookup' k γ = lookup k γ # orElse (keyExists k)
+lookup' k = lookup k >>> orElse (keyExists k)
 
 keyExists :: forall k. Show k => k -> String
 keyExists k = "Key " <> show k <> " exists in map"
 
 get :: forall a k b. Show k => Map a k b => k -> a -> b
 get k = lookup k >>> definitely (keyExists k)
+
+findWithDefault :: forall k v. Ord k => v -> k -> M.Map k v -> v
+findWithDefault d k = maybe d identity <<< M.lookup k
 
 -- Maybe push a semigroup requirement onto Map
 append :: forall a k b. Map a k b => a -> Endo a
@@ -88,7 +91,7 @@ append = unionWith (const identity)
 infixl 5 append as <+>
 
 append_inv :: forall a k b. Ord k => Map a k b => Set k -> a -> a × a
-append_inv xs γ = filterKeys (_ `not <<< (∈)` xs) γ × restrict xs γ
+append_inv xs m = filterKeys (_ `not <<< (∈)` xs) m × restrict xs m
 
 alter :: forall a k b. Map a k b => (Endo (Maybe b)) -> k -> Endo a
 alter f k m = case f (lookup k m) of

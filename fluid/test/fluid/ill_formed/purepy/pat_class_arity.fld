@@ -1,0 +1,10 @@
+@dataclass
+class Point:
+  x: Any
+  y: Any
+
+match Point(1, 2):
+  case Point():
+    pass
+
+return 0

@@ -5,7 +5,7 @@ f = { ["ab"]: 12 }
 {
   d: d,
   e: e,
-  e_ab: e.ab,
+  e_ab: e["ab"],
   f: dict_map((+)(1), e),
   g: dict_difference(e, f)
 }

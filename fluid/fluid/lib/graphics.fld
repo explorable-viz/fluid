@@ -2,6 +2,108 @@
 # type Colours = List Colour
 # type Cat = Str
 
+@dataclass
+class Point:
+  x: Any  # Float
+  y: Any  # Float
+
+@dataclass
+class Orient:
+  pass
+
+@dataclass
+class Horiz(Orient):
+  pass
+
+@dataclass
+class Vert(Orient):
+  pass
+
+@dataclass
+class GraphicsElement:
+  pass
+
+@dataclass
+class Circle(GraphicsElement):
+  x: Any  # Float
+  y: Any  # Float
+  radius: Any  # Float
+  fill: Any  # Colour
+
+@dataclass
+class Group(GraphicsElement):
+  children: Any  # List GraphicsElement
+
+@dataclass
+class Line(GraphicsElement):
+  p1: Any  # Point
+  p2: Any  # Point
+  stroke: Any  # Colour
+  strokeWidth: Any  # Float
+
+@dataclass
+class Polyline(GraphicsElement):
+  points: Any  # List Point
+  stroke: Any  # Colour
+  strokeWidth: Any  # Float
+
+@dataclass
+class Polymarkers(GraphicsElement):
+  points: Any  # List Point
+  markers: Any  # List GraphicsElement
+
+@dataclass
+class Rect(GraphicsElement):
+  x: Any  # Float
+  y: Any  # Float
+  width: Any  # Float
+  height: Any  # Float
+  fill: Any  # Colour
+
+# SVG text-anchor and alignment-baseline properties
+@dataclass
+class String(GraphicsElement):
+  x: Any  # Float
+  y: Any  # Float
+  str: Any  # Str
+  anchor: Any  # Str
+  baseline: Any  # Str
+
+# Margin is in parent reference frame; scaling applies to translated coordinates.
+@dataclass
+class Viewport(GraphicsElement):
+  x: Any  # Float
+  y: Any  # Float
+  width: Any  # Float
+  height: Any  # Float
+  fill: Any  # Colour
+  margin: Any  # Float
+  scale: Any  # Transform
+  translate: Any  # Transform
+  g: Any  # GraphicsElement
+
+@dataclass
+class Transform:
+  pass
+
+@dataclass
+class Scale(Transform):
+  x: Any  # Float
+  y: Any  # Float
+
+@dataclass
+class Translate(Transform):
+  x: Any  # Float
+  y: Any  # Float
+
+@dataclass
+class Marker:
+  pass
+
+@dataclass
+class Arrowhead(Marker):
+  pass
+
 # Group has location (0, 0) because it doesn't interfere with positioning of its children.
 # GraphicsElement -> Point
 def coords(Group(gs)):
@@ -28,11 +130,11 @@ def get_y(g):
 def set_x(x, Group(gs)):
   return error("Group has immutable coordinates")
 def set_x(x, Rect(_, y, w, h, fill)):
-  return Rect(x, y, w, h, fill)
+  return Rect(x=x, y=y, width=w, height=h, fill=fill)
 def set_x(x, String(_, y, str, anchor, baseline)):
   return String(x, y, str, anchor, baseline)
 def set_x(x, Viewport(_, y, w, h, fill, margin, scale, translate, g)):
-  return Viewport(x, y, w, h, fill, margin, scale, translate, g)
+  return Viewport(x=x, y=y, width=w, height=h, fill=fill, margin=margin, scale=scale, translate=translate, g=g)
 
 # (Point, Point) -> Point
 def dimensions2((Point(x1, y1), Point(x2, y2))):
@@ -101,10 +203,10 @@ colours2 = [
 # available area, possibly to zero, at which point nothing will be rendered.
 # Float -> GraphicsElement -> GraphicsElement
 def scale_to_width(w, Rect(x, y, _, h, fill)):
-  return Rect(x, y, w, h, fill)
+  return Rect(x=x, y=y, width=w, height=h, fill=fill)
 def scale_to_width(w, Viewport(x, y, w0, h, fill, margin, Scale(x_scale, y_scale), translate, g)):
   scale = Scale((x_scale * w) / w0, y_scale)
-  return Viewport(x, y, w, h, fill, margin, scale, translate, g)
+  return Viewport(x=x, y=y, width=w, height=h, fill=fill, margin=margin, scale=scale, translate=translate, g=g)
 
 # Float -> List GraphicsElement -> List GraphicsElement
 def stack_right(sep, gs):
@@ -112,7 +214,7 @@ def stack_right(sep, gs):
 
 # Float -> List GraphicsElement -> GraphicsElement
 def group_right(sep, gs):
-  return Viewport(0, 0, length(gs), maximum(map(height, gs)), "none", 0, Scale(1, 1), Translate(0, 0), Group(stack_right(sep, gs)))
+  return Viewport(x=0, y=0, width=length(gs), height=maximum(map(height, gs)), fill="none", margin=0, scale=Scale(1, 1), translate=Translate(0, 0), g=Group(stack_right(sep, gs)))
 
 # Heuristic saying how often to place a tick on an axis of length n.
 # Float -> Float
@@ -188,7 +290,7 @@ def cat_axis(orient, x, cat_values):
 
 # Float -> Float -> Float -> Float -> List GraphicsElement -> GraphicsElement
 def viewport(x_start, x_finish, y_finish, margin, gs):
-  return Viewport(0, 0, x_finish - x_start, y_finish, background_colour, margin, Scale(1, 1), Translate(0 - x_start, 0), Group(gs))
+  return Viewport(x=0, y=0, width=x_finish - x_start, height=y_finish, fill=background_colour, margin=margin, scale=Scale(1, 1), translate=Translate(0 - x_start, 0), g=Group(gs))
 
 # Plot a map of x values to lists of (categorical value, y value) pairs. Importantly, assume all data is uniform
 # (categorical keys are the same for each x value and are ordered the same each time).
@@ -203,7 +305,7 @@ def line_chart(with_axes, colours, x_start, data):
 
     return Group([
       Polyline(ps, colour, 1),
-      Polymarkers(ps, repeat(length(ps), Circle(0, 0, marker_radius, colour)))
+      Polymarkers(ps, repeat(length(ps), Circle(x=0, y=0, radius=marker_radius, fill=colour)))
     ])
 
   # List GraphicsElement
@@ -232,7 +334,7 @@ def categorical_chart(plot_value, with_axes, colours, sep, data):
 
 # Colours -> List a -> GraphicsElement
 def rects(colours, ns):
-  return zip_with(lambda colour, n: Rect(0, 0, 1, n, colour), colours, ns)
+  return zip_with(lambda colour, n: Rect(x=0, y=0, width=1, height=n, fill=colour), colours, ns)
 
 # First component of data (categorical value) currently ignored; values just mapped positionally to colors.
 # Can we use Group instead of Viewport here?
@@ -241,9 +343,9 @@ def stacked_bar(colours, ns):
   heights = map(snd, ns)
   subtotals = scanl1((+), 0, heights)
   dims = zip(0 :| subtotals, heights)
-  rects = map(lambda ((y, height), colour): Rect(0, y, 1, height, colour), zip(dims, colours))
+  rects = map(lambda ((y, height), colour): Rect(x=0, y=y, width=1, height=height, fill=colour), zip(dims, colours))
 
-  return Viewport(0, 0, 1, last(subtotals), "none", 0, Scale(1, 1), Translate(0, 0), Group(rects))
+  return Viewport(x=0, y=0, width=1, height=last(subtotals), fill="none", margin=0, scale=Scale(1, 1), translate=Translate(0, 0), g=Group(rects))
 
 # Bool -> Colours -> Float -> List (a, Float) -> GraphicsElement
 bar_chart = categorical_chart(rects)
@@ -261,7 +363,7 @@ stacked_bar_chart = categorical_chart(compose(map, stacked_bar))
 def caption(str, Viewport(x, y, w, h, fill, margin, scale, translate, g)):
   g_ = Group([
       String(x + w / 2, -2, str, "middle", "hanging"),
-      Viewport(0, 0, w, h, fill, margin, scale, translate, g)
+      Viewport(x=0, y=0, width=w, height=h, fill=fill, margin=margin, scale=scale, translate=translate, g=g)
     ])
 
-  return Viewport(x, y, w, h, background_colour, default_margin / 2 + 4, Scale(1, 1), Translate(0, 0), g_)
+  return Viewport(x=x, y=y, width=w, height=h, fill=background_colour, margin=default_margin / 2 + 4, scale=Scale(1, 1), translate=Translate(0, 0), g=g_)

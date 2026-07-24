@@ -3,13 +3,14 @@ module App.View.LineChart where
 import Prelude hiding (absurd)
 
 import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, contents, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
-import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
+import App.Util.Selector (ConstrArg, ViewSelSetter, listElement)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.Axes (Orientation, create_xAxis, create_yAxis)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
+import DataType (cLineChart, cLinePlot, f_plots, f_points)
 import Data.Array (concat, elemIndex, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
 import Data.Foldable (length)
@@ -18,7 +19,6 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd, uncurry)
-import DataType (f_plots)
 import Effect (Effect, foreachE)
 import Lattice ((∨), (∧))
 import Util (type (×), Endo, definitely', init, nonEmpty, tail, zipWith, (!), (×))
@@ -60,8 +60,8 @@ type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 instance Viewable LineChart Unit where
    isLeaf = const false
 
-   setSelection :: Unit -> LineChart -> Select -> D3.Selection -> Effect Unit
-   setSelection _ (LineChart { plots }) redraw rootElement = do
+   setSelection :: ConstrArg -> Unit -> LineChart -> Select -> D3.Selection -> Effect Unit
+   setSelection arg _ (LineChart { plots }) redraw rootElement = do
       points <- rootElement # selectAll ".linechart-point"
 
       foreachE points \point -> do
@@ -99,7 +99,7 @@ instance Viewable LineChart Unit where
 
       pointSel :: ViewSelSetter PointCoordinate
       pointSel { i, j } =
-         linePoint j >>> listElement i >>> dictVal f_plots >>> lineChart
+         listElement j >>> arg cLinePlot f_points >>> listElement i >>> arg cLineChart f_plots
 
    createElement :: Unit -> LineChart -> D3.Selection -> Effect D3.Selection
    createElement _ (LineChart { size, tickLabels, caption, plots }) parent = do

@@ -2,11 +2,18 @@ module Val where
 
 import Prelude hiding (absurd, append)
 
-import Bind (Var)
+import Bind (Name, Var)
+import DataType (class HasClasses)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
-import Control.Monad.Reader (class MonadReader)
-import Data.Array (concat, fromFoldable, (!!))
+import Control.Monad.Except (ExceptT)
+import Control.Monad.Reader (class MonadReader, ReaderT)
+import Control.Monad.State (StateT)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Writer (WriterT)
+import Data.Array (concat, (!!))
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
@@ -15,25 +22,23 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, unions)
 import Data.Set as Set
-import Data.String (joinWith)
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
-import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Expr (Elim, Stmt, fv)
+import Expr (Elim, Module, Stmt, fv)
 import File (class LoadFile, FileCxt)
+import ModuleGraph (ModuleName)
 import Foreign.Object (foldMap)
-import GaloisConnection (GaloisConnection(..))
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
 import Graph.WithGraph (class MonadWithGraphAlloc, new)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Pretty.Doc (Doc, text)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, error, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
+import Util (class IsEmpty, type (×), Endo, definitely, error, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
-import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
+import Util.Set (class Set, difference, empty, filter, size, union, (∈), (∪))
 
 data Val a = Val a (Maybe (Val a)) (BaseVal a)
 
@@ -51,7 +56,7 @@ data BaseVal a
    = Int Int
    | Float Number
    | Str String
-   | Constr Ctr (List (Val a)) -- always saturated
+   | Constr Name (List (Val a)) -- always saturated
    | Dictionary (DictRep a)
    | Matrix (MatrixRep a)
    | Fun (Fun a)
@@ -65,7 +70,7 @@ asVal e = if unpack typeName e == "Val" then Just (unpack unsafeCoerce e) else N
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)
    | Foreign ForeignOp (List (Val a)) -- never saturated
-   | PartialConstr Ctr (List (Val a)) -- never saturated
+   | PartialConstr Name (List (Val a)) -- never saturated
 
 class (Highlightable a, BoundedLattice a) <= Ann a
 
@@ -77,9 +82,40 @@ instance Highlightable a => Highlightable (a × b) where
 
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
+type ModuleStore =
+   { γ0 :: Env Vertex -- the members of the predefined modules (lib.builtins, which owns the primitives, and lib.prelude)
+   , moduleBody :: Map ModuleName (Module Vertex)
+   , moduleEnv :: Map ModuleName (Env Vertex)
+   }
+
+emptyModuleStore :: ModuleStore
+emptyModuleStore = { γ0: empty, moduleBody: Map.empty, moduleEnv: Map.empty }
+
+class Monad m <= HasModuleStore m where
+   moduleStore :: m ModuleStore
+   modifyModuleStore :: (ModuleStore -> ModuleStore) -> m Unit
+
+instance (Monad m, HasModuleStore m) => HasModuleStore (StateT s m) where
+   moduleStore = lift moduleStore
+   modifyModuleStore = lift <<< modifyModuleStore
+
+instance (Monad m, HasModuleStore m) => HasModuleStore (ReaderT r m) where
+   moduleStore = lift moduleStore
+   modifyModuleStore = lift <<< modifyModuleStore
+
+instance (Monad m, HasModuleStore m) => HasModuleStore (ExceptT e m) where
+   moduleStore = lift moduleStore
+   modifyModuleStore = lift <<< modifyModuleStore
+
+instance (Monad m, HasModuleStore m, Monoid w) => HasModuleStore (WriterT w m) where
+   moduleStore = lift moduleStore
+   modifyModuleStore = lift <<< modifyModuleStore
+
 type Op =
    forall m
-    . MonadWithGraphAlloc m
+    . HasClasses m
+   => HasModuleStore m
+   => MonadWithGraphAlloc m
    => MonadError Error m
    => MonadAff m
    => MonadReader FileCxt m
@@ -127,19 +163,6 @@ instance Map (Env a) String (Val a) where
 
 data EnvStmt a = EnvStmt (Env a) (Stmt a)
 
--- Goes from smaller environment to larger (injection into a biproduct).
-unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
-unrestrictGC γ xs =
-   assertWith ("Variable(s) " <> joinWith ", " (fromFoldable unfound <#> show) <> " are in environment ")
-      (isEmpty unfound) $ GC
-      { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ (topOf γ \\ γ')
-      , bwd: \γ' -> assert (keys γ' == keys γ) $ restrict xs γ'
-
-      }
-   where
-   unfound :: Set Var
-   unfound = xs \\ keys γ
-
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (Set.toUnfoldable xs) empty
    where
@@ -164,7 +187,7 @@ newtype MatrixRep a = MatrixRep (Array2 (Val a) × MatrixDim a × MatrixDim a)
 type Array2 a = Array (Array a)
 
 matrixGet :: forall a. Int -> Int -> MatrixRep a -> Val a
-matrixGet i j (MatrixRep (vss × _ × _)) = definitely "index out of bounds!" $ do
+matrixGet i j (MatrixRep (vss × _ × _)) = definitely "matrix indices within bounds" $ do
    us <- vss !! i
    us !! j
 

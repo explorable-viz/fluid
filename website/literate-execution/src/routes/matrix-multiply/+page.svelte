@@ -10,8 +10,9 @@
 		linking: false
 	};
 
-	const src = `import lib.matrix
-import matrixMultiply.matrices
+	const src = `from lib.matrix import mat_mul
+from lib.view import MultiView
+from matrixMultiply.matrices import a, b, c
 
 MultiView([
   mat_mul(mat_mul(a, b), c),

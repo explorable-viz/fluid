@@ -1,0 +1,2 @@
+import qual_lib
+qual_lib.foo

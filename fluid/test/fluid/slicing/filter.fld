@@ -1,4 +1,4 @@
-import slicing.filter_inputs
+from slicing.filter_inputs import n, xs
 
 def filter(p, []):
   return []

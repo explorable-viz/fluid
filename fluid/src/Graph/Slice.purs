@@ -5,16 +5,12 @@ import Prelude hiding (map)
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Data.List (List(..), (:))
 import Data.List as L
-import Data.Map (Map, lookup)
-import Data.Map as M
-import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
-import Data.Set (map) as Set
 import Data.Tuple (fst)
-import Graph (class Graph, DVertex'(..), Edge, HyperEdge, Vertex, addresses, inEdges, inEdges', outN, sinks, vertexData)
+import Graph (class Graph, DVertex'(..), HyperEdge, Vertex, addresses, outN, vertexData)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking)
-import Util (type (×), singleton, validateWhen, (×), (⊆))
+import Util (type (×), validateWhen, (×), (⊆))
 import Util.Set ((∈))
 
 type BwdConfig =
@@ -43,27 +39,3 @@ bwdSlice (αs × g) = fst $
    go { visited, αs: α : αs', pending } = do
       let βs = outN g α
       pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: (DVertex (α × vertexData g α) × βs) : pending }
-
-type PendingVertices = Map Vertex (Set Vertex)
-type FwdConfig =
-   { pending :: PendingVertices
-   , es :: List Edge
-   }
-
-fwdSlice :: forall g. Graph g => Set Vertex × g -> g
-fwdSlice (αs × g) = fst $
-   αds
-      # validateWhen checking.inputsAreSinks "inputs are sinks" (\_ -> αs ⊆ sinks g)
-      # runWithGraph_spy (tailRecM go { pending: M.empty, es: inEdges g αs })
-   where
-   go :: FwdConfig -> WithGraph (Step FwdConfig Unit)
-   go { es: Nil } = pure $ Done unit
-   go { pending, es: (α × β) : es } =
-      if βs == outN g α then do
-         extend (DVertex (α × vertexData g α)) βs
-         pure $ Loop { pending: M.delete α pending, es: inEdges' g α <> es }
-      else
-         pure $ Loop { pending: M.insert α βs pending, es }
-      where
-      βs = maybe (singleton β) (insert β) (lookup α pending)
-   αds = Set.map (\α -> DVertex (α × vertexData g α)) αs

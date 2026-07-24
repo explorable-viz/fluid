@@ -1,0 +1,11 @@
+@dataclass
+class C:
+   x: Any
+
+k = lambda z: C(z)
+
+@dataclass
+class C:
+   x: Any
+
+k

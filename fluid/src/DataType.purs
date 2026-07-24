@@ -2,21 +2,32 @@ module DataType where
 
 import Prelude hiding (absurd)
 
-import Bind (Var)
-import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Bind (Name, Var, dottedName, qual)
+import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Except.Trans (ExceptT)
+import Control.Monad.Reader.Trans (ReaderT)
+import Control.Monad.State.Trans (StateT)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Writer.Trans (WriterT)
 import Data.CodePoint.Unicode (isUpper)
+import Data.Foldable (for_)
 import Data.Function (on)
-import Data.List (List, concat, (:))
-import Data.List (fromFoldable) as L
+import Data.List (List(..), elemIndex, (:))
+import Data.List as List
+import Data.List.NonEmpty (NonEmptyList(..)) as NE
+import Data.NonEmpty ((:|))
+import Data.Map as Map
+import Data.Array (last) as A
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.String (Pattern(..), split)
 import Data.Set (Set)
-import Data.Set (map, fromFoldable, toUnfoldable) as S
+import Data.Set (fromFoldable, map, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
-import Data.Tuple (uncurry)
+import DefiniteAssignment (ClassEntry, classFor, fields)
 import Dict (Dict, fromFoldable)
 import Effect.Exception (Error)
-import Partial.Unsafe (unsafePartial)
-import Util (type (×), absurd, definitely', error, orElse, withMsg, (=<<<), (×), (≞))
+import Util (type (×), absurd, definitely, definitely', error, throw, whenever, withMsg, (×))
 import Util.Map (keys, lookup)
 
 type TypeName = String
@@ -31,7 +42,7 @@ isCtrName str = let c = definitely' $ charAt 0 str in isUpper (codePointFromChar
 isCtrOp :: String -> Boolean
 isCtrOp str = ':' == (definitely' $ charAt 0 str)
 
-showCtr :: Ctr -> String
+showCtr :: Var -> String
 showCtr c
    | isCtrName c = c
    | isCtrOp c = "(" <> c <> ")"
@@ -49,64 +60,126 @@ instance Eq DataType where
 instance Show DataType where
    show = typeName
 
-dataType :: TypeName -> Array (Ctr × CtrSig) -> DataType
-dataType name = map (uncurry (×)) >>> fromFoldable >>> DataType name
-
-ctrToDataType :: Dict DataType
-ctrToDataType =
-   dataTypes <#> (\d -> ctrs d # S.toUnfoldable <#> (_ × d)) # concat # fromFoldable
-
-class DataTypeFor a where
-   dataTypeFor :: forall m. MonadThrow Error m => a -> m DataType
-
-instance DataTypeFor Ctr where
-   dataTypeFor c = lookup c ctrToDataType # orElse ("Unknown constructor " <> showCtr c)
-
-instance DataTypeFor (Set Ctr) where
-   dataTypeFor cs = unsafePartial $ case S.toUnfoldable cs of c : _ -> dataTypeFor c
-
--- Sets must be non-empty, but this is a more convenient signature.
-consistentWith :: forall m. MonadError Error m => Set Ctr -> Set Ctr -> m Unit
-consistentWith cs cs' = void do
-   d <- dataTypeFor cs'
-   d' <- dataTypeFor cs'
-   withMsg ("constructors of " <> show d' <> " do not include " <> (show (S.map showCtr cs))) (d ≞ d')
-
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
-arity :: forall m. MonadThrow Error m => Ctr -> m Int
-arity c = do
-   DataType _ sigs <- dataTypeFor c
-   lookup c sigs # orElse absurd
+type ClassTable = Map.Map Ctr ClassEntry -- keyed by fully-qualified name
 
-checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
-checkArity c n = void $
-   withMsg ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
+class HasClasses m where
+   askClasses :: m ClassTable
+
+instance (Monad m, HasClasses m) => HasClasses (StateT s m) where
+   askClasses = lift askClasses
+
+instance (Monad m, HasClasses m) => HasClasses (ReaderT r m) where
+   askClasses = lift askClasses
+
+instance (Monad m, HasClasses m) => HasClasses (ExceptT e m) where
+   askClasses = lift askClasses
+
+instance (Monad m, HasClasses m, Monoid w) => HasClasses (WriterT w m) where
+   askClasses = lift askClasses
+
+-- FQN of the base of a class, resolved through its declaring context.
+baseOf :: ClassEntry -> Maybe Ctr
+baseOf cls = (dottedName <<< _.name) <$> (cls.base >>= classFor cls.cxt)
+
+-- Root of the hierarchy containing c.
+rootOf :: ClassTable -> Ctr -> Ctr
+rootOf λ c = case Map.lookup c λ >>= baseOf of
+   Just b -> rootOf λ b
+   Nothing -> c
+
+isLeaf :: ClassTable -> Ctr -> Boolean
+isLeaf λ c = List.all (\cls -> baseOf cls /= Just c) (Map.values λ)
+
+-- A datatype is a dataclass hierarchy, named by its root; every class belongs to the datatype of its
+-- hierarchy. Its constructors are the leaves: non-leaf classes are not constructable/matchable (#1530).
+dataType :: ClassTable -> Ctr -> Maybe DataType
+dataType λ c = Map.lookup c λ $> DataType root (fromFoldable sigs)
+   where
+   root = rootOf λ c
+   sigs = (Map.toUnfoldable λ :: List (Ctr × ClassEntry)) # List.mapMaybe
+      \(c' × cls) -> whenever (rootOf λ c' == root && isLeaf λ c') (c' × List.length (fields cls))
+
+fieldsOf :: ClassTable -> Ctr -> Maybe (List Var)
+fieldsOf λ c = Map.lookup c λ <#> fields
+
+arity :: ClassTable -> Ctr -> Maybe Int
+arity λ c = Map.lookup c λ <#> (fields >>> List.length)
+
+consistentWith :: forall m. MonadError Error m => ClassTable -> Set Ctr -> Set Ctr -> m Unit
+consistentWith λ cs cs' = case S.toUnfoldable cs' :: List Ctr of
+   Nil -> pure unit
+   c : _ -> case dataType λ c of
+      Nothing -> throw $ "Unknown dataclass: " <> showCtr (simpleName c)
+      Just d -> withMsg ("dataclasses of " <> show d <> " do not include " <> show (S.map (showCtr <<< simpleName) cs))
+         $ for_ (S.toUnfoldable cs :: List Ctr) \c'' -> case dataType λ c'' of
+              Just d'' | d'' == d -> pure unit
+              _ -> throw "mismatch"
+
+-- Datatype of c and c's signature within it; a non-leaf class has no signature (#1530).
+ctrSig :: forall m. MonadError Error m => ClassTable -> String -> Ctr -> m (DataType × CtrSig)
+ctrSig λ verb c = do
+   d@(DataType _ sigs) <- maybe (throw $ "Unknown dataclass: " <> showCtr (simpleName c)) pure (dataType λ c)
+   n <- maybe (throw $ "Cannot " <> verb <> " non-leaf class: " <> showCtr (simpleName c)) pure (lookup c sigs)
+   pure (d × n)
+
+checkArity :: forall m. MonadError Error m => ClassTable -> Ctr -> Int -> m Unit
+checkArity λ c n = do
+   _ × n' <- ctrSig λ "construct" c
+   when (n' /= n) $ throw $ showCtr (simpleName c) <> " arity " <> show n' <> "; got " <> show n
+
+type FieldIndex = Name -> FieldName -> Int
+
+fieldIndex :: ClassTable -> Name -> FieldName -> Int
+fieldIndex λ c field = definitely "field declared for class" do
+   fs <- fieldsOf λ (dottedName c)
+   elemIndex field fs
+
+-- Module paths for the builtin/library constructors (hard-coded for now).
+lib_builtins :: Var -> Name
+lib_builtins = qual (NE.NonEmptyList ("lib" :| "builtins" : Nil))
+
+lib_view :: Var -> Name
+lib_view = qual (NE.NonEmptyList ("lib" :| "view" : Nil))
+
+-- Last (simple) segment of a possibly-qualified constructor name.
+simpleName :: Ctr -> String
+simpleName c = fromMaybe c (A.last (split (Pattern ".") c))
 
 -- Used internally by primitives, desugaring or rendering layer.
-cDefault = "Default" :: Ctr -- Orientation
-cRotated = "Rotated" :: Ctr
-cBarChart = "BarChart" :: Ctr -- View
-cLineChart = "LineChart" :: Ctr
-cLinePlot = "LinePlot" :: Ctr
-cMultiView = "MultiView" :: Ctr
-cScatterPlot = "ScatterPlot" :: Ctr
-cParagraph = "Paragraph" :: Ctr
-cFalse = "False" :: Ctr -- Bool
-cTrue = "True" :: Ctr
-cNil = "Nil" :: Ctr -- List
-cCons = ":" :: Ctr
-cPair = "Pair" :: Ctr -- Pair
-cNothing = "Nothing" :: Ctr -- Maybe
-cJust = "Just" :: Ctr
-cNone = "None" :: Ctr -- NoneType
-cNoArgs = "__NoArgs" :: Ctr -- internal: zero-arg fn signature/call
-cText = "Text" :: Ctr
-cLink = "Link" :: Ctr
+cDefault = lib_view "Default" :: Name -- Orientation
+cRotated = lib_view "Rotated" :: Name
+cBarChart = lib_view "BarChart" :: Name -- View
+cLineChart = lib_view "LineChart" :: Name
+cLinePlot = lib_view "LinePlot" :: Name
+cMultiView = lib_view "MultiView" :: Name
+cScatterPlot = lib_view "ScatterPlot" :: Name
+cParagraph = lib_view "Paragraph" :: Name
+cFalse = lib_builtins "False" :: Name -- Bool
+cTrue = lib_builtins "True" :: Name
+cNil = lib_builtins "Nil" :: Name -- List
+cCons = lib_builtins "Cons" :: Name
+cPair = lib_builtins "Pair" :: Name -- Pair
+cNothing = lib_builtins "Nothing" :: Name -- Maybe
+cJust = lib_builtins "Just" :: Name
+cNone = lib_builtins "None" :: Name -- NoneType
+cNonEmpty = lib_builtins "NonEmpty" :: Name -- Tree
+cNoArgs = lib_builtins "__NoArgs" :: Name -- internal: zero-arg fn signature/call
+cText = lib_view "Text" :: Name
+cLink = lib_view "Link" :: Name
 -- Field names used internally by rendering layer.
 f_caption = "caption" :: FieldName
+f_fragments = "fragments" :: FieldName
+f_label = "label" :: FieldName
+f_text = "text" :: FieldName
+f_value = "value" :: FieldName
 f_colour = "c" :: FieldName
+f_fst = "fst" :: FieldName
+f_snd = "snd" :: FieldName
+f_left = "left" :: FieldName
+f_right = "right" :: FieldName
 f_height = "height" :: FieldName
 f_labels = "labels" :: FieldName
 f_legend = "legend" :: FieldName
@@ -117,96 +190,8 @@ f_segments = "segments" :: FieldName
 f_size = "size" :: FieldName
 f_stackedBars = "stackedBars" :: FieldName
 f_tickLabels = "tickLabels" :: FieldName
+f_views = "views" :: FieldName
 f_width = "width" :: FieldName
 f_x = "x" :: FieldName
 f_y = "y" :: FieldName
 f_z = "z" :: FieldName
-
-dataTypes :: List DataType
-dataTypes = L.fromFoldable
-   [
-     -- Core
-     dataType "Bool"
-        [ cTrue × 0
-        , cFalse × 0
-        ]
-   , dataType "InfNum"
-        [ "FNum" × 1
-        , "Infty" × 0
-        ]
-   , dataType "List"
-        [ cNil × 0
-        , cCons × 2 -- any × List any
-        ]
-   , dataType "Maybe"
-        [ cNothing × 0
-        , cJust × 1 -- any
-        ]
-   , dataType "NoneType"
-        [ cNone × 0
-        ]
-   , dataType "__NoArgs"
-        [ cNoArgs × 0
-        ]
-   , dataType "Ordering"
-        [ "GT" × 0
-        , "LT" × 0
-        , "EQ" × 0
-        ]
-   , dataType "Pair"
-        [ "Pair" × 2 -- any × any
-        ]
-   , dataType "Tree"
-        [ "Empty" × 0
-        , "NonEmpty" × 3 -- Tree any × any × Tree any
-        ]
-   -- View stuff
-   , dataType "LinePlot"
-        [ cLinePlot × 1
-        ]
-   , dataType "Orientation"
-        [ cDefault × 0
-        , cRotated × 0
-        ]
-   , dataType "View"
-        [ cBarChart × 1
-        , cLineChart × 1
-        , cMultiView × 1
-        , cParagraph × 1
-        , cScatterPlot × 1
-        ]
-   ,
-     -- Legacy graphics stuff
-     dataType "Point"
-        [ "Point" × 2 -- Float × Float
-        ]
-   , dataType "Orient"
-        [ -- iso to Bool
-          "Horiz" × 0
-        , "Vert" × 0
-        ]
-   , dataType "GraphicsElement"
-        [ "Circle" × 4 -- Float (x), Float (y), Float (radius), Str (fill)
-        , "Group" × 1 -- List GraphicsElement
-        , "Line" × 4 -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth)
-        , "Polyline" × 3 -- List Point (points), Str (stroke), Float (strokeWidth)
-        , "Polymarkers" × 2 -- List Point (points), List GraphicsElement (markers)
-        , "Rect" × 5 -- Float (x), Float (y), Float (width), Float (height), Str (fill)
-        -- SVG text-anchor and alignment-baseline properties
-        , "String" × 5 -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
-        -- margin is in *parent* reference frame; scaling applies to translated coordinates
-        , "Viewport" × 9 -- Float (x), Float (y), Float (width), Float (height), Str (fill),
-        -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
-        ]
-   , dataType "Transform"
-        [ "Scale" × 2 -- Float (x), Float (y)
-        , "Translate" × 2 -- Float (x), Float (y)
-        ]
-   , dataType "Marker"
-        [ "Arrowhead" × 0
-        ]
-   , dataType "ParaFragment"
-        [ cText × 1 -- Str (str)
-        , cLink × 2 --  Val v, Str (str)
-        ]
-   ]

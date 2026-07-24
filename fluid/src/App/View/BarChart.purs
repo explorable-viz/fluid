@@ -3,7 +3,7 @@ module App.View.BarChart where
 import Prelude hiding (absurd)
 
 import App.Util (Dimensions(..), Selectable, classes, contents)
-import App.Util.Selector (barChart, dictVal, listElement)
+import App.Util.Selector (ConstrArg, listElement)
 import App.View.Segment (Segment(..), Scales, indexCol)
 import App.View.StackedBar (StackedBar(..), StackedBarContext, barHeight)
 import App.View.Util (class Viewable, Select, createElement, setSelection)
@@ -12,6 +12,7 @@ import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
+import DataType (cBarChart, f_stackedBars)
 import Data.Array (range)
 import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
 import Data.Foldable (length)
@@ -20,7 +21,6 @@ import Data.Int (toNumber)
 import Data.Newtype (unwrap)
 import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
-import DataType (f_stackedBars)
 import Effect (Effect, foreachE)
 import Util ((!))
 
@@ -35,14 +35,14 @@ newtype BarChart = BarChart
 instance Viewable BarChart Unit where
    isLeaf = const false
 
-   setSelection :: Unit -> BarChart -> Select -> D3.Selection -> Effect Unit
-   setSelection _ chart@(BarChart { stackedBars }) select barChart' = do
+   setSelection :: ConstrArg -> Unit -> BarChart -> Select -> D3.Selection -> Effect Unit
+   setSelection arg _ chart@(BarChart { stackedBars }) select barChart' = do
       let props = barChartProps chart
       -- more robust to iterate over stackedBars and select ith DOM child instead?
       stackedBars' <- barChart' # selectAll ".stack"
       forWithIndex_ stackedBars' \i stack ->
-         setSelection props.stackedBarContext (stackedBars ! i)
-            (select <<< barChart <<< dictVal f_stackedBars <<< listElement i)
+         setSelection arg props.stackedBarContext (stackedBars ! i)
+            (select <<< arg cBarChart f_stackedBars <<< listElement i)
             stack
 
    createElement :: Unit -> BarChart -> D3.Selection -> Effect D3.Selection

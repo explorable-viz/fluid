@@ -1,4 +1,4 @@
-import slicing.matrix_update_inputs
+from slicing.matrix_update_inputs import pair
 
 image_ = [
   [15, 13, 6, 9, 16],

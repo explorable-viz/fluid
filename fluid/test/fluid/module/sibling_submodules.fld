@@ -1,0 +1,3 @@
+import module.pkg.a
+import module.pkg.b
+module.pkg.a.u + module.pkg.b.v

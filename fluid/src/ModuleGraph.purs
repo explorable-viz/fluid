@@ -1,17 +1,25 @@
 module ModuleGraph where
 
-import Data.List (List)
+import Prelude
+
+import Data.List (List(..), takeWhile, (:))
+import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map)
-import Expr (Module)
+import Data.NonEmpty ((:|))
+import Bind (Name)
 
-type ModuleName = String
+type ModuleName = Name
 
-type ModuleCxt a =
-   { roots :: List ModuleName
-   , topsorted :: List ModuleName
-   , graph :: DependencyGraph
-   , modules :: Modules a
-   }
+builtins :: ModuleName
+builtins = NonEmptyList ("lib" :| "builtins" : Nil)
+
+prelude :: ModuleName
+prelude = NonEmptyList ("lib" :| "prelude" : Nil)
+
+predefined :: List ModuleName
+predefined = builtins : prelude : Nil
+
+predefinedDeps :: ModuleName -> List ModuleName
+predefinedDeps q = takeWhile (_ /= q) predefined
 
 type DependencyGraph = Map ModuleName (List ModuleName)
-type Modules a = Map ModuleName (Module a)

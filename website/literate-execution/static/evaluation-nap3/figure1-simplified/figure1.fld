@@ -1,4 +1,6 @@
-import nap3_ccra3_data
+from nap3_ccra3_data import nap3_actions, ccra3_risks
+
+from lib.view import BarChart, MultiView, Default, Link
 
 eval_scores = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
@@ -46,10 +48,10 @@ nat_env_and_infra_depts = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
 
 # action_counts in the [ { y, z } ] format produced by actions_by
 def total_actions(action_counts):
-  return sum([ r.z for r in action_counts ])
+  return sum([ r["z"] for r in action_counts ])
 
 def actions_with_score(action_counts, eval_score):
-  return sum([ r.z for r in action_counts if r.y == eval_score ])
+  return sum([ r["z"] for r in action_counts if r["y"] == eval_score ])
 
 by_nat_env_and_infra = actions_by("Action Owner", nat_env_and_infra_depts)
 
@@ -61,13 +63,13 @@ MultiView([
   this report evaluates extent to which NAP3 commitments actually address them.
   """,
 
-  BarChart({
-    caption: "NAP3 actions assigned to DEFRA, by chapter",
-    size: { width: 275, height: 185 },
-    tickLabels: { x: Default, y: Default },
-    stackedBars: actions_by_chapter("Defra"),
-    legend: False
-  }),
+  BarChart(
+    caption="NAP3 actions assigned to DEFRA, by chapter",
+    size={ width: 275, height: 185 },
+    tickLabels={ x: Default, y: Default },
+    stackedBars=actions_by_chapter("Defra"),
+    legend=False
+  ),
 
   f"""
   Disaggregating by department revealed marked disparities in government response. {

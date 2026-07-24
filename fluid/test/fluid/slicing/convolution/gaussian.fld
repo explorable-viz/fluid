@@ -1,5 +1,5 @@
-import lib.matrix
-import slicing.convolution.filter.gaussian
-import slicing.convolution.test_image
+from lib.matrix import zero, convolve
+from slicing.convolution.filter.gaussian import filter
+from slicing.convolution.test_image import inputImage
 
 convolve(inputImage, filter, zero)

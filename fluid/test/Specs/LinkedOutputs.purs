@@ -3,9 +3,9 @@ module Test.Specs.LinkedOutputs where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd, (>.>), select)
+import App.Util.Selector (barSegment, dictVal, listElement, matrixDims, matrixElement, topα, (>.>), select, select')
 import Data.Maybe (Maybe(..))
-import DataType (f_plots, f_y)
+import DataType (cBarChart, cLineChart, cLinePlot, cMultiView, cPair, cScatterPlot, f_fst, f_plots, f_points, f_snd, f_stackedBars, f_views, f_y)
 import File (Folder(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
 import Util ((×))
@@ -19,20 +19,20 @@ linkedOutputs_spec1 =
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_out: multiViewEntry 0 (barChart (barSegment 1 0 select))
-   , out_expect:
-        multiViewEntry 0 (barChart (barSegment 1 0 select))
-           >.> multiViewEntry 1
-              ( lineChart
-                   ( dictVal f_plots
-                        ( listElement 0 (linePoint 2 (dictVal f_y select))
-                             >.> listElement 1 (linePoint 2 (dictVal f_y select))
-                             >.> listElement 2 (linePoint 2 (dictVal f_y select))
-                             >.> listElement 3 (linePoint 2 (dictVal f_y select))
-
+   , δ_out: \arg -> arg cMultiView f_views (listElement 0 (arg cBarChart f_stackedBars (barSegment 1 0 select)))
+   , out_expect: \arg ->
+        arg cMultiView f_views (listElement 0 (arg cBarChart f_stackedBars (barSegment 1 0 select)))
+           >.> arg cMultiView f_views
+              ( listElement 1
+                   ( arg cLineChart f_plots
+                        ( listElement 0 (arg cLinePlot f_points (listElement 2 (dictVal f_y select)))
+                             >.> listElement 1 (arg cLinePlot f_points (listElement 2 (dictVal f_y select)))
+                             >.> listElement 2 (arg cLinePlot f_points (listElement 2 (dictVal f_y select)))
+                             >.> listElement 3 (arg cLinePlot f_points (listElement 2 (dictVal f_y select)))
                         )
                    )
               )
+   , inert_expect: \_ -> Nothing
    , file: "slicing/linked_outputs/bar_chart_line_chart.fld"
    }
 
@@ -45,15 +45,18 @@ linkedOutputs_spec2 =
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_out: multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
-   , out_expect:
-        multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
-           >.> multiViewEntry 1
-              ( scatterPlot
-                   ( scatterPoint 4 (dictVal f_y select)
-                        >.> scatterPoint 6 (dictVal f_y select)
+   , δ_out: \arg -> arg cMultiView f_views (listElement 0 (arg cBarChart f_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select)))
+   , out_expect: \arg ->
+        arg cMultiView f_views (listElement 0 (arg cBarChart f_stackedBars (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select)))
+           >.> arg cMultiView f_views
+              ( listElement 1
+                   ( arg cScatterPlot f_points
+                        ( listElement 4 (dictVal f_y select)
+                             >.> listElement 6 (dictVal f_y select)
+                        )
                    )
               )
+   , inert_expect: \_ -> Nothing
    , file: "slicing/linked_outputs/stacked_bar_scatter_plot.fld"
    }
 
@@ -66,8 +69,9 @@ movingAverages_spec =
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_out: identity >>> (_ × Persistent) -- TODO: make this a non-trivial test
-   , out_expect: identity >>> (_ × Persistent)
+   , δ_out: \_ -> identity >>> (_ × Persistent) -- TODO: make this a non-trivial test
+   , out_expect: \_ -> identity >>> (_ × Persistent)
+   , inert_expect: \_ -> Nothing
    , file: "linked_outputs/moving_average.fld"
    }
 
@@ -80,8 +84,9 @@ linkedOutputs_cases =
           , linking: true
           , rowFilter: Nothing
           }
-     , δ_out: snd select
-     , out_expect: select
+     , δ_out: \arg -> arg cPair f_snd select
+     , out_expect: \_ -> select
+     , inert_expect: \_ -> Just (identity >>> (_ × Persistent))
      , file: "linked_outputs/pairs.fld"
      }
    , { spec:
@@ -92,16 +97,16 @@ linkedOutputs_cases =
           , linking: true
           , rowFilter: Nothing
           }
-     , δ_out: fst (matrixElement 1 1 select)
-     , out_expect:
-          fst
+     , δ_out: \arg -> arg cPair f_fst (matrixElement 1 1 select)
+     , out_expect: \arg ->
+          arg cPair f_fst
              ( matrixElement 1 0 select
                   >.> matrixElement 1 1 select
                   >.> matrixElement 1 2 select
                   >.> matrixElement 1 3 select
                   >.> matrixElement 1 4 select
              )
-             >.> snd
+             >.> arg cPair f_snd
                 ( matrixElement 0 0 select
                      >.> matrixElement 0 1 select
                      >.> matrixElement 0 2 select
@@ -112,6 +117,7 @@ linkedOutputs_cases =
                      >.> matrixElement 2 1 select
                      >.> matrixElement 2 2 select
                 )
+     , inert_expect: \arg -> Just (topα select' >.> arg cPair f_fst (matrixDims select') >.> arg cPair f_snd (matrixDims select'))
      , file: "linked_outputs/convolution.fld"
      }
    , linkedOutputs_spec1

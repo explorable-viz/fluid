@@ -162,6 +162,10 @@ orElse _ (Just x) = pure x
 throwLeft :: forall a e m. MonadError Error m => Show e => Either e a -> m a
 throwLeft = liftEither <<< lmap (E.error <<< show)
 
+orThrow :: forall a m. MonadThrow Error m => Either String a -> m a
+orThrow (Left s) = throw s
+orThrow (Right x) = pure x
+
 defined :: forall a. MayFail a -> a
 defined = runExcept >>> case _ of
    Right x -> x
@@ -230,6 +234,10 @@ instance UnsafeArray Array where
 instance UnsafeArray NonEmptyArray where
    unsafeIndex xs i = withinBounds (xs NEA.!! i)
    unsafeUpdateAt i x = NEA.updateAt i x >>> withinBounds
+
+instance UnsafeArray List where
+   unsafeIndex xs i = withinBounds (xs L.!! i)
+   unsafeUpdateAt i x = L.updateAt i x >>> withinBounds
 
 infixl 8 unsafeIndex as !
 

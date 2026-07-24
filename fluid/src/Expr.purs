@@ -2,22 +2,19 @@ module Expr where
 
 import Prelude hiding (absurd, top)
 
-import Bind (Var)
+import Bind (Name, Var)
 import Control.Apply (lift2)
-import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
-import Data.List (List(..), (:), zipWith)
+import Data.List (List, zipWith)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, empty, unions)
 import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
-import DataType (Ctr)
 import Dict (Dict)
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
-import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
+import Util (type (×), error, shapeMismatch, singleton, (×), (≜))
 import Util.Map (keys, asMaplet)
 import Util.Pair (Pair(..))
 import Util.Set ((\\), (∪))
@@ -30,10 +27,12 @@ data Expr a
    | Float a Number
    | Str a String
    | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
-   | Constr a Ctr (List (Expr a))
+   | Constr a Name (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
-   | DProject (Expr a) (Expr a)
+   | Attribute (Expr a) Var -- attribute x of a dataclass instance
+   | Subscript (Expr a) (Expr a)
+   | ModMember Name Var -- member x of module q; only arises during desugaring
    | App (Expr a) (Expr a)
    | DocExpr (Expr a) (Expr a)
 
@@ -68,7 +67,9 @@ data Stmt a
    | ExprStmt (Expr a)
    | Seq (Stmt a) (Stmt a)
 
-newtype Module a = Module (List (VarDef a + RecDefs a))
+data Import = Import Name (Maybe (List Var))
+
+data Module a = Module (List Import) (List (Stmt a))
 
 class FV a where
    fv :: a -> Set Var
@@ -83,7 +84,9 @@ instance FV (Expr a) where
    fv (Constr _ _ es) = unions (fv <$> es)
    fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
-   fv (DProject e x) = fv e ∪ fv x
+   fv (Attribute e _) = fv e
+   fv (Subscript e x) = fv e ∪ fv x
+   fv (ModMember _ _) = empty
    fv (App e1 e2) = fv e1 ∪ fv e2
    fv (DocExpr doc e) = fv doc ∪ fv e
 
@@ -205,7 +208,9 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
       Matrix (α ∨ α') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
-   join (DProject e1 e2) (DProject e1' e2') = DProject (e1 ∨ e1') (e2 ∨ e2')
+   join (Attribute e x) (Attribute e' x') = Attribute (e ∨ e') (x ≜ x')
+   join (Subscript e1 e2) (Subscript e1' e2') = Subscript (e1 ∨ e1') (e2 ∨ e2')
+   join (ModMember q x) (ModMember q' x') = ModMember (q ≜ q') (x ≜ x')
    join (App e1 e2) (App e1' e2') = App (e1 ∨ e1') (e2 ∨ e2')
    join (DocExpr doc e) (DocExpr doc' e') = DocExpr (doc ∨ doc') (e ∨ e')
    join _ _ = shapeMismatch unit
@@ -221,7 +226,9 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
       Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
-   expand (DProject e1 e2) (DProject e1' e2') = DProject (expand e1 e1') (expand e2 e2')
+   expand (Attribute e x) (Attribute e' x') = Attribute (expand e e') (x ≜ x')
+   expand (Subscript e1 e2) (Subscript e1' e2') = Subscript (expand e1 e1') (expand e2 e2')
+   expand (ModMember q x) (ModMember q' x') = ModMember (q ≜ q') (x ≜ x')
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (DocExpr doc e) (DocExpr doc' e') = DocExpr (expand doc doc') (expand e e')
    expand _ _ = shapeMismatch unit
@@ -241,7 +248,9 @@ instance Vertices (Expr Vertex) where
    vertices e@(Constr α _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es)
    vertices e@(Matrix α e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
-   vertices (DProject e e') = vertices e ∪ vertices e'
+   vertices (Attribute e _) = vertices e
+   vertices (Subscript e e') = vertices e ∪ vertices e'
+   vertices (ModMember _ _) = empty
    vertices (App e1 e2) = vertices e1 ∪ vertices e2
    vertices (DocExpr e e') = vertices e ∪ vertices e'
 
@@ -270,10 +279,7 @@ instance Vertices (Stmt Vertex) where
    vertices (Seq s1 s2) = vertices s1 ∪ vertices s2
 
 instance Vertices (Module Vertex) where
-   vertices (Module defs) = unions (go <$> defs)
-      where
-      go (Left vardef) = vertices vardef
-      go (Right recdefs) = vertices recdefs
+   vertices (Module _ ss) = unions (vertices <$> ss)
 
 -- ======================
 -- boilerplate
@@ -296,7 +302,6 @@ derive instance Traversable RecDefs
 derive instance Functor Stmt
 derive instance Foldable Stmt
 derive instance Traversable Stmt
-derive instance Newtype (Module a) _
 derive instance Functor Module
 
 -- For terms of a fixed shape.
@@ -311,7 +316,9 @@ instance Apply Expr where
    apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
       Matrix (fα α) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
-   apply (DProject fd fk) (DProject d k) = DProject (fd <*> d) (fk <*> k)
+   apply (Attribute fe x) (Attribute e x') = Attribute (fe <*> e) (x ≜ x')
+   apply (Subscript fd fk) (Subscript d k) = Subscript (fd <*> d) (fk <*> k)
+   apply (ModMember q x) (ModMember q' x') = ModMember (q ≜ q') (x ≜ x')
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (DocExpr fe fe') (DocExpr e e') = DocExpr (fe <*> e) (fe' <*> e')
    apply _ _ = shapeMismatch unit
@@ -343,37 +350,16 @@ instance Apply Stmt where
    apply (Seq fs1 fs2) (Seq s1 s2) = Seq (fs1 <*> s1) (fs2 <*> s2)
    apply _ _ = shapeMismatch unit
 
--- Apply instance for Either no good here as doesn't assume fixed shape.
 instance Apply Module where
-   apply (Module Nil) (Module Nil) = Module Nil
-   apply (Module (Left fdef : fdefs)) (Module (Left def : defs)) =
-      Module (Left (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
-   apply (Module (Right fdef : fdefs)) (Module (Right def : defs)) =
-      Module (Right (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
-   apply _ _ = shapeMismatch unit
-
--- Foldable instance for Either only considers Right case.
-foldlModuleDef :: forall a b. (b -> a -> b) -> b -> VarDef a + RecDefs a -> b
-foldlModuleDef f acc (Left def) = foldl f acc def
-foldlModuleDef f acc (Right def) = foldl f acc def
+   apply (Module fis fss) (Module _ ss) = Module fis (zipWith (<*>) fss ss)
 
 instance Foldable Module where
-   foldl _ acc (Module Nil) = acc
-   foldl f acc (Module (Left def : defs)) =
-      foldl (foldlModuleDef f) (foldl f acc def) defs
-   foldl f acc (Module (Right def : defs)) =
-      foldl (foldlModuleDef f) (foldl f acc def) defs
-
+   foldl f acc (Module _ ss) = foldl (foldl f) acc ss
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
 instance Traversable Module where
-   traverse _ (Module Nil) = pure (Module Nil)
-   traverse f (Module (Left def : ds)) =
-      Module <$> ((Left <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
-   traverse f (Module (Right def : ds)) =
-      Module <$> ((Right <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
-
+   traverse f (Module is ss) = Module is <$> traverse (traverse f) ss
    sequence = sequenceDefault
 
 derive instance Eq a => Eq (Expr a)

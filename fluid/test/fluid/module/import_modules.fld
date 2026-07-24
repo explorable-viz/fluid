@@ -1,4 +1,4 @@
-import lib.maths
-import module.foo
+from lib.maths import dub
+from module.foo import x
 
 dub(x)

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import '$lib/assets/css/styles.css';
+	import AppReady from '$shared/AppReady.svelte';
+	import '$shared/assets/css/styles.css';
 	import '@fontsource/roboto/latin-300.css';
 	import '@fontsource/roboto/latin-500.css';
 
@@ -11,5 +12,7 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
+
+<AppReady />
 
 {@render children()}

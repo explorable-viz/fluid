@@ -3,19 +3,19 @@ module App.Util.Selector where
 import Prelude hiding (absurd)
 
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, getPersistent, selStates)
-import Bind (Var)
-import Data.List (List(..), updateAt, (!!), (:))
-import Data.Maybe (fromJust)
+import Bind (Name, Var)
+import Data.List (List(..), (:))
+import Data.List.NonEmpty (last)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cJust, f_points, f_segments, f_stackedBars, f_z)
+import DataType (FieldIndex, FieldName, cCons, cJust, cNil, f_segments, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
-import Util (Endo, absurd, assert, definitely, error, (×))
+import Util (Endo, absurd, assert, error, unsafeUpdateAt, (!), (×))
 import Util.Map (get, insert, update)
 import Util.Set ((∈))
-import Val (BaseVal(..), DictRep(..), Env, Val(..), matrixGet, matrixPut)
+import Val (BaseVal(..), DictRep(..), Env, MatrixDim(..), MatrixRep(..), Val(..), matrixGet, matrixPut)
 
 type SelSetter f g = Setter (f (SelStates 𝔹)) (g (SelStates 𝔹))
 
@@ -46,45 +46,17 @@ persist δα = \v -> (over SelStates ((<$>) mapδ) v) × Persistent
    mapδ :: Endo (Selection a)
    mapδ s = s { persistent = (T.fst <<< δα) s.persistent }
 
-fst :: SelSetter Val Val
-fst = constrArg cPair 0
-
-snd :: SelSetter Val Val
-snd = constrArg cPair 1
-
 just :: Setter (Val (SelStates 𝔹)) 𝔹
-just = constr cJust
+just = constr (last cJust)
 
-multiView :: SelSetter Val Val
-multiView = constrArg cMultiView 0
-
-multiViewEntry :: Int -> SelSetter Val Val
-multiViewEntry n = listElement n >>> multiView
-
-lineChart :: SelSetter Val Val
-lineChart = constrArg cLineChart 0
-
-linePoint :: Int -> SelSetter Val Val
-linePoint i = listElement i >>> dictVal f_points >>> constrArg cLinePlot 0
-
-barChart :: SelSetter Val Val
-barChart = constrArg cBarChart 0
-
-scatterPlot :: SelSetter Val Val
-scatterPlot = constrArg cScatterPlot 0
-
-scatterPoint :: Int -> Setter (Val (SelStates 𝔹)) (Val (SelStates 𝔹))
-scatterPoint i = listElement i >>> dictVal f_points
+type ConstrArg = Name -> FieldName -> SelSetter Val Val
 
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =
-   nthSegment j >>> dictVal f_segments >>> listElement i >>> dictVal f_stackedBars
+   nthSegment j >>> dictVal f_segments >>> listElement i
 
 nthSegment :: Int -> SelSetter Val Val
 nthSegment n = dictVal f_z >>> listElement n
-
-paragraph :: SelSetter Val Val
-paragraph = constrArg cParagraph 0
 
 matrixElement :: Int -> Int -> SelSetter Val Val
 matrixElement i j δv (Val α doc (Matrix r)) =
@@ -98,16 +70,16 @@ listElement n δv = unsafePartial $ case _ of
    Val α doc (Constr c (v : u : Nil)) | c == cCons ->
       first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listElement (n - 1) δv u)
 
-constrArg :: Ctr -> Int -> SelSetter Val Val
-constrArg c n δv = unsafePartial $ case _ of
-   Val α doc (Constr c' us) | c == c' ->
-      first (\u' -> Val α doc (Constr c' $ fromJust (updateAt n u' us)))
-         $ definitely "constrArg out of bounds"
-         $ δv <$> (us !! n)
+constrArg :: FieldIndex -> ConstrArg
+constrArg fieldIndex c f δv = unsafePartial $ case _ of
+   Val α doc (Constr c' us) | last c == last c' ->
+      first (\u' -> Val α doc (Constr c' $ unsafeUpdateAt n u' us)) (δv (us ! n))
+   where
+   n = fieldIndex c f
 
-constr :: Ctr -> Setter (Val (SelStates 𝔹)) 𝔹
-constr c' δα = unsafePartial $ case _ of
-   Val α doc (Constr c vs) | c == c' -> first (\α' -> Val α' doc (Constr c vs)) (persist δα α)
+constr :: Var -> Setter (Val (SelStates 𝔹)) 𝔹
+constr c δα = unsafePartial $ case _ of
+   Val α doc (Constr c' vs) | c == last c' -> first (\α' -> Val α' doc (Constr c' vs)) (persist δα α)
 
 dict :: Setter (Val (SelStates 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of
@@ -116,6 +88,14 @@ dict δα = unsafePartial $ case _ of
 matrix :: Setter (Val (SelStates 𝔹)) 𝔹
 matrix δα = unsafePartial $ case _ of
    Val α doc (Matrix r) -> first (\α' -> Val α' doc (Matrix r)) (persist δα α)
+
+matrixDims :: Setter (Val (SelStates 𝔹)) 𝔹
+matrixDims δα = unsafePartial $ case _ of
+   Val α doc (Matrix (MatrixRep (vss × MatrixDim (i × βi) × MatrixDim (j × βj)))) ->
+      Val α doc (Matrix (MatrixRep (vss × MatrixDim (i × βi') × MatrixDim (j × βj')))) × s
+      where
+      βi' × _ = persist δα βi
+      βj' × s = persist δα βj
 
 -- Flip only the outer Val annotation, regardless of payload (closure, etc.).
 topα :: Setter (Val (SelStates 𝔹)) 𝔹

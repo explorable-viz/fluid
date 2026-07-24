@@ -3,12 +3,13 @@ module App.View.ScatterPlot where
 import Prelude
 
 import App.Util (Selectable, classes, contents, isPrimary, isSecondary, selClasses, selClassesFor, selectionEventData')
-import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
+import App.Util.Selector (ConstrArg, ViewSelSetter, listElement)
 import App.View.Util (class Viewable, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), create, numericXAxis, numericYAxis, scaleLinear, setText, translate)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
+import DataType (cScatterPlot, f_points)
 import Data.Array (length, range)
 import Data.Foldable (maximum, minimum)
 import Data.FoldableWithIndex (forWithIndex_)
@@ -106,7 +107,7 @@ instance Viewable ScatterPlot Unit where
 
       pure rootElement
 
-   setSelection _ (ScatterPlot { points }) select rootElement = do
+   setSelection arg _ (ScatterPlot { points }) select rootElement = do
       pointEls <- D3.selectAll ".scatterplot-point" rootElement
       foreachE pointEls \pointEl -> do
          idx :: PointIndex <- D3.datum pointEl
@@ -116,10 +117,10 @@ instance Viewable ScatterPlot Unit where
          void $ D3.classed selClasses false pointEl
          void $ D3.classed (selClassesFor sel) true pointEl
          void $ D3.attrs pointEl (fromFoldable (pointAttrs points idx))
-         registerMouseListeners (select <<< uncurry scatterPlotPoint <<< selectionEventData') pointEl
+         registerMouseListeners (select <<< uncurry (scatterPlotPoint arg) <<< selectionEventData') pointEl
 
-scatterPlotPoint :: ViewSelSetter PointIndex
-scatterPlotPoint { i } = scatterPoint i >>> scatterPlot
+scatterPlotPoint :: ConstrArg -> ViewSelSetter PointIndex
+scatterPlotPoint arg { i } = listElement i >>> arg cScatterPlot f_points
 
 pointAttrs :: Array (Point Number) -> PointIndex -> Array (String × String)
 pointAttrs points { i } =

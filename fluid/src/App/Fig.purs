@@ -4,11 +4,12 @@ import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
-import App.Util.Selector (envVal, ViewSetter)
+import App.Util.Selector (constrArg, envVal, ViewSetter)
 import App.View (view')
 import App.View.Util (Direction(..), Fig, Options, HTMLId, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
+import DataType (class HasClasses, fieldIndex)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Maybe (Maybe(..), maybe)
@@ -24,13 +25,12 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Eval (graphEval, graphGC, withOp)
+import Eval (ConjugatePair, depsOf, graphEval, withOp)
 import File (class LoadFile, File(..), FileCxt)
-import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex, DVertex', Vertex(..), VertexData, dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
-import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
+import Lattice (𝔹, botOf, erase, topOf)
 import Module (prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -39,7 +39,7 @@ import Test.Util.Debug (tracing)
 import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
-import Val (Env(..), EnvStmt(..), Val(..), asVal, unrestrictGC)
+import Val (class HasModuleStore, Env(..), EnvStmt(..), Val(..), asVal)
 
 str
    :: { output :: String -- pseudo-variable to use as name of output view
@@ -162,19 +162,20 @@ intermediates { spec, in_roots, inerts } αs =
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig@{ spec: options } = do
-   drawView { divId, suffix: str.output, view: out_view } (selectOutput >>> redraw)
+   drawView arg { divId, suffix: str.output, view: out_view } (selectOutput >>> redraw)
 
    sequence_ $ flip mapWithKey in_views \x view ->
-      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x >>> redraw)
+      drawView arg { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x >>> redraw)
 
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
    sequence_ $ flip mapWithKey (unwrap ι) \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' options str.intermediate (map to𝕊 <$> v) }
+      drawView arg { divId: prefix, suffix: α, view: unsafePartial $ view' fig.fieldIndex options str.intermediate (map to𝕊 <$> v) }
          (selectIntermediate (Vertex α) >>> redraw)
    where
+   arg = constrArg fig.fieldIndex
    { v, γ, ι } = selectionResult fig
-   out_view = unsafePartial $ view' options str.output v
-   in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' options) γ)
+   out_view = unsafePartial $ view' fig.fieldIndex options str.output v
+   in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' fig.fieldIndex options) γ)
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
    unused = keys fig.ι \\ keys ι
    prefix = divId <> "-" <> str.intermediate
@@ -182,12 +183,6 @@ drawFig divId fig@{ spec: options } = do
 drawFile :: File × String -> Effect Unit
 drawFile (File fileName × src) =
    addEditorView (codeMirrorDiv fileName) >>= loadCode src
-
-unprojStmt :: forall a. BoundedMeetSemilattice a => Raw EnvStmt -> GaloisConnection (Env a) (EnvStmt a)
-unprojStmt (EnvStmt _ s) = GC
-   { fwd: \γ -> EnvStmt γ (topOf s)
-   , bwd: \(EnvStmt γ _) -> γ
-   }
 
 type IO a = { γ :: Env a, v :: Val a }
 
@@ -201,41 +196,39 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
+loadFig :: forall m. HasClasses m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
 loadFig options@{ inputs, linking } fluidSrc = do
    { s, e, gconfig } <- prepConfig primitives fluidSrc
    eval@({ inα: EnvStmt γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval
       inputs' = Set.fromFoldable inputs
-      EnvStmt γ s' = erase eval.inα
-      GC focus = unrestrictGC γ inputs' >>> unprojStmt (EnvStmt γ s')
+      EnvStmt _ s' = erase eval.inα
       Env γ_restricted = restrict inputs' γα
       in_roots = Set.fromFoldable $ (\(Val α _ _) -> α) <$> γ_restricted
 
-      graphgc = graphGC eval
-      graphgc_op = graphGC opEval
+      deps = depsOf eval
 
-      gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
-      gcBwd v = first focus.bwd (graphgc.bwd v)
-
-      gcFwd :: Env 𝔹 -> Val 𝔹 × GraphImpl
-      gcFwd γ = graphgc_op.bwd (deMorgan focus.fwd γ)
+      io :: ConjugatePair GraphImpl Env Val
+      io =
+         { fwd: \γ -> deps.fwd (EnvStmt γ (botOf s'))
+         , bwd: \v -> first (\(EnvStmt γ _) -> restrict inputs' γ) (deps.bwd v)
+         }
 
       in_views = const Nothing <$> γ_restricted
       unselected = { γ: botOf γα, v: botOf outα } :: IO 𝔹
 
-      inertBwd = vertices g0 \\ (vertices $ snd $ gcBwd $ topOf outα)
-      inertFwd = vertices $ snd $ graphgc.fwd $ focus.fwd unselected.γ
+      inertBwd = vertices g0 \\ (vertices $ snd $ io.bwd $ topOf outα)
+      inertFwd = vertices g0 \\ (vertices $ snd $ deps.fwd (EnvStmt (topOf γα) (botOf s')))
 
       inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
       inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
 
       demands :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      demands = lift inert'.γ gcBwd
+      demands = lift inert'.γ io.bwd
 
       demandedBy :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      demandedBy = lift inert'.v gcFwd
+      demandedBy = lift inert'.v io.fwd
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ = γ'' × v × vertices g
@@ -277,6 +270,7 @@ loadFig options@{ inputs, linking } fluidSrc = do
       , intermediate_views: empty
       , in_roots
       , inerts: inertFwd ∩ inertBwd
+      , fieldIndex: fieldIndex gconfig.classes
       }
 
 ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)
