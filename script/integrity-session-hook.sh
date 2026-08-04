@@ -1,12 +1,29 @@
 #!/usr/bin/env bash
-# SessionStart hook: run the project integrity check and inject any failures
-# into the session context. A check that errors (e.g. offline) is silently
-# skipped and retried at the next session start.
 set -u
 
-cd "${CLAUDE_PROJECT_DIR:-$(pwd)}"
-OUT=$(./script/check-project-integrity.sh fluid 2>/dev/null) && exit 0
+dir="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+state="${TMPDIR:-/tmp}/claude-statusline"
+key=$(printf '%s' "$dir" | shasum | cut -c1-12)
+file="$state/integrity-$key"
+mkdir -p "$state"
+: > "$file"
 
-FAILS=$(printf '%s\n' "$OUT" | grep 'FAIL:')
-[ -z "$FAILS" ] && exit 0
-jq -n --arg fails "$FAILS" '{hookSpecificOutput: {hookEventName: "SessionStart", additionalContext: ("The project integrity check failed:\n" + $fails + "\nApply the mechanical fixes to the project board via the GitHub API; ask about cases needing judgement (e.g. which milestone to assign).")}}'
+( (
+  trap '' HUP TERM
+  cd "$dir" 2>/dev/null || exit 0
+  OUT=$(./script/check-project-integrity.sh fluid 2>&1)
+  RC=$?
+  if [ "$RC" -eq 0 ]; then
+    : > "$file"
+  else
+    FAILS=$(printf '%s\n' "$OUT" | grep 'FAIL:')
+    if [ -n "$FAILS" ]; then
+      N=$(printf '%s\n' "$FAILS" | grep -c 'FAIL:')
+      printf '\033[31mintegrity: %s issue(s)\033[0m' "$N" > "$file"
+    else
+      printf '\033[31mintegrity: could not run\033[0m' > "$file"
+    fi
+  fi
+) >/dev/null 2>&1 & )
+
+exit 0
