@@ -3,18 +3,20 @@ module SExpr where
 import Prelude hiding (top)
 
 import Bind (Bind, Name, Var, varThis)
-import Data.Set (Set, empty, singleton, unions)
+import Data.Set (Set, empty, unions)
+import Data.Set as Set
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), (:))
+import Data.List (List(..), nub, (:))
 import Data.List.NonEmpty (NonEmptyList)
-import Data.Maybe (Maybe, maybe)
+import Data.List.NonEmpty as NEL
+import Data.Maybe (Maybe(..), maybe)
 import Data.Show.Generic (genericShow)
 import Data.Tuple (fst, snd)
 import Literal (Literal)
 import Expr (class BV, class FV, Binop, Pattern, Unop, bv, fv)
 import Types as T
 import Util.Set ((\\), (∪))
-import Util (type (×), (×))
+import Util (type (×), singleton, (×))
 
 -- Surface language expressions.
 
@@ -212,6 +214,23 @@ assigns (DefRec ds) = unions (singleton <<< fst <$> ds)
 assigns (Seq s1 s2) = assigns s1 ∪ assigns s2
 assigns (Dataclass c _ _ _) = singleton c
 assigns (TypeAlias x _ _) = singleton x
+
+declares :: Stmt -> List Var
+declares (Declare x _) = singleton x
+declares (Def (VarDef p (Just _) _)) = Set.toUnfoldable (bv p)
+declares (DefRec ds) = nub (NEL.toList (fst <$> ds))
+declares (If es s) = (NEL.toList es >>= declares <<< snd) <> maybe Nil declares s
+declares (Match _ ps) = NEL.toList ps >>= declares <<< snd
+declares (Seq s1 s2) = declares s1 <> declares s2
+declares (Dataclass c _ _ _) = singleton c
+declares (TypeAlias x _ _) = singleton x
+declares _ = Nil
+
+binds :: Stmt -> Set Var
+binds (If es s) = unions (binds <<< snd <$> es) ∪ maybe empty binds s
+binds (Match _ ps) = unions ((\(p × s) -> bv p ∪ binds s) <$> ps)
+binds (Seq s1 s2) = binds s1 ∪ binds s2
+binds _ = empty
 
 instance BV Param where
    bv (Param p _) = bv p

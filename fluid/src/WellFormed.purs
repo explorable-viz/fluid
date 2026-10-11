@@ -31,13 +31,13 @@ import Data.Tuple (fst, snd)
 import DataType (cParagraph, cRange)
 import DefiniteAssignment (ClassEntry, Entry(..), Cxt, WfResult(..), ancestors, classFor, classOf, extend, fieldMap, fields, mergeRes, override, overrideRes, resolveName)
 import Dict as D
-import Util.Map (constMap, filterKeys, insert, keys, lookup, maplet, toUnfoldable)
+import Util.Map (constMap, insert, keys, lookup, maplet)
 import Expr (bv, fv)
 import Expr (Pattern(..)) as S
 import Expr (Branch(..), Def(..), Expr(..), Import(..), Module(..), Qualifier(..), RecDefs(..), Stmt(..)) as E
 import Literal (Literal(..))
 import Pretty (prettyP)
-import SExpr (Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeExpr(..), VarDef(..), assigns) as S
+import SExpr (Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeExpr(..), VarDef(..), assigns, binds, declares) as S
 import Types as T
 import Util (MayFail, type (×), absurd, checkDistinct, definitely', error, nonEmpty, singleton, tail, zip, zipWith, (×), (∩))
 import Util.Pair (Pair(..))
@@ -55,7 +55,7 @@ runCheckM m mods predefined = runReaderT (runStateT m (predefined <#> \cxt -> { 
 checkProgram :: List S.Import -> S.Stmt -> CheckM E.Stmt
 checkProgram imports s = do
    cxt_imp × cxt_ιs <- checkImports mainModule imports
-   cxt × _ × s' <- lift (lift (wellFormedTop mainModule (moduleScope cxt_imp cxt_ιs s) s))
+   cxt × _ × s' <- lift (lift (moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> wellFormedTop mainModule cxt_s s))
    modify_ (insert mainModule { cxt, mod: Nothing })
    pure s'
 
@@ -124,7 +124,7 @@ importedMembers q cxt (x : xs) = do
 
 checkStatements :: Name -> Cxt -> Cxt -> S.Module -> MayFail (Cxt × E.Module)
 checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
-   cxt × r × s' <- wellFormedTop q (moduleScope cxt_imp cxt_ιs s) s
+   cxt × r × s' <- moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> wellFormedTop q cxt_s s
    case r of
       -- Program may return, with the returned value as its result; spec treats __main__ as a module
       Returns -> throwError "Module body cannot return"
@@ -132,40 +132,20 @@ checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
    where
    imports' = imports <#> \(S.Import q' xs) -> E.Import q' xs
 
-moduleScope :: Cxt -> Cxt -> S.Stmt -> Cxt
-moduleScope cxt_imp cxt_ιs s = insert "__name__" Assigned (cxt_imp `extend` cxt_ιs `override` scope (keys cxt_ιs) s)
+moduleScope :: Cxt -> Cxt -> S.Stmt -> MayFail Cxt
+moduleScope cxt_imp cxt_ιs s = insert "__name__" Assigned <<< (cxt_imp `extend` cxt_ιs `override` _) <$> scope (keys cxt_ιs) s
 
-scope :: Set Var -> S.Stmt -> Cxt
-scope ys s = constMap Unbound (S.assigns s \\ ys)
+scope :: Set Var -> S.Stmt -> MayFail Cxt
+scope ys s = do
+   checkDistinct ("Redeclared: " <> _) (Set.toUnfoldable ys <> S.declares s <> Set.toUnfoldable (S.binds s))
+   pure (constMap Unbound (S.assigns s \\ ys))
 
 mainModule :: Name
 mainModule = pure "__main__"
 
-typeDecls :: S.Stmt -> Set Var
-typeDecls (S.Dataclass c _ _ _) = singleton c
-typeDecls (S.TypeAlias x _ _) = singleton x
-typeDecls (S.Seq s1 s2) = typeDecls s1 ∪ typeDecls s2
-typeDecls _ = empty
-
--- Variables of enclosing scopes read within closures.
+-- Variables of the enclosing scope captured by lambdas.
 class Captures a where
    captures :: a -> Set Var
-
-instance Captures S.Stmt where
-   captures S.Pass = empty
-   captures (S.Declare _ _) = empty
-   captures (S.Def (S.VarDef _ _ e)) = captures e
-   captures (S.ExprStmt e) = captures e
-   captures (S.Assert e e') = captures e ∪ maybe empty captures e'
-   captures (S.Return e) = captures e
-   captures (S.If es s) =
-      unions ((\(e × s') -> captures e ∪ captures s') <$> es) ∪ maybe empty captures s
-   captures (S.Match e ps) =
-      captures e ∪ unions ((\(_ × s) -> captures s) <$> ps)
-   captures (S.DefRec ds) = unions ((fv <<< snd) <$> ds) \\ unions (singleton <<< fst <$> ds)
-   captures (S.Seq s1 s2) = captures s1 ∪ captures s2
-   captures (S.Dataclass _ _ _ _) = empty
-   captures (S.TypeAlias _ _ _) = empty
 
 instance Captures S.Expr where
    captures (S.Var _) = empty
@@ -216,8 +196,6 @@ instance WellFormed S.Stmt (WfResult Cxt × E.Stmt) where
       pure (Assigns (maplet x Declared) × E.Declare x)
    wellFormed cxt (S.Def (S.VarDef p ψ e)) = do
       let xs = bv p
-      for_ (Set.toUnfoldable (xs ∩ captures e) :: Array Var) \x ->
-         throwError $ "Variable captured by its own definition: " <> x
       for_ xs (assignable cxt)
       e' <- wellFormed cxt e
       p' <- wellFormed cxt p
@@ -237,8 +215,6 @@ instance WellFormed S.Stmt (WfResult Cxt × E.Stmt) where
       case r1 of
          Returns -> throwError "Unreachable statement"
          Assigns cxt' -> do
-            for_ (Set.toUnfoldable (captures s1 ∩ S.assigns s2) :: Array Var) \x ->
-               throwError $ "Captured variable reassigned: " <> x
             r2 × s2' <- wellFormed (cxt `override` cxt') s2
             pure (overrideRes r1 r2 × E.Seq s1' s2')
    wellFormed cxt (S.If es elseBranch) = do
@@ -296,10 +272,6 @@ wellFormedTop q cxt (S.Seq t1 t2) = do
    case r1 of
       Returns -> throwError "Unreachable statement"
       Assigns cxt' -> do
-         for_ (Set.toUnfoldable (captures t1 ∩ S.assigns t2) :: Array Var) \x ->
-            throwError $ "Captured variable reassigned: " <> x
-         for_ (toUnfoldable (filterKeys (_ ∈ S.assigns t2) cxt_t1) :: Array (Var × Entry)) \(x × θ) ->
-            throwError $ (if x ∈ typeDecls t2 then "Duplicate " <> kind θ <> " declaration: " else "Reassigned " <> kind θ <> " name: ") <> x
          cxt_t2 × r2 × t2' <- wellFormedTop q (cxt `override` cxt' `override` cxt_t1) t2
          pure ((cxt_t2 ∪ cxt_t1) × overrideRes r1 r2 × E.Seq t1' t2')
 wellFormedTop _ cxt s = do
@@ -395,9 +367,11 @@ instance WellFormed S.Expr E.Expr where
       pe (S.Token str) = pure (E.Lit (Str str))
    wellFormed cxt (S.List es) = E.List <$> traverse (wellFormed cxt) es
    wellFormed cxt (S.Tuple es) = E.Tuple <$> traverse (wellFormed cxt) es
-   wellFormed cxt (S.ListComp e gs) =
+   wellFormed cxt (S.ListComp e gs) = do
+      notCaptured (bv gs) (captures e)
       (\(e' × gs') -> E.ListComp e' gs') <$> wellFormedQualifiers cxt gs (\cxt' -> wellFormed cxt' e)
-   wellFormed cxt (S.DictComp k e gs) =
+   wellFormed cxt (S.DictComp k e gs) = do
+      notCaptured (bv gs) (captures k ∪ captures e)
       (\((k' × e') × gs') -> E.DictComp k' e' gs') <$> wellFormedQualifiers cxt gs \cxt' ->
          (×) <$> wellFormed cxt' k <*> wellFormed cxt' e
    wellFormed cxt (S.DocExpr e e') =
@@ -420,14 +394,19 @@ wellFormedQualifiers cxt (g : gs) body = case g of
       e' <- wellFormed cxt e
       map (E.Guard e' : _) <$> wellFormedQualifiers cxt gs body
    S.Generator p e -> do
+      notCaptured (bv p) (captures gs)
       e' <- wellFormed cxt e
       p' <- wellFormed cxt p
       map (E.Generator p' e' : _) <$> wellFormedQualifiers (cxt `override` constMap Assigned (bv p)) gs body
    S.Decl (S.VarDef p ψ e) -> do
+      notCaptured (bv p) (captures gs)
       for_ ψ (resolveType cxt)
       e' <- wellFormed cxt e
       p' <- wellFormed cxt p
       map (E.Decl p' e' : _) <$> wellFormedQualifiers (cxt `override` constMap Assigned (bv p)) gs body
+
+notCaptured :: Set Var -> Set Var -> MayFail Unit
+notCaptured xs captured = for_ (xs ∩ captured) \x -> throwError $ "Comprehension variable captured by lambda: " <> x
 
 -- Keyword arguments in field order; must cover fields after first n exactly.
 positionaliseKw :: forall b. ClassEntry -> Name -> Int -> List (Bind b) -> MayFail (List b)
@@ -449,7 +428,8 @@ wellFormedClause cxt (S.Clause (αs × ps × ψ × s)) = do
    let xs = unions (bv <$> ps)
    ps' <- for ps \(S.Param p ψ') -> (×) <$> wellFormed cxt p <*> traverse (resolveType cxt_αs) ψ'
    τ <- traverse (resolveType cxt_αs) ψ
-   r × s' <- wellFormed (cxt_αs `override` constMap Assigned xs `override` scope xs s) s
+   cxt_s <- scope xs s
+   r × s' <- wellFormed (cxt_αs `override` constMap Assigned xs `override` cxt_s) s
    pure (ps' × τ × close r s')
    where
    -- Body that may fall through returns None
