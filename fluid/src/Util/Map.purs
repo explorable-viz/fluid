@@ -4,6 +4,7 @@ import Prelude hiding (append)
 
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.Foldable (foldl)
+import Data.FunctorWithIndex (mapWithIndex)
 import Data.List (List, head)
 import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
@@ -57,6 +58,11 @@ instance Ord k => Map (M.Map k v) k v where
    delete = M.delete
    insert = M.insert
    toUnfoldable = M.toUnfoldable
+
+instance Ord k => MapF (M.Map k) k where
+   intersectionWith = M.intersectionWith
+   difference = M.difference
+   mapWithKey = mapWithIndex
 
 instance MapF Object String where
    intersectionWith = intersectionWith_Object
