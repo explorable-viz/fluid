@@ -6,18 +6,14 @@ import Bind (Name, Var, dottedName)
 import Control.Monad.Error.Class (throwError)
 import Data.List.NonEmpty (unsnoc)
 import Data.List.NonEmpty as NEL
-import Data.Foldable (foldl, lookup)
+import Data.Foldable (lookup) as F
 import Data.List (List(..), elemIndex, index, length, (:))
 import Data.Map (Map)
-import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
-import Data.Set (Set)
-import Data.Set as Set
 import Types (Type) as T
 import Util (MayFail, type (×), definitely')
+import Util.Map (intersectionWith, lookup, unionWith)
 import Util.Set ((∪))
-
-type VarCxt = Map Var Boolean
 
 type ClassEntry =
    { cxt :: Cxt -- declaring context (resolves the base class)
@@ -27,8 +23,12 @@ type ClassEntry =
    , fields :: List Var -- own field names, distinct
    }
 
+-- Variable entries carry no type until checking and synthesis, as unannotated assignments have none.
 data Entry
-   = VarStatus Boolean -- definite-assignment status
+   = Unbound -- declared later in scope
+   | Declared -- definitely unassigned
+   | PossiblyUnassigned
+   | Assigned
    | Class ClassEntry
    | Mod Name
    | ModChecked Name Cxt
@@ -41,7 +41,7 @@ type Cxt = Map Var Entry
 data WfResult a = Returns | Assigns a
 
 extend :: Cxt -> Cxt -> Cxt
-extend cxt cxt' = Map.unionWith extendEntry cxt cxt'
+extend cxt cxt' = unionWith extendEntry cxt cxt'
 
 extendEntry :: Entry -> Entry -> Entry
 extendEntry (ModChecked q cxt) (ModChecked q' cxt') | q == q' = ModChecked q (cxt `extend` cxt')
@@ -49,31 +49,26 @@ extendEntry (Mod q) θ'@(ModChecked q' _) | q == q' = θ'
 extendEntry θ@(ModChecked q _) (Mod q') | q == q' = θ
 extendEntry _ θ' = θ'
 
-overrideVarCxt :: VarCxt -> VarCxt -> VarCxt
-overrideVarCxt = flip Map.union
+override :: Cxt -> Cxt -> Cxt
+override = flip (∪)
 
-mergeVarCxt :: VarCxt -> VarCxt -> VarCxt
-mergeVarCxt cxt1 cxt2 =
-   foldl (\acc k -> Map.insert k (mergedAt k) acc) Map.empty allKeys
+merge :: Cxt -> Cxt -> Cxt
+merge cxt cxt' = intersectionWith mergeEntry cxt cxt' ∪ (PossiblyUnassigned <$ (cxt ∪ cxt'))
    where
-   allKeys :: Set Var
-   allKeys = Set.fromFoldable (Map.keys cxt1) ∪ Set.fromFoldable (Map.keys cxt2)
-   mergedAt k = case Map.lookup k cxt1, Map.lookup k cxt2 of
-      Just a, Just b -> a && b
-      _, _ -> false
+   mergeEntry θ θ' = if θ == θ' then θ else PossiblyUnassigned
 
-overrideRes :: WfResult VarCxt -> WfResult VarCxt -> WfResult VarCxt
+overrideRes :: WfResult Cxt -> WfResult Cxt -> WfResult Cxt
 overrideRes _ Returns = Returns
 overrideRes Returns _ = Returns
-overrideRes (Assigns a) (Assigns b) = Assigns (overrideVarCxt a b)
+overrideRes (Assigns cxt) (Assigns cxt') = Assigns (cxt `override` cxt')
 
-mergeRes :: WfResult VarCxt -> WfResult VarCxt -> WfResult VarCxt
+mergeRes :: WfResult Cxt -> WfResult Cxt -> WfResult Cxt
 mergeRes Returns r = r
 mergeRes r Returns = r
-mergeRes (Assigns a) (Assigns b) = Assigns (mergeVarCxt a b)
+mergeRes (Assigns cxt) (Assigns cxt') = Assigns (cxt `merge` cxt')
 
 classFor :: Cxt -> Var -> Maybe ClassEntry
-classFor cxt c = case Map.lookup c cxt of
+classFor cxt c = case lookup c cxt of
    Just (Class cls) -> Just cls
    _ -> Nothing
 
@@ -90,16 +85,13 @@ resolveName cxt name = case NEL.fromList init of
       _ -> Nothing
    where
    { init, last: x } = unsnoc name
-   simpleEntry g y = case Map.lookup y g of
-      Just e@(VarStatus true) -> Just e
+   simpleEntry g y = case lookup y g of
+      Just e@Assigned -> Just e
       Just e@(ModChecked _ _) -> Just e
       Just e@(Class _) -> Just e
       Just e@TypeVar -> Just e
       Just e@(TypeAlias _ _) -> Just e
       _ -> Nothing
-
-extendVar :: Cxt -> VarCxt -> Cxt
-extendVar cxt cxt' = Map.union (VarStatus <$> cxt') cxt
 
 fields :: ClassEntry -> List Var
 fields cls = case cls.base of
@@ -113,7 +105,7 @@ ancestors cls = cls.name : maybe Nil ancestors (cls.base >>= classFor cls.cxt)
 fieldMap :: forall a. ClassEntry -> List a -> List (Var × a) -> Var -> Maybe a
 fieldMap cls xs xys x = case elemIndex x (fields cls) of
    Just i | i < length xs -> index xs i
-   _ -> lookup x xys
+   _ -> F.lookup x xys
 
 -- ======================
 -- boilerplate

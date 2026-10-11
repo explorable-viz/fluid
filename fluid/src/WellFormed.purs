@@ -10,7 +10,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (lmap)
 import Data.Either (Either, hush)
 import Control.MonadPlus (guard)
-import Data.Foldable (all, and, elem, find, foldM, foldl, foldr, for_)
+import Data.Foldable (all, and, elem, find, foldM, foldl, for_)
 import Data.Function (on)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.FunctorWithIndex (mapWithIndex)
@@ -29,9 +29,9 @@ import Data.Set as Set
 import Data.Traversable (for, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cParagraph, cRange)
-import DefiniteAssignment (ClassEntry, VarCxt, Entry(..), Cxt, WfResult(..), ancestors, classFor, classOf, extendVar, extend, fieldMap, fields, mergeRes, overrideRes, resolveName)
+import DefiniteAssignment (ClassEntry, Entry(..), Cxt, WfResult(..), ancestors, classFor, classOf, extend, fieldMap, fields, mergeRes, override, overrideRes, resolveName)
 import Dict as D
-import Util.Map (constMap)
+import Util.Map (constMap, filterKeys, insert, keys, lookup, maplet, toUnfoldable)
 import Expr (bv, fv)
 import Expr (Pattern(..)) as S
 import Expr (Branch(..), Def(..), Expr(..), Import(..), Module(..), Qualifier(..), RecDefs(..), Stmt(..)) as E
@@ -41,7 +41,7 @@ import SExpr (Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Pa
 import Types as T
 import Util (MayFail, type (×), absurd, checkDistinct, definitely', error, nonEmpty, singleton, tail, zip, zipWith, (×), (∩))
 import Util.Pair (Pair(..))
-import Util.Set ((\\), (∈), (∪))
+import Util.Set (empty, (\\), (∈), (∪))
 
 -- Predefined modules and program (under __main__) have no body
 type CheckedModule = { cxt :: Cxt, mod :: Maybe E.Module }
@@ -54,37 +54,34 @@ runCheckM m mods predefined = runReaderT (runStateT m (predefined <#> \cxt -> { 
 
 checkProgram :: List S.Import -> S.Stmt -> CheckM E.Stmt
 checkProgram imports s = do
-   _ × cxt_imp <- checkImports mainModule imports
-   -- Unlike a module (checkStatements), the program may return: a top-level return yields
-   -- its result value. The spec forbids this, treating __main__ as a module; Fluid does not.
-   cxt × _ × s' <- lift (lift (wellFormedTop mainModule (Map.insert "__name__" (VarStatus true) cxt_imp) s))
-   modify_ (Map.insert mainModule { cxt, mod: Nothing })
+   cxt_imp × cxt_ιs <- checkImports mainModule imports
+   cxt × _ × s' <- lift (lift (wellFormedTop mainModule (moduleScope cxt_imp cxt_ιs s) s))
+   modify_ (insert mainModule { cxt, mod: Nothing })
    pure s'
 
--- Member context of module q, checked on demand as its import is checked; memoised. The recursion has no
--- cycle guard; it terminates because the dependency graph is acyclic.
+-- Member context of module q, checked on first import; no cycle guard, as the dependency graph is acyclic.
 checkModule :: ModuleName -> CheckM Cxt
-checkModule q = get >>= \checked -> case Map.lookup q checked of
+checkModule q = get >>= \checked -> case lookup q checked of
    Just { cxt } -> pure cxt
    Nothing -> mapStateT (mapReaderT (lmap (_ <> "\nChecking module " <> dottedName q))) do
       mods <- lift ask
-      mod@(S.Module ιs _) <- maybe (throwError ("Module not parsed: " <> dottedName q)) pure (Map.lookup q mods)
-      cxt_ιs × cxt_imp <- checkImports q ιs
-      cxt' × mod' <- lift (lift (checkStatements q cxt_imp mod))
-      let subMods = Mod <$> Map.fromFoldable (submodules (Map.keys mods) q)
-      for_ (Set.toUnfoldable ((Map.keys cxt_ιs ∪ Map.keys cxt') ∩ Map.keys subMods) :: List Var) \x ->
+      mod@(S.Module ιs _) <- maybe (throwError ("Module not parsed: " <> dottedName q)) pure (lookup q mods)
+      cxt_imp × cxt_ιs <- checkImports q ιs
+      cxt' × mod' <- lift (lift (checkStatements q cxt_imp cxt_ιs mod))
+      let subMods = Mod <$> Map.fromFoldable (submodules (keys mods) q)
+      for_ (Set.toUnfoldable ((keys cxt_ιs ∪ keys cxt') ∩ keys subMods) :: List Var) \x ->
          throwError $ "Duplicate module member: " <> dottedName q <> " defines " <> x
             <> " and also has submodule "
             <> dottedName (snoc q x)
-      let cxt = subMods `Map.union` cxt'
-      modify_ (Map.insert q { cxt, mod: Just mod' })
+      let cxt = subMods ∪ cxt'
+      modify_ (insert q { cxt, mod: Just mod' })
       pure cxt
 
 checkImports :: ModuleName -> List S.Import -> CheckM (Cxt × Cxt)
 checkImports enclosing ιs = do
-   cxt <- foldM (\acc q -> (acc `Map.union` _) <$> checkModule q) Map.empty (implicitFor enclosing)
-   cxt' <- foldM (\acc ι -> (acc `extend` _) <$> importBindings enclosing ι) Map.empty ιs
-   pure (cxt' × (cxt `extend` cxt'))
+   cxt <- foldM (\acc q -> (acc ∪ _) <$> checkModule q) empty (implicitFor enclosing)
+   cxt' <- foldM (\acc ι -> (acc `extend` _) <$> importBindings enclosing ι) empty ιs
+   pure (cxt × cxt')
 
 -- Bindings contributed by one import of the enclosing module.
 importBindings :: ModuleName -> S.Import -> CheckM Cxt
@@ -93,7 +90,7 @@ importBindings enclosing (S.Import q Nothing) = do
       $ throwError
       $ "Module " <> dottedName enclosing <> " cannot import its own descendant " <> dottedName q
    θ <- ModChecked q <$> checkModule q
-   Map.singleton (head q) <$> checksTo Nothing q θ
+   maplet (head q) <$> checksTo Nothing q θ
 importBindings enclosing (S.Import q (Just xs)) = do
    cxt <- checkModule q
    _ <- checksTo (Just enclosing) q (ModChecked q cxt) -- checks q's ancestors; contributes no bindings
@@ -109,72 +106,75 @@ checksTo bound q θ = case NEL.fromList init of
       | maybe false (q' `prefixOf` _) bound -> pure θ
       | otherwise -> do
            cxt <- checkModule q'
-           checksTo bound q' (ModChecked q' (cxt `extend` Map.singleton x θ))
+           checksTo bound q' (ModChecked q' (cxt `extend` maplet x θ))
    where
    { init, last: x } = unsnoc q
 
 -- Bindings for names imported from module q with member context cxt.
 importedMembers :: ModuleName -> Cxt -> List Var -> CheckM Cxt
-importedMembers _ _ Nil = pure Map.empty
+importedMembers _ _ Nil = pure empty
 importedMembers q cxt (x : xs) = do
    othersCxt <- importedMembers q cxt xs
-   case Map.lookup x cxt of
-      Just (Mod q') -> checkModule q' <#> \cxt' -> Map.insert x (ModChecked q' cxt') othersCxt
-      Just (VarStatus false) -> throwError $ "Not definitely assigned: " <> x
-      Just θ -> pure (Map.insert x θ othersCxt)
+   case lookup x cxt of
+      Just (Mod q') -> checkModule q' <#> \cxt' -> insert x (ModChecked q' cxt') othersCxt
+      Just Declared -> throwError $ "Not definitely initialised: " <> x
+      Just PossiblyUnassigned -> throwError $ "Not definitely initialised: " <> x
+      Just θ -> pure (insert x θ othersCxt)
       Nothing -> throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
 
-checkStatements :: Name -> Cxt -> S.Module -> MayFail (Cxt × E.Module)
-checkStatements q cxt_imp (S.Module imports ss) =
-   case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
-      Nothing -> pure (Map.singleton "__name__" (VarStatus true) × E.Module imports' Nil)
-      Just s -> do
-         cxt × r × s' <- wellFormedTop q (Map.insert "__name__" (VarStatus true) cxt_imp) s
-         case r of
-            Returns -> throwError "Module body cannot return"
-            Assigns cxt' ->
-               pure (Map.insert "__name__" (VarStatus true) (Map.union cxt (VarStatus <$> cxt')) × E.Module imports' (unSeq s'))
+checkStatements :: Name -> Cxt -> Cxt -> S.Module -> MayFail (Cxt × E.Module)
+checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
+   cxt × r × s' <- wellFormedTop q (moduleScope cxt_imp cxt_ιs s) s
+   case r of
+      -- Program may return, with the returned value as its result; spec treats __main__ as a module
+      Returns -> throwError "Module body cannot return"
+      Assigns cxt' -> pure (insert "__name__" Assigned (cxt `override` cxt') × E.Module imports' s')
    where
    imports' = imports <#> \(S.Import q' xs) -> E.Import q' xs
-   unSeq (E.Seq s1 s2) = s1 : unSeq s2
-   unSeq s = s : Nil
+
+moduleScope :: Cxt -> Cxt -> S.Stmt -> Cxt
+moduleScope cxt_imp cxt_ιs s = insert "__name__" Assigned (cxt_imp `extend` cxt_ιs `override` scope (keys cxt_ιs) s)
+
+scope :: Set Var -> S.Stmt -> Cxt
+scope ys s = constMap Unbound (S.assigns s \\ ys)
 
 mainModule :: Name
 mainModule = pure "__main__"
 
 typeDecls :: S.Stmt -> Set Var
-typeDecls (S.Dataclass c _ _ _) = Set.singleton c
-typeDecls (S.TypeAlias x _ _) = Set.singleton x
+typeDecls (S.Dataclass c _ _ _) = singleton c
+typeDecls (S.TypeAlias x _ _) = singleton x
 typeDecls (S.Seq s1 s2) = typeDecls s1 ∪ typeDecls s2
-typeDecls _ = Set.empty
+typeDecls _ = empty
 
 -- Variables of enclosing scopes read within closures.
 class Captures a where
    captures :: a -> Set Var
 
 instance Captures S.Stmt where
-   captures S.Pass = Set.empty
+   captures S.Pass = empty
+   captures (S.Declare _ _) = empty
    captures (S.Def (S.VarDef _ _ e)) = captures e
    captures (S.ExprStmt e) = captures e
-   captures (S.Assert e e') = captures e ∪ maybe Set.empty captures e'
+   captures (S.Assert e e') = captures e ∪ maybe empty captures e'
    captures (S.Return e) = captures e
    captures (S.If es s) =
-      unions ((\(e × s') -> captures e ∪ captures s') <$> es) ∪ maybe Set.empty captures s
+      unions ((\(e × s') -> captures e ∪ captures s') <$> es) ∪ maybe empty captures s
    captures (S.Match e ps) =
       captures e ∪ unions ((\(_ × s) -> captures s) <$> ps)
-   captures (S.DefRec ds) = unions ((fv <<< snd) <$> ds) \\ unions (Set.singleton <<< fst <$> ds)
+   captures (S.DefRec ds) = unions ((fv <<< snd) <$> ds) \\ unions (singleton <<< fst <$> ds)
    captures (S.Seq s1 s2) = captures s1 ∪ captures s2
-   captures (S.Dataclass _ _ _ _) = Set.empty
-   captures (S.TypeAlias _ _ _) = Set.empty
+   captures (S.Dataclass _ _ _ _) = empty
+   captures (S.TypeAlias _ _ _) = empty
 
 instance Captures S.Expr where
-   captures (S.Var _) = Set.empty
-   captures (S.Lit _) = Set.empty
+   captures (S.Var _) = empty
+   captures (S.Lit _) = empty
    captures (S.Call e _ es xes) = captures e ∪ unions (captures <$> es) ∪ unions ((captures <<< snd) <$> xes)
    captures (S.Dictionary es) =
       unions ((\(k × v) -> captures k ∪ captures v) <$> es)
    captures (S.Matrix e (x × y) e') =
-      (captures e \\ (Set.singleton x ∪ Set.singleton y)) ∪ captures e'
+      (captures e \\ (singleton x ∪ singleton y)) ∪ captures e'
    captures (S.Lambda (S.LambdaClause (ps × e))) =
       fv e \\ unions (bv <$> ps)
    captures (S.Attribute e _) = captures e
@@ -187,16 +187,16 @@ instance Captures S.Expr where
    captures (S.Cond e1 e e2) = captures e1 ∪ captures e ∪ captures e2
    captures (S.Paragraph es) = unions (capturesPe <$> es)
       where
-      capturesPe (S.Token _) = Set.empty
+      capturesPe (S.Token _) = empty
       capturesPe (S.Unquote e) = captures e
    captures (S.List es) = unions (captures <$> es)
    captures (S.Tuple es) = unions (captures <$> es)
    captures (S.ListComp e gs) = captures gs ∪ (captures e \\ bv gs)
    captures (S.DictComp k e gs) = captures gs ∪ ((captures k ∪ captures e) \\ bv gs)
-   captures (S.DocExpr e e') = (captures e \\ Set.singleton varThis) ∪ captures e'
+   captures (S.DocExpr e e') = (captures e \\ singleton varThis) ∪ captures e'
 
 instance Captures (List S.Qualifier) where
-   captures Nil = Set.empty
+   captures Nil = empty
    captures (S.Guard e : gs) = captures e ∪ captures gs
    captures (S.Generator p e : gs) = captures e ∪ (captures gs \\ bv p)
    captures (S.Decl (S.VarDef p _ e) : gs) = captures e ∪ (captures gs \\ bv p)
@@ -205,23 +205,27 @@ instance Captures (List S.Qualifier) where
 class WellFormed a b | a -> b where
    wellFormed :: Cxt -> a -> MayFail b
 
-instance WellFormed S.Stmt (WfResult VarCxt × E.Stmt) where
-   wellFormed _ S.Pass = pure (Assigns Map.empty × E.Pass)
+instance WellFormed S.Stmt (WfResult Cxt × E.Stmt) where
+   wellFormed _ S.Pass = pure (Assigns empty × E.Pass)
    wellFormed cxt (S.Return e) = (Returns × _) <<< E.Return <$> wellFormed cxt e
-   wellFormed cxt (S.ExprStmt e) = (Assigns Map.empty × _) <<< E.ExprStmt <$> wellFormed cxt e
+   wellFormed cxt (S.ExprStmt e) = (Assigns empty × _) <<< E.ExprStmt <$> wellFormed cxt e
    wellFormed cxt (S.Assert e e') =
-      (Assigns Map.empty × _) <$> (E.Assert <$> wellFormed cxt e <*> traverse (wellFormed cxt) e')
+      (Assigns empty × _) <$> (E.Assert <$> wellFormed cxt e <*> traverse (wellFormed cxt) e')
+   wellFormed cxt (S.Declare x ψ) = do
+      void $ resolveType cxt ψ
+      pure (Assigns (maplet x Declared) × E.Declare x)
    wellFormed cxt (S.Def (S.VarDef p ψ e)) = do
       let xs = bv p
       for_ (Set.toUnfoldable (xs ∩ captures e) :: Array Var) \x ->
          throwError $ "Variable captured by its own definition: " <> x
+      for_ xs (assignable cxt)
       e' <- wellFormed cxt e
       p' <- wellFormed cxt p
       for_ ψ (resolveType cxt)
-      pure (Assigns (constMap true xs) × E.Assign p' e')
+      pure (Assigns (constMap Assigned xs) × E.Assign p' e')
    wellFormed cxt (S.DefRec ds) = do
-      let cxt_fs = constMap true (Set.fromFoldable (fst <$> ds))
-      let cxt' = cxt `extendVar` cxt_fs
+      let cxt_fs = constMap Assigned (Set.fromFoldable (fst <$> ds))
+      let cxt' = cxt `override` cxt_fs
       let defs = NEL.groupBy (eq `on` fst) ds
       checkDistinct ("Non-contiguous clauses for: " <> _) (NEL.toList (fst <<< head <$> defs))
       defs' <- for defs \def -> do
@@ -235,7 +239,7 @@ instance WellFormed S.Stmt (WfResult VarCxt × E.Stmt) where
          Assigns cxt' -> do
             for_ (Set.toUnfoldable (captures s1 ∩ S.assigns s2) :: Array Var) \x ->
                throwError $ "Captured variable reassigned: " <> x
-            r2 × s2' <- wellFormed (cxt `extendVar` cxt') s2
+            r2 × s2' <- wellFormed (cxt `override` cxt') s2
             pure (overrideRes r1 r2 × E.Seq s1' s2')
    wellFormed cxt (S.If es elseBranch) = do
       es' <- for es \(e × s) -> do
@@ -244,25 +248,25 @@ instance WellFormed S.Stmt (WfResult VarCxt × E.Stmt) where
          pure (r × E.Branch e' s')
       rElse × elseBranch' <- case elseBranch of
          Just s -> map Just <$> wellFormed cxt s
-         Nothing -> pure (Assigns Map.empty × Nothing)
+         Nothing -> pure (Assigns empty × Nothing)
       pure (foldl1 mergeRes (NEL.cons rElse (fst <$> es')) × E.If (snd <$> es') elseBranch')
    wellFormed cxt (S.Match e bs) = do
       e' <- wellFormed cxt e
       ps' <- wellFormedPatterns cxt (fst <$> bs)
       bs' <- for (zip ps' bs) \(p' × (p × s)) -> do
-         let xs = bv p
-         r × s' <- wellFormed (cxt `extendVar` constMap true xs) s
-         pure (overrideRes (Assigns (constMap true xs)) r × (p' × s'))
+         let cxt_xs = constMap Assigned (bv p)
+         r × s' <- wellFormed (cxt `override` cxt_xs) s
+         pure (overrideRes (Assigns cxt_xs) r × (p' × s'))
       pure (foldl1 mergeRes ((fst <$> bs') `snoc` rNoMatch) × E.Match e' (snd <$> bs'))
       where
       rNoMatch = case fst (last bs) of
          S.PVar _ -> Returns
          S.PWild -> Returns
-         _ -> Assigns Map.empty
+         _ -> Assigns empty
    wellFormed _ (S.Dataclass _ _ _ _) = error absurd
    wellFormed _ (S.TypeAlias _ _ _) = error absurd
 
-wellFormedTop :: Name -> Cxt -> S.Stmt -> MayFail (Cxt × WfResult VarCxt × E.Stmt)
+wellFormedTop :: Name -> Cxt -> S.Stmt -> MayFail (Cxt × WfResult Cxt × E.Stmt)
 wellFormedTop q cxt (S.Dataclass c αs b xψs) = do
    predefName cxt "dataclass"
    let cxt_αs = cxt `extend` typeParams αs
@@ -280,13 +284,13 @@ wellFormedTop q cxt (S.Dataclass c αs b xψs) = do
       S.NameTy base _ -> throwError $ "Cannot extend imported class: " <> dottedName base
       _ -> notClass ψ
    let cls = { cxt, name: snoc q c, typeParams: αs, base, fields: xs }
-   pure (Map.singleton c (Class cls) × Assigns Map.empty × E.Dataclass (snoc q c))
+   pure (maplet c (Class cls) × Assigns empty × E.Dataclass (snoc q c))
    where
    notClass :: forall a. S.TypeExpr -> MayFail a
    notClass ψ = throwError $ "Class " <> c <> " extends " <> prettyP ψ <> ", which is not a class"
 wellFormedTop _ cxt (S.TypeAlias x αs ψ) = do
    τ <- resolveType (cxt `extend` typeParams αs) ψ
-   pure (Map.singleton x (TypeAlias αs τ) × Assigns Map.empty × E.TypeAlias x αs τ)
+   pure (maplet x (TypeAlias αs τ) × Assigns empty × E.TypeAlias x αs τ)
 wellFormedTop q cxt (S.Seq t1 t2) = do
    cxt_t1 × r1 × t1' <- wellFormedTop q cxt t1
    case r1 of
@@ -294,16 +298,13 @@ wellFormedTop q cxt (S.Seq t1 t2) = do
       Assigns cxt' -> do
          for_ (Set.toUnfoldable (captures t1 ∩ S.assigns t2) :: Array Var) \x ->
             throwError $ "Captured variable reassigned: " <> x
-         for_ (Map.toUnfoldable (Map.filterKeys (_ ∈ S.assigns t2) cxt_t1) :: Array (Var × Entry)) \(x × θ) ->
+         for_ (toUnfoldable (filterKeys (_ ∈ S.assigns t2) cxt_t1) :: Array (Var × Entry)) \(x × θ) ->
             throwError $ (if x ∈ typeDecls t2 then "Duplicate " <> kind θ <> " declaration: " else "Reassigned " <> kind θ <> " name: ") <> x
-         cxt_t2 × r2 × t2' <- wellFormedTop q (Map.union cxt_t1 (cxt `extendVar` cxt')) t2
-         pure (Map.union cxt_t2 cxt_t1 × overrideRes r1 r2 × E.Seq t1' t2')
-   where
-   kind (TypeAlias _ _) = "type alias"
-   kind _ = "class"
+         cxt_t2 × r2 × t2' <- wellFormedTop q (cxt `override` cxt' `override` cxt_t1) t2
+         pure ((cxt_t2 ∪ cxt_t1) × overrideRes r1 r2 × E.Seq t1' t2')
 wellFormedTop _ cxt s = do
    r × s' <- wellFormed cxt s
-   pure (Map.empty × r × s')
+   pure (empty × r × s')
 
 typeParams :: List Var -> Cxt
 typeParams αs = constMap TypeVar (Set.fromFoldable αs)
@@ -379,11 +380,11 @@ instance WellFormed S.Expr E.Expr where
    wellFormed cxt (S.Subscript e e') = E.Subscript <$> wellFormed cxt e <*> wellFormed cxt e'
    wellFormed cxt (S.Matrix e1 (x × y) e2) =
       (\e2' e1' -> E.Matrix e1' (x × y) e2') <$> wellFormed cxt e2 <*> wellFormed
-         (cxt `extendVar` constMap true (Set.singleton x ∪ Set.singleton y))
+         (cxt `override` constMap Assigned (singleton x ∪ singleton y))
          e1
    wellFormed cxt (S.Lambda (S.LambdaClause (ps × e))) = do
       ps' <- traverse (wellFormed cxt) ps
-      e' <- wellFormed (cxt `extendVar` constMap true (unions (bv <$> ps))) e
+      e' <- wellFormed (cxt `override` constMap Assigned (unions (bv <$> ps))) e
       E.Lambda <$> clauses (NEL.singleton ((ps' <#> (_ × Nothing)) × Nothing × E.Return e'))
    wellFormed cxt (S.Dictionary kvs) =
       E.Dictionary <$> traverse (\(k × v) -> Pair <$> wellFormed cxt k <*> wellFormed cxt v) kvs
@@ -400,7 +401,7 @@ instance WellFormed S.Expr E.Expr where
       (\((k' × e') × gs') -> E.DictComp k' e' gs') <$> wellFormedQualifiers cxt gs \cxt' ->
          (×) <$> wellFormed cxt' k <*> wellFormed cxt' e
    wellFormed cxt (S.DocExpr e e') =
-      E.DocExpr <$> wellFormed (cxt `extendVar` constMap true (Set.singleton varThis)) e <*> wellFormed cxt e'
+      E.DocExpr <$> wellFormed (cxt `override` constMap Assigned (singleton varThis)) e <*> wellFormed cxt e'
 
 asName :: S.Expr -> Maybe Name
 asName (S.Var x) = Just (singleton x)
@@ -421,21 +422,22 @@ wellFormedQualifiers cxt (g : gs) body = case g of
    S.Generator p e -> do
       e' <- wellFormed cxt e
       p' <- wellFormed cxt p
-      map (E.Generator p' e' : _) <$> wellFormedQualifiers (cxt `extendVar` constMap true (bv p)) gs body
+      map (E.Generator p' e' : _) <$> wellFormedQualifiers (cxt `override` constMap Assigned (bv p)) gs body
    S.Decl (S.VarDef p ψ e) -> do
       for_ ψ (resolveType cxt)
       e' <- wellFormed cxt e
       p' <- wellFormed cxt p
-      map (E.Decl p' e' : _) <$> wellFormedQualifiers (cxt `extendVar` constMap true (bv p)) gs body
+      map (E.Decl p' e' : _) <$> wellFormedQualifiers (cxt `override` constMap Assigned (bv p)) gs body
 
 -- Keyword arguments in field order; must cover fields after first n exactly.
 positionaliseKw :: forall b. ClassEntry -> Name -> Int -> List (Bind b) -> MayFail (List b)
 positionaliseKw cls c n xbs = do
-   let remaining = drop n (fields cls)
-   let provided = fst <$> xbs
    when (sort provided /= sort remaining) $ throwError $
       "Class " <> last c <> " keyword fields mismatch: expected " <> show remaining <> ", got " <> show provided
    pure $ remaining <#> \f -> definitely' (snd <$> find (\(k ↦ _) -> k == f) xbs)
+   where
+   remaining = drop n (fields cls)
+   provided = fst <$> xbs
 
 -- Parameter names for desugared functions, kept apart from source identifiers by the leading $.
 param :: Int -> Var
@@ -447,7 +449,7 @@ wellFormedClause cxt (S.Clause (αs × ps × ψ × s)) = do
    let xs = unions (bv <$> ps)
    ps' <- for ps \(S.Param p ψ') -> (×) <$> wellFormed cxt p <*> traverse (resolveType cxt_αs) ψ'
    τ <- traverse (resolveType cxt_αs) ψ
-   r × s' <- wellFormed (cxt_αs `extendVar` constMap true xs `extendVar` constMap false (S.assigns s \\ xs)) s
+   r × s' <- wellFormed (cxt_αs `override` constMap Assigned xs `override` scope xs s) s
    pure (ps' × τ × close r s')
    where
    -- Body that may fall through returns None
@@ -474,7 +476,8 @@ clauses cs = do
       body = case matched of
          Nil -> head ss
          (x × ps) : Nil -> E.Match (E.Var x) (zip (nonEmpty ps) ss)
-         _ -> E.Match (E.Tuple (E.Var <<< fst <$> matched)) (zipWith (\ps s -> S.PTuple ps × s) (nonEmpty (transpose (snd <$> matched))) ss)
+         _ -> E.Match (E.Tuple (E.Var <<< fst <$> matched))
+            (zipWith (\ps s -> S.PTuple ps × s) (nonEmpty (transpose (snd <$> matched))) ss)
    pure (E.Def (fst <$> named) body)
    where
    sharedVar :: List S.Pattern -> Maybe Var
@@ -486,19 +489,37 @@ clauses cs = do
       unless (all (\ψ -> ψ == Nothing || ψ == head ψs) (tail ψs)) $ throwError ("Clauses differ in " <> what)
 
 var :: Cxt -> Var -> MayFail Unit
-var cxt x = case Map.lookup x cxt of
-   Just (VarStatus true) -> pure unit
-   Just (VarStatus false) -> throwError $ "Not definitely assigned: " <> x
+var cxt x = case lookup x cxt of
+   Just Assigned -> pure unit
+   Just Unbound -> throwError $ "Declared later in scope: " <> x
+   Just Declared -> throwError $ "Declared but not initialised: " <> x
+   Just PossiblyUnassigned -> throwError $ "Possibly uninitialised: " <> x
    Just (Mod q) -> throwError $ "module " <> dottedName q <> " is not a value"
    Just (ModChecked q _) -> throwError $ "module " <> dottedName q <> " is not a value"
-   Just (Class _) -> throwError $ "class " <> x <> " is not a value"
-   Just TypeVar -> throwError $ "type parameter " <> x <> " is not a value"
-   Just (TypeAlias _ _) -> throwError $ "type alias " <> x <> " is not a value"
-   Just PredefName -> throwError $ "predefined name " <> x <> " is not a value"
+   Just θ -> throwError $ kind θ <> " " <> x <> " is not a value"
    Nothing -> throwError $ "Unbound name: " <> x
 
+-- Unbound accepted until annotations are required, as an unannotated assignment also declares.
+assignable :: Cxt -> Var -> MayFail Unit
+assignable cxt x = case lookup x cxt of
+   Just Declared -> pure unit
+   Just Unbound -> pure unit
+   Just Assigned -> throwError $ "Already initialised: " <> x
+   Just PossiblyUnassigned -> throwError $ "Possibly initialised already: " <> x
+   Just θ -> throwError $ "Reassigned " <> kind θ <> " name: " <> x
+   Nothing -> error absurd
+
+kind :: Entry -> String
+kind (Class _) = "class"
+kind (TypeAlias _ _) = "type alias"
+kind (Mod _) = "module"
+kind (ModChecked _ _) = "module"
+kind PredefName = "predefined name"
+kind TypeVar = "type parameter"
+kind _ = "variable"
+
 predefName :: Cxt -> Var -> MayFail Unit
-predefName cxt x = case Map.lookup x cxt of
+predefName cxt x = case lookup x cxt of
    Just PredefName -> pure unit
    _ -> throwError $ "Not bound as a predefined name: " <> x
 

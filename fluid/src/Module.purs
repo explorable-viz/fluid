@@ -177,7 +177,7 @@ parseModules imports = do
    orThrow (checkAcyclic moduleDeps (deps >>= _.edges))
    -- prefix-closed: a package with no source file of its own is an empty module
    let ancestors = Set.fromFoldable ((Set.toUnfoldable (Map.keys mods) :: List ModuleName) >>= parents)
-   pure (mods `Map.union` constMap (S.Module Nil Nil) ancestors)
+   pure (mods `Map.union` constMap (S.Module Nil S.Pass) ancestors)
 
    where
 
@@ -214,5 +214,5 @@ parseModules imports = do
             let toLoad = implicitFor path <> (deps >>= _.load)
             pure $ mod × edges × toLoad
          Nothing -> hasDirectory fluidSrcPaths (File (pathName path)) >>= case _ of
-            true -> pure (S.Module Nil Nil × Nil × Nil)
+            true -> pure (S.Module Nil S.Pass × Nil × Nil)
             false -> throw ("Module not found in any path: " <> dottedName path)
