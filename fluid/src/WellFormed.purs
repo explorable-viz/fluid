@@ -432,11 +432,12 @@ wellFormedQualifiers cxt (g : gs) body = case g of
 -- Keyword arguments in field order; must cover fields after first n exactly.
 positionaliseKw :: forall b. ClassEntry -> Name -> Int -> List (Bind b) -> MayFail (List b)
 positionaliseKw cls c n xbs = do
-   let remaining = drop n (fields cls)
-   let provided = fst <$> xbs
    when (sort provided /= sort remaining) $ throwError $
       "Class " <> last c <> " keyword fields mismatch: expected " <> show remaining <> ", got " <> show provided
    pure $ remaining <#> \f -> definitely' (snd <$> find (\(k ↦ _) -> k == f) xbs)
+   where
+   remaining = drop n (fields cls)
+   provided = fst <$> xbs
 
 -- Parameter names for desugared functions, kept apart from source identifiers by the leading $.
 param :: Int -> Var
