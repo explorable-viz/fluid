@@ -412,10 +412,10 @@ evalModule ρ0 q (Module ιs s) = do
    { modules } <- moduleStore
    ρ_subMods <- traverse moduleVal (D.fromFoldable (submodules (Map.keys modules) q))
    ρ <- traverse gvalAt (ρ_imp <+> ρ_name)
-   bindings × _ <- asAssigns <$> evalStmt { ctrl: Nil, env: ρ } s
+   ρ' × _ <- asAssigns <$> evalStmt { ctrl: Nil, env: ρ } s
    let xs = L.fromFoldable (assigns s)
    ρ_unbound <- D.fromFoldable <<< zip xs <$> traverse (const (deriv (Val unit V.Unbound))) xs
-   members <- traverse (record >>> map fst) bindings
+   members <- traverse (record >>> map fst) ρ'
    pure (ρ_name <+> ρ_subMods <+> ρ_unbound <+> members)
 
 -- Bind imported members, and names of imported modules to module values.
