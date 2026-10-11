@@ -55,8 +55,6 @@ runCheckM m mods predefined = runReaderT (runStateT m (predefined <#> \cxt -> { 
 checkProgram :: List S.Import -> S.Stmt -> CheckM E.Stmt
 checkProgram imports s = do
    cxt_ιs × cxt_imp <- checkImports mainModule imports
-   -- Unlike a module (checkStatements), the program may return: a top-level return yields
-   -- its result value. The spec forbids this, treating __main__ as a module; Fluid does not.
    cxt × _ × s' <- lift (lift (wellFormedTop mainModule (moduleScope cxt_ιs cxt_imp s) s))
    modify_ (Map.insert mainModule { cxt, mod: Nothing })
    pure s'
@@ -132,6 +130,7 @@ checkStatements q cxt_ιs cxt_imp (S.Module imports ss) =
       Just s -> do
          cxt × r × s' <- wellFormedTop q (moduleScope cxt_ιs cxt_imp s) s
          case r of
+            -- Program may return, with the returned value as its result; spec treats __main__ as a module
             Returns -> throwError "Module body cannot return"
             Assigns cxt' ->
                pure (Map.insert "__name__" Assigned (cxt `override` cxt') × E.Module imports' (unSeq s'))
