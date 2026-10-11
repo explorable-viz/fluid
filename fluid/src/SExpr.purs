@@ -82,7 +82,7 @@ data Qualifier
    | Generator Pattern Expr
    | Decl VarDef
 
-data Module = Module (List Import) (List Stmt)
+data Module = Module (List Import) Stmt
 
 data TypeExpr
    = PrimitiveTy T.Primitive

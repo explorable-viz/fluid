@@ -543,8 +543,8 @@ expr = context "expr" $ cond <?> "expression"
 module_ :: Parser Module
 module_ = do
    ιs <- many (align import_)
-   ss <- many (align topStmt)
-   pure $ Module ιs ss
+   s <- (many1 (align topStmt) <#> foldr1Seq) <|> pure Pass
+   pure $ Module ιs s
 
 misplacedImport :: forall a. Parser a
 misplacedImport = (reserved "import" <|> reserved "from") *> fail "imports must precede statements"

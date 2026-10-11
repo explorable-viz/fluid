@@ -10,7 +10,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (lmap)
 import Data.Either (Either, hush)
 import Control.MonadPlus (guard)
-import Data.Foldable (all, and, elem, find, foldM, foldl, foldr, for_)
+import Data.Foldable (all, and, elem, find, foldM, foldl, for_)
 import Data.Function (on)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.FunctorWithIndex (mapWithIndex)
@@ -123,20 +123,14 @@ importedMembers q cxt (x : xs) = do
       Nothing -> throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
 
 checkStatements :: Name -> Cxt -> Cxt -> S.Module -> MayFail (Cxt × E.Module)
-checkStatements q cxt_imp cxt_ιs (S.Module imports ss) =
-   case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
-      Nothing -> pure (Map.singleton "__name__" Assigned × E.Module imports' Nil)
-      Just s -> do
-         cxt × r × s' <- wellFormedTop q (moduleScope cxt_imp cxt_ιs s) s
-         case r of
-            -- Program may return, with the returned value as its result; spec treats __main__ as a module
-            Returns -> throwError "Module body cannot return"
-            Assigns cxt' ->
-               pure (Map.insert "__name__" Assigned (cxt `override` cxt') × E.Module imports' (unSeq s'))
+checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
+   cxt × r × s' <- wellFormedTop q (moduleScope cxt_imp cxt_ιs s) s
+   case r of
+      -- Program may return, with the returned value as its result; spec treats __main__ as a module
+      Returns -> throwError "Module body cannot return"
+      Assigns cxt' -> pure (Map.insert "__name__" Assigned (cxt `override` cxt') × E.Module imports' s')
    where
    imports' = imports <#> \(S.Import q' xs) -> E.Import q' xs
-   unSeq (E.Seq s1 s2) = s1 : unSeq s2
-   unSeq s = s : Nil
 
 moduleScope :: Cxt -> Cxt -> S.Stmt -> Cxt
 moduleScope cxt_imp cxt_ιs s = Map.insert "__name__" Assigned (cxt_imp `extend` cxt_ιs `override` scope (Map.keys cxt_ιs) s)

@@ -8,7 +8,7 @@ import Control.Monad.Reader (class MonadReader)
 import Control.Monad.State (runStateT)
 import Data.Array as A
 import Data.Either (either)
-import Data.Foldable (elem, fold, foldM, foldMap, foldl, sum)
+import Data.Foldable (elem, fold, foldM, foldl, sum)
 import Data.Functor.Compose (Compose(..))
 import Data.Functor.Product (Product(..), product)
 import Data.Identity (Identity(..))
@@ -57,6 +57,11 @@ asReturns (Assigns _ _) = error "Returns expected"
 asAssigns :: forall s. Result s -> Dict (GVal s) × Ctrl s
 asAssigns (Assigns ρ ctrl) = ρ × ctrl
 asAssigns (Returns _) = error "Assigns expected"
+
+-- assigns ρ' ▷ r
+override :: forall s. Dict (GVal s) -> Result s -> Result s
+override ρ' (Assigns ρ'' ctrl) = Assigns (ρ' <+> ρ'') ctrl
+override _ r = r
 
 -- Variables bound if the pattern matches the value, with the dependence of each inspected position.
 matches :: forall s. ClassTable -> GVal s -> Pattern -> Maybe (Dict (GVal s)) × List (Ctrl s)
@@ -314,11 +319,7 @@ evalStmt inputs = case _ of
       classes <- askClasses
       case dispatch classes (NEL.toList bs) v inputs.ctrl of
          Nothing × ctrl -> pure (Assigns empty ctrl)
-         Just (ρ' × s') × ctrl -> do
-            r <- evalStmt (inputs { env = inputs.env <+> ρ', ctrl = ctrl }) s'
-            case r of
-               Returns _ -> pure r
-               Assigns ρ'' ctrl' -> pure (Assigns (ρ' <+> ρ'') ctrl')
+         Just (ρ' × s') × ctrl -> override ρ' <$> evalStmt (inputs { env = inputs.env <+> ρ', ctrl = ctrl }) s'
    Declare _ -> pure (Assigns empty inputs.ctrl)
    Assign p e -> do
       v <- gval <$> eval inputs e
@@ -346,7 +347,7 @@ evalStmt inputs = case _ of
       r1 <- evalStmt inputs s1
       case r1 of
          Returns _ -> pure r1
-         Assigns ρ' ctrl -> evalStmt (inputs { env = inputs.env <+> ρ', ctrl = ctrl }) s2
+         Assigns ρ' ctrl -> override ρ' <$> evalStmt (inputs { env = inputs.env <+> ρ', ctrl = ctrl }) s2
 
 -- Fewer arguments than the arity is a partial application; more applies the result to the rest.
 apply
@@ -405,14 +406,14 @@ evalModule
    -> ModuleName
    -> Module
    -> m (Dict Deriv)
-evalModule ρ0 q (Module ιs ss) = do
+evalModule ρ0 q (Module ιs s) = do
    ρ_imp <- foldM (evalImport q) ρ0 ιs
    ρ_name <- maplet "__name__" <$> deriv (Val unit (V.Lit (Str (dottedName q))))
    { modules } <- moduleStore
    ρ_subMods <- traverse moduleVal (D.fromFoldable (submodules (Map.keys modules) q))
    ρ <- traverse gvalAt (ρ_imp <+> ρ_name)
-   bindings × _ <- foldM (\(ρ' × ctrl) s -> asAssigns <$> evalStmt { ctrl, env: ρ <+> ρ' } s <#> first (ρ' <+> _)) (empty × Nil) ss
-   let xs = L.fromFoldable (foldMap assigns ss)
+   bindings × _ <- asAssigns <$> evalStmt { ctrl: Nil, env: ρ } s
+   let xs = L.fromFoldable (assigns s)
    ρ_unbound <- D.fromFoldable <<< zip xs <$> traverse (const (deriv (Val unit V.Unbound))) xs
    members <- traverse (record >>> map fst) bindings
    pure (ρ_name <+> ρ_subMods <+> ρ_unbound <+> members)

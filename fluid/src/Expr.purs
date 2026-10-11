@@ -89,7 +89,7 @@ data Stmt
 
 data Import = Import Name (Maybe (List Var))
 
-data Module = Module (List Import) (List Stmt)
+data Module = Module (List Import) Stmt
 
 class FV a where
    fv :: a -> Set Var

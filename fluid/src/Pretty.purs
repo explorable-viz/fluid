@@ -4,7 +4,7 @@ import Prelude
 
 import Bind (Bind, Var, dottedName, (↦))
 import Data.Foldable (intercalate)
-import Data.List (List(..), fromFoldable, singleton, (:))
+import Data.List (List(..), fromFoldable, (:))
 import Data.List.NonEmpty (NonEmptyList(..), last, toList)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
@@ -21,7 +21,7 @@ import Pretty.Util (assignment, block, braces, brackets, hsep, matrix, number, p
 import Operator (Operator(..), binopSymbol, prec, unopSymbol)
 import SExpr (Branch, Case, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), RecDefs, Stmt(..), TypeExpr(..), VarDef(..), VarDefs)
 import Types as T
-import Util (type (×), isEmpty, (×))
+import Util (type (×), isEmpty, singleton, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
 import Val (BaseVal(..), Fun(..)) as V
@@ -160,7 +160,7 @@ instance Pretty (List Qualifier) where
       text "def" <+> pretty v <> text ":" <+> pretty s
    pretty (Cons (Guard s) Nil) = text "if" <+> prettyQualifierExpr s
    pretty (Cons (Generator p s) Nil) = text "for" <+> pretty p <+> text "in" <+> prettyQualifierExpr s
-   pretty (Cons q qs) = pretty (singleton q) <+> pretty qs
+   pretty (Cons q qs) = pretty (singleton q :: List Qualifier) <+> pretty qs
    pretty Nil = empty
 
 instance Pretty (NonEmptyList Case) where
@@ -196,7 +196,7 @@ instance Pretty Import where
       text "from" <+> text (dottedName q) <+> text "import" <+> text (intercalate ", " xs)
 
 instance Pretty Module where
-   pretty (Module imports ss) = vsep ((pretty <$> imports) <> (pretty <$> ss))
+   pretty (Module imports s) = vsep ((pretty <$> imports) <> singleton (pretty s))
 
 instance Pretty Stmt where
    pretty (Return e) = text "return" <+> pretty e
