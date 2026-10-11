@@ -476,7 +476,8 @@ clauses cs = do
       body = case matched of
          Nil -> head ss
          (x × ps) : Nil -> E.Match (E.Var x) (zip (nonEmpty ps) ss)
-         _ -> E.Match (E.Tuple (E.Var <<< fst <$> matched)) (zipWith (\ps s -> S.PTuple ps × s) (nonEmpty (transpose (snd <$> matched))) ss)
+         _ -> E.Match (E.Tuple (E.Var <<< fst <$> matched))
+            (zipWith (\ps s -> S.PTuple ps × s) (nonEmpty (transpose (snd <$> matched))) ss)
    pure (E.Def (fst <$> named) body)
    where
    sharedVar :: List S.Pattern -> Maybe Var
