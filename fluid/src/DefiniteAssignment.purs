@@ -6,22 +6,13 @@ import Bind (Name, Var, dottedName)
 import Control.Monad.Error.Class (throwError)
 import Data.List.NonEmpty (unsnoc)
 import Data.List.NonEmpty as NEL
-import Data.Foldable (lookup) as F
-import Data.List (List(..), elemIndex, index, length, (:))
+import Data.List (List)
 import Data.Map (Map)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Types (Type) as T
-import Util (MayFail, type (×), definitely')
+import Util (MayFail)
 import Util.Map (intersectionWith, lookup, unionWith)
 import Util.Set ((∪))
-
-type ClassEntry =
-   { cxt :: Cxt -- declaring context (resolves the base class)
-   , name :: Name -- fully-qualified name, the class's identity
-   , typeParams :: List Var
-   , base :: Maybe Var -- base class, if any
-   , fields :: List Var -- own field names, distinct
-   }
 
 -- Variable entries carry no type until checking and synthesis, as unannotated assignments have none.
 data Entry
@@ -29,7 +20,7 @@ data Entry
    | Declared -- definitely unassigned
    | PossiblyUnassigned
    | Assigned
-   | Class ClassEntry
+   | Type Name -- class, by fully-qualified name
    | Mod Name
    | ModChecked Name Cxt
    | PredefName
@@ -67,14 +58,9 @@ mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns cxt) (Assigns cxt') = Assigns (cxt `merge` cxt')
 
-classFor :: Cxt -> Var -> Maybe ClassEntry
-classFor cxt c = case lookup c cxt of
-   Just (Class cls) -> Just cls
-   _ -> Nothing
-
-classOf :: Cxt -> Name -> MayFail ClassEntry
+classOf :: Cxt -> Name -> MayFail Name
 classOf cxt c = case resolveName cxt c of
-   Just (Class cls) -> pure cls
+   Just (Type c') -> pure c'
    _ -> throwError $ "Unknown dataclass: " <> dottedName c
 
 resolveName :: Cxt -> Name -> Maybe Entry
@@ -88,24 +74,10 @@ resolveName cxt name = case NEL.fromList init of
    simpleEntry g y = case lookup y g of
       Just e@Assigned -> Just e
       Just e@(ModChecked _ _) -> Just e
-      Just e@(Class _) -> Just e
+      Just e@(Type _) -> Just e
       Just e@TypeVar -> Just e
       Just e@(TypeAlias _ _) -> Just e
       _ -> Nothing
-
-fields :: ClassEntry -> List Var
-fields cls = case cls.base of
-   Nothing -> cls.fields
-   Just b -> fields (definitely' (classFor cls.cxt b)) <> cls.fields
-
-ancestors :: ClassEntry -> List Name
-ancestors cls = cls.name : maybe Nil ancestors (cls.base >>= classFor cls.cxt)
-
--- Argument for a field, positional then keyword.
-fieldMap :: forall a. ClassEntry -> List a -> List (Var × a) -> Var -> Maybe a
-fieldMap cls xs xys x = case elemIndex x (fields cls) of
-   Just i | i < length xs -> index xs i
-   _ -> F.lookup x xys
 
 -- ======================
 -- boilerplate

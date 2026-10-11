@@ -10,7 +10,7 @@ import Data.List.NonEmpty (snoc, unsnoc)
 import Data.List.NonEmpty (fromList) as NEL
 import Data.Either (Either(..))
 import Data.Foldable (foldM, for_, intercalate)
-import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
+import Data.List (List(..), catMaybes, elem, filter, reverse, takeWhile, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -30,8 +30,7 @@ import DepGraph (Deriv, deriv, emptyGraph)
 import Literal (Literal(..))
 import ModuleGraph (DependencyGraph, ModuleName, implicit, implicitFor)
 import Parse (parseModule, parseProgram)
-import DefiniteAssignment (Cxt, Entry(..))
-import Primitive.Defs (predefined)
+import Primitive.Defs (predefined, predefinedClasses)
 import WellFormed (CheckM, checkProgram, checkModule, mainModule, runCheckM)
 import SExpr as S
 import Util (MayFail, type (×), orThrow, throw, throwLeft, whenever, withMsg, (×))
@@ -84,15 +83,6 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
       | q `elem` path = Left
            ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
-
-classTable :: Map ModuleName Cxt -> ClassTable
-classTable modCxt =
-   Map.fromFoldable (map (\cls -> dottedName cls.name × cls) (Map.values modCxt >>= classValues))
-   where
-   classValues cxt = mapMaybe classOf (Map.values cxt)
-   classOf = case _ of
-      Class cls -> Just cls
-      _ -> Nothing
 
 -- Load modules into a new dependence graph, kept in the store; return the top-level environment as a vertex per variable.
 loadTopLevel
@@ -148,8 +138,8 @@ prepModules
    -> m { result :: a, modules :: Map ModuleName Module, classes :: ClassTable }
 prepModules imports action = do
    mods <- parseModules imports
-   result × checked <- orThrow (runCheckM action mods (fst <$> predefined))
-   pure { result, modules: Map.mapMaybe _.mod checked, classes: classTable (_.cxt <$> checked) }
+   result × { modules: checked, classes } <- orThrow (runCheckM action mods (fst <$> predefined) predefinedClasses)
+   pure { result, modules: Map.mapMaybe _.mod checked, classes }
 
 -- Module q checked as module, not program, with modules it imports.
 prepModule

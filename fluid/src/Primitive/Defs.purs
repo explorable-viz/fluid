@@ -2,7 +2,7 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, apply, div, mod, top)
 
-import Bind (Bind, Var, dottedName, qual)
+import Bind (Bind, Name, Var, dottedName, qual)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Argonaut.Core (Json, caseJson)
 import Data.Argonaut.Decode (parseJson)
@@ -14,6 +14,7 @@ import Data.Int (quot, rem) as I
 import Data.Int as Int
 import Data.List (List(..), (:))
 import Data.List as L
+import Data.List.NonEmpty (last)
 import Data.Map (Map)
 import Data.Map as M
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -27,8 +28,9 @@ import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (for)
 import Data.Tuple (fst, snd)
-import DataType (cRange)
-import DefiniteAssignment (ClassEntry, Cxt, Entry(..))
+import DataType (ClassTable, cRange)
+import DefiniteAssignment (Entry(..)) as Entry
+import DefiniteAssignment (Cxt)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -40,7 +42,8 @@ import Literal (Literal(..))
 import Primitive (int, intOrNumber, number, string, typeMismatch, unary, union1)
 import Util (MayFail, type (+), type (×), definitely', error, orElse, singleton, throw, (×))
 import ModuleGraph (ModuleName, builtins, dataclasses, math, sys, typing)
-import Util.Map (constMap, keys, lookup, unionWith_never, (\\))
+import Types (Primitive(..), Type(..)) as T
+import Util.Map (constMap, keys, lookup, maplet, unionWith_never, (\\))
 import Util.Map as Dict
 import Util.Map as Map
 import Val (BaseVal(..), DepOp, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), GVal, MatrixRep(..), Val(..), construct, deliver, dictEntries, dictEntry, elementCount, fromRel, gval, matrixPut, pureRel, root, via)
@@ -49,10 +52,15 @@ extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
 extern (ForeignOp (id × φ)) =
    id × Val bot (Fun (Prim (ForeignOp (id × φ))))
 
+predefinedClasses :: ClassTable
+predefinedClasses = maplet cRange { typeParams: Nil, fields: ("start" × int) : ("stop" × int) : Nil, base: Nothing }
+   where
+   int = T.PrimitiveTy T.Int
+
 predefined :: Map ModuleName (Cxt × Raw Env)
 predefined = M.fromFoldable
    [ predefinedModule builtins ("None" : "object" : "bool" : "int" : "float" : "str" : "list" : "dict" : "tuple" : Nil)
-        [ "range" × { cxt: M.empty, name: cRange, typeParams: Nil, base: Nothing, fields: "start" : "stop" : Nil } ]
+        [ cRange ]
         [ extern print_
         , extern len
         -- Fluid-only members, without spec counterpart
@@ -95,13 +103,17 @@ predefined = M.fromFoldable
    , predefinedModule dataclasses ("dataclass" : Nil) [] []
    ]
    where
-   predefinedModule :: ModuleName -> List Var -> Array (Bind ClassEntry) -> Array (Bind (Val Unit)) -> ModuleName × (Cxt × Raw Env)
+   predefinedModule :: ModuleName -> List Var -> Array Name -> Array (Bind (Val Unit)) -> ModuleName × (Cxt × Raw Env)
    predefinedModule q names classes members = q × (cxt × wrap (ρ `unionWith_never` ρ_classes `unionWith_never` ρ_names))
       where
       ρ = D.fromFoldable (Array.cons ("__name__" × Val bot (Lit (Str (dottedName q)))) members)
-      ρ_classes = D.fromFoldable classes <#> \cls -> Val bot (Fun (Type cls.name))
+      ρ_classes = D.fromFoldable (classes <#> \c -> last c × Val bot (Fun (Type c)))
       ρ_names = D.fromFoldable (names <#> \x -> x × Val bot (Opaque (qual q x)))
-      cxt = M.unions [ constMap PredefName (Set.fromFoldable names), Class <$> M.fromFoldable classes, constMap Assigned (keys ρ) ]
+      cxt = M.unions
+         [ constMap Entry.PredefName (Set.fromFoldable names)
+         , M.fromFoldable (classes <#> \c -> last c × Entry.Type c)
+         , constMap Entry.Assigned (keys ρ)
+         ]
 
 len :: ForeignOp
 len =

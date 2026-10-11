@@ -11,7 +11,6 @@ illFormed_cases =
    , { file: "capture_redefined_class.fld", expected_error: "Declared twice: C" }
    , { file: "constr_dup_keyword.fld", expected_error: "Class Coord keyword fields mismatch: expected (\"x\" : \"y\" : Nil), got (\"x\" : \"x\" : \"y\" : Nil)" }
    , { file: "dict_attr.fld", expected_error: "Found {\"a\": 1}, expected object" }
-   , { file: "extend_imported_class.fld", expected_error: "Cannot extend imported class: Base" }
    , { file: "from_import_arity.fld", expected_error: "Derived expects 2 argument(s); got 1" }
    , { file: "from_import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module bad_pkg" }
    , { file: "from_import_loads_ancestor.fld", expected_error: "AssertionError" }

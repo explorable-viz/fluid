@@ -172,5 +172,3 @@ test/program-level/excluded/static/from_import_repeated (check: exit 0, expected
 test/program-level/excluded/static/name_import (check: exit 0, expected [3, 4]: )
 test/program-level/excluded/static/same_name_distinct_classes (check: exit 0, expected [3, 4]: )
 test/program-level/python-error/syntactic/parse_error (check: exit 3, expected [1]: "ParseError on line 1, column 6:\nExpected EOF")
-test/program-level/semantically-valid/extend_imported_class (check: exit 3, expected [0]: Cannot extend imported class: Base)
-test/program-level/semantically-valid/extend_qualified_class (check: exit 3, expected [0]: Cannot extend imported class: base.Base)
