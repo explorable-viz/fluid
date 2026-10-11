@@ -24,8 +24,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, traverse)
 import Data.Tuple (fst, snd)
-import DefiniteAssignment (ancestors)
-import DataType (class HasClasses, ClassTable, arity, askClasses, checkArity, fieldsOf)
+import DataType (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fields)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -73,7 +72,7 @@ matches classes v (PAs p x) = first (map (_ `unionWith_never` maplet x v)) (matc
 matches classes v@{ val: Val _ u } p = second (via root v : _) case u, p of
    V.Lit ℓ', PLit ℓ | eqLiteral ℓ ℓ' -> Just empty × Nil
    V.Constr c' vs, PConstr c ps Nil
-      | c `elem` ancestors (get (dottedName c') classes) ->
+      | c `elem` ancestors classes c' ->
            matchesMany classes (mapWithIndex (\i val -> { val, inEdges: via (field i) v }) (take (length ps) vs)) ps
    V.Dictionary (DictRep xvs), PRecord xps ->
       case traverse (\(x × p') -> lookup x xvs <#> \(_ × val) -> x × { val, inEdges: via (dictEntry x >>> snd) v } × p') xps of
@@ -154,7 +153,7 @@ eval inputs = case _ of
       vs <- for cs \inputs' -> gval <$> eval inputs' e
       constructWith ctrl (A.fromFoldable >>> V.List) vs
    Constr c es -> do
-      askClasses >>= checkArity (dottedName c) (length es)
+      askClasses >>= checkArity c (length es)
       vs <- traverse (eval inputs >>> map gval) es
       constructWith inputs.ctrl (V.Constr c) vs
    Matrix e (x × y) e' -> do
@@ -183,7 +182,7 @@ eval inputs = case _ of
       v <- gval <$> eval inputs e
       case v.val of
          Val _ (V.Constr c _) -> do
-            xs <- askClasses <#> \classes -> definitely' (fieldsOf classes (dottedName c))
+            xs <- askClasses <#> \classes -> fst <$> fields classes c
             i <- elemIndex x xs # orElse (dottedName c <> " has no field " <> x)
             deliver (inputs.ctrl <> via root v) { val: field i v.val, inEdges: via (field i) v }
          _ -> throw $ "Found " <> prettyP v.val <> ", expected object"
@@ -372,7 +371,7 @@ apply ctrl f@{ val: Val _ u } vs = case u of
       arity' = case φ of
          V.Closure _ _ (Def xs _) -> pure (length xs)
          V.Prim (ForeignOp (_ × ForeignOp' φ')) -> pure φ'.arity
-         V.Type c -> askClasses >>= arity (dottedName c)
+         V.Type c -> askClasses >>= arity c
          V.Partial _ _ -> error absurd
 
       -- Partial application of f to vs, with root and function depending on those of f, and arguments depending on vs.
