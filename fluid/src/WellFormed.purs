@@ -133,12 +133,17 @@ checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
    imports' = imports <#> \(S.Import q' xs) -> E.Import q' xs
 
 moduleScope :: Cxt -> Cxt -> S.Stmt -> MayFail Cxt
-moduleScope cxt_imp cxt_ιs s = insert "__name__" Assigned <<< (cxt_imp `extend` cxt_ιs `override` _) <$> scope (keys cxt_ιs) s
+moduleScope cxt_imp cxt_ιs s = insert "__name__" Assigned <<< (cxt_imp `extend` cxt_ιs `override` _) <$> scope "imported name" (keys cxt_ιs) s
 
-scope :: Set Var -> S.Stmt -> MayFail Cxt
-scope ys s = do
-   checkDistinct ("Redeclared: " <> _) (Set.toUnfoldable ys <> S.declares s <> Set.toUnfoldable (S.binds s))
+scope :: String -> Set Var -> S.Stmt -> MayFail Cxt
+scope what ys s = do
+   checkDistinct ("Declared twice: " <> _) (S.declares s)
+   for_ (declared ∩ ys) \x -> throwError $ "Redeclared " <> what <> ": " <> x
+   for_ (S.binds s ∩ declared) \x -> throwError $ "Pattern variable also declared: " <> x
+   for_ (S.binds s ∩ ys) \x -> throwError $ "Pattern variable shadows " <> what <> ": " <> x
    pure (constMap Unbound (S.assigns s \\ ys))
+   where
+   declared = Set.fromFoldable (S.declares s)
 
 mainModule :: Name
 mainModule = pure "__main__"
@@ -428,7 +433,7 @@ wellFormedClause cxt (S.Clause (αs × ps × ψ × s)) = do
    let xs = unions (bv <$> ps)
    ps' <- for ps \(S.Param p ψ') -> (×) <$> wellFormed cxt p <*> traverse (resolveType cxt_αs) ψ'
    τ <- traverse (resolveType cxt_αs) ψ
-   cxt_s <- scope xs s
+   cxt_s <- scope "parameter" xs s
    r × s' <- wellFormed (cxt_αs `override` constMap Assigned xs `override` cxt_s) s
    pure (ps' × τ × close r s')
    where
