@@ -59,8 +59,7 @@ checkProgram imports s = do
    modify_ (Map.insert mainModule { cxt, mod: Nothing })
    pure s'
 
--- Member context of module q, checked on demand as its import is checked; memoised. The recursion has no
--- cycle guard; it terminates because the dependency graph is acyclic.
+-- Member context of module q, checked on first import; no cycle guard, as the dependency graph is acyclic.
 checkModule :: ModuleName -> CheckM Cxt
 checkModule q = get >>= \checked -> case Map.lookup q checked of
    Just { cxt } -> pure cxt
@@ -504,8 +503,7 @@ var cxt x = case Map.lookup x cxt of
    Just θ -> throwError $ kind θ <> " " <> x <> " is not a value"
    Nothing -> throwError $ "Unbound name: " <> x
 
--- Variable may be assigned: declared but unassigned, or unbound, an unannotated assignment serving as
--- declaration until annotations are required.
+-- Unbound accepted until annotations are required, as an unannotated assignment also declares.
 assignable :: Cxt -> Var -> MayFail Unit
 assignable cxt x = case Map.lookup x cxt of
    Just Declared -> pure unit
