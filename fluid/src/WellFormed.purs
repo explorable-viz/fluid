@@ -54,8 +54,8 @@ runCheckM m mods predefined = runReaderT (runStateT m (predefined <#> \cxt -> { 
 
 checkProgram :: List S.Import -> S.Stmt -> CheckM E.Stmt
 checkProgram imports s = do
-   cxt_ιs × cxt_imp <- checkImports mainModule imports
-   cxt × _ × s' <- lift (lift (wellFormedTop mainModule (moduleScope cxt_ιs cxt_imp s) s))
+   cxt_imp × cxt_ιs <- checkImports mainModule imports
+   cxt × _ × s' <- lift (lift (wellFormedTop mainModule (moduleScope cxt_imp cxt_ιs s) s))
    modify_ (Map.insert mainModule { cxt, mod: Nothing })
    pure s'
 
@@ -66,8 +66,8 @@ checkModule q = get >>= \checked -> case Map.lookup q checked of
    Nothing -> mapStateT (mapReaderT (lmap (_ <> "\nChecking module " <> dottedName q))) do
       mods <- lift ask
       mod@(S.Module ιs _) <- maybe (throwError ("Module not parsed: " <> dottedName q)) pure (Map.lookup q mods)
-      cxt_ιs × cxt_imp <- checkImports q ιs
-      cxt' × mod' <- lift (lift (checkStatements q cxt_ιs cxt_imp mod))
+      cxt_imp × cxt_ιs <- checkImports q ιs
+      cxt' × mod' <- lift (lift (checkStatements q cxt_imp cxt_ιs mod))
       let subMods = Mod <$> Map.fromFoldable (submodules (Map.keys mods) q)
       for_ (Set.toUnfoldable ((Map.keys cxt_ιs ∪ Map.keys cxt') ∩ Map.keys subMods) :: List Var) \x ->
          throwError $ "Duplicate module member: " <> dottedName q <> " defines " <> x
@@ -81,7 +81,7 @@ checkImports :: ModuleName -> List S.Import -> CheckM (Cxt × Cxt)
 checkImports enclosing ιs = do
    cxt <- foldM (\acc q -> (acc `Map.union` _) <$> checkModule q) Map.empty (implicitFor enclosing)
    cxt' <- foldM (\acc ι -> (acc `extend` _) <$> importBindings enclosing ι) Map.empty ιs
-   pure (cxt' × (cxt `extend` cxt'))
+   pure (cxt × cxt')
 
 -- Bindings contributed by one import of the enclosing module.
 importBindings :: ModuleName -> S.Import -> CheckM Cxt
@@ -123,11 +123,11 @@ importedMembers q cxt (x : xs) = do
       Nothing -> throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
 
 checkStatements :: Name -> Cxt -> Cxt -> S.Module -> MayFail (Cxt × E.Module)
-checkStatements q cxt_ιs cxt_imp (S.Module imports ss) =
+checkStatements q cxt_imp cxt_ιs (S.Module imports ss) =
    case foldr (\s acc -> Just (maybe s (S.Seq s) acc)) Nothing ss of
       Nothing -> pure (Map.singleton "__name__" Assigned × E.Module imports' Nil)
       Just s -> do
-         cxt × r × s' <- wellFormedTop q (moduleScope cxt_ιs cxt_imp s) s
+         cxt × r × s' <- wellFormedTop q (moduleScope cxt_imp cxt_ιs s) s
          case r of
             -- Program may return, with the returned value as its result; spec treats __main__ as a module
             Returns -> throwError "Module body cannot return"
@@ -139,7 +139,7 @@ checkStatements q cxt_ιs cxt_imp (S.Module imports ss) =
    unSeq s = s : Nil
 
 moduleScope :: Cxt -> Cxt -> S.Stmt -> Cxt
-moduleScope cxt_ιs cxt_imp s = Map.insert "__name__" Assigned (cxt_imp `override` scope (Map.keys cxt_ιs) s)
+moduleScope cxt_imp cxt_ιs s = Map.insert "__name__" Assigned (cxt_imp `extend` cxt_ιs `override` scope (Map.keys cxt_ιs) s)
 
 scope :: Set Var -> S.Stmt -> Cxt
 scope ys s = constMap Unbound (S.assigns s \\ ys)
