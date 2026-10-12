@@ -29,6 +29,7 @@ import Data.String as String
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (for, traverse)
+import Data.Lazy (defer, force)
 import Data.Tuple (fst, snd)
 import DataType (ClassTable, askClasses, cMatrix, cRange, fields)
 import DefiniteAssignment (Entry(..)) as Entry
@@ -340,11 +341,11 @@ entryValue k d = { val: snd (dictEntry k d.val), inEdges: via (dictEntry k >>> s
 dictFrom :: forall s. Semiring s => List (GVal s) -> List (String × GVal s) -> GVal s
 dictFrom ds kvs =
    { val: Val unit (Dictionary (DictRep (D.fromFoldable (kvs <#> \(k × v) -> k × (unit × v.val)))))
-   , inEdges: L.concat (ds <#> via \x -> Val (root x) (Dictionary (DictRep (Dict.mapWithKey (\k (_ × zu) -> fst (dictEntry k x) × zu) zd))))
-        <> L.concat (kvs <#> \(k × v) -> via (\y -> dict (Map.insert k (zero × y) zd)) v)
+   , inEdges: L.concat (ds <#> via \x -> Val (root x) (Dictionary (DictRep (Dict.mapWithKey (\k (_ × zu) -> fst (dictEntry k x) × zu) (force zd)))))
+        <> L.concat (kvs <#> \(k × v) -> via (\y -> dict (Map.insert k (zero × y) (force zd))) v)
    }
    where
-   zd = D.fromFoldable (kvs <#> \(k × v) -> k × (zero × zeros v.val))
+   zd = defer \_ -> D.fromFoldable (kvs <#> \(k × v) -> k × (zero × zeros v.val))
    dict = DictRep >>> Dictionary >>> Val zero
 
 quot :: ForeignOp

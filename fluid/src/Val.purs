@@ -17,6 +17,7 @@ import Data.Map as Map
 import Data.Bitraversable (bitraverse)
 import Data.Foldable (class Foldable, fold, foldMapDefaultL, foldl, foldrDefault, for_)
 import Data.Functor.Compose (Compose(..))
+import Data.Lazy (defer, force)
 import Data.List (List(..), (:), zipWith)
 import Data.List ((!!), range, take) as L
 import Data.Maybe (Maybe(..))
@@ -206,19 +207,21 @@ via r v = second (r <<< _) <$> v.inEdges
 
 -- Dependence on values already in the graph of a value that depends on vs by r.
 viaAll :: forall t s. Traversable t => Semiring s => Rel (t (Val s)) (Val s) -> t (GVal s) -> InEdges s
-viaAll r vs = fold (ivs <#> \(i × v) -> via (\x -> r (zs <#> \(j × z) -> if i == j then x else z)) v)
+viaAll r vs = fold (ivs <#> \(i × v) -> via (\x -> r (force zs <#> \(j × z) -> if i == j then x else z)) v)
    where
    ivs = (mapAccumL (\i v -> { accum: i + 1, value: i × v }) 0 vs).value
-   zs = map (zeros <<< _.val) <$> ivs
+   zs = defer \_ -> map (zeros <<< _.val) <$> ivs
 
--- Adds dependence on control at weight c to the positions of v in the given section.
-withCtrl :: forall s. DepSemiring s => Ctrl s -> Val s -> GVal s -> GVal s
+-- Adds dependence on control at weight c to the positions of v in the section of its value.
+withCtrl :: forall s. DepSemiring s => Ctrl s -> (Raw Val -> Val s) -> GVal s -> GVal s
 withCtrl ctrl section v =
-   v { inEdges = v.inEdges <> (ctrl <#> second \r x -> scale (ctrlWeight * r x) section) }
+   v { inEdges = v.inEdges <> (ctrl <#> second \r x -> scale (ctrlWeight * r x) (force section')) }
+   where
+   section' = defer \_ -> section v.val
 
 -- Constructed value: root depends on control at weight c.
 constructed :: forall s. DepSemiring s => Ctrl s -> GVal s -> GVal s
-constructed ctrl v@{ val: Val _ u } = withCtrl ctrl (Val one (zeros u)) v
+constructed ctrl = withCtrl ctrl \(Val _ u) -> Val one (zeros u)
 
 record :: forall m s. MonadState (DepGraph Val s) m => Semiring s => GVal s -> m (Dep.Deriv × Raw Val)
 record { val: v, inEdges } = do
@@ -228,7 +231,7 @@ record { val: v, inEdges } = do
 
 -- Value delivered rather than constructed: every position depends on control at weight c.
 deliver :: forall m s. MonadState (DepGraph Val s) m => DepSemiring s => Ctrl s -> GVal s -> m (Dep.Deriv × Raw Val)
-deliver ctrl v = record (withCtrl ctrl (unitSection v.val) v)
+deliver ctrl v = record (withCtrl ctrl unitSection v)
 
 construct :: forall m s. MonadState (DepGraph Val s) m => DepSemiring s => Ctrl s -> GVal s -> m (Dep.Deriv × Raw Val)
 construct ctrl v = record (constructed ctrl v)
