@@ -288,7 +288,9 @@ qualifiers inputs (Guard e : gs) = do
    if holds then qualifiers (inputs { ctrl = ctrl }) gs else pure (Nil × ctrl)
 qualifiers inputs (Generator p e : gs) = do
    v <- gval <$> eval inputs e
-   n <- elementCount v.val # orElse ("Found " <> prettyP v.val <> ", expected list, tuple, str or dict")
+   n <- case elementCount v.val of
+      Just n -> pure n
+      Nothing -> throw ("Found " <> prettyP v.val <> ", expected list, tuple, str or dict")
    classes <- askClasses
    fold <$> for (L.take n (L.range 0 n)) \i -> do
       let el = { val: element i v.val, inEdges: via (element i) v }

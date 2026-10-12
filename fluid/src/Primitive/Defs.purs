@@ -128,7 +128,9 @@ len =
    ForeignOp ("len" × ForeignOp' { arity: 1, depOp: pureRel depRel })
    where
    depRel :: forall a. List (Val a) -> MayFail (Val a)
-   depRel (v@(Val α u) : Nil) = maybe (Left (typeMismatch u "Sized")) (\n -> Right (Val α (Lit (Int n)))) (elementCount v)
+   depRel (v@(Val α u) : Nil) = case elementCount v of
+      Just n -> Right (Val α (Lit (Int n)))
+      Nothing -> Left (typeMismatch u "Sized")
    depRel _ = Left "Single argument expected"
 
 exit :: ForeignOp
