@@ -179,8 +179,8 @@ def iterate[A](n: int, f: Callable[[A], A], z: A) -> list[A]:
     return []
   return [z] + iterate(n - 1, f, f(z))
 
-# sum, fsum, max, min, fmax, fmin, maximum, minimum, abs: one type each, pending protocols and overloads
-# (pure-py/pure-py-spec#233, #234); retire with Python's builtins.
+# sum, fsum, max, min, fmax, fmin, maximum, minimum, abs: one type each, pending protocols
+# (pure-py/pure-py-spec#233); retire with Python's builtins.
 def sum(xs: list[int]) -> int:
   return foldr(lambda x, y: x + y, 0, xs)
 
