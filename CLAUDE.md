@@ -19,6 +19,6 @@ Continual improvement of the workflow itself, including documenting the workflow
 
 ## Process
 
-Conventions for prose, code, commits, issues and pull requests are in the `technical-authoring`, `coding-conventions` and `github` skills. **Before starting work, read** [docs/workflow/process.md](docs/workflow/process.md) and [docs/workflow/issue-lifecycle.md](docs/workflow/issue-lifecycle.md), which cover what is specific to Fluid: branching, deployment, publishing, project board, testing, and the issue state machine.
+Conventions for prose, code, commits, issues and pull requests are in the `technical-authoring`, `coding-conventions` and `github` skills; branching, milestones, deployment and publishing in the `release-cycle` skill. **Before starting work, read** [docs/workflow/process.md](docs/workflow/process.md) (testing) and [docs/workflow/issue-lifecycle.md](docs/workflow/issue-lifecycle.md) (issue state machine).
 
 [docs/workflow/milestone-report.md](docs/workflow/milestone-report.md) covers the milestone report format and generation process — read when closing a milestone or producing release notes.
