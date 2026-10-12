@@ -12,7 +12,7 @@ linkedOutputs_spec1 =
         { fluidSrcPaths
         , inputs: [ "renewables" ]
         , query: false
-        , ignoreInputs: \fieldIndex -> envVal "renewables" (valOf (eachElement (field fieldIndex "year" select >.> field fieldIndex "country" select)))
+        , ignoreInputs: \classes -> envVal "renewables" (valOf (eachElement (field classes "year" select >.> field classes "country" select)))
         , linking: true
         , rowFilter: Nothing
         }
@@ -39,7 +39,7 @@ linkedOutputs_spec2 =
         { fluidSrcPaths
         , inputs: [ "nonRenewables" ]
         , query: false
-        , ignoreInputs: \fieldIndex -> envVal "nonRenewables" (valOf (eachElement (field fieldIndex "year" select >.> field fieldIndex "country" select)))
+        , ignoreInputs: \classes -> envVal "nonRenewables" (valOf (eachElement (field classes "year" select >.> field classes "country" select)))
         , linking: true
         , rowFilter: Nothing
         }

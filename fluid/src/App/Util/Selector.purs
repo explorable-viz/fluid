@@ -8,7 +8,7 @@ import Data.List.NonEmpty (last)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (FieldIndex, FieldName, cSegment, cStackedBar, f_segments, f_z)
+import DataType (ClassTable, FieldName, cSegment, cStackedBar, f_segments, f_z, fieldIndex)
 import Lattice (class Neg, 𝔹, neg)
 import Data.Maybe (Maybe(..))
 import Partial.Unsafe (unsafePartial)
@@ -74,16 +74,16 @@ eachElement δv = unsafePartial $ case _ of
 none :: forall a. SetSel a
 none = (_ × Persistent)
 
-field :: FieldIndex -> FieldName -> SelSetter Val Val
-field fieldIndex f δv = unsafePartial $ case _ of
-   Val α (Constr c us) -> first (\u' -> Val α (Constr c $ unsafeUpdateAt (fieldIndex c f) u' us)) (δv (us ! fieldIndex c f))
+field :: ClassTable -> FieldName -> SelSetter Val Val
+field classes f δv = unsafePartial $ case _ of
+   Val α (Constr c us) -> first (\u' -> Val α (Constr c $ unsafeUpdateAt (fieldIndex classes c f) u' us)) (δv (us ! fieldIndex classes c f))
 
-constrArg :: FieldIndex -> ConstrArg
-constrArg fieldIndex c f δv = unsafePartial $ case _ of
+constrArg :: ClassTable -> ConstrArg
+constrArg classes c f δv = unsafePartial $ case _ of
    Val α (Constr c' us) | last c == last c' ->
       first (\u' -> Val α (Constr c' $ unsafeUpdateAt n u' us)) (δv (us ! n))
    where
-   n = fieldIndex c f
+   n = fieldIndex classes c f
 
 constr :: Var -> Setter (Val (SelStates 𝔹)) 𝔹
 constr c δα = unsafePartial $ case _ of

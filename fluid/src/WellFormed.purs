@@ -28,7 +28,7 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (for, traverse)
 import Data.Tuple (fst, snd)
-import DataType (ClassTable, cParagraph, cRange, ancestors, fieldMap, fields)
+import DataType (ClassTable, cParagraph, cRange, ancestors, fieldMap, fieldNames, fields)
 import DefiniteAssignment (Entry(..), Cxt, WfResult(..), classOf, extend, mergeRes, override, overrideRes, resolveName)
 import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
@@ -257,7 +257,7 @@ wellFormedTop q cxt (S.Dataclass c αs b xψs) = do
    base <- for b \ψ -> case ψ of
       S.NameTy q' ψs | Just (Type d) <- resolveName cxt q' -> do
          σs <- typeArguments cxt' d ψs
-         inherited <- fieldNames d
+         inherited <- gets \{ classes } -> fieldNames classes d
          for_ (xs `intersect` inherited) \x -> throwError $ "Inherited field " <> x <> " redeclared in class " <> c
          pure (d × σs)
       _ -> throwError $ "Base class of " <> c <> " is not a class: " <> prettyP ψ
@@ -278,9 +278,6 @@ wellFormedTop _ cxt s = wellFormed cxt s
 
 typeParams :: List Var -> Cxt
 typeParams αs = constMap TypeVar (Set.fromFoldable αs)
-
-fieldNames :: Name -> CheckM (List Var)
-fieldNames c = gets \{ classes } -> fst <$> fields classes c
 
 resolveType :: Cxt -> S.TypeExpr -> CheckM T.Type
 resolveType cxt (S.PrimitiveTy ν) = T.PrimitiveTy ν <$ predefName cxt (T.primitiveName ν)
@@ -325,7 +322,7 @@ instance WellFormed S.Expr E.Expr where
    wellFormed cxt (S.Call e ψs es xes) = case asName e >>= \c -> (c × _) <$> resolveName cxt c of
       Just (c × Type name) -> do
          for_ (NEL.fromList ψs) \_ -> resolveType cxt (S.NameTy c ψs)
-         xs <- fieldNames name
+         xs <- gets \{ classes } -> fieldNames classes name
          when (null xes && length es /= length xs)
             $ throwError
             $ dottedName c <> " expects " <> show (length xs) <> " argument(s); got " <> show (length es)
@@ -564,7 +561,7 @@ instance WellFormed S.Pattern S.Pattern where
    wellFormed cxt (S.PConstr c ps xps) = do
       name <- classOf cxt c
       when (name == cRange) $ throwError "range not permitted in a constructor pattern"
-      xs <- fieldNames name
+      xs <- gets \{ classes } -> fieldNames classes name
       when (null xps && length ps /= length xs)
          $ throwError
          $ dottedName c <> " expects " <> show (length xs) <> " argument(s); got " <> show (length ps)

@@ -10,7 +10,7 @@ import App.View.ViewWithDoc (drawView)
 import App.View.Util (Direction(..), Fig, Options, HTMLId, QueryResult, View)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
-import DataType (class HasClasses, fieldIndex, fieldNames)
+import DataType (class HasClasses)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
@@ -135,8 +135,8 @@ drawFig divId fig = do
          (selectIntermediate p >>> redraw)
    where
    { v, ρ, ι } = selectionResult fig
-   arg = constrArg fig.fieldIndex
-   options = { fieldIndex: fig.fieldIndex, fieldNames: fig.fieldNames, rowFilter: fig.spec.rowFilter }
+   arg = constrArg fig.classes
+   options = { classes: fig.classes, rowFilter: fig.spec.rowFilter }
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
    prefix = divId <> "-" <> str.intermediate
 
@@ -172,7 +172,7 @@ loadFig options@{ inputs, linking, query, ignoreInputs } fluidSrc = do
       graph = materialise g (visible eval ∪ Set.fromFoldable (values eval.inputs))
       everything = map (const true) <$> graph.vals
       nothing = map (const false) <$> graph.vals
-      ignored = unvals ins (sel𝔹 (ignoreInputs (fieldIndex config.classes)) (EnvWithDocs (ins <#> val everything)))
+      ignored = unvals ins (sel𝔹 (ignoreInputs config.classes) (EnvWithDocs (ins <#> val everything)))
 
       -- Over the graph as it is, and restricted to data positions less the ignored ones.
       unmasked = boolean (queries graph)
@@ -238,8 +238,7 @@ loadFig options@{ inputs, linking, query, ignoreInputs } fluidSrc = do
       , out_view: Nothing
       , intermediate_views: Map.empty
       , inertι: ιs <#> \p -> (&&) <$> val inertUnmasked.bwd p <*> val inertUnmasked.fwd p
-      , fieldIndex: fieldIndex config.classes
-      , fieldNames: A.fromFoldable <<< fieldNames config.classes
+      , classes: config.classes
       }
 
 codeMirrorDiv :: Endo String

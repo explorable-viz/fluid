@@ -4,7 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.Util (SelStates, SelectionType(..), Selector, SetSel, getPersistent, unselected)
 import App.Util.Selector (ConstrArg, constrArg)
-import DataType (class HasClasses, ClassTable, fieldIndex)
+import DataType (class HasClasses, ClassTable)
 import Data.Array as A
 import Data.Foldable (any, minimum)
 import Data.Map as Map
@@ -120,7 +120,7 @@ selection
    -> (ConstrArg -> Selector Val)
    -> Labelling (Set Pos)
 selection classes depGraph eval vertex δv =
-   maplet p (selected (selectOn δv (constrArg (fieldIndex classes)) (valAt eval.g p)))
+   maplet p (selected (selectOn δv (constrArg classes) (valAt eval.g p)))
    where
    p = deriv depGraph eval vertex
 

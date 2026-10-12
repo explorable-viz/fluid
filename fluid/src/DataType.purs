@@ -137,8 +137,6 @@ meet classes σ τ
            TupleTy σs, TupleTy τs | length σs == length τs -> TupleTy (zipWith (meet classes) σs τs)
            _, _ -> PrimitiveTy Never
 
-type FieldIndex = Name -> FieldName -> Int
-
 fieldIndex :: ClassTable -> Name -> FieldName -> Int
 fieldIndex classes c field = definitely' (elemIndex field (fst <$> fields classes c))
 

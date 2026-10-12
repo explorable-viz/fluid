@@ -21,19 +21,18 @@ import Data.Array as A
 import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (snd)
-import DataType (FieldIndex, cAxisLabels, cBarChart, cDimensions, cLineChart, cLinePlot, cLink, cMultiView, cParagraph, cPoint, cScatterPlot, cSegment, cStackedBar, cText, cTickLabels, f_caption, f_fragments, f_height, f_label, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_text, f_tickLabels, f_value, f_views, f_width, f_x, f_y, f_z)
+import DataType (ClassTable, cAxisLabels, cBarChart, cDimensions, cLineChart, cLinePlot, cLink, cMultiView, cParagraph, cPoint, cScatterPlot, cSegment, cStackedBar, cText, cTickLabels, f_caption, f_fragments, f_height, f_label, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_text, f_tickLabels, f_value, f_views, f_width, f_x, f_y, f_z, fieldIndex, fieldNames)
 import Dict (Dict)
 import Link (Link(..))
 import Literal (Literal(..))
 import Pretty (prettyP)
 import Primitive (boolean, int, string, typeError)
 import Primitive (unpack') as P
-import Bind (Name)
 import Util (type (×), absurd, error, (!), (×))
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..), ValWithDoc(..))
 
-type ViewOptions = { fieldIndex :: FieldIndex, fieldNames :: Name -> Array String, rowFilter :: Maybe Filter }
+type ViewOptions = { classes :: ClassTable, rowFilter :: Maybe Filter }
 
 -- TODO: merge with 'view' below.
 viewWithDoc :: ViewOptions -> String -> ValWithDoc (SelStates 𝕊) -> ViewWithDoc
@@ -55,7 +54,7 @@ view options title v@(Val α u') = case u' of
       | c == cLineChart -> pack (reflect options v :: LineChart)
    List vs -> case A.uncons vs of
       Just { head: Val _ (Constr c _) } | not (c `A.elem` viewClasses) ->
-         pack (TableView { title, rowFilter, className: Just c, colNames: options.fieldNames c, rows: vs <#> fieldValues })
+         pack (TableView { title, rowFilter, className: Just c, colNames: A.fromFoldable (fieldNames options.classes c), rows: vs <#> fieldValues })
       Just { head: Val _ (Constr _ _) } -> pack (MultiView $ view options "" <$> vs)
       _ ->
          let
@@ -94,111 +93,111 @@ instance Reflect b => Reflect (NonEmptyArray b) where
       Nothing -> error "Expected non-empty list"
 
 instance Reflect BarChart where
-   reflect options@{ fieldIndex } (Val _ u) = case u of
+   reflect options@{ classes } (Val _ u) = case u of
       Constr c us | c == cBarChart -> BarChart
-         { caption: P.unpack' string (us ! fieldIndex cBarChart f_caption)
-         , size: reflect options (us ! fieldIndex cBarChart f_size)
-         , tickLabels: reflect options (us ! fieldIndex cBarChart f_tickLabels)
-         , stackedBars: reflect options (us ! fieldIndex cBarChart f_stackedBars)
-         , legend: P.unpack' boolean (us ! fieldIndex cBarChart f_legend)
+         { caption: P.unpack' string (us ! fieldIndex classes cBarChart f_caption)
+         , size: reflect options (us ! fieldIndex classes cBarChart f_size)
+         , tickLabels: reflect options (us ! fieldIndex classes cBarChart f_tickLabels)
+         , stackedBars: reflect options (us ! fieldIndex classes cBarChart f_stackedBars)
+         , legend: P.unpack' boolean (us ! fieldIndex classes cBarChart f_legend)
          }
       _ -> typeError u "BarChart"
 
 instance Reflect LineChart where
-   reflect options@{ fieldIndex } (Val _ u) = case u of
+   reflect options@{ classes } (Val _ u) = case u of
       Constr c us | c == cLineChart -> LineChart
-         { size: reflect options (us ! fieldIndex cLineChart f_size)
-         , tickLabels: reflect options (us ! fieldIndex cLineChart f_tickLabels)
-         , caption: P.unpack' string (us ! fieldIndex cLineChart f_caption)
-         , plots: reflect options (us ! fieldIndex cLineChart f_plots)
+         { size: reflect options (us ! fieldIndex classes cLineChart f_size)
+         , tickLabels: reflect options (us ! fieldIndex classes cLineChart f_tickLabels)
+         , caption: P.unpack' string (us ! fieldIndex classes cLineChart f_caption)
+         , plots: reflect options (us ! fieldIndex classes cLineChart f_plots)
          }
       _ -> typeError u "LineChart"
 
 instance Reflect LinePlot where
-   reflect options@{ fieldIndex } (Val _ u) = case u of
+   reflect options@{ classes } (Val _ u) = case u of
       Constr c us | c == cLinePlot -> LinePlot
-         { name: P.unpack' string (us ! fieldIndex cLinePlot f_name)
-         , points: reflect options (us ! fieldIndex cLinePlot f_points)
+         { name: P.unpack' string (us ! fieldIndex classes cLinePlot f_name)
+         , points: reflect options (us ! fieldIndex classes cLinePlot f_points)
          }
       _ -> typeError u "LinePlot"
 
 instance Reflect ScatterPlot where
-   reflect options@{ fieldIndex } (Val _ u) = case u of
+   reflect options@{ classes } (Val _ u) = case u of
       Constr c us | c == cScatterPlot -> ScatterPlot
-         { caption: P.unpack' string (us ! fieldIndex cScatterPlot f_caption)
-         , points: reflect options (us ! fieldIndex cScatterPlot f_points)
-         , labels: reflect options (us ! fieldIndex cScatterPlot f_labels)
+         { caption: P.unpack' string (us ! fieldIndex classes cScatterPlot f_caption)
+         , points: reflect options (us ! fieldIndex classes cScatterPlot f_points)
+         , labels: reflect options (us ! fieldIndex classes cScatterPlot f_labels)
          }
       _ -> typeError u "ScatterPlot"
 
 instance Reflect (Dimensions (Selectable Int)) where
-   reflect { fieldIndex } (Val _ u) = case u of
+   reflect { classes } (Val _ u) = case u of
       Constr c us | c == cDimensions -> Dimensions
-         { width: P.unpack' int (us ! fieldIndex cDimensions f_width)
-         , height: P.unpack' int (us ! fieldIndex cDimensions f_height)
+         { width: P.unpack' int (us ! fieldIndex classes cDimensions f_width)
+         , height: P.unpack' int (us ! fieldIndex classes cDimensions f_height)
          }
       _ -> typeError u "Dimensions"
 
 instance Reflect (Point Number) where
-   reflect { fieldIndex } (Val _ u) = case u of
+   reflect { classes } (Val _ u) = case u of
       Constr c us | c == cPoint -> Point
-         { x: unpackIntOrNumber (us ! fieldIndex cPoint f_x)
-         , y: unpackIntOrNumber (us ! fieldIndex cPoint f_y)
+         { x: unpackIntOrNumber (us ! fieldIndex classes cPoint f_x)
+         , y: unpackIntOrNumber (us ! fieldIndex classes cPoint f_y)
          }
       _ -> typeError u "Point"
 
 instance Reflect (Point String) where
-   reflect { fieldIndex } (Val _ u) = case u of
+   reflect { classes } (Val _ u) = case u of
       Constr c us | c == cAxisLabels -> Point
-         { x: P.unpack' string (us ! fieldIndex cAxisLabels f_x)
-         , y: P.unpack' string (us ! fieldIndex cAxisLabels f_y)
+         { x: P.unpack' string (us ! fieldIndex classes cAxisLabels f_x)
+         , y: P.unpack' string (us ! fieldIndex classes cAxisLabels f_y)
          }
       _ -> typeError u "AxisLabels"
 
 instance Reflect (Point Orientation) where
-   reflect { fieldIndex } (Val _ u) = case u of
+   reflect { classes } (Val _ u) = case u of
       Constr c us | c == cTickLabels -> Point
-         { x: P.unpack' orientation (us ! fieldIndex cTickLabels f_x)
-         , y: P.unpack' orientation (us ! fieldIndex cTickLabels f_y)
+         { x: P.unpack' orientation (us ! fieldIndex classes cTickLabels f_x)
+         , y: P.unpack' orientation (us ! fieldIndex classes cTickLabels f_y)
          }
       _ -> typeError u "TickLabels"
 
 instance Reflect Segment where
-   reflect { fieldIndex } (Val _ u) = case u of
+   reflect { classes } (Val _ u) = case u of
       Constr c us | c == cSegment -> Segment
-         { y: P.unpack' string (us ! fieldIndex cSegment f_y)
-         , z: unpackIntOrNumber (us ! fieldIndex cSegment f_z)
+         { y: P.unpack' string (us ! fieldIndex classes cSegment f_y)
+         , z: unpackIntOrNumber (us ! fieldIndex classes cSegment f_z)
          }
       _ -> typeError u "Segment"
 
 instance Reflect StackedBar where
-   reflect options@{ fieldIndex } (Val _ u) = case u of
+   reflect options@{ classes } (Val _ u) = case u of
       Constr c us | c == cStackedBar -> StackedBar
-         { x: P.unpack' string (us ! fieldIndex cStackedBar f_x)
-         , segments: reflect options (us ! fieldIndex cStackedBar f_segments)
+         { x: P.unpack' string (us ! fieldIndex classes cStackedBar f_x)
+         , segments: reflect options (us ! fieldIndex classes cStackedBar f_segments)
          }
       _ -> typeError u "StackedBar"
 
 instance Reflect Text where
-   reflect { fieldIndex } (Val _ u) = case u of
-      Constr c us | c == cText -> case us ! fieldIndex cText f_text of
+   reflect { classes } (Val _ u) = case u of
+      Constr c us | c == cText -> case us ! fieldIndex classes cText f_text of
          Val α (Lit (Str s)) -> Text (s × α)
          _ -> typeError u "Text expects string"
       _ -> typeError u "Text"
 
 instance Reflect Link where
-   reflect { fieldIndex } (Val _ u) = case u of
-      Constr c us | c == cLink -> case us ! fieldIndex cLink f_label of
-         Val α' (Lit (Str s)) -> Link (us ! fieldIndex cLink f_value) (s × α')
+   reflect { classes } (Val _ u) = case u of
+      Constr c us | c == cLink -> case us ! fieldIndex classes cLink f_label of
+         Val α' (Lit (Str s)) -> Link (us ! fieldIndex classes cLink f_value) (s × α')
          _ -> typeError u "Link expects string label"
       _ -> typeError u "Link"
 
 instance Reflect MultiView where
-   reflect options@{ fieldIndex } (Val _ u) = case u of
-      Constr c us | c == cMultiView -> MultiView (view options "" <$> reflect options (us ! fieldIndex cMultiView f_views))
+   reflect options@{ classes } (Val _ u) = case u of
+      Constr c us | c == cMultiView -> MultiView (view options "" <$> reflect options (us ! fieldIndex classes cMultiView f_views))
       _ -> typeError u "MultiView"
 
 instance Reflect Paragraph where
-   reflect options@{ fieldIndex } (Val _ u) = case u of
-      Constr c us | c == cParagraph -> Paragraph (view options "" <$> reflect options (us ! fieldIndex cParagraph f_fragments))
+   reflect options@{ classes } (Val _ u) = case u of
+      Constr c us | c == cParagraph -> Paragraph (view options "" <$> reflect options (us ! fieldIndex classes cParagraph f_fragments))
       _ -> typeError u "Paragraph"
