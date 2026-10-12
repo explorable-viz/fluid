@@ -42,6 +42,9 @@ fields classes c = case def.base of
    where
    def = get c classes
 
+fieldNames :: ClassTable -> Name -> List Var
+fieldNames classes c = fst <$> fields classes c
+
 ancestors :: ClassTable -> Name -> List Name
 ancestors classes c = c : maybe Nil (ancestors classes <<< fst) (get c classes).base
 
@@ -96,6 +99,7 @@ subtype classes σ τ
            _, PrimitiveTy Sized -> sized σ
            ListTy σ', ListTy τ' -> equiv classes σ' τ'
            DictTy σ', DictTy τ' -> equiv classes σ' τ'
+           TypeTy σ', TypeTy τ' -> subtype classes σ' τ'
            TupleTy σs, TupleTy τs -> length σs == length τs && F.and (zipWith (subtype classes) σs τs)
            CallableTy σs σ', CallableTy τs τ' ->
               length σs == length τs && F.and (zipWith (subtype classes) τs σs) && subtype classes σ' τ'

@@ -1,15 +1,16 @@
 module Test.Specs.LinkedInputs where
 
 import App.Util (Selector)
-import App.Util.Selector (dictVal, eachElement, envVal, valOf, listElement, select, none, (>.>))
+import App.Util.Selector (eachElement, envVal, field, valOf, listElement, select, none, (>.>))
 import Bind ((↦))
 import Data.Maybe (Maybe(..))
 import Test.Util (fluidSrcPaths)
 import Test.Util.Suite (TestLinkedInputsSpec)
+import DataType (FieldIndex)
 import Val (Val)
 
-yearAndCountry :: Selector Val
-yearAndCountry = eachElement (dictVal "year" select >.> dictVal "country" select)
+yearAndCountry :: FieldIndex -> Selector Val
+yearAndCountry fieldIndex = eachElement (field fieldIndex "year" select >.> field fieldIndex "country" select)
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
@@ -17,19 +18,19 @@ linkedInputs_spec3 =
         { fluidSrcPaths
         , inputs: [ "renewables", "nonRenewables" ]
         , query: false
-        , ignoreInputs: envVal "renewables" (valOf yearAndCountry) >.> envVal "nonRenewables" (valOf yearAndCountry)
+        , ignoreInputs: \fieldIndex -> envVal "renewables" (valOf (yearAndCountry fieldIndex)) >.> envVal "nonRenewables" (valOf (yearAndCountry fieldIndex))
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_in: "nonRenewables" ↦ listElement 51 (dictVal "coalCap" select)
-   , in_expect:
-        envVal "nonRenewables" (valOf (listElement 51 (dictVal "coalCap" select >.> dictVal "gasCap" select >.> dictVal "nuclearCap" select >.> dictVal "petrolCap" select))) >.>
+   , δ_in: \fieldIndex -> "nonRenewables" ↦ listElement 51 (field fieldIndex "coalCap" select)
+   , in_expect: \fieldIndex ->
+        envVal "nonRenewables" (valOf (listElement 51 (field fieldIndex "coalCap" select >.> field fieldIndex "gasCap" select >.> field fieldIndex "nuclearCap" select >.> field fieldIndex "petrolCap" select))) >.>
            envVal "renewables"
               ( valOf
-                   ( listElement 204 (dictVal "capacity" select)
-                        >.> listElement 205 (dictVal "capacity" select)
-                        >.> listElement 206 (dictVal "capacity" select)
-                        >.> listElement 207 (dictVal "capacity" select)
+                   ( listElement 204 (field fieldIndex "capacity" select)
+                        >.> listElement 205 (field fieldIndex "capacity" select)
+                        >.> listElement 206 (field fieldIndex "capacity" select)
+                        >.> listElement 207 (field fieldIndex "capacity" select)
                    )
               )
    , file: "linked_inputs/energyscatter.fld"
@@ -41,29 +42,29 @@ linkedInputs_spec4 =
         { fluidSrcPaths
         , inputs: [ "renewables", "nonRenewables" ]
         , query: false
-        , ignoreInputs: envVal "renewables" (valOf yearAndCountry) >.> envVal "nonRenewables" (valOf yearAndCountry)
+        , ignoreInputs: \fieldIndex -> envVal "renewables" (valOf (yearAndCountry fieldIndex)) >.> envVal "nonRenewables" (valOf (yearAndCountry fieldIndex))
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_in: "renewables" ↦ listElement 204 (dictVal "capacity" select)
-   , in_expect:
+   , δ_in: \fieldIndex -> "renewables" ↦ listElement 204 (field fieldIndex "capacity" select)
+   , in_expect: \fieldIndex ->
         envVal "nonRenewables"
            ( valOf
                 ( listElement 51
-                     ( dictVal "coalCap" select
-                          >.> dictVal "gasCap" select
-                          >.> dictVal "nuclearCap" select
-                          >.> dictVal "petrolCap" select
-                          >.> dictVal "nuclearOut" select
+                     ( field fieldIndex "coalCap" select
+                          >.> field fieldIndex "gasCap" select
+                          >.> field fieldIndex "nuclearCap" select
+                          >.> field fieldIndex "petrolCap" select
+                          >.> field fieldIndex "nuclearOut" select
                      )
                 )
            )
            >.> envVal "renewables"
               ( valOf
-                   ( listElement 204 (dictVal "capacity" select >.> dictVal "output" select)
-                        >.> listElement 205 (dictVal "capacity" select >.> dictVal "output" select)
-                        >.> listElement 206 (dictVal "capacity" select >.> dictVal "output" select)
-                        >.> listElement 207 (dictVal "capacity" select >.> dictVal "output" select)
+                   ( listElement 204 (field fieldIndex "capacity" select >.> field fieldIndex "output" select)
+                        >.> listElement 205 (field fieldIndex "capacity" select >.> field fieldIndex "output" select)
+                        >.> listElement 206 (field fieldIndex "capacity" select >.> field fieldIndex "output" select)
+                        >.> listElement 207 (field fieldIndex "capacity" select >.> field fieldIndex "output" select)
                    )
               )
    , file: "linked_inputs/energyscatter.fld"
@@ -76,28 +77,28 @@ linkedInputs_spec5 =
 
         , inputs: [ "nonRenewables", "renewables" ]
         , query: false
-        , ignoreInputs: none
+        , ignoreInputs: \_ -> none
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_in: "nonRenewables" ↦ listElement 0 (dictVal "coalCap" select)
-   , in_expect:
+   , δ_in: \fieldIndex -> "nonRenewables" ↦ listElement 0 (field fieldIndex "coalCap" select)
+   , in_expect: \fieldIndex ->
         envVal "nonRenewables"
            ( valOf
                 ( listElement 0
-                     ( dictVal "coalCap" select
-                          >.> dictVal "gasCap" select
-                          >.> dictVal "nuclearCap" select
-                          >.> dictVal "petrolCap" select
+                     ( field fieldIndex "coalCap" select
+                          >.> field fieldIndex "gasCap" select
+                          >.> field fieldIndex "nuclearCap" select
+                          >.> field fieldIndex "petrolCap" select
                      )
                 )
            )
            >.> envVal "renewables"
               ( valOf
-                   ( listElement 0 (dictVal "capacity" select)
-                        >.> listElement 1 (dictVal "capacity" select)
-                        >.> listElement 2 (dictVal "capacity" select)
-                        >.> listElement 3 (dictVal "capacity" select)
+                   ( listElement 0 (field fieldIndex "capacity" select)
+                        >.> listElement 1 (field fieldIndex "capacity" select)
+                        >.> listElement 2 (field fieldIndex "capacity" select)
+                        >.> listElement 3 (field fieldIndex "capacity" select)
                    )
               )
    , file: "linked_inputs/mini_energyscatter.fld"

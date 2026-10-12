@@ -28,11 +28,12 @@ import Literal (Literal(..))
 import Pretty (prettyP)
 import Primitive (boolean, int, string, typeError)
 import Primitive (unpack') as P
-import Util (type (×), error, (!), (×))
+import Bind (Name)
+import Util (type (×), absurd, error, (!), (×))
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..), ValWithDoc(..))
 
-type ViewOptions = { fieldIndex :: FieldIndex, rowFilter :: Maybe Filter }
+type ViewOptions = { fieldIndex :: FieldIndex, fieldNames :: Name -> Array String, rowFilter :: Maybe Filter }
 
 -- TODO: merge with 'view' below.
 viewWithDoc :: ViewOptions -> String -> ValWithDoc (SelStates 𝕊) -> ViewWithDoc
@@ -52,21 +53,22 @@ view options title v@(Val α u') = case u' of
       | c == cBarChart -> pack (reflect options v :: BarChart)
       | c == cScatterPlot -> pack (reflect options v :: ScatterPlot)
       | c == cLineChart -> pack (reflect options v :: LineChart)
-   List vs ->
-      if tableView then
+   List vs -> case A.uncons vs of
+      Just { head: Val _ (Constr c _) } | not (c `A.elem` viewClasses) ->
+         pack (TableView { title, rowFilter, className: Just c, colNames: options.fieldNames c, rows: vs <#> fieldValues })
+      Just { head: Val _ (Constr _ _) } -> pack (MultiView $ view options "" <$> vs)
+      _ ->
          let
-            rowFilter = fromMaybe Interactive options.rowFilter
             records = dict identity <$> vs
             colNames = headers records
             rows = arrayDictToArray2 colNames records <#> map snd
          in
-            pack (TableView { title, rowFilter, colNames, rows })
-      else pack (MultiView $ view options "" <$> vs)
+            pack (TableView { title, rowFilter, className: Nothing, colNames, rows })
       where
-      tableView = case A.uncons vs of
-         Just { head: Val _ (Dictionary _) } -> true
-         Just { head: Val _ _ } -> false
-         Nothing -> true
+      rowFilter = fromMaybe Interactive options.rowFilter
+      viewClasses = [ cText, cMultiView, cParagraph, cLink, cBarChart, cScatterPlot, cLineChart ]
+      fieldValues (Val _ (Constr _ us)) = A.fromFoldable us
+      fieldValues _ = error absurd
    Matrix r ->
       pack (MatrixView { title, matrix: matrixRep r })
    Dictionary (DictRep d) ->

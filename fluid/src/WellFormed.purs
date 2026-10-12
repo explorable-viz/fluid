@@ -299,6 +299,13 @@ resolveType cxt (S.DictTy ψ) = predefName cxt "dict" *> predefName cxt "str" *>
 resolveType cxt (S.TupleTy ψs) = predefName cxt "tuple" *> (T.TupleTy <$> traverse (resolveType cxt) ψs)
 resolveType cxt (S.CallableTy ψs ψ) =
    predefName cxt "Callable" *> (T.CallableTy <$> traverse (resolveType cxt) ψs <*> resolveType cxt ψ)
+resolveType cxt (S.TypeTy ψ) = predefName cxt "type" *> resolveType cxt ψ >>= \τ -> case τ of
+   T.UnionTy _ _ -> excluded τ
+   T.LitTy _ -> excluded τ
+   T.CallableTy _ _ -> excluded τ
+   _ -> pure (T.TypeTy τ)
+   where
+   excluded τ = throwError $ "Excluded from type[...]: " <> prettyP τ
 resolveType cxt (S.UnionTy ψ ψ') = T.UnionTy <$> resolveType cxt ψ <*> resolveType cxt ψ'
 
 typeArguments :: Cxt -> Name -> List S.TypeExpr -> CheckM (List T.Type)
@@ -355,7 +362,9 @@ instance WellFormed S.Expr E.Expr where
          var cxt' y
          pure (E.ModMember q y)
       _ -> flip E.Attribute y <$> wellFormed cxt e
-   wellFormed cxt (S.Subscript e e') = E.Subscript <$> wellFormed cxt e <*> wellFormed cxt e'
+   wellFormed cxt (S.Subscript e e')
+      | Just ψ <- typeValue cxt (S.Subscript e e') = E.Type <$> resolveType cxt ψ
+      | otherwise = E.Subscript <$> wellFormed cxt e <*> wellFormed cxt e'
    wellFormed cxt (S.Matrix e1 (x × y) e2) =
       (\e2' e1' -> E.Matrix e1' (x × y) e2') <$> wellFormed cxt e2 <*> wellFormed
          (cxt `override` constMap Assigned (singleton x ∪ singleton y))
@@ -382,6 +391,38 @@ instance WellFormed S.Expr E.Expr where
          (×) <$> wellFormed cxt' k <*> wellFormed cxt' e
    wellFormed cxt (S.DocExpr e e') =
       E.DocExpr <$> wellFormed (cxt `override` constMap Assigned (singleton varThis)) e <*> wellFormed cxt e'
+
+typeValue :: Cxt -> S.Expr -> Maybe S.TypeExpr
+typeValue cxt e@(S.Subscript e' _) = do
+   q <- asName e'
+   guard case resolveName cxt q, q of
+      Just (Type _), _ -> true
+      _, NonEmptyList (x :| Nil) -> lookup x cxt == Just PredefName && x `elem` [ "list", "dict", "tuple" ]
+      _, _ -> false
+   typeExprOf e
+typeValue _ _ = Nothing
+
+typeExprOf :: S.Expr -> Maybe S.TypeExpr
+typeExprOf (S.Subscript e e') = do
+   q <- asName e
+   ψs <- case e' of
+      S.Tuple es -> traverse typeExprOf es
+      _ -> singleton <$> typeExprOf e'
+   case dottedName q, ψs of
+      "list", ψ : Nil -> pure (S.ListTy ψ)
+      "dict", S.PrimitiveTy T.Str : ψ : Nil -> pure (S.DictTy ψ)
+      "tuple", _ -> pure (S.TupleTy ψs)
+      _, _ -> pure (S.NameTy q ψs)
+typeExprOf e = asName e <#> \q -> case dottedName q of
+   "None" -> S.PrimitiveTy T.None
+   "object" -> S.PrimitiveTy T.Object
+   "bool" -> S.PrimitiveTy T.Bool
+   "int" -> S.PrimitiveTy T.Int
+   "float" -> S.PrimitiveTy T.Float
+   "str" -> S.PrimitiveTy T.Str
+   "Never" -> S.PrimitiveTy T.Never
+   "Sized" -> S.PrimitiveTy T.Sized
+   _ -> S.NameTy q Nil
 
 asName :: S.Expr -> Maybe Name
 asName (S.Var x) = Just (singleton x)
@@ -477,6 +518,7 @@ clauses cs = do
 var :: Cxt -> Var -> CheckM Unit
 var cxt x = case lookup x cxt of
    Just Assigned -> pure unit
+   Just (Type _) -> pure unit
    Just Unbound -> throwError $ "Declared later in scope: " <> x
    Just Declared -> throwError $ "Declared but not initialised: " <> x
    Just PossiblyUnassigned -> throwError $ "Possibly uninitialised: " <> x

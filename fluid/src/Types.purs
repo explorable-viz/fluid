@@ -32,6 +32,7 @@ data Type
    | LitTy Literal
    | VarTy Var
    | ClassTy Name (List Type) -- class by fully-qualified name, with type arguments
+   | TypeTy Type -- class as value
    | UnionTy Type Type
 
 primitiveName :: Primitive -> String
@@ -63,6 +64,7 @@ subst τs αs = assert (length τs == length αs) go
    go (DictTy τ) = DictTy (go τ)
    go (CallableTy τs' τ) = CallableTy (go <$> τs') (go τ)
    go (ClassTy c τs') = ClassTy c (go <$> τs')
+   go (TypeTy τ) = TypeTy (go τ)
    go (UnionTy σ τ) = UnionTy (go σ) (go τ)
    go τ = τ
 

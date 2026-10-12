@@ -1,5 +1,19 @@
+from dataclasses import dataclass
+
+@dataclass
+class Ensemble:
+  ens: dict[str, dict[str, float]]
+
+# Variable, then statistic, then region.
+@dataclass
+class Hydro:
+  pr: dict[str, dict[str, Ensemble]]
+  tas: dict[str, dict[str, Ensemble]]
+  mrro: dict[str, dict[str, Ensemble]]
+  prw: dict[str, dict[str, Ensemble]]
+
 path = "../../dataset/TS/inputdata_TS_12/v20230301/WaterCyclePanels/"
-hydroData = load_json(path + "Hydro_vars_change_20210201_derived_extra_raw.json")
+hydroData: Hydro = load_json(Hydro, path + "Hydro_vars_change_20210201_derived_extra_raw.json")
 
 # extract from data set instead?
 models = [
@@ -23,8 +37,4 @@ models = [
 def precip(ensemble_data):
   return mean([ ensemble_data[ model ] for model in models ])
 
-hydroData_agg = {
-  "pr": {
-    "std": { "extra_annual": dict_map(precip, hydroData["pr"]["std"]["extra_annual"]["ens"]) }
-  }
-}
+precip_std_extra_annual = dict_map(precip, hydroData.pr["std"]["extra_annual"].ens)

@@ -1,6 +1,6 @@
 module Test.Specs.LinkedOutputs where
 
-import App.Util.Selector (barSegment, dictVal, eachElement, envVal, valOf, listElement, matrixDims, matrixElement, none, topα, tupleElement, (>.>), select, select')
+import App.Util.Selector (barSegment, eachElement, envVal, field, valOf, listElement, matrixDims, matrixElement, none, topα, tupleElement, (>.>), select, select')
 import Data.Maybe (Maybe(..))
 import DataType (cBarChart, cLineChart, cLinePlot, cMultiView, cPoint, cScatterPlot, f_plots, f_points, f_stackedBars, f_views, f_y)
 import Test.Util (at, fluidSrcPaths)
@@ -12,7 +12,7 @@ linkedOutputs_spec1 =
         { fluidSrcPaths
         , inputs: [ "renewables" ]
         , query: false
-        , ignoreInputs: envVal "renewables" (valOf (eachElement (dictVal "year" select >.> dictVal "country" select)))
+        , ignoreInputs: \fieldIndex -> envVal "renewables" (valOf (eachElement (field fieldIndex "year" select >.> field fieldIndex "country" select)))
         , linking: true
         , rowFilter: Nothing
         }
@@ -39,7 +39,7 @@ linkedOutputs_spec2 =
         { fluidSrcPaths
         , inputs: [ "nonRenewables" ]
         , query: false
-        , ignoreInputs: envVal "nonRenewables" (valOf (eachElement (dictVal "year" select >.> dictVal "country" select)))
+        , ignoreInputs: \fieldIndex -> envVal "nonRenewables" (valOf (eachElement (field fieldIndex "year" select >.> field fieldIndex "country" select)))
         , linking: true
         , rowFilter: Nothing
         }
@@ -64,7 +64,7 @@ movingAverages_spec =
         { fluidSrcPaths
         , inputs: [ "methane" ]
         , query: false
-        , ignoreInputs: none
+        , ignoreInputs: \_ -> none
         , linking: true
         , rowFilter: Nothing
         }
@@ -80,7 +80,7 @@ linkedOutputs_cases =
           { fluidSrcPaths
           , inputs: [ "data" ]
           , query: false
-          , ignoreInputs: none
+          , ignoreInputs: \_ -> none
           , linking: true
           , rowFilter: Nothing
           }
@@ -94,7 +94,7 @@ linkedOutputs_cases =
 
           , inputs: [ "data" ]
           , query: false
-          , ignoreInputs: none
+          , ignoreInputs: \_ -> none
           , linking: true
           , rowFilter: Nothing
           }
@@ -131,7 +131,7 @@ linkedOutputs_cases =
           { fluidSrcPaths
           , inputs: [ "xs", "n", "ys", "m" ]
           , query: false
-          , ignoreInputs: none
+          , ignoreInputs: \_ -> none
           , linking: true
           , rowFilter: Nothing
           }
@@ -144,7 +144,7 @@ linkedOutputs_cases =
           { fluidSrcPaths
           , inputs: [ "types", "data" ]
           , query: false
-          , ignoreInputs: none
+          , ignoreInputs: \_ -> none
           , linking: true
           , rowFilter: Nothing
           }
@@ -157,7 +157,7 @@ linkedOutputs_cases =
           { fluidSrcPaths
           , inputs: [ "seq1", "seq2" ]
           , query: false
-          , ignoreInputs: none
+          , ignoreInputs: \_ -> none
           , linking: true
           , rowFilter: Nothing
           }
@@ -170,7 +170,7 @@ linkedOutputs_cases =
           { fluidSrcPaths
           , inputs: [ "x", "n" ]
           , query: false
-          , ignoreInputs: none
+          , ignoreInputs: \_ -> none
           , linking: true
           , rowFilter: Nothing
           }

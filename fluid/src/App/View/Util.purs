@@ -6,7 +6,7 @@ import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, Sele
 import App.Util.Selector (ConstrArg, dictVal)
 import App.View.Util.D3 (create, on, setAttrs)
 import App.View.Util.D3 as D3
-import Bind (Var)
+import Bind (Name, Var)
 import DataType (FieldIndex)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..))
 import Data.Argonaut.Decode.Decoders (decodeString)
@@ -109,7 +109,7 @@ type Options =
    { fluidSrcPaths :: Array Folder
    , inputs :: Array Var
    , query :: Boolean -- show documented intermediates
-   , ignoreInputs :: Selector EnvWithDocs -- input positions left out of linked queries; retire with #1585
+   , ignoreInputs :: FieldIndex -> Selector EnvWithDocs -- input positions left out of linked queries; retire with #1585
    , linking :: Boolean
    , rowFilter :: Maybe Filter
    }
@@ -131,6 +131,7 @@ type Fig =
    , intermediate_views :: Labelling (Maybe View)
    , inertι :: Labelling (ValWithDoc 𝔹) -- inert positions of each intermediate
    , fieldIndex :: FieldIndex
+   , fieldNames :: Name -> Array String
    }
 
 -- Inputs, output and intermediates reached by a query.

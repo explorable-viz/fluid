@@ -7,7 +7,7 @@ import App.Util (SelStates, Selector, isInert, isPersistent, isTransient, selSta
 import App.Util.Selector (ConstrArg, constrArg, sel𝔹, valOf)
 import App.View.Util (Fig, Options)
 import Bind (Bind)
-import DataType (class HasClasses)
+import DataType (class HasClasses, FieldIndex)
 import Control.Monad.Error.Class (class MonadError, catchError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Either (Either(..))
@@ -45,8 +45,8 @@ type TestLinkedOutputsSpec =
 
 type TestLinkedInputsSpec =
    { spec :: Options
-   , δ_in :: Bind (Selector Val)
-   , in_expect :: Selector EnvWithDocs
+   , δ_in :: FieldIndex -> Bind (Selector Val)
+   , in_expect :: FieldIndex -> Selector EnvWithDocs
    , file :: String
    }
 
@@ -83,10 +83,10 @@ linkedOutputsSuite testSpecs = testSpecs <#> (_.file &&& (linkedOutputsTest >>> 
 linkedInputsTest :: forall m. MonadAff m => MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => TestLinkedInputsSpec -> m Fig
 linkedInputsTest { spec, δ_in, in_expect, file } = do
    fluidSrc <- loadFile spec.fluidSrcPaths (File file)
-   fig <- loadFig spec fluidSrc <#> uncurry selectInput (valOf <$> δ_in)
+   fig <- loadFig spec fluidSrc <#> \fig0 -> uncurry selectInput (valOf <$> δ_in fig0.fieldIndex) fig0
    ρ <- logTimeWhen timing.selectionResult file \_ ->
       pure (selectionResult fig).ρ
-   checkSelection in_expect (selected <$> ρ)
+   checkSelection (in_expect fig.fieldIndex) (selected <$> ρ)
    pure fig
 
 linkedInputsSuite :: forall m. MonadAff m => MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array TestLinkedInputsSpec -> Array (String × m Unit)

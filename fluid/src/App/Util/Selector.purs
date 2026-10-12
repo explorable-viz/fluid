@@ -74,6 +74,10 @@ eachElement δv = unsafePartial $ case _ of
 none :: forall a. SetSel a
 none = (_ × Persistent)
 
+field :: FieldIndex -> FieldName -> SelSetter Val Val
+field fieldIndex f δv = unsafePartial $ case _ of
+   Val α (Constr c us) -> first (\u' -> Val α (Constr c $ unsafeUpdateAt (fieldIndex c f) u' us)) (δv (us ! fieldIndex c f))
+
 constrArg :: FieldIndex -> ConstrArg
 constrArg fieldIndex c f δv = unsafePartial $ case _ of
    Val α (Constr c' us) | last c == last c' ->

@@ -3,16 +3,16 @@ from renewables import renewables
 from fluid.view import BarChart, Dimensions, LineChart, MultiView, LinePlot, Point, Segment, StackedBar, TickLabels, Default
 
 def totalFor(c, rows):
-  return sum([row["output"] for row in rows if row["country"] == c])
+  return sum([row.output for row in rows if row.country == c])
 
-data2015 = [row for row in renewables if row["year"] == 2015]
+data2015 = [row for row in renewables if row.year == 2015]
 countryData = [StackedBar(x=c, segments=[Segment(y="output", z=totalFor(c, data2015))]) for c in ["China", "USA", "Germany"]]
 
 def series(energyType, country):
   return [
-    Point(x=row["year"], y=row["output"])
+    Point(x=row.year, y=row.output)
     for year in range(2013, 2019) for row in renewables
-    if row["year"] == year if row["energyType"] == energyType if row["country"] == country
+    if row.year == year if row.energyType == energyType if row.country == country
   ]
 
 MultiView([

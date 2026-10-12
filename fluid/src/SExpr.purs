@@ -94,6 +94,7 @@ data TypeExpr
    | CallableTy (List TypeExpr) TypeExpr
    | LitTy Literal
    | NameTy Name (List TypeExpr) -- class, alias or type parameter, with type arguments
+   | TypeTy TypeExpr -- class as value
    | UnionTy TypeExpr TypeExpr
 
 -- ======================

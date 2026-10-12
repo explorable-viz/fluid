@@ -89,11 +89,12 @@ overChildren f (Fun φ) = Fun (overFun φ)
    overFun (Partial φ' vs) = Partial (overFun φ') (f <$> vs)
    overFun φ' = φ'
 
--- False at shape positions: root, keys and dimensions of a list, tuple, dictionary or matrix.
+-- False at shape positions: root, keys and dimensions of a list, tuple, dictionary, matrix or class instance.
 dataPositions :: forall a. Val a -> Val Boolean
 dataPositions (Val _ u) = Val (not container) (overChildren dataPositions (false <$ u))
    where
    container = case u of
+      Constr _ _ -> true
       List _ -> true
       Tuple _ -> true
       Dictionary _ -> true
@@ -103,7 +104,7 @@ dataPositions (Val _ u) = Val (not container) (overChildren dataPositions (false
 data Fun a
    = Closure (Env a) (Dict Def) Def
    | Prim ForeignOp
-   | Type Name -- class as a value, as at the Python runtime
+   | Type T.Type -- type as a value, as at the Python runtime
    | Partial (Fun a) (List (Val a)) -- fewer arguments than the arity of the function, which is not itself partial
 
 class (Highlightable a, BoundedLattice a) <= Ann a
@@ -495,7 +496,7 @@ instance Apply BaseVal where
 instance Apply Fun where
    apply (Closure fρ ds d) (Closure ρ _ _) = Closure (fρ <*> ρ) ds d
    apply (Prim op) (Prim _) = Prim op
-   apply (Type c) (Type c') = Type (c ≜ c')
+   apply (Type τ) (Type τ') = Type (τ ≜ τ')
    apply (Partial fφ fvs) (Partial φ vs) = Partial (fφ <*> φ) (zipWith (<*>) fvs vs)
    apply _ _ = shapeMismatch unit
 
@@ -557,7 +558,7 @@ instance JoinSemilattice a => JoinSemilattice (BaseVal a) where
 instance JoinSemilattice a => JoinSemilattice (Fun a) where
    join (Closure ρ ds d) (Closure ρ' _ _) = Closure (ρ ∨ ρ') ds d
    join (Prim φ) (Prim _) = Prim φ -- TODO: require φ == φ'
-   join (Type c) (Type c') = Type (c ≜ c')
+   join (Type τ) (Type τ') = Type (τ ≜ τ')
    join (Partial φ vs) (Partial φ' vs') = Partial (φ ∨ φ') (vs ∨ vs')
    join _ _ = shapeMismatch unit
 

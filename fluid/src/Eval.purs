@@ -37,6 +37,7 @@ import Literal (Literal(..), eqLiteral)
 import ModuleGraph (ModuleName, implicit, submodules)
 import Operator (binopSymbol, unopSymbol)
 import Pretty (prettyP)
+import Types (Type(..)) as T
 import Primitive (binop, binopRel, boolean, int, string, typeMismatch, unop, unopRel, unpack, unpackVal)
 import Util (type (×), absurd, check, definitely', definitelyRight, error, orElse, orThrow, singleton, throw, withMsg, (×))
 import Util.Map (get, lookup, lookup', mapWithKey, maplet, restrict, unionWith_never, (<+>))
@@ -178,6 +179,7 @@ eval inputs = case _ of
       mat :: forall a. Product (Compose Array Array) Identity (Val a) -> BaseVal a
       mat (Product (Compose vss × Identity p)) = V.Matrix (MatrixRep (vss × element 0 p × element 1 p))
    Lambda d -> construct inputs.ctrl (closure (restrict (fv d) inputs.env) empty d)
+   Type τ -> construct inputs.ctrl { val: Val unit (V.Fun (V.Type τ)), inEdges: Nil }
    Attribute e x -> do
       v <- gval <$> eval inputs e
       case v.val of
@@ -337,7 +339,7 @@ evalStmt inputs = case _ of
             _ × Val _ w <- eval (inputs { ctrl = ctrl }) e'
             throw ("AssertionError: " <> either (\_ -> prettyP w) identity (string.unpack w))
    Dataclass c -> do
-      let v = constructed inputs.ctrl { val: Val unit (V.Fun (V.Type c)), inEdges: Nil }
+      let v = constructed inputs.ctrl { val: Val unit (V.Fun (V.Type (T.ClassTy c Nil))), inEdges: Nil }
       pure (Assigns (maplet (last c) v) inputs.ctrl)
    TypeAlias x αs τ -> do
       let v = constructed inputs.ctrl { val: Val unit (V.TypeAlias αs τ), inEdges: Nil }
@@ -371,7 +373,8 @@ apply ctrl f@{ val: Val _ u } vs = case u of
       arity' = case φ of
          V.Closure _ _ (Def xs _) -> pure (length xs)
          V.Prim (ForeignOp (_ × ForeignOp' φ')) -> pure φ'.arity
-         V.Type c -> askClasses >>= arity c
+         V.Type (T.ClassTy c _) -> askClasses >>= arity c
+         V.Type τ -> throw ("Not callable: " <> prettyP τ)
          V.Partial _ _ -> error absurd
 
       -- Partial application of f to vs, with root and function depending on those of f, and arguments depending on vs.
@@ -393,7 +396,8 @@ apply ctrl f@{ val: Val _ u } vs = case u of
             ρ3 = foldl (\ρ (x × v) -> if x == varAnon then ρ else ρ `unionWith_never` maplet x v) empty (zip xs vs')
          asReturns <$> evalStmt { ctrl: ctrl', env: ρ1' <+> ρ2 <+> ρ3 } s
       V.Prim (ForeignOp (_ × ForeignOp' { depOp })) -> depOp ctrl' vs'
-      V.Type c -> constructWith ctrl' (V.Constr c) vs'
+      V.Type (T.ClassTy c _) -> constructWith ctrl' (V.Constr c) vs'
+      V.Type _ -> error absurd
       V.Partial _ _ -> error absurd
       where
       ctrl' = via root f

@@ -1,2 +1,25 @@
-nonRenewables = load_json("../dataset/non_renewables.json")
-renewables = load_json("../dataset/renewable.json")
+from dataclasses import dataclass
+
+@dataclass
+class NonRenewable:
+  country: str
+  year: int
+  nuclearOut: float
+  nuclearCap: float
+  gasOut: float
+  gasCap: float
+  coalOut: float
+  coalCap: float
+  petrolOut: float
+  petrolCap: float
+
+@dataclass
+class Renewable:
+  year: int
+  country: str
+  energyType: str
+  output: float
+  capacity: float
+
+nonRenewables: list[NonRenewable] = load_json(list[NonRenewable], "../dataset/non_renewables.json")
+renewables: list[Renewable] = load_json(list[Renewable], "../dataset/renewable.json")

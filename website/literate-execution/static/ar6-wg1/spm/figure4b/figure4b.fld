@@ -1,5 +1,5 @@
 from fluid.stats import find_percentile, cut
-from figure4b_data import ssp126Source, ssp126preds, ssp245Source, ssp245preds
+from figure4b_data import Emission, ssp126Source, ssp126preds, ssp245Source, ssp245preds
 
 from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, TickLabels, Default, Link
 
@@ -15,7 +15,7 @@ def mkBarChart(scenName, table):
     size=Dimensions(width=275, height=185),
     tickLabels=TickLabels(x=Default(), y=Default()),
     stackedBars=
-      map(lambda record: StackedBar(x=record["type"], segments=[Segment(y="emissions", z=record["emissions"])]), table),
+      map(lambda record: StackedBar(x=record.type, segments=[Segment(y="emissions", z=record.emissions)]), table),
     legend=True
   )
 
@@ -34,11 +34,11 @@ def mkHistogram(xs, name, nbins):
 def getHeight(offset, bar):
   return bar.segments[0].z + offset
 
-changed126 = map(lambda r: r["changed"], ssp126preds)
-changed245 = map(lambda r: r["changed"], ssp245preds)
-ssp126Total = { "type": "Total", "emissions": sum(map(lambda r: r["emissions"], ssp126Source)) }
+changed126 = map(lambda r: r.changed, ssp126preds)
+changed245 = map(lambda r: r.changed, ssp245preds)
+ssp126Total = Emission("Total", sum(map(lambda r: r.emissions, ssp126Source)))
 ssp126table = [ssp126Total] + ssp126Source
-ssp245table = [{ "type": "Total", "emissions": find_percentile(50, changed245) }] + ssp245Source
+ssp245table = [Emission("Total", find_percentile(50, changed245))] + ssp245Source
 ssp126 = mkBarChart("SSP1-2.6", ssp126table)
 ssp245 = mkBarChart("SSP2-4.5", ssp245table)
 totals = map(stackedBarHeight, map(get("Total"), [ssp126, ssp245]))

@@ -1,1 +1,10 @@
-renewables = load_json("dataset/renewables.json")
+from dataclasses import dataclass
+
+@dataclass
+class Renewable:
+  year: int
+  country: str
+  energyType: str
+  output: float
+
+renewables: list[Renewable] = load_json(list[Renewable], "dataset/renewables.json")

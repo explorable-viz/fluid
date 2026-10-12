@@ -121,6 +121,7 @@ typeExpr = defer \_ -> do
       "list" -> ListTy <$> brackets typeExpr
       "tuple" -> TupleTy <$> brackets ((delim '(' *> delim ')' $> Nil) <|> commas typeExpr)
       "dict" -> brackets (reserved "str" *> delim ',' *> (DictTy <$> typeExpr))
+      "type" -> TypeTy <$> brackets typeExpr
       _ -> NameTy (singleton x) <$> typeArgs
    namedType q = NameTy q <$> typeArgs
 
