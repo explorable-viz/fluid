@@ -89,7 +89,7 @@ overChildren f (Fun φ) = Fun (overFun φ)
    overFun (Partial φ' vs) = Partial (overFun φ') (f <$> vs)
    overFun φ' = φ'
 
--- False at shape positions: root, keys and dimensions of a list, tuple, dictionary, matrix or class instance.
+-- False at shape positions.
 dataPositions :: forall a. Val a -> Val Boolean
 dataPositions (Val _ u) = Val (not container) (overChildren dataPositions (false <$ u))
    where
