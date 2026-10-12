@@ -104,7 +104,7 @@ dataPositions (Val _ u) = Val (not container) (overChildren dataPositions (false
 data Fun a
    = Closure (Env a) (Dict Def) Def
    | Prim ForeignOp
-   | Type T.Type -- type as a value, as at the Python runtime
+   | Type T.Type
    | Partial (Fun a) (List (Val a)) -- fewer arguments than the arity of the function, which is not itself partial
 
 class (Highlightable a, BoundedLattice a) <= Ann a

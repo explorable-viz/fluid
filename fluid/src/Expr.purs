@@ -32,7 +32,7 @@ data Expr
    | Tuple (List Expr)
    | Matrix Expr (Var × Var) Expr
    | Lambda Def
-   | Type T.Type -- type as value
+   | Type T.Type
    | Attribute Expr Var -- attribute x of a dataclass instance
    | Subscript Expr Expr
    | ModMember Name Var -- member x of module q; only arises during desugaring
