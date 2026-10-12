@@ -18,7 +18,7 @@ import App.View.Util (Filter(..), View, pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Data.Array as A
-import Data.Array.NonEmpty (NonEmptyArray, cons')
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (snd)
 import DataType (ClassTable, cAxisLabels, cBarChart, cDimensions, cLineChart, cLinePlot, cLink, cMultiView, cParagraph, cPoint, cScatterPlot, cSegment, cStackedBar, cText, cTickLabels, f_caption, f_fragments, f_height, f_label, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_text, f_tickLabels, f_value, f_views, f_width, f_x, f_y, f_z, fieldIndex, fieldNames)
@@ -28,7 +28,7 @@ import Literal (Literal(..))
 import Pretty (prettyP)
 import Primitive (boolean, int, string, typeError)
 import Primitive (unpack') as P
-import Util (type (×), absurd, error, (!), (×))
+import Util (type (×), absurd, error, head, nonEmpty, (!), (×))
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..), ValWithDoc(..))
 
@@ -52,10 +52,10 @@ view options title v@(Val α u') = case u' of
       | c == cBarChart -> pack (reflect options v :: BarChart)
       | c == cScatterPlot -> pack (reflect options v :: ScatterPlot)
       | c == cLineChart -> pack (reflect options v :: LineChart)
-   List vs -> case A.uncons vs of
-      Just { head: Val _ (Constr c _) } | not (c `A.elem` viewClasses) ->
+   List vs -> case head vs of
+      Just (Val _ (Constr c _)) | not (c `A.elem` viewClasses) ->
          pack (TableView { title, rowFilter, className: Just c, colNames: A.fromFoldable (fieldNames options.classes c), rows: vs <#> fieldValues })
-      Just { head: Val _ (Constr _ _) } -> pack (MultiView $ view options "" <$> vs)
+      Just (Val _ (Constr _ _)) -> pack (MultiView $ view options "" <$> vs)
       _ ->
          let
             records = dict identity <$> vs
@@ -88,9 +88,7 @@ instance Reflect b => Reflect (Array b) where
    reflect _ (Val _ u) = typeError u "list"
 
 instance Reflect b => Reflect (NonEmptyArray b) where
-   reflect options v = case A.uncons (reflect options v) of
-      Just { head, tail } -> cons' head tail
-      Nothing -> error "Expected non-empty list"
+   reflect options v = nonEmpty (reflect options v)
 
 instance Reflect BarChart where
    reflect options@{ classes } (Val _ u) = case u of
