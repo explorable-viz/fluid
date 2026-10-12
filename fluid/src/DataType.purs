@@ -27,8 +27,7 @@ import Util.Map (get, lookup)
 type FieldName = String
 type Ctr = String -- newtype would require more general Dict keys
 
--- Class table entry (ᾱ; x̄:τ̄; D[σ̄]) of PurePy 0.18, named for the 0.19 entry, the class definition under its context,
--- which supersedes it.
+-- 0.18 class table entry under 0.19 name; retire with 0.19 sync.
 type ClassDef =
    { typeParams :: List Var
    , fields :: List (Var × Type) -- own fields, distinct
@@ -52,7 +51,6 @@ baseAt classes c τs = def.base <#> \(d × σs) -> ClassTy d (subst τs def.type
    where
    def = get c classes
 
--- Argument for a field, positional then keyword.
 fieldMap :: forall a. ClassTable -> Name -> List a -> List (Var × a) -> Var -> Maybe a
 fieldMap classes c xs xys x = case elemIndex x (fst <$> fields classes c) of
    Just i | i < length xs -> index xs i
