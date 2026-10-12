@@ -8,9 +8,10 @@ class Foo:
 class Bar:
    pass
 
-v = @doc("v") Bar()
-w = @doc("w") 5
+v: Foo | Bar = @doc("v") Bar()
+w: int = @doc("w") 5
 
+x: int
 match v:
    case Foo():
       x = 1

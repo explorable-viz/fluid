@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from dataset.energy_data import renewables, nonRenewables
+from dataset.energy_data import renewables, nonRenewables, Renewable, NonRenewable
 
 from fluid.view import AxisLabels, Point, ScatterPlot
 
@@ -10,25 +10,25 @@ class Energy:
   nonRenewables: float
   renCapFactor: float
 
-def sumNonRenewables(x):
+def sumNonRenewables(x: NonRenewable) -> float:
   return ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
 
-def country_check(name, x):
+def country_check(name: str, x: Renewable | NonRenewable) -> bool:
   return name == x.country
 
-def year_check(year, x):
+def year_check(year: int, x: Renewable | NonRenewable) -> bool:
   return year == x.year
 
-def energy(year, c_names):
-  rens2018 = filter(year_check(year), renewables)
-  nonrens2018 = filter(year_check(year), nonRenewables)
+def energy(year: int, c_names: list[str]) -> list[Energy]:
+  rens2018: list[Renewable] = filter(year_check(year), renewables)
+  nonrens2018: list[NonRenewable] = filter(year_check(year), nonRenewables)
 
-  def energy_per_country(c_name):
-    filteredRen = filter(country_check(c_name), rens2018)
-    non_ren_x = filter(country_check(c_name), nonrens2018)[0]
-    rensOut = sum(map(lambda x: x.output, filteredRen))
-    rensCap = sum(map(lambda x: x.capacity, filteredRen))
-    nonRensCap = sumNonRenewables(non_ren_x)
+  def energy_per_country(c_name: str) -> Energy:
+    filteredRen: list[Renewable] = filter(country_check(c_name), rens2018)
+    non_ren_x: NonRenewable = filter(country_check(c_name), nonrens2018)[0]
+    rensOut: float = fsum(map(lambda x: x.output, filteredRen))
+    rensCap: float = fsum(map(lambda x: x.capacity, filteredRen))
+    nonRensCap: float = sumNonRenewables(non_ren_x)
     return Energy(
       name=c_name,
       totalCap=rensCap + nonRensCap,

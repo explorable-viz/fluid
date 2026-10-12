@@ -162,6 +162,7 @@ cSegment = qual view "Segment" :: Name
 cStackedBar = qual view "StackedBar" :: Name
 cNonEmpty = qual prelude "NonEmpty" :: Name -- Tree
 cRange = qual builtins "range" :: Name
+cMatrix = qual builtins "Matrix" :: Name
 cText = qual view "Text" :: Name
 cLink = qual view "Link" :: Name
 -- Field names used internally by rendering layer.

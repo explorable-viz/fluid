@@ -1,12 +1,13 @@
+from typing import Callable
 from math import ceil
-from nap3_ccra3_data import nap3_actions, ccra3_risks
+from nap3_ccra3_data import Action, Risk, nap3_actions, ccra3_risks
 
 from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, TickLabels, Default, Link
 
-eval_scores = [ "Significantly addressed", "Recognised but not addressed",
+eval_scores: list[str] = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
-def actions_by(field, keys):
+def actions_by(field: Callable[[Action], str], keys: list[str]) -> list[StackedBar]:
   return [ StackedBar(x=key_,
       segments=[ Segment(y=eval_score,
           z=len([ action for action in nap3_actions
@@ -15,12 +16,12 @@ def actions_by(field, keys):
       ]) for key_ in keys
   ]
 
-risks_ = { [risk.id]: risk for risk in ccra3_risks }
+risks_: dict[str, Risk] = { [risk.id]: risk for risk in ccra3_risks }
 
-def percent(x, y):
+def percent(x: float, y: float) -> float:
   return 0 if y == 0 else x / y * 100
 
-def actions_by_chapter(owner):
+def actions_by_chapter(owner: str) -> list[StackedBar]:
   return [ StackedBar(x=chapter,
       segments=[ Segment(y=eval_score,
           z=def segment_risks: [
@@ -39,18 +40,18 @@ def actions_by_chapter(owner):
       ]
   ]
 
-departments = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+departments: list[str] = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
-nat_env_and_infra_depts = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
+nat_env_and_infra_depts: list[str] = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
 
 # action_counts: segments of a bar produced by actions_by
-def total_actions(action_counts):
-  return sum([ segment.z for segment in action_counts ])
+def total_actions(action_counts: list[Segment]) -> float:
+  return fsum([ segment.z for segment in action_counts ])
 
-def actions_with_score(action_counts, eval_score):
-  return sum([ segment.z for segment in action_counts if segment.y == eval_score ])
+def actions_with_score(action_counts: list[Segment], eval_score: str) -> float:
+  return fsum([ segment.z for segment in action_counts if segment.y == eval_score ])
 
-by_nat_env_and_infra = actions_by(lambda action: action.action_owner, nat_env_and_infra_depts)
+by_nat_env_and_infra: list[StackedBar] = actions_by(lambda action: action.action_owner, nat_env_and_infra_depts)
 
 MultiView([
   f"""
@@ -74,12 +75,12 @@ MultiView([
   } performed relatively well, with {
     ceil(
       percent(
-        sum([
+        fsum([
           actions_with_score(action_counts, eval_score)
           for eval_score in [ "Fully addressed", "Minimally addressed" ]
           for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra
         ]),
-        sum([ total_actions(action_counts) for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra])
+        fsum([ total_actions(action_counts) for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra])
       )
     )
   }% of actions at least “minimally addressed.”

@@ -1,4 +1,4 @@
-def greet():
+def greet() -> str:
    return "hello"
 
 greet()

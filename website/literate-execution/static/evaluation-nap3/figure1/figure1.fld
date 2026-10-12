@@ -1,12 +1,13 @@
-from math import ceil
-from nap3_ccra3_data import nap3_actions, ccra3_risks
+from typing import Callable
+from math import ceil, floor
+from nap3_ccra3_data import Action, Risk, nap3_actions, ccra3_risks
 
 from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, TickLabels, Default, Rotated, Link
 
-eval_scores = [ "Significantly addressed", "Recognised but not addressed",
+eval_scores: list[str] = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
-def actions_by(field, keys):
+def actions_by(field: Callable[[Action], str], keys: list[str]) -> list[StackedBar]:
   return [ StackedBar(x=key_,
       segments=[ Segment(y=eval_score,
           z=len([ action for action in nap3_actions
@@ -15,9 +16,9 @@ def actions_by(field, keys):
       ]) for key_ in keys
   ]
 
-risks_ = { [r.id]: r for r in ccra3_risks }
+risks_: dict[str, Risk] = { [r.id]: r for r in ccra3_risks }
 
-actions_by_chapter = [ StackedBar(x=chapter,
+actions_by_chapter: list[StackedBar] = [ StackedBar(x=chapter,
       segments=[ Segment(y=eval_score,
           z=len([ action for action in nap3_actions
             if risks_[ action.risk_id ].chapter == chapter and
@@ -26,13 +27,13 @@ actions_by_chapter = [ StackedBar(x=chapter,
       ]) for chapter in [ "3", "4", "5", "6", "7" ]
   ]
 
-departments = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+departments: list[str] = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
-nat_env_and_infra_depts = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
+nat_env_and_infra_depts: list[str] = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
 
-by_action_owner = actions_by(lambda action: action.action_owner, departments)
+by_action_owner: list[StackedBar] = actions_by(lambda action: action.action_owner, departments)
 
-by_topology = actions_by(
+by_topology: list[StackedBar] = actions_by(
     lambda action: action.typology,
     [ "No and low regret adaptation, including capacity building",
       "Climate-smart design, considering uncertainty",
@@ -42,22 +43,22 @@ by_topology = actions_by(
   )
 
 # action_counts: segments of a bar produced by actions_by
-def total_actions(action_counts):
-  return sum([ segment.z for segment in action_counts ])
+def total_actions(action_counts: list[Segment]) -> float:
+  return fsum([ segment.z for segment in action_counts ])
 
-def actions_with_score(action_counts, eval_score):
-  return sum([ segment.z for segment in action_counts if segment.y == eval_score ])
+def actions_with_score(action_counts: list[Segment], eval_score: str) -> float:
+  return fsum([ segment.z for segment in action_counts if segment.y == eval_score ])
 
-def proportion(x, y):
+def proportion(x: float, y: float) -> float:
   return 0 if y == 0 else x / y
 
-def max_with_score(actions, eval_score):
+def max_with_score(actions: list[StackedBar], eval_score: str) -> float:
   return maximum([
     proportion(actions_with_score(action_counts, eval_score), total_actions(action_counts))
     for StackedBar(x=_, segments=action_counts) in actions
   ])
 
-by_nat_env_and_infra = actions_by(lambda action: action.action_owner, nat_env_and_infra_depts)
+by_nat_env_and_infra: list[StackedBar] = actions_by(lambda action: action.action_owner, nat_env_and_infra_depts)
 
 MultiView([
   f"""
@@ -84,13 +85,13 @@ MultiView([
   Disaggregating by department revealed marked disparities in government response. {
     Link(nat_env_and_infra_depts, "Natural environment and infrastructure sectors")
   } performed relatively well, with {
-    sum([
+    floor(fsum([
       actions_with_score(action_counts, eval_score)
       for eval_score in [ "Fully addressed", "Minimally addressed" ]
       for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra
-    ])
+    ]))
   } of {
-    sum([ total_actions(action_counts) for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra])
+    floor(fsum([ total_actions(action_counts) for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra]))
   } actions at least “minimally addressed.”
   In contrast, business and industry actions lagged sharply, with nearly half unaddressed or only nominally
   recognized—an institutional lapse in private-sector resilience. Defra (Environment, Food and Rural Affairs)

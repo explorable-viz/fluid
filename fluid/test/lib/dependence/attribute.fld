@@ -5,6 +5,6 @@ class P:
    x: int
    y: int
 
-p = @doc("p") P(1, 2)
+p: P = @doc("p") P(1, 2)
 
 p.x

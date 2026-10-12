@@ -1,6 +1,8 @@
-def mul(x, y):
+from typing import Callable
+
+def mul(x: int, y: int) -> int:
   return x * y
 
-dub = mul(2)
+dub: Callable[[int], int] = mul(2)
 
-trip = mul(3)
+trip: Callable[[int], int] = mul(3)

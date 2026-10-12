@@ -5,7 +5,7 @@ class Row:
   energyType: str
   output: float
 
-data = @doc("data") [
+data: list[Row] = @doc("data") [
   Row("Bio", 6.2),
   Row("Hydro", 260),
   Row("Solar", 19.9),
@@ -13,4 +13,4 @@ data = @doc("data") [
   Row("Geo", 14.4)
 ]
 
-types = @doc("types") ["Hydro", "Solar", "Geo"]
+types: list[str] = @doc("types") ["Hydro", "Solar", "Geo"]

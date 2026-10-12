@@ -1,2 +1,2 @@
-a = c
+a: int = c
 from use_before_import_lib import c

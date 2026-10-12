@@ -1,9 +1,10 @@
+from typing import Callable
 from dataclasses import dataclass
 from math import floor
 
-# type Colour = Str
-# type Colours = List Colour
-# type Cat = Str
+type Colour = str
+type Colours = list[Colour]
+type Cat = str
 
 @dataclass
 class Point:
@@ -108,77 +109,68 @@ class Arrowhead(Marker):
   pass
 
 # Group has location (0, 0) because it doesn't interfere with positioning of its children.
-# GraphicsElement -> Point
-def coords(Group(gs)):
+def coords(Group(gs): GraphicsElement) -> Point:
   return Point(0, 0)
-def coords(Rect(x, y, _, _, _)):
+def coords(Rect(x, y, _, _, _): GraphicsElement) -> Point:
   return Point(x, y)
-def coords(String(x, y, _, _, _)):
+def coords(String(x, y, _, _, _): GraphicsElement) -> Point:
   return Point(x, y)
-def coords(Viewport(x, y, _, _, _, _, _, _, _)):
+def coords(Viewport(x, y, _, _, _, _, _, _, _): GraphicsElement) -> Point:
   return Point(x, y)
 
-# GraphicsElement -> Float
-def get_x(g):
+def get_x(g: GraphicsElement) -> float:
   Point(x, _) = coords(g)
   return x
 
-# GraphicsElement -> Float
-def get_y(g):
+def get_y(g: GraphicsElement) -> float:
   Point(_, y) = coords(g)
   return y
 
 # Want some kind of typeclass mechanism plus record accessors/updaters.
-# Float -> GraphicsElement -> GraphicsElement
-def set_x(x, Group(gs)):
+def set_x(x: float, Group(gs): GraphicsElement) -> GraphicsElement:
   assert False, "Group has immutable coordinates"
-def set_x(x, Rect(_, y, w, h, fill)):
+def set_x(x: float, Rect(_, y, w, h, fill): GraphicsElement) -> GraphicsElement:
   return Rect(x=x, y=y, width=w, height=h, fill=fill)
-def set_x(x, String(_, y, str, anchor, baseline)):
+def set_x(x: float, String(_, y, str, anchor, baseline): GraphicsElement) -> GraphicsElement:
   return String(x, y, str, anchor, baseline)
-def set_x(x, Viewport(_, y, w, h, fill, margin, scale, translate, g)):
+def set_x(x: float, Viewport(_, y, w, h, fill, margin, scale, translate, g): GraphicsElement) -> GraphicsElement:
   return Viewport(x=x, y=y, width=w, height=h, fill=fill, margin=margin, scale=scale, translate=translate, g=g)
 
-# (Point, Point) -> Point
-def dimensions2((Point(x1, y1), Point(x2, y2))):
-  return Point(max(x1, x2), max(y1, y2))
+def dimensions2((Point(x1, y1), Point(x2, y2)): tuple[Point, Point]) -> Point:
+  return Point(fmax(x1, x2), fmax(y1, y2))
 
 # For Group, dimensions are relative to implicit coords of (0, 0), since a Group's children are effectively
 # positioned relative to parent of Group. For Polymarker, will probably have to ignore the markers themselves,
 # since they are scale-invariant.
-# GraphicsElement -> Point
-def dimensions(Group(gs)):
+def dimensions(Group(gs): GraphicsElement) -> Point:
   return foldl(curry(dimensions2), Point(0, 0), map(coords_op, gs))
-def dimensions(Polyline(ps, _, _)):
+def dimensions(Polyline(ps, _, _): GraphicsElement) -> Point:
   return foldl(curry(dimensions2), Point(0, 0), ps)
-def dimensions(Rect(_, _, w, h, _)):
+def dimensions(Rect(_, _, w, h, _): GraphicsElement) -> Point:
   return Point(w, h)
-def dimensions(String(_, _, _, _, _)):
+def dimensions(String(_, _, _, _, _): GraphicsElement) -> Point:
   return Point(0, 0)
-def dimensions(Viewport(_, _, w, h, _, _, _, _, _)):
+def dimensions(Viewport(_, _, w, h, _, _, _, _, _): GraphicsElement) -> Point:
   return Point(w, h)
 
-def coords_op(g):
+def coords_op(g: GraphicsElement) -> Point:
   (Point(x, y), Point(w, h)) = prod(coords, dimensions, g)
   return Point(x + w, y + h)
 
-# GraphicsElement -> Float
-def width(g):
+def width(g: GraphicsElement) -> float:
   Point(w, _) = dimensions(g)
   return w
 
-# GraphicsElement -> Float
-def height(g):
+def height(g: GraphicsElement) -> float:
   Point(_, h) = dimensions(g)
   return h
 
-# Float -> Float -> List GraphicsElement -> List GraphicsElement
-def space_right(z, sep, gs):
+def space_right(z: float, sep: float, gs: list[GraphicsElement]) -> list[GraphicsElement]:
   return zip_with(set_x, iterate(len(gs), lambda x: sep + x, z), gs)
 
 # Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
 # different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org
-colours1 = [
+colours1: Colours = [
   "#66c2a5",
   "#a6d854",
   "#ffd92f",
@@ -189,7 +181,7 @@ colours1 = [
   "#e78ac3"
 ]
 
-colours2 = [
+colours2: Colours = [
   "#e41a1c",
   "#377eb8",
   "#4daf4a",
@@ -204,75 +196,66 @@ colours2 = [
 # frame, to avoid depending on content of child, and so are not themselves scaled. Polyline can't be scaled
 # directly because it inherits its frame of reference from its parent. For Viewport, margin will shrink the
 # available area, possibly to zero, at which point nothing will be rendered.
-# Float -> GraphicsElement -> GraphicsElement
-def scale_to_width(w, Rect(x, y, _, h, fill)):
+def scale_to_width(w: float, Rect(x, y, _, h, fill): GraphicsElement) -> GraphicsElement:
   return Rect(x=x, y=y, width=w, height=h, fill=fill)
-def scale_to_width(w, Viewport(x, y, w0, h, fill, margin, Scale(x_scale, y_scale), translate, g)):
-  scale = Scale((x_scale * w) / w0, y_scale)
+def scale_to_width(w: float, Viewport(x, y, w0, h, fill, margin, Scale(x_scale, y_scale), translate, g): GraphicsElement) -> GraphicsElement:
+  scale: Scale = Scale((x_scale * w) / w0, y_scale)
   return Viewport(x=x, y=y, width=w, height=h, fill=fill, margin=margin, scale=scale, translate=translate, g=g)
 
-# Float -> List GraphicsElement -> List GraphicsElement
-def stack_right(sep, gs):
+def stack_right(sep: float, gs: list[GraphicsElement]) -> list[GraphicsElement]:
   return map(scale_to_width(1 - sep), space_right(sep / 2, 1, gs))
 
-# Float -> List GraphicsElement -> GraphicsElement
-def group_right(sep, gs):
+def group_right(sep: float, gs: list[GraphicsElement]) -> GraphicsElement:
   return Viewport(x=0, y=0, width=len(gs), height=maximum(map(height, gs)), fill="none", margin=0, scale=Scale(1, 1), translate=Translate(0, 0), g=Group(stack_right(sep, gs)))
 
 # Heuristic saying how often to place a tick on an axis of length n.
-# Float -> Float
-def tick_every(n):
-  m = floor(log_base(10, n))
+def tick_every(n: float) -> float:
+  m: int = floor(log_base(10, n))
 
   if n <= 2 * 10 ** m:
     return 2 * 10 ** (m - 1)
   return 10 ** m
 
-axis_stroke_width = 0.5
-axis_colour = "black"
-background_colour = "white"
-default_margin = 24
-marker_radius = 3.5
-tick_length = 4
+axis_stroke_width: float = 0.5
+axis_colour: Colour = "black"
+background_colour: Colour = "white"
+default_margin: float = 24
+marker_radius: float = 3.5
+tick_length: float = 4
 
 # Helpers for axis functions.
-# Orient -> Colour -> Float -> GraphicsElement
-def tick(Horiz(), colour, len):
+def tick(Horiz(): Orient, colour: Colour, len: float) -> GraphicsElement:
   return Line(Point(0, 0), Point(0, 0 - len), colour, axis_stroke_width)
-def tick(Vert(), colour, len):
+def tick(Vert(): Orient, colour: Colour, len: float) -> GraphicsElement:
   return Line(Point(0, 0), Point(0 - len, 0), colour, axis_stroke_width)
 
-# Orient -> Float -> Float -> Str -> GraphicsElement
-def label(Horiz(), x, distance, str):
+def label(Horiz(): Orient, x: float, distance: float, str: str) -> GraphicsElement:
   return String(x, (0 - distance) - 4, str, "middle", "hanging")
-def label(Vert(), x, distance, str):
+def label(Vert(): Orient, x: float, distance: float, str: str) -> GraphicsElement:
   return String(0 - distance, x, str, "end", "central")
 
-# Orient -> Colour -> Float -> Str -> GraphicsElement
-def labelled_tick(orient, colour, len, str):
+def labelled_tick(orient: Orient, colour: Colour, len: float, str: str) -> GraphicsElement:
   return Group([
     tick(orient, colour, len),
     label(orient, 0, len, str)
   ])
 
-# Orient -> Float -> Float -> Point
-def mk_point(Horiz(), x, y):
+def mk_point(Horiz(): Orient, x: float, y: float) -> Point:
   return Point(y, x)
-def mk_point(Vert(), x, y):
+def mk_point(Vert(): Orient, x: float, y: float) -> Point:
   return Point(x, y)
 
 # x is position of this axis on the other axis. Returns axis and position of last tick.
-# Orient -> Float -> Float -> Float -> GraphicsElement
-def axis(orient, x, start, end):
-  tick_sp = tick_every(end - start)
-  first_tick = ceil_to_nearest(start, tick_sp)
-  last_tick = ceil_to_nearest(end, tick_sp)
-  n = floor((end - first_tick) / tick_sp) + 1
-  ticks = iterate(n, lambda x: tick_sp + x, first_tick)
-  ticks_from_start = [start] + ticks if first_tick > start else ticks
-  ys = ticks_from_start + [last_tick] if last_tick > end else ticks_from_start
-  ps = map(mk_point(orient, x), ys)
-  ax = Group([
+def axis(orient: Orient, x: float, start: float, end: float) -> tuple[GraphicsElement, float]:
+  tick_sp: float = tick_every(end - start)
+  first_tick: float = ceil_to_nearest(start, tick_sp)
+  last_tick: float = ceil_to_nearest(end, tick_sp)
+  n: int = floor((end - first_tick) / tick_sp) + 1
+  ticks: list[float] = iterate(n, lambda x: tick_sp + x, first_tick)
+  ticks_from_start: list[float] = [start] + ticks if first_tick > start else ticks
+  ys: list[float] = ticks_from_start + [last_tick] if last_tick > end else ticks_from_start
+  ps: list[Point] = map(mk_point(orient, x), ys)
+  ax: GraphicsElement = Group([
       Line(ps[0], ps[-1], axis_colour, axis_stroke_width),
       Polymarkers(ps, flip(map, ys, compose(labelled_tick(orient, axis_colour, tick_length), num_to_str)))
     ])
@@ -280,10 +263,9 @@ def axis(orient, x, start, end):
   return (ax, last_tick)
 
 # x is position of this axis on the other axis.
-# Orient -> Float -> List Cat -> GraphicsElement
-def cat_axis(orient, x, cat_values):
-  ys = iterate(len(cat_values) + 1, lambda x: 1 + x, 0)
-  ps = map(mk_point(orient, x), ys)
+def cat_axis(orient: Orient, x: float, cat_values: list[Cat]) -> GraphicsElement:
+  ys: list[int] = iterate(len(cat_values) + 1, lambda x: 1 + x, 0)
+  ps: list[Point] = map(mk_point(orient, x), ys)
 
   return Group([
     Line(ps[0], ps[-1], axis_colour, axis_stroke_width),
@@ -291,30 +273,26 @@ def cat_axis(orient, x, cat_values):
     Polymarkers(flip(map, tail(ps), lambda Point(x, y): Point(x - 0.5, y)), map(label(orient, -0.5, 0), cat_values))
   ])
 
-# Float -> Float -> Float -> Float -> List GraphicsElement -> GraphicsElement
-def viewport(x_start, x_finish, y_finish, margin, gs):
+def viewport(x_start: float, x_finish: float, y_finish: float, margin: float, gs: list[GraphicsElement]) -> GraphicsElement:
   return Viewport(x=0, y=0, width=x_finish - x_start, height=y_finish, fill=background_colour, margin=margin, scale=Scale(1, 1), translate=Translate(0 - x_start, 0), g=Group(gs))
 
 # Plot a map of x values to lists of (categorical value, y value) pairs. Importantly, assume all data is uniform
 # (categorical keys are the same for each x value and are ordered the same each time).
-# Bool -> Colours -> Float -> List (Float, List (Cat, Float)) -> GraphicsElement
-def line_chart(with_axes, colours, x_start, data):
-  xs = map(fst, data)
-  n_cat = len(snd(data[0]))
+def line_chart(with_axes: bool, colours: Colours, x_start: float, data: list[tuple[float, list[tuple[Cat, float]]]]) -> GraphicsElement:
+  xs: list[float] = map(fst, data)
+  n_cat: int = len(snd(data[0]))
 
-  # (Int, Colour) -> GraphicsElement
-  def plot((n, colour)):
-    ps = map(lambda (x, kvs): Point(x, snd(kvs[n])), data)
+  def plot((n, colour): tuple[int, Colour]) -> GraphicsElement:
+    ps: list[Point] = map(lambda (x, kvs): Point(x, snd(kvs[n])), data)
 
     return Group([
       Polyline(ps, colour, 1),
       Polymarkers(ps, [Circle(x=0, y=0, radius=marker_radius, fill=colour)] * len(ps))
     ])
 
-  # List GraphicsElement
-  lines = zip_with(curry(plot), iterate(n_cat, lambda x: 1 + x, 0), colours)
-  x_finish = xs[-1]
-  y_finish = maximum(flip(map, data, lambda (_, kvs): maximum(map(snd, kvs))))
+  lines: list[GraphicsElement] = zip_with(curry(plot), iterate(n_cat, lambda x: 1 + x, 0), colours)
+  x_finish: float = xs[-1]
+  y_finish: float = maximum(flip(map, data, lambda (_, kvs): maximum(map(snd, kvs))))
 
   if with_axes:
     (x_axis, x_finish_) = axis(Horiz(), 0, x_start, x_finish)
@@ -323,48 +301,43 @@ def line_chart(with_axes, colours, x_start, data):
   return viewport(x_start, x_finish, y_finish, 0, lines)
 
 # Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
-# (Colours -> List a -> GraphicsElement) -> Bool -> Colours -> Float -> List (Cat, a) -> GraphicsElement
-def categorical_chart(plot_value, with_axes, colours, sep, data):
-  gs = stack_right(sep, plot_value(colours, map(snd, data)))
-  w = len(gs)
-  h = maximum(map(height, gs))
+def categorical_chart[A](plot_value: Callable[[Colours, list[A]], list[GraphicsElement]], with_axes: bool, colours: Colours, sep: float, data: list[tuple[Cat, A]]) -> GraphicsElement:
+  gs: list[GraphicsElement] = stack_right(sep, plot_value(colours, map(snd, data)))
+  w: int = len(gs)
+  h: float = maximum(map(height, gs))
 
   if with_axes:
-    x_axis = cat_axis(Horiz(), 0, map(fst, data))
+    x_axis: GraphicsElement = cat_axis(Horiz(), 0, map(fst, data))
     (y_axis, h_) = axis(Vert(), 0, 0, h)
     return viewport(0, w, h_, default_margin, gs + [x_axis, y_axis])
   return viewport(0, w, h, 0, gs)
 
-# Colours -> List a -> GraphicsElement
-def rects(colours, ns):
+def rects(colours: Colours, ns: list[float]) -> list[GraphicsElement]:
   return zip_with(lambda colour, n: Rect(x=0, y=0, width=1, height=n, fill=colour), colours, ns)
 
 # First component of data (categorical value) currently ignored; values just mapped positionally to colors.
 # Can we use Group instead of Viewport here?
-# Colours -> List (a, Num) -> GraphicsElement
-def stacked_bar(colours, ns):
-  heights = map(snd, ns)
-  subtotals = scanl1(lambda x, y: x + y, 0, heights)
-  dims = zip([0] + subtotals, heights)
-  rects = map(lambda ((y, height), colour): Rect(x=0, y=y, width=1, height=height, fill=colour), zip(dims, colours))
+def stacked_bar(colours: Colours, ns: list[tuple[Cat, float]]) -> GraphicsElement:
+  heights: list[float] = map(snd, ns)
+  subtotals: list[float] = scanl1(lambda x, y: x + y, 0.0, heights)
+  dims: list[tuple[float, float]] = zip([0.0] + subtotals, heights)
+  bars: list[GraphicsElement] = map(lambda ((y, height), colour): Rect(x=0, y=y, width=1, height=height, fill=colour), zip(dims, colours))
 
-  return Viewport(x=0, y=0, width=1, height=subtotals[-1], fill="none", margin=0, scale=Scale(1, 1), translate=Translate(0, 0), g=Group(rects))
+  return Viewport(x=0, y=0, width=1, height=subtotals[-1], fill="none", margin=0, scale=Scale(1, 1), translate=Translate(0, 0), g=Group(bars))
 
-# Bool -> Colours -> Float -> List (a, Float) -> GraphicsElement
-bar_chart = categorical_chart(rects)
+bar_chart: Callable[[bool, Colours, float, list[tuple[Cat, float]]], GraphicsElement] = categorical_chart(rects)
 
-# For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
-# Bool -> Colours -> Float -> List (a, List (b, Float)) -> GraphicsElement
-grouped_bar_chart = categorical_chart(compose(map, flip(bar_chart(False), 0)))
+# For each categorical value, plot a bar chart for the corresponding data.
+def grouped_bar_chart(with_axes: bool, colours: Colours, sep: float, data: list[tuple[Cat, list[tuple[Cat, float]]]]) -> GraphicsElement:
+  return categorical_chart(lambda colours_, groups: map(lambda group: bar_chart(False, colours_, 0, group), groups), with_axes, colours, sep, data)
 
 # See stacked_bar for strong (unjustified) assumption about uniformity of data.
-# Bool -> Colours -> Num -> List (a, List (b, Num)) -> GraphicsElement
-stacked_bar_chart = categorical_chart(compose(map, stacked_bar))
+def stacked_bar_chart(with_axes: bool, colours: Colours, sep: float, data: list[tuple[Cat, list[tuple[Cat, float]]]]) -> GraphicsElement:
+  return categorical_chart(lambda colours_, groups: map(stacked_bar(colours_), groups), with_axes, colours, sep, data)
 
 # Bit of a hack, but how text fits into our model is a bit unclear at the moment.
-# Str -> GraphicsElement -> GraphicsElement
-def caption(str, Viewport(x, y, w, h, fill, margin, scale, translate, g)):
-  g_ = Group([
+def caption(str: str, Viewport(x, y, w, h, fill, margin, scale, translate, g): GraphicsElement) -> GraphicsElement:
+  g_: GraphicsElement = Group([
       String(x + w / 2, -2, str, "middle", "hanging"),
       Viewport(x=0, y=0, width=w, height=h, fill=fill, margin=margin, scale=scale, translate=translate, g=g)
     ])

@@ -1,2 +1,4 @@
-incr = lambda x: 1 + x
+from typing import Callable
+
+incr: Callable[[int], int] = lambda x: 1 + x
 compose(incr, incr, 3)

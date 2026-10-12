@@ -1,4 +1,4 @@
-def f(v):
+def f(v: tuple[int, int]) -> tuple[int, tuple[int, int]]:
    match v:
       case (1, y) as p:
          return (y, p)

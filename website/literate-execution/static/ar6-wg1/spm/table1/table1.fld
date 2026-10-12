@@ -1,3 +1,4 @@
+from typing import Callable
 from dataclasses import dataclass
 from fluid.stats import likelihood_map
 from table1_data import tableData, likelihoods
@@ -14,7 +15,7 @@ class Scenario:
   beLong: float
   longRange: tuple[float, float]
 
-def newDataTable(offset):
+def newDataTable(offset: float) -> list[Scenario]:
   return map(lambda s: Scenario(
     scenario=s.scenario,
     beNear=s.bestEstNear + offset,
@@ -25,24 +26,24 @@ def newDataTable(offset):
     longRange=(s.lowLate, s.highLate)
   ), tableData)
 
-def getByScenario(data, scenario):
+def getByScenario(data: list[Scenario], scenario: str) -> Scenario:
   return [r for r in data if r.scenario == scenario][0]
 
-probAsText = likelihood_map(likelihoods)
+probAsText: Callable[[float], str] = likelihood_map(likelihoods)
 
-def mean(xs):
-  return sum(xs) / len(xs)
+def mean(xs: list[float]) -> float:
+  return fsum(xs) / len(xs)
 
-def calcLikelihood((min, max), target):
+def calcLikelihood((min, max): tuple[float, float], target: float) -> float:
   if max < target:
     return 0.05
   if target <= min:
     return 0.95
   return (target - min) / (max - min)
 
-getByScenario_ = getByScenario(newDataTable(0))
-ssp119 = getByScenario_("SSP1-1.9")
-ssp245 = getByScenario_("SSP2-4.5")
+getByScenario_: Callable[[str], Scenario] = getByScenario(newDataTable(0))
+ssp119: Scenario = getByScenario_("SSP1-1.9")
+ssp245: Scenario = getByScenario_("SSP2-4.5")
 
 MultiView([
   f"""Under the low GHG emissions scenario (SSP1-1.9), global warming of 2°C would

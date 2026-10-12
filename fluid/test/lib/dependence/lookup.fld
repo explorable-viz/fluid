@@ -1,13 +1,13 @@
-k = @doc("k") 6
-tree = @doc("tree") NonEmpty(
+k: int = @doc("k") 6
+tree: Tree[tuple[int, str]] = @doc("tree") NonEmpty(
     NonEmpty(Empty(), (3, "USA"), Empty()),
     (4, "China"),
     NonEmpty(NonEmpty(Empty(), (6, "Germany"), Empty()), (7, "UK"), Empty())
   )
 
-def lookup(k, Empty()):
+def lookup[V](k: int, Empty(): Tree[tuple[int, V]]) -> V | None:
   return None
-def lookup(k, NonEmpty(t1, (key, val), t2)):
+def lookup[V](k: int, NonEmpty(t1, (key, val), t2): Tree[tuple[int, V]]) -> V | None:
   match compare(k, key):
     case LT():
       return lookup(k, t1)

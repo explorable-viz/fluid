@@ -1,4 +1,4 @@
-def mult(x,y):
+def mult(x: int, y: int) -> int:
   return x * y
 
 # `|x|` binds tighter than `and` and `==`, but less than `+`, so the

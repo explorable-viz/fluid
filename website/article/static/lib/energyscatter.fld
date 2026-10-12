@@ -1,22 +1,22 @@
-from energy_data import nonRenewables, renewables
+from energy_data import NonRenewable, Renewable, nonRenewables, renewables
 
 from fluid.view import AxisLabels, Point, ScatterPlot
 
-def isCountry(name, x):
+def isCountry(name: str, x: Renewable | NonRenewable) -> bool:
   return name == x.country
-def isYear(year, x):
+def isYear(year: int, x: Renewable | NonRenewable) -> bool:
   return year == x.year
 
-def plot(year, countries):
-  rens = filter(isYear(year), renewables)
-  nonRens = filter(isYear(year), nonRenewables)
+def plot(year: int, countries: list[str]) -> list[Point]:
+  rens: list[Renewable] = filter(isYear(year), renewables)
+  nonRens: list[NonRenewable] = filter(isYear(year), nonRenewables)
 
-  def plotCountry(country):
-    rens_ = filter(isCountry(country), rens)
-    rensOut = sum(map(lambda x: x.output, rens_))
-    rensCap = sum(map(lambda x: x.capacity, rens_))
-    x = filter(isCountry(country), nonRens)[0]
-    nonRensCap = (x.nuclearCap + x.petrolCap + x.gasCap) + x.coalCap
+  def plotCountry(country: str) -> Point:
+    rens_: list[Renewable] = filter(isCountry(country), rens)
+    rensOut: float = fsum(map(lambda x: x.output, rens_))
+    rensCap: float = fsum(map(lambda x: x.capacity, rens_))
+    x: NonRenewable = filter(isCountry(country), nonRens)[0]
+    nonRensCap: float = (x.nuclearCap + x.petrolCap + x.gasCap) + x.coalCap
     return Point(
       x=rensCap / (rensCap + nonRensCap),
       y=(rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)

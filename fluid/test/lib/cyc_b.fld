@@ -1,2 +1,2 @@
 import cyc_a
-b = 1
+b: int = 1

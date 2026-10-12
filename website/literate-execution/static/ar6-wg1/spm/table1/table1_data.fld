@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from fluid.stats import Likelihood
 
 @dataclass
 class Projection:
@@ -12,11 +13,6 @@ class Projection:
   bestEstLate: float
   lowLate: float
   highLate: float
-
-@dataclass
-class Likelihood:
-  prob: float
-  msg: str
 
 tableData: list[Projection] = load_json(list[Projection], "../../dataset/SPM/explainable-table.json")
 likelihoods: list[Likelihood] = load_json(list[Likelihood], "../../dataset/SPM/likelihoods.json")

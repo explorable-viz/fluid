@@ -3,13 +3,13 @@ from figure4b_data import Emission, ssp126Source, ssp126preds, ssp245Source, ssp
 
 from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, TickLabels, Default, Link
 
-def stackedBarHeight(stackedBar):
-  return sum([segment.z for segment in stackedBar.segments])
+def stackedBarHeight(stackedBar: StackedBar) -> float:
+  return fsum([segment.z for segment in stackedBar.segments])
 
-def get(x, bar):
+def get(x: str, bar: BarChart) -> StackedBar:
   return [stackedBar for stackedBar in bar.stackedBars if stackedBar.x == x][0]
 
-def mkBarChart(scenName, table):
+def mkBarChart(scenName: str, table: list[Emission]) -> BarChart:
   return BarChart(
     caption="Scenario " + scenName,
     size=Dimensions(width=275, height=185),
@@ -19,8 +19,8 @@ def mkBarChart(scenName, table):
     legend=True
   )
 
-def mkHistogram(xs, name, nbins):
-  binWidth = (maximum(xs) - minimum(xs)) / nbins
+def mkHistogram(xs: list[float], name: str, nbins: int) -> BarChart:
+  binWidth: float = (maximum(xs) - minimum(xs)) / nbins
 
   return BarChart(
     caption="Histogram of distribution of " + name,
@@ -31,19 +31,19 @@ def mkHistogram(xs, name, nbins):
     legend=True
   )
 
-def getHeight(offset, bar):
+def getHeight(offset: float, bar: StackedBar) -> float:
   return bar.segments[0].z + offset
 
-changed126 = map(lambda r: r.changed, ssp126preds)
-changed245 = map(lambda r: r.changed, ssp245preds)
-ssp126Total = Emission("Total", sum(map(lambda r: r.emissions, ssp126Source)))
-ssp126table = [ssp126Total] + ssp126Source
-ssp245table = [Emission("Total", find_percentile(50, changed245))] + ssp245Source
-ssp126 = mkBarChart("SSP1-2.6", ssp126table)
-ssp245 = mkBarChart("SSP2-4.5", ssp245table)
-totals = map(stackedBarHeight, map(get("Total"), [ssp126, ssp245]))
-co2s = map(stackedBarHeight, map(get("CO2"), [ssp126, ssp245]))
-nonco2 = map(get("Non-CO2"), [ssp126, ssp245])
+changed126: list[float] = map(lambda r: r.changed, ssp126preds)
+changed245: list[float] = map(lambda r: r.changed, ssp245preds)
+ssp126Total: Emission = Emission("Total", fsum(map(lambda r: r.emissions, ssp126Source)))
+ssp126table: list[Emission] = [ssp126Total] + ssp126Source
+ssp245table: list[Emission] = [Emission("Total", find_percentile(50, changed245))] + ssp245Source
+ssp126: BarChart = mkBarChart("SSP1-2.6", ssp126table)
+ssp245: BarChart = mkBarChart("SSP2-4.5", ssp245table)
+totals: list[float] = map(stackedBarHeight, map(get("Total"), [ssp126, ssp245]))
+co2s: list[float] = map(stackedBarHeight, map(get("CO2"), [ssp126, ssp245]))
+nonco2: list[StackedBar] = map(get("Non-CO2"), [ssp126, ssp245])
 
 MultiView([
   ssp126,

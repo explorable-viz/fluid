@@ -12,17 +12,17 @@ class Derived(Base):
 class Leaf(Derived):
    z: int
 
-def base_x(v):
+def base_x(v: Base) -> int:
    match v:
       case Base(x):
          return x
 
-def derived_y(v):
+def derived_y(v: Base) -> int:
    match v:
       case Derived(y=y, x=_):
          return y
       case Base(x=x):
          return -x
 
-vs = [Base(1), Derived(2, 3), Leaf(4, 5, z=6)]
+vs: list[Base] = [Base(1), Derived(2, 3), Leaf(4, 5, z=6)]
 [[base_x(v) for v in vs], [derived_y(v) for v in vs], Derived(x=7, y=8)]

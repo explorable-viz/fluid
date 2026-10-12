@@ -1,4 +1,4 @@
-def first_big(xs):
+def first_big(xs: list[int]) -> int | str:
   match find(lambda x: x > 2, xs):
     case None:
       return "none"

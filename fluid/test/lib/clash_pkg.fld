@@ -1,1 +1,1 @@
-sub = 1
+sub: int = 1

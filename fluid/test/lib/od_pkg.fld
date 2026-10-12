@@ -1,2 +1,2 @@
 import od_pkg.sub
-w = 2
+w: int = 2

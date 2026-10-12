@@ -2,7 +2,7 @@ from methane_data import methane
 
 from fluid.view import Dimensions, LineChart, LinePlot, Point, TickLabels, Default, Rotated
 
-def series(type):
+def series(type: str) -> list[Point]:
   return [Point(x=row.year, y=row.emissions) for row in methane if row.type == type]
 
 LineChart(

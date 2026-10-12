@@ -1,6 +1,6 @@
-xs = @doc("xs") [1, 2]
+xs: list[int] = @doc("xs") [1, 2]
 
-def zeros(xs):
+def zeros[A](xs: list[A]) -> list[int]:
   return [0 for _ in xs]
 
 zeros(xs)

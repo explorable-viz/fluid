@@ -1,3 +1,5 @@
-decr = (lambda x: flip(lambda a, b: a - b, x))(2)
-x = 8
+from typing import Callable
+
+decr: Callable[[int], int] = (lambda x: flip(lambda a, b: a - b, x))(2)
+x: int = 8
 num_to_str(decr(x))

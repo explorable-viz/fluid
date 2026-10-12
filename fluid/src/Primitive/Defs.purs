@@ -30,7 +30,7 @@ import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (for, traverse)
 import Data.Tuple (fst, snd)
-import DataType (ClassTable, askClasses, cRange, fields)
+import DataType (ClassTable, askClasses, cMatrix, cRange, fields)
 import DefiniteAssignment (Entry(..)) as Entry
 import DefiniteAssignment (Cxt)
 import Dict (fromFoldable) as D
@@ -47,7 +47,7 @@ import ModuleGraph (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
 import Types (Primitive(..), Type(..), baseType) as T
-import Util.Map (constMap, keys, lookup, maplet, unionWith_never, (\\))
+import Util.Map (constMap, keys, lookup, unionWith_never, (\\))
 import Util.Map as Dict
 import Util.Map as Map
 import Val (BaseVal(..), DepOp, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), GVal, MatrixRep(..), Val(..), construct, deliver, dictEntries, dictEntry, elementCount, fromRel, gval, matrixPut, pureRel, root, via)
@@ -57,14 +57,17 @@ extern (ForeignOp (id × φ)) =
    id × Val bot (Fun (Prim (ForeignOp (id × φ))))
 
 predefinedClasses :: ClassTable
-predefinedClasses = maplet cRange { typeParams: Nil, fields: ("start" × int) : ("stop" × int) : Nil, base: Nothing }
+predefinedClasses = M.fromFoldable
+   [ cRange × { typeParams: Nil, fields: ("start" × int) : ("stop" × int) : Nil, base: Nothing }
+   , cMatrix × { typeParams: "T" : Nil, fields: Nil, base: Nothing }
+   ]
    where
    int = T.PrimitiveTy T.Int
 
 predefined :: Map ModuleName (Cxt × Raw Env)
 predefined = M.fromFoldable
    [ predefinedModule builtins ("None" : "object" : "bool" : "int" : "float" : "str" : "list" : "dict" : "tuple" : "type" : Nil)
-        [ cRange ]
+        [ cRange, cMatrix ]
         [ extern print_
         , extern len
         -- Fluid-only members, without spec counterpart

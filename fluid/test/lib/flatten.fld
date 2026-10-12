@@ -1,6 +1,6 @@
-def flatten(Empty()):
+def flatten[K, V](Empty(): Tree[tuple[K, V]]) -> list[tuple[K, V]]:
   return []
-def flatten(NonEmpty(t1, (key, val), t2)):
+def flatten[K, V](NonEmpty(t1, (key, val), t2): Tree[tuple[K, V]]) -> list[tuple[K, V]]:
   return flatten(t1) + [(key, val)] + flatten(t2)
 
 flatten(NonEmpty(NonEmpty(Empty(), (3, "simon"), Empty()), (4, "john"), NonEmpty(NonEmpty(Empty(), (6, "sarah"), Empty()), (7, "claire"), Empty())))

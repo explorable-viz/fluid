@@ -1,17 +1,17 @@
 from scigen import rankLabel, trendWord, growShrink, smallerHigher, improve, improvements, shorterLonger, betterWorse, underOverPerforming
 from util import insertionSort, findIndex, findWhere, model
-from dataset.scigen._1805_02474v1_10 import tableData
+from dataset.scigen._1805_02474v1_10 import Model, tableData
 
 import fluid.view
 
-model_BiLSTM = model("BiLSTM", tableData)
-model_LSTM = model("LSTM", tableData)
-model_2_stacked_BiLSTM = model("2 stacked BiLSTM", tableData)
-model_3_stacked_BiLSTM = model("3 stacked BiLSTM", tableData)
-model_S_LSTM = model("S-LSTM", tableData)
-model_CNN = model("CNN", tableData)
-model_3_stacked_CNN = model("3 stacked CNN", tableData)
-mostEfficient = findWhere(lambda r: r.time_s == minimum(map(lambda y: y.time_s, tableData)), tableData)
+model_BiLSTM: Model = model("BiLSTM", tableData)
+model_LSTM: Model = model("LSTM", tableData)
+model_2_stacked_BiLSTM: Model = model("2 stacked BiLSTM", tableData)
+model_3_stacked_BiLSTM: Model = model("3 stacked BiLSTM", tableData)
+model_S_LSTM: Model = model("S-LSTM", tableData)
+model_CNN: Model = model("CNN", tableData)
+model_3_stacked_CNN: Model = model("3 stacked CNN", tableData)
+mostEfficient: Model = findWhere(lambda r: r.time_s == minimum(map(lambda y: y.time_s, tableData)), tableData)
 
 f"""As shown in Table 3, BiLSTM gives significantly
    {trendWord(model_BiLSTM.acc, model_LSTM.acc, betterWorse)}

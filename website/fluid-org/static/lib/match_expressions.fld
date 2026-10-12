@@ -1,6 +1,6 @@
-def lookup(k, Empty()):
+def lookup[V](k: float, Empty(): Tree[tuple[float, V]]) -> V | None:
   return None
-def lookup(k, NonEmpty(left, (key, val), right)):
+def lookup[V](k: float, NonEmpty(left, (key, val), right): Tree[tuple[float, V]]) -> V | None:
   match compare(k, key):
     case LT():
       return lookup(k, left)

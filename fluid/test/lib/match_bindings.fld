@@ -1,4 +1,4 @@
-def f(v):
+def f(v: tuple[int, int] | int) -> int:
    match v:
       case (x, y):
          pass

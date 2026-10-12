@@ -1,6 +1,6 @@
 from fluid.view import Paragraph, Text
 
-better = "better"
+better: str = "better"
 
 Paragraph([
   Text("As shown in Table 3, BiLSTM gives significantly  "),
