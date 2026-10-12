@@ -6,25 +6,25 @@ from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, Tic
 eval_scores: list[str] = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
-def actions_by(key: str, keys: list[str]) -> list[StackedBar]:
-  return [ StackedBar(x=key_,
-      segments=[ Segment(y=eval_score,
-          z=len([ action for action in nap3_actions
-            if action[ key ] == key_ and action[ "Evaluation score" ] == eval_score
-          ])) for eval_score in eval_scores
-      ]) for key_ in keys
-  ]
-
 risks_: dict[str, dict[str, str]] = { r[ "ID#" ]: r for r in ccra3_risks }
 
-actions_by_chapter: list[StackedBar] = [ StackedBar(x=chapter,
-      segments=[ Segment(y=eval_score,
-          z=len([ action for action in nap3_actions
-            if risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter and
-              action[ "Evaluation score" ] == eval_score
-          ])) for eval_score in eval_scores
-      ]) for chapter in [ "3", "4", "5", "6", "7" ]
+actions: list[dict[str, str]] = [
+    { "Action Owner": action[ "Action Owner" ], "Typology": action[ "Typology" ],
+      "Evaluation score": action[ "Evaluation score" ], "Chapter": risks_[ action[ "Risk ID#" ] ][ "Chapter" ] }
+    for action in nap3_actions
   ]
+
+def actions_by(key: str, keys: list[str]) -> list[StackedBar]:
+  def bar(key_: str) -> StackedBar:
+    actions_: list[dict[str, str]] = [ action for action in actions if action[ key ] == key_ ]
+    return StackedBar(x=key_,
+      segments=[ Segment(y=eval_score,
+          z=len([ action for action in actions_ if action[ "Evaluation score" ] == eval_score ]))
+        for eval_score in eval_scores
+      ])
+  return [ bar(key_) for key_ in keys ]
+
+actions_by_chapter: list[StackedBar] = actions_by("Chapter", [ "3", "4", "5", "6", "7" ])
 
 departments: list[str] = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 

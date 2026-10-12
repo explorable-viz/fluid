@@ -6,38 +6,45 @@ from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, Tic
 eval_scores: list[str] = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
-def actions_by(key: str, keys: list[str]) -> list[StackedBar]:
-  return [ StackedBar(x=key_,
-      segments=[ Segment(y=eval_score,
-          z=len([ action for action in nap3_actions
-            if action[ key ] == key_ and action[ "Evaluation score" ] == eval_score
-          ])) for eval_score in eval_scores
-      ]) for key_ in keys
+risks_: dict[str, dict[str, str]] = { r[ "ID#" ]: r for r in ccra3_risks }
+
+actions: list[dict[str, str]] = [
+    { "Action Owner": action[ "Action Owner" ], "Typology": action[ "Typology" ],
+      "Evaluation score": action[ "Evaluation score" ], "Chapter": risks_[ action[ "Risk ID#" ] ][ "Chapter" ],
+      "Descriptor": risks_[ action[ "Risk ID#" ] ][ "Risk or Opportunity Descriptor" ] }
+    for action in nap3_actions
   ]
 
-risks_: dict[str, dict[str, str]] = { risk[ "ID#" ]: risk for risk in ccra3_risks }
+def actions_by(key: str, keys: list[str]) -> list[StackedBar]:
+  def bar(key_: str) -> StackedBar:
+    actions_: list[dict[str, str]] = [ action for action in actions if action[ key ] == key_ ]
+    return StackedBar(x=key_,
+      segments=[ Segment(y=eval_score,
+          z=len([ action for action in actions_ if action[ "Evaluation score" ] == eval_score ]))
+        for eval_score in eval_scores
+      ])
+  return [ bar(key_) for key_ in keys ]
 
 def percent(x: float, y: float) -> float:
   return 0 if y == 0 else x / y * 100
 
 def actions_by_chapter(owner: str) -> list[StackedBar]:
-  return [ StackedBar(x=chapter,
-      segments=[ Segment(y=eval_score,
-          z=def segment_risks: [
-               risks_[ action[ "Risk ID#" ] ][ "Risk or Opportunity Descriptor" ]
-               for action in chapter_actions if action[ "Evaluation score" ] == eval_score
-             ]
-             percent(
-                @doc(f"""risk descriptors contribute to this segment: { join(intersperse(nub(segment_risks), ", ")) }.""")
-                len(segment_risks),
-                len(chapter_actions)
-             )
-        ) for eval_score in eval_scores  ])
-    for chapter in ["3", "4", "5", "6", "7"]
-    chapter_actions = [ action for action in nap3_actions
-        if risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter and find_str(owner, action[ "Action Owner" ]) != -1
+  def bar(chapter: str) -> StackedBar:
+    chapter_actions: list[dict[str, str]] = [ action for action in actions
+        if action[ "Chapter" ] == chapter and find_str(owner, action[ "Action Owner" ]) != -1
       ]
-  ]
+    def segment(eval_score: str) -> Segment:
+      segment_risks: list[str] = [ action[ "Descriptor" ]
+          for action in chapter_actions if action[ "Evaluation score" ] == eval_score
+        ]
+      return Segment(y=eval_score,
+        z=percent(
+          @doc(f"""risk descriptors contribute to this segment: { join(intersperse(nub(segment_risks), ", ")) }.""")
+          len(segment_risks),
+          len(chapter_actions)
+        ))
+    return StackedBar(x=chapter, segments=[ segment(eval_score) for eval_score in eval_scores ])
+  return [ bar(chapter) for chapter in ["3", "4", "5", "6", "7"] ]
 
 departments: list[str] = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
