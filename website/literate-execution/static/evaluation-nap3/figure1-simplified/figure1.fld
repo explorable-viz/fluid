@@ -1,22 +1,21 @@
-from typing import Callable
 from math import ceil
-from nap3_ccra3_data import Action, Risk, nap3_actions, ccra3_risks
+from nap3_ccra3_data import nap3_actions, ccra3_risks
 
 from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, TickLabels, Default, Link
 
 eval_scores: list[str] = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
-def actions_by(field: Callable[[Action], str], keys: list[str]) -> list[StackedBar]:
+def actions_by(key: str, keys: list[str]) -> list[StackedBar]:
   return [ StackedBar(x=key_,
       segments=[ Segment(y=eval_score,
           z=len([ action for action in nap3_actions
-            if field(action) == key_ and action.evaluation_score == eval_score
+            if action[ key ] == key_ and action[ "Evaluation score" ] == eval_score
           ])) for eval_score in eval_scores
       ]) for key_ in keys
   ]
 
-risks_: dict[str, Risk] = { [risk.id]: risk for risk in ccra3_risks }
+risks_: dict[str, dict[str, str]] = { risk[ "ID#" ]: risk for risk in ccra3_risks }
 
 def percent(x: float, y: float) -> float:
   return 0 if y == 0 else x / y * 100
@@ -25,8 +24,8 @@ def actions_by_chapter(owner: str) -> list[StackedBar]:
   return [ StackedBar(x=chapter,
       segments=[ Segment(y=eval_score,
           z=def segment_risks: [
-               risks_[ action.risk_id ].descriptor
-               for action in chapter_actions if action.evaluation_score == eval_score
+               risks_[ action[ "Risk ID#" ] ][ "Risk or Opportunity Descriptor" ]
+               for action in chapter_actions if action[ "Evaluation score" ] == eval_score
              ]
              percent(
                 @doc(f"""risk descriptors contribute to this segment: { join(intersperse(nub(segment_risks), ", ")) }.""")
@@ -36,7 +35,7 @@ def actions_by_chapter(owner: str) -> list[StackedBar]:
         ) for eval_score in eval_scores  ])
     for chapter in ["3", "4", "5", "6", "7"]
     chapter_actions = [ action for action in nap3_actions
-        if risks_[ action.risk_id ].chapter == chapter and find_str(owner, action.action_owner) != -1
+        if risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter and find_str(owner, action[ "Action Owner" ]) != -1
       ]
   ]
 
@@ -51,12 +50,12 @@ def total_actions(action_counts: list[Segment]) -> float:
 def actions_with_score(action_counts: list[Segment], eval_score: str) -> float:
   return fsum([ segment.z for segment in action_counts if segment.y == eval_score ])
 
-by_nat_env_and_infra: list[StackedBar] = actions_by(lambda action: action.action_owner, nat_env_and_infra_depts)
+by_nat_env_and_infra: list[StackedBar] = actions_by("Action Owner", nat_env_and_infra_depts)
 
 MultiView([
   f"""
   Climate Change Risk Assessment (CCRA3) identified {
-    len(nub([ risk.descriptor for risk in ccra3_risks ]))
+    len(nub([ risk[ "Risk or Opportunity Descriptor" ] for risk in ccra3_risks ]))
   } risks/opportunities for the UK;
   this report evaluates extent to which NAP3 commitments actually address them.
   """,

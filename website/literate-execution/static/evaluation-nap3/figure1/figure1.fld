@@ -1,28 +1,27 @@
-from typing import Callable
 from math import ceil, floor
-from nap3_ccra3_data import Action, Risk, nap3_actions, ccra3_risks
+from nap3_ccra3_data import nap3_actions, ccra3_risks
 
 from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, TickLabels, Default, Rotated, Link
 
 eval_scores: list[str] = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
-def actions_by(field: Callable[[Action], str], keys: list[str]) -> list[StackedBar]:
+def actions_by(key: str, keys: list[str]) -> list[StackedBar]:
   return [ StackedBar(x=key_,
       segments=[ Segment(y=eval_score,
           z=len([ action for action in nap3_actions
-            if field(action) == key_ and action.evaluation_score == eval_score
+            if action[ key ] == key_ and action[ "Evaluation score" ] == eval_score
           ])) for eval_score in eval_scores
       ]) for key_ in keys
   ]
 
-risks_: dict[str, Risk] = { [r.id]: r for r in ccra3_risks }
+risks_: dict[str, dict[str, str]] = { r[ "ID#" ]: r for r in ccra3_risks }
 
 actions_by_chapter: list[StackedBar] = [ StackedBar(x=chapter,
       segments=[ Segment(y=eval_score,
           z=len([ action for action in nap3_actions
-            if risks_[ action.risk_id ].chapter == chapter and
-              action.evaluation_score == eval_score
+            if risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter and
+              action[ "Evaluation score" ] == eval_score
           ])) for eval_score in eval_scores
       ]) for chapter in [ "3", "4", "5", "6", "7" ]
   ]
@@ -31,10 +30,10 @@ departments: list[str] = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUH
 
 nat_env_and_infra_depts: list[str] = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
 
-by_action_owner: list[StackedBar] = actions_by(lambda action: action.action_owner, departments)
+by_action_owner: list[StackedBar] = actions_by("Action Owner", departments)
 
 by_topology: list[StackedBar] = actions_by(
-    lambda action: action.typology,
+    "Typology",
     [ "No and low regret adaptation, including capacity building",
       "Climate-smart design, considering uncertainty",
       "Further investigation",
@@ -58,12 +57,12 @@ def max_with_score(actions: list[StackedBar], eval_score: str) -> float:
     for StackedBar(x=_, segments=action_counts) in actions
   ])
 
-by_nat_env_and_infra: list[StackedBar] = actions_by(lambda action: action.action_owner, nat_env_and_infra_depts)
+by_nat_env_and_infra: list[StackedBar] = actions_by("Action Owner", nat_env_and_infra_depts)
 
 MultiView([
   f"""
   Climate Change Risk Assessment (CCRA3) identified {
-    len(nub([ risk.descriptor for risk in ccra3_risks ]))
+    len(nub([ risk[ "Risk or Opportunity Descriptor" ] for risk in ccra3_risks ]))
   } risks/opportunities for the UK;
   this report evaluates extent to which NAP3 commitments actually address them.
   """,
@@ -105,8 +104,8 @@ MultiView([
   f"""
   Of the {
     Link(
-      [ (risk.chapter, risk.descriptor)
-        for risk in ccra3_risks if risk.ccc_priority == "Yes"
+      [ (risk[ "Chapter" ], risk[ "Risk or Opportunity Descriptor" ])
+        for risk in ccra3_risks if risk[ "CCC Priority" ] == "Yes"
       ],
       "committee's priority risks"
     )
