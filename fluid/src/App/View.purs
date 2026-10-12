@@ -44,18 +44,11 @@ view :: ViewOptions -> String -> Val (SelStates 𝕊) -> View
 view options title v@(Val α u') = case u' of
    Lit (Str str) -> pack (Text (str × α))
    Lit ℓ -> pack (Text (prettyP ℓ × α))
-   Constr c _
-      | c == cText -> pack (reflect options v :: Text)
-      | c == cMultiView -> pack (reflect options v :: MultiView)
-      | c == cParagraph -> pack (reflect options v :: Paragraph)
-      | c == cLink -> pack (reflect options v :: Link)
-      | c == cBarChart -> pack (reflect options v :: BarChart)
-      | c == cScatterPlot -> pack (reflect options v :: ScatterPlot)
-      | c == cLineChart -> pack (reflect options v :: LineChart)
+   Constr _ _ -> fromMaybe (typeError u' "Viewable") (classView options v)
    List vs -> case head vs of
-      Just (Val _ (Constr c _)) | not (c `A.elem` viewClasses) ->
-         pack (TableView { title, rowFilter, className: Just c, colNames: A.fromFoldable (fieldNames options.classes c), rows: vs <#> fieldValues })
-      Just (Val _ (Constr _ _)) -> pack (MultiView $ view options "" <$> vs)
+      Just v'@(Val _ (Constr c _)) -> case classView options v' of
+         Nothing -> pack (TableView { title, rowFilter, className: Just c, colNames: A.fromFoldable (fieldNames options.classes c), rows: vs <#> fieldValues })
+         Just _ -> pack (MultiView $ view options "" <$> vs)
       _ ->
          let
             records = dict identity <$> vs
@@ -65,7 +58,6 @@ view options title v@(Val α u') = case u' of
             pack (TableView { title, rowFilter, className: Nothing, colNames, rows })
       where
       rowFilter = fromMaybe Interactive options.rowFilter
-      viewClasses = [ cText, cMultiView, cParagraph, cLink, cBarChart, cScatterPlot, cLineChart ]
       fieldValues (Val _ (Constr _ us)) = A.fromFoldable us
       fieldValues _ = error absurd
    Matrix r ->
@@ -76,6 +68,17 @@ view options title v@(Val α u') = case u' of
    where
    viewDict :: Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View × View)
    viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view options k v'
+
+classView :: ViewOptions -> Val (SelStates 𝕊) -> Maybe View
+classView options v@(Val _ (Constr c _))
+   | c == cText = Just (pack (reflect options v :: Text))
+   | c == cMultiView = Just (pack (reflect options v :: MultiView))
+   | c == cParagraph = Just (pack (reflect options v :: Paragraph))
+   | c == cLink = Just (pack (reflect options v :: Link))
+   | c == cBarChart = Just (pack (reflect options v :: BarChart))
+   | c == cScatterPlot = Just (pack (reflect options v :: ScatterPlot))
+   | c == cLineChart = Just (pack (reflect options v :: LineChart))
+classView _ _ = Nothing
 
 class Reflect b where
    reflect :: ViewOptions -> Val (SelStates 𝕊) -> b
