@@ -19,7 +19,8 @@ import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Data.Array as A
 import Data.Array.NonEmpty (NonEmptyArray)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Bind (Name)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Tuple (snd)
 import DataType (ClassTable, cAxisLabels, cBarChart, cDimensions, cLineChart, cLinePlot, cLink, cMultiView, cParagraph, cPoint, cScatterPlot, cSegment, cStackedBar, cText, cTickLabels, f_caption, f_fragments, f_height, f_label, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_text, f_tickLabels, f_value, f_views, f_width, f_x, f_y, f_z, fieldIndex, fieldNames)
 import Dict (Dict)
@@ -48,26 +49,29 @@ view options title v@(Val α u') = case u' of
       Just view' -> view'
       Nothing -> typeError u' "Viewable"
    List vs -> case head vs of
-      Just v'@(Val _ (Constr c _)) -> case classView options v' of
-         Nothing -> pack (TableView { title, rowFilter, className: Just c, colNames: A.fromFoldable (fieldNames options.classes c), rows: vs <#> fieldValues })
-         Just _ -> pack (MultiView $ view options "" <$> vs)
-      _ ->
-         let
-            records = dict identity <$> vs
-            colNames = headers records
-            rows = arrayDictToArray2 colNames records <#> map snd
-         in
-            pack (TableView { title, rowFilter, className: Nothing, colNames, rows })
-      where
-      rowFilter = fromMaybe Interactive options.rowFilter
-      fieldValues (Val _ (Constr _ us)) = A.fromFoldable us
-      fieldValues _ = error absurd
-   Matrix r ->
-      pack (MatrixView { title, matrix: matrixRep r })
-   Dictionary (DictRep d) ->
-      pack (viewDict d)
+      Just v'@(Val _ (Constr c _)) | isNothing (classView options v') -> classTable c vs
+      Just (Val _ (Constr _ _)) -> pack (MultiView (view options "" <$> vs))
+      _ -> dictTable vs
+   Matrix r -> pack (MatrixView { title, matrix: matrixRep r })
+   Dictionary (DictRep d) -> pack (viewDict d)
    _ -> typeError u' "Viewable"
    where
+   table :: Maybe Name -> Array String -> Array (Array (Val (SelStates 𝕊))) -> View
+   table className colNames rows =
+      pack (TableView { title, rowFilter: fromMaybe Interactive options.rowFilter, className, colNames, rows })
+
+   classTable :: Name -> Array (Val (SelStates 𝕊)) -> View
+   classTable c vs = table (Just c) (A.fromFoldable (fieldNames options.classes c)) (vs <#> fieldValues)
+      where
+      fieldValues (Val _ (Constr _ us)) = A.fromFoldable us
+      fieldValues _ = error absurd
+
+   dictTable :: Array (Val (SelStates 𝕊)) -> View
+   dictTable vs = table Nothing colNames (arrayDictToArray2 colNames records <#> map snd)
+      where
+      records = dict identity <$> vs
+      colNames = headers records
+
    viewDict :: Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View × View)
    viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view options k v'
 
