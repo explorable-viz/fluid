@@ -19,7 +19,7 @@ issue branch → milestone branch → develop → staging → release
 
 ## Issue lifecycle
 
-Select issue from current milestone; branch, implement, test, PR, review and merge per `github` skill. After merging: update milestone report if issue is complete. State machine and invariants: [issue-lifecycle.md](../../../docs/workflow/issue-lifecycle.md).
+Select issue from current milestone; branch, implement, test ([CONTRIBUTING.md](../../../CONTRIBUTING.md#testing)), PR, review and merge per `github` skill. After merging: update milestone report if issue is complete. State machine and invariants: [issue-lifecycle.md](../../../docs/workflow/issue-lifecycle.md).
 
 ## Milestone population
 
@@ -44,6 +44,4 @@ Managed manually by developer:
 
 ## NPM publishing
 
-Package version tracks milestone (e.g. `fluid 1.0` → `1.0.x`). Before publishing: run `./script/test-website-all.sh`; working tree clean (publish script commits the version bump). Publish via `yarn workspace @fluid-org/fluid build-publish` (from any directory). Script bumps patch version, commits, tags `vX.Y.Z`, builds, stages website, and publishes to npm. After it succeeds, push manually: `git push && git push --tags`.
-
-Auth: needs an npm automation token in `~/.npmrc` (`//registry.npmjs.org/:_authToken=...`) — bypasses 2FA.
+Package version tracks milestone (e.g. `fluid 1.0` → `1.0.x`). Before publishing: run `./script/test-website-all.sh`; working tree clean (publish script commits the version bump). Publish per [CONTRIBUTING.md](../../../CONTRIBUTING.md#publishing-to-npm).
