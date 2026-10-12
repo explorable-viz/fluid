@@ -49,7 +49,7 @@ view options title v@(Val α u') = case u' of
       Just view' -> view'
       Nothing -> typeError u' "Viewable"
    List vs -> case head vs of
-      Just v'@(Val _ (Constr c _)) | isNothing (classView options v') -> classTable c vs
+      Just v'@(Val _ (Constr c _)) | isNothing (classView options v') -> instanceTable c vs
       Just (Val _ (Constr _ _)) -> pack (MultiView (view options "" <$> vs))
       _ -> dictTable vs
    Matrix r -> pack (MatrixView { title, matrix: matrixRep r })
@@ -60,8 +60,8 @@ view options title v@(Val α u') = case u' of
    table className colNames rows =
       pack (TableView { title, rowFilter: fromMaybe Interactive options.rowFilter, className, colNames, rows })
 
-   classTable :: Name -> Array (Val (SelStates 𝕊)) -> View
-   classTable c vs = table (Just c) (A.fromFoldable (fieldNames options.classes c)) (vs <#> fieldValues)
+   instanceTable :: Name -> Array (Val (SelStates 𝕊)) -> View
+   instanceTable c vs = table (Just c) (A.fromFoldable (fieldNames options.classes c)) (vs <#> fieldValues)
       where
       fieldValues (Val _ (Constr _ us)) = A.fromFoldable us
       fieldValues _ = error absurd
