@@ -61,7 +61,6 @@ def log_base(x: float, y: float) -> float:
 def ceil_to_nearest(n: float, m: float) -> float:
   return ceil(n / m) * m
 
-# Want infix <<<
 def compose[A, B, C](f: Callable[[B], C], g: Callable[[A], B], x: A) -> C:
   return f(g(x))
 
@@ -92,7 +91,6 @@ def fst[A, B]((x, _): tuple[A, B]) -> A:
 def identity[A](x: A) -> A:
   return x
 
-# Want infix &&&
 def prod[A, B, C](f: Callable[[A], B], g: Callable[[A], C], x: A) -> tuple[B, C]:
   return (f(x), g(x))
 
