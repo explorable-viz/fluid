@@ -27,7 +27,6 @@ import Util.Map (get, lookup)
 type FieldName = String
 type Ctr = String -- newtype would require more general Dict keys
 
--- 0.18 class table entry under 0.19 name; retire with 0.19 sync.
 type ClassDef =
    { typeParams :: List Var
    , fields :: List (Var × Type) -- own fields, distinct
