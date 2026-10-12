@@ -44,7 +44,9 @@ view :: ViewOptions -> String -> Val (SelStates 𝕊) -> View
 view options title v@(Val α u') = case u' of
    Lit (Str str) -> pack (Text (str × α))
    Lit ℓ -> pack (Text (prettyP ℓ × α))
-   Constr _ _ -> fromMaybe (typeError u' "Viewable") (classView options v)
+   Constr _ _ -> case classView options v of
+      Just view' -> view'
+      Nothing -> typeError u' "Viewable"
    List vs -> case head vs of
       Just v'@(Val _ (Constr c _)) -> case classView options v' of
          Nothing -> pack (TableView { title, rowFilter, className: Just c, colNames: A.fromFoldable (fieldNames options.classes c), rows: vs <#> fieldValues })
@@ -195,10 +197,12 @@ instance Reflect Link where
 
 instance Reflect MultiView where
    reflect options@{ classes } (Val _ u) = case u of
-      Constr c us | c == cMultiView -> MultiView (view options "" <$> reflect options (us ! fieldIndex classes cMultiView f_views))
+      Constr c us | c == cMultiView ->
+         MultiView (view options "" <$> reflect options (us ! fieldIndex classes cMultiView f_views))
       _ -> typeError u "MultiView"
 
 instance Reflect Paragraph where
    reflect options@{ classes } (Val _ u) = case u of
-      Constr c us | c == cParagraph -> Paragraph (view options "" <$> reflect options (us ! fieldIndex classes cParagraph f_fragments))
+      Constr c us | c == cParagraph ->
+         Paragraph (view options "" <$> reflect options (us ! fieldIndex classes cParagraph f_fragments))
       _ -> typeError u "Paragraph"
