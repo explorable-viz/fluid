@@ -29,7 +29,7 @@ type Ctr = String -- newtype would require more general Dict keys
 
 type ClassDef =
    { typeParams :: List Var
-   , fields :: List (Var × Type) -- own fields, distinct
+   , fields :: List (Var × Type) -- declared fields, distinct
    , base :: Maybe (Name × List Type)
    }
 

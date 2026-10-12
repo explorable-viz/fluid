@@ -47,7 +47,7 @@ import Util.Set (empty, (\\), (∈), (∪))
 -- Predefined modules and program (under __main__) have no body
 type CheckedModule = { cxt :: Cxt, mod :: Maybe E.Module }
 
--- Modules checked so far and class table, over parsed modules.
+-- Modules checked so far, over parsed modules.
 type CheckState = { modules :: Map.Map ModuleName CheckedModule, classes :: ClassTable }
 type CheckM = StateT CheckState (ReaderT (Map.Map ModuleName S.Module) (Either String))
 
