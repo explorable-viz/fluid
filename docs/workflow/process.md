@@ -1,35 +1,6 @@
 # Development Process
 
-## Checklists
-
-### After every push
-- [ ] Check GitHub Actions for pushed branch — confirm run passes or diagnose failures
-
-### After every commit
-- [ ] Review what was done before proceeding
-
-### After merging issue branch
-- [ ] Delete issue branch (local and remote)
-- [ ] Update milestone report if issue is complete
-
-### After populating milestone
-- [ ] Run `./script/check-project-integrity.sh` to verify invariants
-
-### After any change to project board state
-- [ ] Verify project view at https://github.com/orgs/fluid-org/projects/1
-
-### Before npm publish
-- [ ] Run full test suite: `./script/test-website-all.sh`
-- [ ] Working tree clean (publish script commits the version bump)
-
-## Principles
-
-Prose style, comments, identifiers, line width and commit granularity follow the `technical-authoring`, `coding-conventions` and `github` skills. Specific to Fluid:
-
-- Workflow docs, this file included, are telegraphic: omit articles unless needed for clarity.
-- Comments: single line; no mini-paragraphs. Same for test fixtures.
-- Before writing code: scan codebase for naming conventions and existing helpers; build from existing behaviours rather than reinventing.
-- Minor docs, process changes, and trivial fixes can be committed directly to current milestone branch.
+Prose, code, commits, issues, pull requests and board Status follow the `technical-authoring`, `coding-conventions` and `github` skills. This document covers what is specific to Fluid.
 
 ## Branching
 
@@ -40,8 +11,7 @@ issue branch → milestone branch → develop → staging → release
 ```
 
 - **Milestone branches**: named to match milestone (e.g. `fluid-0.12`).
-- **Issue branches**: named `<issue-number>-<short-description>`, branched from milestone branch.
-- **PRs to milestone branches**: Claude can merge directly once CI passes.
+- **Issue branches**: named `<issue-number>-<short-description>`, branched from milestone branch; PRs target milestone branch.
 - **PRs to develop**: developer decides when to merge. [Milestone report](milestone-report.md) generated at this point.
 
 ## Deployment
@@ -58,20 +28,13 @@ Managed manually by developer:
 
 ## NPM publishing
 
-Package version tracks milestone (e.g. `fluid 0.12` → `0.12.x`). Publish via `yarn workspace @fluid-org/fluid build-publish` (from any directory). Script bumps patch version, commits, tags `vX.Y.Z`, builds, stages website, and publishes to npm. After it succeeds, push manually: `git push && git push --tags`.
+Package version tracks milestone (e.g. `fluid 0.12` → `0.12.x`). Before publishing: run `./script/test-website-all.sh`; working tree clean (publish script commits the version bump). Publish via `yarn workspace @fluid-org/fluid build-publish` (from any directory). Script bumps patch version, commits, tags `vX.Y.Z`, builds, stages website, and publishes to npm. After it succeeds, push manually: `git push && git push --tags`.
 
 Auth: needs an npm automation token in `~/.npmrc` (`//registry.npmjs.org/:_authToken=...`) — bypasses 2FA.
 
 ## Issue lifecycle
 
-1. **Select** issue from current milestone.
-2. **Branch** from milestone branch.
-3. **Implement** incrementally, committing after each step.
-4. **Test**: run `./script/test-website-all.sh` and any other relevant tests.
-5. **Push and create PR** targeting milestone branch.
-6. **Merge** once CI passes. Delete branch. Update milestone report.
-
-See [issue-lifecycle.md](issue-lifecycle.md) for state machine and invariants.
+Select issue from current milestone; branch, implement, test, PR, review and merge per `github` skill. After merging: update milestone report if issue is complete. See [issue-lifecycle.md](issue-lifecycle.md) for state machine and invariants.
 
 ## Milestone population
 
@@ -80,36 +43,19 @@ When all issues in milestone are done, paused, or awaiting decision, populate wi
 1. **Planned issues first** — already prioritised by developer.
 2. **Proposed issues** — prefer low-hanging fruit, thematic fit, test coverage.
 
-Adding to milestone bumps Proposed → Planned. Can be done autonomously.
+Adding to milestone bumps Proposed → Planned. Can be done autonomously. Afterwards run `./script/check-project-integrity.sh` to verify invariants.
 
-## Escalation
+## Project board
 
-When best approach isn't obvious, Claude should not guess:
-
-1. Comment on GitHub issue with options and recommendation.
-2. Move issue to "Awaiting Decision" on project board.
-3. Move to other work.
-
-**Destructive or organisation-wide changes require explicit approval.** This includes modifying project board fields, branch protection, org settings, or any mutation that replaces rather than appends data. See [incidents.md](incidents.md).
-
-No undo for GitHub Projects v2 field mutations.
+- New issues: add to [project board](https://github.com/orgs/fluid-org/projects/1) (`script/issue-status.sh <issue> <Status>` adds an absent issue) and populate **Status** (usually `Proposed` for new work) and **Aspect**. Also set Type, labels (`implementation`, `testing`, `setup`, `documentation`), and milestone when appropriate.
+- After any change to board state, verify project view at https://github.com/orgs/fluid-org/projects/1.
+- Destructive mutations of board state: see [incidents.md](incidents.md).
 
 ## Tracking
 
 - Commits by Claude are authored by the `rolyp-claude-bot` GitHub account; no `Co-Authored-By` trailer is added (it would produce a duplicate avatar on GitHub).
 - Searchable via `git log --author=rolyp-claude-bot`.
 - Issue comments record design decisions.
-
-## GitHub conventions
-
-Commits, issues, pull requests and board Status follow the `github` skill. Specific to Fluid:
-
-- **Issue titles**: "Fluid" is redundant in titles (repo is Fluid) — omit it.
-- **Issue bodies**: do not hard-wrap paragraphs; GitHub markdown flows them, hard wraps render as ragged short lines. Code fences: omit language tag rather than guess.
-- **New issues**: add to [project board](https://github.com/orgs/fluid-org/projects/1) (`script/issue-status.sh <issue> <Status>` adds an absent issue) and populate **Status** (usually `Proposed` for new work) and **Aspect**. Also set Type, labels, and milestone when appropriate.
-- **Labels**: use existing labels (`implementation`, `testing`, `setup`, `documentation`).
-- **Milestones**: all issues must belong to milestone.
-- **Issue bodies**: keep checklist items updated.
 
 ## Testing
 
@@ -126,26 +72,9 @@ Do not invent ad hoc CLI invocations of `fluid.mjs` to run individual `.fld` fil
 
 `yarn workspace @fluid-org/fluid test` doesn't exercise website fixtures. Run `./script/test-website-all.sh` from the repo root after changes that touch parsing, desugaring, evaluation, or well-formedness; before pushing a commit that completes a meaningful chunk of work; or whenever in doubt about wider impact. Don't run it on every change — it's slow (a few minutes per website).
 
-## Token setup
-
-Set `GH_TOKEN` per repo via `.claude/settings.local.json` (gitignored):
-
-```json
-{"env": {"GH_TOKEN": "<fine-grained-pat>"}}
-```
-
-Avoids keyring conflicts across multiple GitHub organisations. Token needs:
-- **Pull requests, Issues**: Read and write
-- **Organisation projects**: Read, Write, Admin
-
-## Manual setup requirements
-
-When Claude encounters missing permission or setting:
-1. Document in pending tasks section.
-2. Note specific change needed.
-3. Continue with available work.
-
 ## Pending manual tasks
+
+When Claude encounters a missing permission or setting, note the specific change needed here and continue with available work.
 
 None.
 
