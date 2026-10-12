@@ -179,6 +179,8 @@ def iterate[A](n: int, f: Callable[[A], A], z: A) -> list[A]:
     return []
   return [z] + iterate(n - 1, f, f(z))
 
+# sum, fsum, max, min, fmax, fmin, maximum, minimum, abs: one type each, pending protocols and overloads
+# (pure-py/pure-py-spec#233, #234); retire with Python's builtins.
 def sum(xs: list[int]) -> int:
   return foldr(lambda x, y: x + y, 0, xs)
 
@@ -198,7 +200,8 @@ def take[A](n: int, xs: list[A]) -> list[A]:
 def drop[A](n: int, xs: list[A]) -> list[A]:
   return [xs[i] for i in range(max(n, 0), len(xs))]
 
-# Partial; requires k to be in the map.
+# Partial; requires k to be in the map. Keyed at int and str, as equality is undefined at a type variable;
+# retire with pure-py/pure-py-spec#233.
 def lookup[V](k: int, kvs: list[tuple[int, V]]) -> V:
   match find(lambda (k_, _): k == k_, kvs):
     case None:
