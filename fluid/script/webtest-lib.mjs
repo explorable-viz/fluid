@@ -26,7 +26,7 @@ async function launchBrowser(browserName) {
    })
 }
 
-// Relaunching a browser fails intermittently.
+// Relaunching Firefox fails intermittently, so browsers are reused across pages.
 const browsers = {}
 
 async function getBrowser(browserName) {
@@ -36,11 +36,15 @@ async function getBrowser(browserName) {
    return browsers[browserName]
 }
 
-export async function closeBrowsers() {
-   for (const name of Object.keys(browsers)) {
+async function closeBrowser(name) {
+   if (browsers[name]) {
       await browsers[name].close()
       delete browsers[name]
    }
+}
+
+export async function closeBrowsers() {
+   for (const name of Object.keys(browsers)) await closeBrowser(name)
 }
 
 export async function waitFor(page, selector, { visible = true, timeout = TIMEOUT } = {}) {
@@ -178,11 +182,13 @@ const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:8080"
 export async function testURL(suffix, tests, { timeout = TIMEOUT } = {}) {
    const url = `${BASE_URL}/${suffix}`
    await browserTests(url, "chrome", VIEWPORT, tests, timeout)
+   await closeBrowser("chrome") // frees its memory for the Firefox pass
    await browserTests(url, "firefox", VIEWPORT, tests, timeout)
 }
 
 export async function testMobile(suffix, tests) {
    const url = `${BASE_URL}/${suffix}`
    await browserTests(url, "chrome", MOBILE, tests)
+   await closeBrowser("chrome")
    await browserTests(url, "firefox", MOBILE, tests)
 }
