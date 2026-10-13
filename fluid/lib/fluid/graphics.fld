@@ -1,6 +1,7 @@
 from typing import Callable
 from dataclasses import dataclass
 from math import floor
+from sys import exit
 
 type Colour = str
 type Colours = list[Colour]
@@ -129,6 +130,7 @@ def get_y(g: GraphicsElement) -> float:
 # Want some kind of typeclass mechanism plus record accessors/updaters.
 def set_x(x: float, Group(gs): GraphicsElement) -> GraphicsElement:
   assert False, "Group has immutable coordinates"
+  return exit(1)
 def set_x(x: float, Rect(_, y, w, h, fill): GraphicsElement) -> GraphicsElement:
   return Rect(x=x, y=y, width=w, height=h, fill=fill)
 def set_x(x: float, String(_, y, str, anchor, baseline): GraphicsElement) -> GraphicsElement:

@@ -47,8 +47,9 @@ import Util (MayFail, type (+), type (×), definitely', orElse, orThrow, singlet
 import ModuleGraph (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
-import Types (Primitive(..), Type(..), baseType) as T
-import Util.Map (constMap, keys, lookup, unionWith_never, (\\))
+import Types (Primitive(..), Scheme, Type(..), baseType) as T
+import Types (Scheme(..), mono)
+import Util.Map (constMap, lookup, unionWith_never, (\\))
 import Util.Map as Dict
 import Util.Map as Map
 import Val (BaseVal(..), DepOp, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), GVal, MatrixRep(..), Val(..), construct, deliver, dictEntries, dictEntry, elementCount, fromRel, gval, matrixPut, pureRel, root, via)
@@ -69,59 +70,77 @@ predefined :: Map ModuleName (Cxt × Raw Env)
 predefined = M.fromFoldable
    [ predefinedModule builtins ("None" : "object" : "bool" : "int" : "float" : "str" : "list" : "dict" : "tuple" : "type" : Nil)
         [ cRange, cMatrix ]
-        [ extern print_
-        , extern len
+        [ extern print_ × mono (fn [ objectTy ] noneTy)
+        , extern len × mono (fn [ T.PrimitiveTy T.Sized ] intTy)
         -- Fluid-only members, without spec counterpart
-        , extern dims
-        , extern loadJson
-        , unary "str_to_float" { i: string, o: number, fwd: definitely' <<< fromString }
-        , unary "num_to_str" { i: intOrNumber, o: string, fwd: numToStr } -- rename to 'str' (more Pythonic)
+        , extern dims × Forall t (fn [ matrix tVar ] intPair)
+        , extern loadJson × Forall t (fn [ T.TypeTy tVar, strTy ] tVar)
+        , unary "str_to_float" { i: string, o: number, fwd: definitely' <<< fromString } × mono (fn [ strTy ] floatTy)
+        , unary "num_to_str" { i: intOrNumber, o: string, fwd: numToStr } × mono (fn [ floatTy ] strTy) -- rename to 'str' (more Pythonic)
         -- TODO: rename the rest of these (apart from dict_map?) to lose the dict_ prefix
-        , extern dict_difference
-        , extern dict_disjointUnion
-        , extern foldl_with_index
-        , extern get
-        , extern insert
-        , extern dict_intersectionWith
-        , extern dict_map
-        , extern matrixUpdate
-        , extern find_str
-        , extern search
-        , extern split
-        , extern quot
-        , extern rem
+        , extern dict_difference × Forall tu (fn [ dict tVar, dict uVar ] (dict tVar))
+        , extern dict_disjointUnion × Forall t (fn [ dict tVar, dict tVar ] (dict tVar))
+        , extern foldl_with_index × Forall tu (fn [ fn [ strTy, uVar, tVar ] uVar, uVar, dict tVar ] uVar)
+        , extern get × Forall t (fn [ strTy, dict tVar ] (T.UnionTy tVar noneTy))
+        , extern insert × Forall t (fn [ dict tVar, strTy, tVar ] (dict tVar))
+        , extern dict_intersectionWith × Forall tuv (fn [ fn [ tVar, uVar ] vVar, dict tVar, dict uVar ] (dict vVar))
+        , extern dict_map × Forall tu (fn [ fn [ tVar ] uVar, dict tVar ] (dict uVar))
+        , extern matrixUpdate × Forall t (fn [ matrix tVar, intPair, tVar ] (matrix tVar))
+        , extern find_str × mono (fn [ strTy, strTy ] intTy)
+        , extern search × mono (fn [ strTy, strTy ] (T.UnionTy intTy noneTy))
+        , extern split × mono (fn [ intTy, strTy ] (T.TupleTy (strTy : strTy : Nil)))
+        , extern quot × mono (fn [ intTy, intTy ] intTy)
+        , extern rem × mono (fn [ intTy, intTy ] intTy)
         ]
    , predefinedModule math Nil []
-        [ "pi" × Val bot (Lit (Float N.pi))
-        , "e" × Val bot (Lit (Float N.e))
-        , unary "sqrt" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sqrt) `union1` N.sqrt }
-        , unary "exp" { i: intOrNumber, o: number, fwd: (toNumber >>> N.exp) `union1` N.exp }
-        , unary "log" { i: intOrNumber, o: number, fwd: (toNumber >>> N.log) `union1` N.log }
-        , unary "sin" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sin) `union1` N.sin }
-        , unary "cos" { i: intOrNumber, o: number, fwd: (toNumber >>> N.cos) `union1` N.cos }
-        , unary "tan" { i: intOrNumber, o: number, fwd: (toNumber >>> N.tan) `union1` N.tan }
-        , unary "floor" { i: intOrNumber, o: int, fwd: identity `union1` floor }
-        , unary "ceil" { i: intOrNumber, o: int, fwd: identity `union1` ceil }
+        [ ("pi" × Val bot (Lit (Float N.pi))) × mono floatTy
+        , ("e" × Val bot (Lit (Float N.e))) × mono floatTy
+        , unary "sqrt" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sqrt) `union1` N.sqrt } × mono floatFun
+        , unary "exp" { i: intOrNumber, o: number, fwd: (toNumber >>> N.exp) `union1` N.exp } × mono floatFun
+        , unary "log" { i: intOrNumber, o: number, fwd: (toNumber >>> N.log) `union1` N.log } × mono floatFun
+        , unary "sin" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sin) `union1` N.sin } × mono floatFun
+        , unary "cos" { i: intOrNumber, o: number, fwd: (toNumber >>> N.cos) `union1` N.cos } × mono floatFun
+        , unary "tan" { i: intOrNumber, o: number, fwd: (toNumber >>> N.tan) `union1` N.tan } × mono floatFun
+        , unary "floor" { i: intOrNumber, o: int, fwd: identity `union1` floor } × mono (fn [ floatTy ] intTy)
+        , unary "ceil" { i: intOrNumber, o: int, fwd: identity `union1` ceil } × mono (fn [ floatTy ] intTy)
         ]
    , predefinedModule sys Nil []
-        [ "argv" × Val bot (List [])
-        , extern exit
+        [ ("argv" × Val bot (List [])) × mono (T.ListTy strTy)
+        , extern exit × mono (fn [ intTy ] (T.PrimitiveTy T.Never))
         ]
    , predefinedModule typing ("Callable" : "Literal" : "Never" : "Sized" : Nil) [] []
    , predefinedModule dataclasses ("dataclass" : Nil) [] []
    ]
    where
-   predefinedModule :: ModuleName -> List Var -> Array Name -> Array (Bind (Val Unit)) -> ModuleName × (Cxt × Raw Env)
+   predefinedModule :: ModuleName -> List Var -> Array Name -> Array (Bind (Val Unit) × T.Scheme) -> ModuleName × (Cxt × Raw Env)
    predefinedModule q names classes members = q × (cxt × wrap (ρ `unionWith_never` ρ_classes `unionWith_never` ρ_names))
       where
-      ρ = D.fromFoldable (Array.cons ("__name__" × Val bot (Lit (Str (dottedName q)))) members)
+      members' = Array.cons (("__name__" × Val bot (Lit (Str (dottedName q)))) × mono strTy) members
+      ρ = D.fromFoldable (fst <$> members')
       ρ_classes = D.fromFoldable (classes <#> \c -> last c × Val bot (Fun (Type (T.ClassTy c Nil))))
       ρ_names = D.fromFoldable (names <#> \x -> x × Val bot (Opaque (qual q x)))
       cxt = M.unions
          [ constMap Entry.PredefName (Set.fromFoldable names)
          , M.fromFoldable (classes <#> \c -> last c × Entry.Type c)
-         , constMap Entry.Assigned (keys ρ)
+         , M.fromFoldable (members' <#> \((x × _) × π) -> x × Entry.Assigned π)
          ]
+
+   fn σs τ = T.CallableTy (L.fromFoldable σs) τ
+   objectTy = T.PrimitiveTy T.Object
+   noneTy = T.PrimitiveTy T.None
+   intTy = T.PrimitiveTy T.Int
+   floatTy = T.PrimitiveTy T.Float
+   strTy = T.PrimitiveTy T.Str
+   floatFun = fn [ floatTy ] floatTy
+   intPair = T.TupleTy (intTy : intTy : Nil)
+   dict = T.DictTy
+   matrix τ = T.ClassTy cMatrix (τ : Nil)
+   t = "T" : Nil
+   tu = "T" : "U" : Nil
+   tuv = "T" : "U" : "V" : Nil
+   tVar = T.VarTy "T"
+   uVar = T.VarTy "U"
+   vVar = T.VarTy "V"
 
 len :: ForeignOp
 len =

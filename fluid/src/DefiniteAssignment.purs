@@ -1,6 +1,6 @@
 module DefiniteAssignment where
 
-import Prelude
+import Prelude hiding (absurd)
 
 import Bind (Name, Var, dottedName)
 import Control.Monad.Error.Class (class MonadThrow, throwError)
@@ -9,16 +9,16 @@ import Data.List.NonEmpty as NEL
 import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
-import Types (Type) as T
+import Types (Scheme, Type, mono) as T
+import Util (absurd, error)
 import Util.Map (intersectionWith, lookup, unionWith)
 import Util.Set ((∪))
 
--- Variable entries carry no type until checking and synthesis, as unannotated assignments have none.
 data Entry
    = Unbound -- declared later in scope
-   | Declared -- definitely unassigned
-   | PossiblyUnassigned
-   | Assigned
+   | Declared T.Type -- definitely unassigned
+   | PossiblyUnassigned T.Scheme
+   | Assigned T.Scheme
    | Type Name -- class, by fully-qualified name
    | Mod Name
    | ModChecked Name Cxt
@@ -43,9 +43,14 @@ override :: Cxt -> Cxt -> Cxt
 override = flip (∪)
 
 merge :: Cxt -> Cxt -> Cxt
-merge cxt cxt' = intersectionWith mergeEntry cxt cxt' ∪ (PossiblyUnassigned <$ (cxt ∪ cxt'))
+merge cxt cxt' = intersectionWith mergeEntry cxt cxt' ∪ (possiblyUnassigned <$> (cxt ∪ cxt'))
    where
-   mergeEntry θ θ' = if θ == θ' then θ else PossiblyUnassigned
+   mergeEntry θ θ' = if θ == θ' then θ else possiblyUnassigned θ
+
+   possiblyUnassigned (Declared τ) = PossiblyUnassigned (T.mono τ)
+   possiblyUnassigned (PossiblyUnassigned π) = PossiblyUnassigned π
+   possiblyUnassigned (Assigned π) = PossiblyUnassigned π
+   possiblyUnassigned _ = error absurd
 
 overrideRes :: WfResult Cxt -> WfResult Cxt -> WfResult Cxt
 overrideRes _ Returns = Returns
@@ -71,7 +76,7 @@ resolveName cxt name = case NEL.fromList init of
    where
    { init, last: x } = unsnoc name
    simpleEntry g y = case lookup y g of
-      Just e@Assigned -> Just e
+      Just e@(Assigned _) -> Just e
       Just e@(ModChecked _ _) -> Just e
       Just e@(Type _) -> Just e
       Just e@TypeVar -> Just e

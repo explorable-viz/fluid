@@ -38,7 +38,8 @@ def find_quantile(q: float, p: float, xs: list[float]) -> float:
   right: float = xs[x2]
   return left + (rank - x1) * (right - left)
 
-find_percentile: Callable[[float, list[float]], float] = find_quantile(100)
+def find_percentile(p: float, xs: list[float]) -> float:
+  return find_quantile(100, p, xs)
 
 def accum_bins(data: list[float], edges: list[float]) -> list[tuple[list[float], float]]:
   return [([x for x in data if (i == 0 or edges[i] < x) and x <= edges[i + 1]], edges[i + 1] - edges[i]) for i in range(0, len(edges) - 1)]
