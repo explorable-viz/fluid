@@ -12,7 +12,7 @@ linkedOutputs_spec1 =
         { fluidSrcPaths
         , inputs: [ "renewables" ]
         , query: false
-        , ignoreInputs: \classes -> envVal "renewables" (valOf (eachElement (field classes "year" select >.> field classes "country" select)))
+        , ignoreInputs: envVal "renewables" (valOf (eachElement (field "year" select >.> field "country" select)))
         , linking: true
         , rowFilter: Nothing
         }
@@ -39,7 +39,7 @@ linkedOutputs_spec2 =
         { fluidSrcPaths
         , inputs: [ "nonRenewables" ]
         , query: false
-        , ignoreInputs: \classes -> envVal "nonRenewables" (valOf (eachElement (field classes "year" select >.> field classes "country" select)))
+        , ignoreInputs: envVal "nonRenewables" (valOf (eachElement (field "year" select >.> field "country" select)))
         , linking: true
         , rowFilter: Nothing
         }
@@ -64,7 +64,7 @@ movingAverages_spec =
         { fluidSrcPaths
         , inputs: [ "methane" ]
         , query: false
-        , ignoreInputs: \_ -> none
+        , ignoreInputs: none
         , linking: true
         , rowFilter: Nothing
         }
@@ -80,7 +80,7 @@ linkedOutputs_cases =
           { fluidSrcPaths
           , inputs: [ "data" ]
           , query: false
-          , ignoreInputs: \_ -> none
+          , ignoreInputs: none
           , linking: true
           , rowFilter: Nothing
           }
@@ -94,7 +94,7 @@ linkedOutputs_cases =
 
           , inputs: [ "data" ]
           , query: false
-          , ignoreInputs: \_ -> none
+          , ignoreInputs: none
           , linking: true
           , rowFilter: Nothing
           }
@@ -131,7 +131,7 @@ linkedOutputs_cases =
           { fluidSrcPaths
           , inputs: [ "xs", "n", "ys", "m" ]
           , query: false
-          , ignoreInputs: \_ -> none
+          , ignoreInputs: none
           , linking: true
           , rowFilter: Nothing
           }
@@ -144,7 +144,7 @@ linkedOutputs_cases =
           { fluidSrcPaths
           , inputs: [ "types", "data" ]
           , query: false
-          , ignoreInputs: \_ -> none
+          , ignoreInputs: none
           , linking: true
           , rowFilter: Nothing
           }
@@ -157,7 +157,7 @@ linkedOutputs_cases =
           { fluidSrcPaths
           , inputs: [ "seq1", "seq2" ]
           , query: false
-          , ignoreInputs: \_ -> none
+          , ignoreInputs: none
           , linking: true
           , rowFilter: Nothing
           }
@@ -170,7 +170,7 @@ linkedOutputs_cases =
           { fluidSrcPaths
           , inputs: [ "x", "n" ]
           , query: false
-          , ignoreInputs: \_ -> none
+          , ignoreInputs: none
           , linking: true
           , rowFilter: Nothing
           }

@@ -21,7 +21,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (fst)
 import Effect.Exception (Error)
 import Types (Primitive(..), Type(..), baseType, subst)
-import Util (type (×), definitely', throw, (×))
+import Util (type (×), throw, (×))
 import Util.Map (get, lookup)
 
 type FieldName = String
@@ -136,9 +136,6 @@ meet classes σ τ
               CallableTy (zipWith (join classes) σs τs) (meet classes σ' τ')
            TupleTy σs, TupleTy τs | length σs == length τs -> TupleTy (zipWith (meet classes) σs τs)
            _, _ -> PrimitiveTy Never
-
-fieldIndex :: ClassTable -> Name -> FieldName -> Int
-fieldIndex classes c field = definitely' (elemIndex field (fst <$> fields classes c))
 
 view :: Name
 view = NE.NonEmptyList ("fluid" :| "view" : Nil)

@@ -182,7 +182,7 @@ jsonVal classes τ json = case τ of
       let xσs = fields classes c
       when (Set.fromFoldable (O.keys obj) /= Set.fromFoldable (fst <$> xσs))
          $ Left ("Expected fields of " <> last c <> ": " <> show (fst <$> xσs) <> "; got " <> show (O.keys obj))
-      val <<< Constr c <$> traverse (\(x × σ) -> jsonVal classes σ (definitely' (O.lookup x obj))) xσs
+      val <<< Obj c <$> traverse (\(x × σ) -> (x × _) <$> jsonVal classes σ (definitely' (O.lookup x obj))) xσs
    T.PrimitiveTy T.Int -> val <<< Lit <<< Int <$> expect "integer" (J.toNumber json >>= Int.fromNumber)
    T.PrimitiveTy T.Float -> val <<< Lit <<< Float <$> expect "number" (J.toNumber json)
    T.PrimitiveTy T.Str -> val <<< Lit <<< Str <$> expect "string" (toString json)

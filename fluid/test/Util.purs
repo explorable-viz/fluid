@@ -4,7 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.Util (SelStates, SelectionType(..), Selector, SetSel, getPersistent, unselected)
 import App.Util.Selector (ConstrArg, constrArg)
-import DataType (class HasClasses, ClassTable)
+import DataType (class HasClasses)
 import Data.Array as A
 import Data.Foldable (any, minimum)
 import Data.Map as Map
@@ -113,14 +113,13 @@ showDeps { g: { docs }, root } deps = joinWith "\n" (documented <> output)
 
 selection
    :: forall s
-    . ClassTable
-   -> DepGraph Val s
+    . DepGraph Val s
    -> Eval
    -> VertexSpec
    -> (ConstrArg -> Selector Val)
    -> Labelling (Set Pos)
-selection classes depGraph eval vertex δv =
-   maplet p (selected (selectOn δv (constrArg classes) (valAt eval.g p)))
+selection depGraph eval vertex δv =
+   maplet p (selected (selectOn δv constrArg (valAt eval.g p)))
    where
    p = deriv depGraph eval vertex
 
@@ -133,8 +132,8 @@ testDep file query = do
    let
       visibleGraph = materialise eval.g (visible eval)
       deps × expect = case query of
-         Bwd vertex δv expect' -> bwd visibleGraph (selection classes depGraph eval vertex δv) × expect'
-         Fwd vertex δv expect' -> fwd visibleGraph (selection classes depGraph eval vertex δv) × expect'
+         Bwd vertex δv expect' -> bwd visibleGraph (selection depGraph eval vertex δv) × expect'
+         Fwd vertex δv expect' -> fwd visibleGraph (selection depGraph eval vertex δv) × expect'
    withMsg "expect" $ checkPretty expect (showDeps eval deps)
 
 -- Persistent selection made by δv on the output.

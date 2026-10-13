@@ -39,8 +39,8 @@ optionsFromJson spec@{ inputs, query, ignoreInputs, linking, rowFilter } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , inputs
    , query
-   , ignoreInputs: \classes -> foldr (>.>) none $ (maybe [] Object.toUnfoldable ignoreInputs) <#> \(x × ks) ->
-        envVal x (valOf (eachElement (foldr (>.>) none (ks <#> \k -> field classes k select))))
+   , ignoreInputs: foldr (>.>) none $ (maybe [] Object.toUnfoldable ignoreInputs) <#> \(x × ks) ->
+        envVal x (valOf (eachElement (foldr (>.>) none (ks <#> \k -> field k select))))
    , linking
    , rowFilter
    }

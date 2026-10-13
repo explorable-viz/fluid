@@ -16,6 +16,7 @@ import Data.Map (Map)
 import Data.Map as Map
 import Data.Bitraversable (bitraverse)
 import Data.Foldable (class Foldable, fold, foldMapDefaultL, foldl, foldrDefault, for_)
+import Data.Foldable (lookup) as F
 import Data.Functor.Compose (Compose(..))
 import Data.Lazy (defer, force)
 import Data.List (List(..), (:), zipWith)
@@ -26,6 +27,7 @@ import Data.Set (Set)
 import Data.String.CodePoints (codePointAt, length, singleton) as S
 import Data.Set as Set
 import Data.Profunctor.Strong (second)
+import Data.Tuple (snd)
 import Data.Traversable (class Traversable, mapAccumL, sequenceDefault, traverse)
 import Dict (Dict)
 import Dict as D
@@ -59,7 +61,7 @@ asAssigns (Returns _) = error "Assigns expected"
 
 data BaseVal a
    = Lit Literal
-   | Constr Name (List (Val a)) -- always saturated
+   | Obj Name (List (Var × Val a))
    | List (Array (Val a))
    | Tuple (Array (Val a))
    | Dictionary (DictRep a)
@@ -79,7 +81,7 @@ overChildren _ (Opaque q) = Opaque q
 overChildren _ (Module q) = Module q
 overChildren _ Unbound = Unbound
 overChildren _ (TypeAlias αs τ) = TypeAlias αs τ
-overChildren f (Constr c vs) = Constr c (f <$> vs)
+overChildren f (Obj c xvs) = Obj c (map f <$> xvs)
 overChildren f (List vs) = List (f <$> vs)
 overChildren f (Tuple vs) = Tuple (f <$> vs)
 overChildren f (Dictionary (DictRep d)) = Dictionary (DictRep (map f <$> d))
@@ -95,7 +97,7 @@ dataPositions :: forall a. Val a -> Val Boolean
 dataPositions (Val _ u) = Val (not container) (overChildren dataPositions (false <$ u))
    where
    container = case u of
-      Constr _ _ -> true
+      Obj _ _ -> true
       List _ -> true
       Tuple _ -> true
       Dictionary _ -> true
@@ -163,7 +165,7 @@ type Ctrl s = List (Dep.Deriv × Rel (Val s) s)
 unitSection :: forall s. Semiring s => Raw Val -> Val s
 unitSection (Val _ u) = Val one case u of
    Lit ℓ -> Lit ℓ
-   Constr c vs -> Constr c (unitSection <$> vs)
+   Obj c xvs -> Obj c (map unitSection <$> xvs)
    List vs -> List (unitSection <$> vs)
    Tuple vs -> Tuple (unitSection <$> vs)
    Dictionary (DictRep d) -> Dictionary (DictRep ((\(_ × v) -> one × unitSection v) <$> d))
@@ -373,8 +375,12 @@ matrixElement i j (Val _ (Matrix r)) = matrixGet i j r
 matrixElement _ _ _ = error absurd
 
 field :: forall a. Int -> Val a -> Val a
-field i (Val _ (Constr _ vs)) = definitely' (vs L.!! i)
+field i (Val _ (Obj _ xvs)) = snd (definitely' (xvs L.!! i))
 field _ _ = error absurd
+
+attr :: forall a. Var -> Val a -> Val a
+attr x (Val _ (Obj _ xvs)) = definitely' (F.lookup x xvs)
+attr _ _ = error absurd
 
 -- i-th element of a sequence: element of a list or tuple, character of a string, key of a dictionary, integer of a range.
 element :: forall a. Int -> Val a -> Val a
@@ -382,7 +388,7 @@ element i (Val _ (List vs)) = definitely' (vs A.!! i)
 element i (Val _ (Tuple vs)) = definitely' (vs A.!! i)
 element i (Val α (Lit (Str s))) = Val α (Lit (Str (definitely' (S.singleton <$> S.codePointAt i s))))
 element i (Val _ (Dictionary (DictRep d))) = let k × (β × _) = definitely' (toUnfoldable d L.!! i) in Val β (Lit (Str k))
-element i (Val _ (Constr c (Val β (Lit (Int m)) : _ : Nil))) | c == cRange = Val β (Lit (Int (m + i)))
+element i (Val _ (Obj c ((_ × Val β (Lit (Int m))) : _ : Nil))) | c == cRange = Val β (Lit (Int (m + i)))
 element _ _ = error absurd
 
 elements :: forall a. Val a -> List (Val a)
@@ -392,13 +398,14 @@ elements v = (\i -> element i v) <$> L.take n (L.range 0 n)
 
 -- Dependence of the length of a sequence: the root, plus start and stop of a range.
 lengthDep :: forall a. Semiring a => Val a -> a
-lengthDep (Val α (Constr c vs)) | c == cRange = foldl (+) α (root <$> vs)
+lengthDep (Val α (Obj c xvs)) | c == cRange = foldl (+) α (root <<< snd <$> xvs)
 lengthDep (Val α _) = α
 
 elementCount :: forall a. Val a -> Maybe Int
 elementCount (Val _ (List vs)) = Just (A.length vs)
 elementCount (Val _ (Tuple vs)) = Just (A.length vs)
-elementCount (Val _ (Constr c (Val _ (Lit (Int m)) : Val _ (Lit (Int n)) : Nil))) | c == cRange = Just (max 0 (n - m))
+elementCount (Val _ (Obj c ((_ × Val _ (Lit (Int m))) : (_ × Val _ (Lit (Int n))) : Nil))) | c == cRange =
+   Just (max 0 (n - m))
 elementCount (Val _ (Lit (Str s))) = Just (S.length s)
 elementCount (Val _ (Dictionary (DictRep d))) = Just (size d)
 elementCount _ = Nothing
@@ -484,7 +491,7 @@ instance Apply EnvWithDocs where
 
 instance Apply BaseVal where
    apply (Lit ℓ) (Lit ℓ') = Lit (ℓ ≜ ℓ')
-   apply (Constr c fes) (Constr c' es) = Constr (c ≜ c') (zipWith (<*>) fes es)
+   apply (Obj c fxes) (Obj c' xes) = Obj (c ≜ c') (zipWith (\(x × f) (x' × e) -> (x ≜ x') × (f <*> e)) fxes xes)
    apply (List fvs) (List vs) = List (A.zipWith (<*>) fvs vs)
    apply (Tuple fvs) (Tuple vs) = Tuple (A.zipWith (<*>) fvs vs)
    apply (Dictionary fxvs) (Dictionary xvs) = Dictionary (fxvs <*> xvs)
@@ -551,7 +558,7 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
 instance JoinSemilattice a => JoinSemilattice (BaseVal a) where
    join (Lit ℓ) (Lit ℓ') = Lit (ℓ ≜ ℓ')
    join (Dictionary d) (Dictionary d') = Dictionary (d ∨ d')
-   join (Constr c vs) (Constr c' us) = Constr (c ≜ c') (vs ∨ us)
+   join (Obj c xvs) (Obj c' xus) = Obj (c ≜ c') (zipWith (\(x × v) (x' × u) -> (x ≜ x') × (v ∨ u)) xvs xus)
    join (List vs) (List us) = List (vs ∨ us)
    join (Tuple vs) (Tuple us) = Tuple (vs ∨ us)
    join (Matrix m) (Matrix m') = Matrix (m ∨ m')

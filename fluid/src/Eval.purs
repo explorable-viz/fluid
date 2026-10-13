@@ -24,7 +24,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, traverse)
 import Data.Tuple (fst, snd)
-import DataType (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fields)
+import DataType (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fieldNames)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -72,9 +72,11 @@ matches _ _ PWild = Just empty × Nil
 matches classes v (PAs p x) = first (map (_ `unionWith_never` maplet x v)) (matches classes v p)
 matches classes v@{ val: Val _ u } p = second (via root v : _) case u, p of
    V.Lit ℓ', PLit ℓ | eqLiteral ℓ ℓ' -> Just empty × Nil
-   V.Constr c' vs, PConstr c ps Nil
+   V.Obj c' xvs, PConstr c ps Nil
       | c `elem` ancestors classes c' ->
-           matchesMany classes (mapWithIndex (\i val -> { val, inEdges: via (field i) v }) (take (length ps) vs)) ps
+           matchesMany classes
+              (mapWithIndex (\i (_ × val) -> { val, inEdges: via (field i) v }) (take (length ps) xvs))
+              ps
    V.Dictionary (DictRep xvs), PRecord xps ->
       case traverse (\(x × p') -> lookup x xvs <#> \(_ × val) -> x × { val, inEdges: via (dictEntry x >>> snd) v } × p') xps of
          Just kvs -> second ((kvs <#> \(x × _) -> via (dictEntry x >>> fst) v) <> _)
@@ -154,9 +156,10 @@ eval inputs = case _ of
       vs <- for cs \inputs' -> gval <$> eval inputs' e
       constructWith ctrl (A.fromFoldable >>> V.List) vs
    Constr c es -> do
-      askClasses >>= checkArity c (length es)
+      classes <- askClasses
+      checkArity c (length es) classes
       vs <- traverse (eval inputs >>> map gval) es
-      constructWith inputs.ctrl (V.Constr c) vs
+      constructWith inputs.ctrl (V.Obj c <<< zip (fieldNames classes c)) vs
    Matrix e (x × y) e' -> do
       dims <- gval <$> eval inputs e'
       i' × j' <- case dims.val of
@@ -183,9 +186,8 @@ eval inputs = case _ of
    Attribute e x -> do
       v <- gval <$> eval inputs e
       case v.val of
-         Val _ (V.Constr c _) -> do
-            xs <- askClasses <#> \classes -> fst <$> fields classes c
-            i <- elemIndex x xs # orElse (dottedName c <> " has no field " <> x)
+         Val _ (V.Obj c xvs) -> do
+            i <- elemIndex x (fst <$> xvs) # orElse (dottedName c <> " has no field " <> x)
             deliver (inputs.ctrl <> via root v) { val: field i v.val, inEdges: via (field i) v }
          _ -> throw $ "Found " <> prettyP v.val <> ", expected object"
    Subscript e e' -> do
@@ -398,7 +400,8 @@ apply ctrl f@{ val: Val _ u } vs = case u of
             ρ3 = foldl (\ρ (x × v) -> if x == varAnon then ρ else ρ `unionWith_never` maplet x v) empty (zip xs vs')
          asReturns <$> evalStmt { ctrl: ctrl', env: ρ1' <+> ρ2 <+> ρ3 } s
       V.Prim (ForeignOp (_ × ForeignOp' { depOp })) -> depOp ctrl' vs'
-      V.Type (T.ClassTy c _) -> constructWith ctrl' (V.Constr c) vs'
+      V.Type (T.ClassTy c _) ->
+         askClasses >>= \classes -> constructWith ctrl' (V.Obj c <<< zip (fieldNames classes c)) vs'
       V.Type _ -> error absurd
       V.Partial _ _ -> error absurd
       where

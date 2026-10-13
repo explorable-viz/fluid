@@ -10,6 +10,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Data.NonEmpty ((:|))
 import Data.Traversable (class Foldable)
+import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
 import Expr (Pattern(..))
@@ -420,7 +421,7 @@ instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Dictionary (DictRep svs))
       | isEmpty svs = text "{}"
       | otherwise = record (pretty <$> (toUnfoldable svs))
-   pretty (V.Constr c vs) = prettyConstr (last c) vs
+   pretty (V.Obj c xvs) = prettyConstr (last c) (snd <$> xvs)
    pretty (V.List vs) = brackets (prettyList vs)
    pretty (V.Tuple vs) = tuple (pretty <$> fromFoldable vs)
    pretty (V.Matrix (MatrixRep (vss × _ × _))) = vcommas $ fromFoldable (prettyList <$> vss) -- ???
