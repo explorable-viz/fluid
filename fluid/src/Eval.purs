@@ -340,8 +340,8 @@ evalStmt inputs = case _ of
       else case e_opt of
          Nothing -> throw "AssertionError"
          Just e' -> do
-            _ × Val _ w <- eval (inputs { ctrl = ctrl }) e'
-            throw ("AssertionError: " <> either (\_ -> prettyP w) identity (string.unpack w))
+            _ × Val _ u <- eval (inputs { ctrl = ctrl }) e'
+            throw ("AssertionError: " <> either (\_ -> prettyP u) identity (string.unpack u))
    Dataclass c -> do
       let v = constructed inputs.ctrl { val: Val unit (V.Fun (V.Type (T.ClassTy c Nil))), inEdges: Nil }
       pure (Assigns (maplet (last c) v) inputs.ctrl)

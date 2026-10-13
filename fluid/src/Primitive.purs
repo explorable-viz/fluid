@@ -282,8 +282,8 @@ eqOp v@(Val α u) v'@(Val β u') = case u, u' of
    Lit (Float _), Lit (Bool _) -> undefined
    Fun _, Fun _ -> undefined
    Obj c _, Obj d _ | c == cRange && d == cRange -> eqElems both (elements v) (elements v')
-   Obj c xvs, Obj d yws
-      | c == d -> eqElems both (snd <$> xvs) (snd <$> yws)
+   Obj c xvs, Obj d yus
+      | c == d -> eqElems both (snd <$> xvs) (snd <$> yus)
       | otherwise -> pure (false × both)
    List _, List _ -> eqElems both (elements v) (elements v')
    Tuple _, Tuple _ -> eqElems both (elements v) (elements v')
