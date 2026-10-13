@@ -83,7 +83,7 @@ linkedOutputsSuite testSpecs = testSpecs <#> (_.file &&& (linkedOutputsTest >>> 
 linkedInputsTest :: forall m. MonadAff m => MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => TestLinkedInputsSpec -> m Fig
 linkedInputsTest { spec, δ_in, in_expect, file } = do
    fluidSrc <- loadFile spec.fluidSrcPaths (File file)
-   fig <- loadFig spec fluidSrc <#> \fig0 -> uncurry selectInput (valOf <$> δ_in) fig0
+   fig <- loadFig spec fluidSrc <#> uncurry selectInput (valOf <$> δ_in)
    ρ <- logTimeWhen timing.selectionResult file \_ ->
       pure (selectionResult fig).ρ
    checkSelection in_expect (selected <$> ρ)

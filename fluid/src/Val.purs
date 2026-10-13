@@ -16,7 +16,6 @@ import Data.Map (Map)
 import Data.Map as Map
 import Data.Bitraversable (bitraverse)
 import Data.Foldable (class Foldable, fold, foldMapDefaultL, foldl, foldrDefault, for_)
-import Data.Foldable (lookup) as F
 import Data.Functor.Compose (Compose(..))
 import Data.Lazy (defer, force)
 import Data.List (List(..), (:), zipWith)
@@ -375,11 +374,11 @@ matrixElement i j (Val _ (Matrix r)) = matrixGet i j r
 matrixElement _ _ _ = error absurd
 
 field :: forall a. Int -> Val a -> Val a
-field i (Val _ (Obj _ xvs)) = snd (definitely' (xvs L.!! i))
+field i (Val _ (Obj _ xvs)) = snd (xvs ! i)
 field _ _ = error absurd
 
 attr :: forall a. Var -> Val a -> Val a
-attr x (Val _ (Obj _ xvs)) = definitely' (F.lookup x xvs)
+attr x (Val _ (Obj _ xvs)) = get x (D.fromFoldable xvs)
 attr _ _ = error absurd
 
 -- i-th element of a sequence: element of a list or tuple, character of a string, key of a dictionary, integer of a range.
