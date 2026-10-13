@@ -26,7 +26,6 @@ async function launchBrowser(browserName) {
    })
 }
 
-// Browsers to test, as a comma-separated list; the runner script runs one browser per process.
 const BROWSERS = (process.env.BROWSERS || "firefox,chrome").split(",")
 
 // Relaunching Firefox fails intermittently, so browsers are reused across pages.
