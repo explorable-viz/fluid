@@ -10,7 +10,7 @@ illFormed_cases =
    [ { file: "bare_module.fld", expected_error: "module qual_lib is not a value" }
    , { file: "capture_redefined_class.fld", expected_error: "Declared twice: C" }
    , { file: "constr_dup_keyword.fld", expected_error: "Class Coord keyword fields mismatch: expected (\"x\" : \"y\" : Nil), got (\"x\" : \"x\" : \"y\" : Nil)" }
-   , { file: "dict_attr.fld", expected_error: "Found {\"a\": 1}, expected object" }
+   , { file: "dict_attr.fld", expected_error: "Values of type dict[str, int] have no attributes" }
    , { file: "from_import_arity.fld", expected_error: "Derived expects 2 argument(s); got 1" }
    , { file: "from_import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module bad_pkg" }
    , { file: "from_import_loads_ancestor.fld", expected_error: "AssertionError" }
@@ -18,8 +18,8 @@ illFormed_cases =
    , { file: "from_import_unassigned.fld", expected_error: "Not definitely initialised: x" }
    , { file: "import_bad_ancestor.fld", expected_error: "Unbound name: z\nChecking module bad_pkg" }
    , { file: "import_cycle.fld", expected_error: "import cycle: cyc_a -> cyc_b -> cyc_a" }
-   , { file: "match_exhaustive_assign.fld", expected_error: "Possibly uninitialised: result" }
-   , { file: "match_partial_def.fld", expected_error: "Already initialised: result" }
+   , { file: "match_exhaustive_assign.fld", expected_error: "Possibly uninitialised: result\nChecking definition of foo" }
+   , { file: "match_partial_def.fld", expected_error: "Already initialised: result\nChecking definition of foo" }
    , { file: "module_returns.fld", expected_error: "Module body cannot return\nChecking module return_mod" }
    , { file: "non_contiguous_def.fld", expected_error: "Non-contiguous clauses for: f" }
    , { file: "own_descendant_import.fld", expected_error: "Module od_pkg cannot import its own descendant od_pkg.sub\nChecking module od_pkg" }
@@ -30,10 +30,10 @@ illFormed_cases =
    , { file: "self_import.fld", expected_error: "import cycle: selfy -> selfy" }
    , { file: "submodule_name_clash.fld", expected_error: "Duplicate module member: clash_pkg defines sub and also has submodule clash_pkg.sub\nChecking module clash_pkg" }
    , { file: "eq_nan_container.fld", expected_error: "Cannot compare nan with nan in container\nIn ==" }
-   , { file: "matrix_dim_type.fld", expected_error: "Found (2, \"a\"), expected pair of int" }
+   , { file: "matrix_dim_type.fld", expected_error: "Expected type int; given Literal[\"a\"]" }
    , { file: "submodule_self_import.fld", expected_error: "import cycle: ssi.b -> ssi.b" }
    , { file: "subscript_matrix_out_of_range.fld", expected_error: "Index (2, 0) out of range" }
-   , { file: "subscript_non_dict.fld", expected_error: "Found Point(1, 2), expected list, tuple, str, dict or matrix" }
+   , { file: "subscript_non_dict.fld", expected_error: "Values of type ~__main__.Point cannot be subscripted" }
    , { file: "use_before_import.fld", expected_error: "\"ParseError on line 2, column 6:\\nimports must precede statements\"\nLoading module use_before_import_mod" }
    ]
 

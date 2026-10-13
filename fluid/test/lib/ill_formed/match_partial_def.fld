@@ -1,5 +1,5 @@
-def foo(xs):
-   result = 0
+def foo(xs: list[int]) -> int:
+   result: int = 0
    match xs:
       case []:
          result = 99

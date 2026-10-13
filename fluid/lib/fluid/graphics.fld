@@ -264,8 +264,8 @@ def axis(orient: Orient, x: float, start: float, end: float) -> tuple[GraphicsEl
 
 # x is position of this axis on the other axis.
 def cat_axis(orient: Orient, x: float, cat_values: list[Cat]) -> GraphicsElement:
-  ys: list[float] = iterate(len(cat_values) + 1, lambda x: 1 + x, 0.0)
-  ps: list[Point] = map(mk_point(orient, x), ys)
+  ys: list[int] = iterate(len(cat_values) + 1, lambda x: 1 + x, 0)
+  ps: list[Point] = [mk_point(orient, x, y) for y in ys]
 
   return Group([
     Line(ps[0], ps[-1], axis_colour, axis_stroke_width),

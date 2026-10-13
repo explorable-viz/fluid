@@ -217,7 +217,7 @@ checkStmt cxt _ (S.Def (S.VarDef (S.PVar x) Nothing e)) = case lookup x cxt of
       e' <- checkExpr cxt e τ
       pure (Assigns (maplet x (Assigned (mono τ))) × E.Assign (S.PVar x) e')
    Just Unbound -> throwError $ "Assigned before declaration: " <> x
-   _ -> assignable cxt x *> error absurd
+   _ -> assignable cxt x >>= \_ -> error absurd
 -- Assignment to a pattern; the spec has only variables
 checkStmt cxt _ (S.Def (S.VarDef p ψ e)) = do
    for_ (bv p) (unbound cxt)

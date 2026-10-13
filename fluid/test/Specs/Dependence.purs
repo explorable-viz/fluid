@@ -256,7 +256,7 @@ dep_cases =
      }
    , { file: "dependence/dict/get.fld"
      , queries:
-          [ Bwd Output (\_ -> select) "⟪{\"a\": 5, ⟪\"ab\"⟫: ⟪{\"fst\": 6, ⟪\"snd\"⟫: ⸨0⸩}⟫}⟫\n⟪\"a\"⟫\n⸨0⸩"
+          [ Bwd Output (\_ -> select) "⟪{\"a\": {\"fst\": 5}, ⟪\"ab\"⟫: ⟪{\"fst\": 6, ⟪\"snd\"⟫: ⸨0⸩}⟫}⟫\n⟪\"a\"⟫\n⸨0⸩"
           ]
      }
    , { file: "dependence/dict/create.fld"
