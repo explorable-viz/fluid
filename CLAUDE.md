@@ -19,6 +19,9 @@ Continual improvement of the workflow itself, including documenting the workflow
 
 ## Process
 
-Before writing code, prose, commits, issues or pull requests, load the `conventions:coding-conventions`, `conventions:technical-authoring` and `conventions:github` skills, from the `conventions@fluid-org` plugin ([fluid-org/claude-plugins](https://github.com/fluid-org/claude-plugins)), which Claude Code offers to install when the project is opened; load `conventions:spec-implementor` as well when working against the PurePy specification. Branching, milestones, deployment and publishing are in the `release-cycle` skill. Building and testing: [CONTRIBUTING.md](CONTRIBUTING.md). Issue state machine and invariants: [docs/workflow/issue-lifecycle.md](docs/workflow/issue-lifecycle.md).
+Before writing code, prose, commits, issues or pull requests, load the `conventions:coding-conventions`, `conventions:technical-authoring` and `conventions:github` skills, and `conventions:spec-implementor` when working against the PurePy specification.
 
-[docs/workflow/milestone-report.md](docs/workflow/milestone-report.md) covers the milestone report format and generation process — read when closing a milestone or producing release notes.
+- Branching, milestones, deployment and publishing: `release-cycle` skill
+- Building and testing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Issue state machine and invariants: [docs/workflow/issue-lifecycle.md](docs/workflow/issue-lifecycle.md)
+- Milestone reports and release notes: [docs/workflow/milestone-report.md](docs/workflow/milestone-report.md)
