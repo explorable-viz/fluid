@@ -295,8 +295,8 @@ qualifiers inputs (Generator p e : gs) = do
       Nothing -> throw ("Found " <> prettyP v.val <> ", expected list, tuple, str or dict")
    classes <- askClasses
    fold <$> for (L.take n (L.range 0 n)) \i -> do
-      let el = { val: element i v.val, inEdges: via (element i) v }
-      case dispatch classes (singleton (p × unit)) el Nil of
+      let u = { val: element i v.val, inEdges: via (element i) v }
+      case dispatch classes (singleton (p × unit)) u Nil of
          Nothing × ctrl -> pure (Nil × (via lengthDep v <> ctrl))
          Just (ρ' × _) × ctrl -> qualifiers (inputs { env = inputs.env <+> ρ', ctrl = via lengthDep v <> ctrl }) gs
 qualifiers inputs (Decl p e : gs) = do
