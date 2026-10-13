@@ -1,6 +1,6 @@
 import fluid.view
 
-x = @doc("x") 1
-y = @doc("y") 2
+x: int = @doc("x") 1
+y: int = @doc("y") 2
 
 @doc(f"""Sum is {this}""") x + y

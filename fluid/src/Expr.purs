@@ -32,6 +32,7 @@ data Expr
    | Tuple (List Expr)
    | Matrix Expr (Var × Var) Expr
    | Lambda Def
+   | Type T.Type
    | Attribute Expr Var -- attribute x of a dataclass instance
    | Subscript Expr Expr
    | ModMember Name Var -- member x of module q; only arises during desugaring
@@ -103,6 +104,7 @@ instance FV Expr where
    fv (Tuple es) = unions (fv <$> es)
    fv (Matrix e1 _ e2) = fv e1 ∪ fv e2
    fv (Lambda d) = fv d
+   fv (Type _) = empty
    fv (Attribute e _) = fv e
    fv (Subscript e x) = fv e ∪ fv x
    fv (ModMember _ _) = empty

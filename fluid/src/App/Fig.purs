@@ -4,13 +4,13 @@ import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState, SelStates, Selection, SelectionType(..), Selector, 𝕊, pairSel, primary, primaryOrSecondary, selState, selStates, projSel, to𝔹, to𝕊)
-import App.Util.Selector (constrArg, envVal, sel𝔹, ViewSetter)
+import App.Util.Selector (objArg, envVal, sel𝔹, ViewSetter)
 import App.View (viewWithDoc)
 import App.View.ViewWithDoc (drawView)
 import App.View.Util (Direction(..), Fig, Options, HTMLId, QueryResult, View)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
-import DataType (class HasClasses, fieldIndex)
+import DataType (class HasClasses)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
@@ -135,8 +135,8 @@ drawFig divId fig = do
          (selectIntermediate p >>> redraw)
    where
    { v, ρ, ι } = selectionResult fig
-   arg = constrArg fig.fieldIndex
-   options = { fieldIndex: fig.fieldIndex, rowFilter: fig.spec.rowFilter }
+   arg = objArg
+   options = { rowFilter: fig.spec.rowFilter }
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
    prefix = divId <> "-" <> str.intermediate
 
@@ -238,7 +238,6 @@ loadFig options@{ inputs, linking, query, ignoreInputs } fluidSrc = do
       , out_view: Nothing
       , intermediate_views: Map.empty
       , inertι: ιs <#> \p -> (&&) <$> val inertUnmasked.bwd p <*> val inertUnmasked.fwd p
-      , fieldIndex: fieldIndex config.classes
       }
 
 codeMirrorDiv :: Endo String

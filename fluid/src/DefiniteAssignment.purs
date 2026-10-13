@@ -3,14 +3,13 @@ module DefiniteAssignment where
 import Prelude
 
 import Bind (Name, Var, dottedName)
-import Control.Monad.Error.Class (throwError)
+import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Data.List.NonEmpty (unsnoc)
 import Data.List.NonEmpty as NEL
 import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Types (Type) as T
-import Util (MayFail)
 import Util.Map (intersectionWith, lookup, unionWith)
 import Util.Set ((∪))
 
@@ -58,7 +57,7 @@ mergeRes Returns r = r
 mergeRes r Returns = r
 mergeRes (Assigns cxt) (Assigns cxt') = Assigns (cxt `merge` cxt')
 
-classOf :: Cxt -> Name -> MayFail Name
+classOf :: forall m. MonadThrow String m => Cxt -> Name -> m Name
 classOf cxt c = case resolveName cxt c of
    Just (Type c') -> pure c'
    _ -> throwError $ "Unknown dataclass: " <> dottedName c

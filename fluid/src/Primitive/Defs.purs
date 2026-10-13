@@ -4,7 +4,9 @@ import Prelude hiding (absurd, apply, div, mod, top)
 
 import Bind (Bind, Name, Var, dottedName, qual)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Argonaut.Core (Json, caseJson)
+import Control.Alt ((<|>))
+import Data.Argonaut.Core (Json, caseJson, isNull, stringify, toArray, toBoolean, toObject, toString)
+import Data.Argonaut.Core (toNumber) as J
 import Data.Argonaut.Decode (parseJson)
 import Data.Array as Array
 import Data.Either (Either(..))
@@ -26,9 +28,10 @@ import Data.String (Pattern(..))
 import Data.String as String
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
-import Data.Traversable (for)
+import Data.Traversable (for, traverse)
+import Data.Lazy (defer, force)
 import Data.Tuple (fst, snd)
-import DataType (ClassTable, cRange)
+import DataType (ClassTable, askClasses, cMatrix, cRange, fields)
 import DefiniteAssignment (Entry(..)) as Entry
 import DefiniteAssignment (Cxt)
 import Dict (fromFoldable) as D
@@ -40,10 +43,12 @@ import DepGraph (zeros)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, ctrlWeight)
 import Literal (Literal(..))
 import Primitive (int, intOrNumber, number, string, typeMismatch, unary, union1)
-import Util (MayFail, type (+), type (×), definitely', error, orElse, singleton, throw, (×))
+import Util (MayFail, type (+), type (×), definitely', orElse, orThrow, singleton, throw, whenever, (×))
 import ModuleGraph (ModuleName, builtins, dataclasses, math, sys, typing)
-import Types (Primitive(..), Type(..)) as T
-import Util.Map (constMap, keys, lookup, maplet, unionWith_never, (\\))
+import Foreign.Object (keys, lookup) as O
+import Pretty (prettyP)
+import Types (Primitive(..), Type(..), baseType) as T
+import Util.Map (constMap, keys, lookup, unionWith_never, (\\))
 import Util.Map as Dict
 import Util.Map as Map
 import Val (BaseVal(..), DepOp, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), GVal, MatrixRep(..), Val(..), construct, deliver, dictEntries, dictEntry, elementCount, fromRel, gval, matrixPut, pureRel, root, via)
@@ -53,14 +58,17 @@ extern (ForeignOp (id × φ)) =
    id × Val bot (Fun (Prim (ForeignOp (id × φ))))
 
 predefinedClasses :: ClassTable
-predefinedClasses = maplet cRange { typeParams: Nil, fields: ("start" × int) : ("stop" × int) : Nil, base: Nothing }
+predefinedClasses = M.fromFoldable
+   [ cRange × { typeParams: Nil, fields: ("start" × int) : ("stop" × int) : Nil, base: Nothing }
+   , cMatrix × { typeParams: "T" : Nil, fields: Nil, base: Nothing }
+   ]
    where
    int = T.PrimitiveTy T.Int
 
 predefined :: Map ModuleName (Cxt × Raw Env)
 predefined = M.fromFoldable
-   [ predefinedModule builtins ("None" : "object" : "bool" : "int" : "float" : "str" : "list" : "dict" : "tuple" : Nil)
-        [ cRange ]
+   [ predefinedModule builtins ("None" : "object" : "bool" : "int" : "float" : "str" : "list" : "dict" : "tuple" : "type" : Nil)
+        [ cRange, cMatrix ]
         [ extern print_
         , extern len
         -- Fluid-only members, without spec counterpart
@@ -107,7 +115,7 @@ predefined = M.fromFoldable
    predefinedModule q names classes members = q × (cxt × wrap (ρ `unionWith_never` ρ_classes `unionWith_never` ρ_names))
       where
       ρ = D.fromFoldable (Array.cons ("__name__" × Val bot (Lit (Str (dottedName q)))) members)
-      ρ_classes = D.fromFoldable (classes <#> \c -> last c × Val bot (Fun (Type c)))
+      ρ_classes = D.fromFoldable (classes <#> \c -> last c × Val bot (Fun (Type (T.ClassTy c Nil))))
       ρ_names = D.fromFoldable (names <#> \x -> x × Val bot (Opaque (qual q x)))
       cxt = M.unions
          [ constMap Entry.PredefName (Set.fromFoldable names)
@@ -120,7 +128,9 @@ len =
    ForeignOp ("len" × ForeignOp' { arity: 1, depOp: pureRel depRel })
    where
    depRel :: forall a. List (Val a) -> MayFail (Val a)
-   depRel (v@(Val α u) : Nil) = maybe (Left (typeMismatch u "Sized")) (\n -> Right (Val α (Lit (Int n)))) (elementCount v)
+   depRel (v@(Val α u) : Nil) = case elementCount v of
+      Just n -> Right (Val α (Lit (Int n)))
+      Nothing -> Left (typeMismatch u "Sized")
    depRel _ = Left "Single argument expected"
 
 exit :: ForeignOp
@@ -142,13 +152,15 @@ print_ =
 
 loadJson :: ForeignOp
 loadJson =
-   ForeignOp ("load_json" × ForeignOp' { arity: 1, depOp })
+   ForeignOp ("load_json" × ForeignOp' { arity: 2, depOp })
    where
    depOp :: DepOp
-   depOp ctrl vs@({ val: Val _ (Lit (Str path)) } : Nil) = do
+   depOp ctrl vs@({ val: Val _ (Fun (Type τ)) } : { val: Val _ (Lit (Str path)) } : Nil) = do
+      classes <- askClasses
       json <- loadJsonFile path
-      fromRel (\us -> jsonVal (ctrlWeight * foldl add zero (root <$> us)) json) ctrl vs
-   depOp _ _ = throw "String expected"
+      v <- orThrow (jsonVal classes τ json)
+      fromRel (\us -> ctrlWeight * foldl add zero (root <$> us) <$ v) ctrl vs
+   depOp _ _ = throw "Type and string expected"
 
 loadJsonFile :: forall m. MonadError Error m => MonadAff m => LoadFile m => String -> m Json
 loadJsonFile path = do
@@ -157,18 +169,42 @@ loadJsonFile path = do
       Left err -> throw ("Failed to parse JSON: " <> show err)
       Right json -> pure json
 
--- Weight α at every position.
-jsonVal :: forall a. a -> Json -> Val a
-jsonVal α json = caseJson
-   (\_ -> error "Null JSON value cannot be converted to Val")
-   (Bool >>> lit)
-   (\n -> lit (maybe (Float n) Int (Int.fromNumber n)))
-   (Str >>> lit)
-   (map (jsonVal α) >>> List >>> Val α)
-   (map (\x -> α × jsonVal α x) >>> wrap >>> DictRep >>> Dictionary >>> Val α)
-   json
+jsonVal :: ClassTable -> T.Type -> Json -> MayFail (Raw Val)
+jsonVal classes τ json = case τ of
+   T.ListTy σ -> val <<< List <$> (traverse (jsonVal classes σ) =<< expect "array" (toArray json))
+   T.TupleTy σs -> do
+      elems <- expect ("array of length " <> show (L.length σs))
+         (toArray json >>= \js -> whenever (Array.length js == L.length σs) js)
+      val <<< Tuple <$> traverse (\(σ × j) -> jsonVal classes σ j) (Array.zip (Array.fromFoldable σs) elems)
+   T.DictTy σ -> val <<< dictionary <$> (traverse (jsonVal classes σ) =<< expect "object" (toObject json))
+   T.ClassTy c _ -> do
+      obj <- expect "object" (toObject json)
+      let xσs = fields classes c
+      when (Set.fromFoldable (O.keys obj) /= Set.fromFoldable (fst <$> xσs))
+         $ Left ("Expected fields of " <> last c <> ": " <> show (fst <$> xσs) <> "; got " <> show (O.keys obj))
+      val <<< Obj c <$> traverse (\(x × σ) -> (x × _) <$> jsonVal classes σ (definitely' (O.lookup x obj))) xσs
+   T.PrimitiveTy T.Int -> val <<< Lit <<< Int <$> expect "integer" (J.toNumber json >>= Int.fromNumber)
+   T.PrimitiveTy T.Float -> val <<< Lit <<< Float <$> expect "number" (J.toNumber json)
+   T.PrimitiveTy T.Str -> val <<< Lit <<< Str <$> expect "string" (toString json)
+   T.PrimitiveTy T.Bool -> val <<< Lit <<< Bool <$> expect "boolean" (toBoolean json)
+   T.PrimitiveTy T.None -> val (Lit None) <$ expect "null" (whenever (isNull json) unit)
+   T.UnionTy σ σ' -> jsonVal classes σ json <|> jsonVal classes σ' json
+   T.LitTy ℓ -> jsonVal classes (T.baseType (T.LitTy ℓ)) json
+   _ -> caseJson
+      (\_ -> expect "value" Nothing)
+      (pure <<< val <<< Lit <<< Bool)
+      (\n -> pure (val (Lit (maybe (Float n) Int (Int.fromNumber n)))))
+      (pure <<< val <<< Lit <<< Str)
+      (traverse (jsonVal classes τ) >>> map (val <<< List))
+      (traverse (jsonVal classes τ) >>> map (val <<< dictionary))
+      json
    where
-   lit = Lit >>> Val α
+   val = Val unit
+
+   expect :: forall a. String -> Maybe a -> MayFail a
+   expect what = maybe (Left ("Expected " <> what <> " at " <> prettyP τ <> ", got " <> stringify json)) pure
+
+   dictionary = map (unit × _) >>> wrap >>> DictRep >>> Dictionary
 
 dims :: ForeignOp
 dims =
@@ -307,11 +343,11 @@ entryValue k d = { val: snd (dictEntry k d.val), inEdges: via (dictEntry k >>> s
 dictFrom :: forall s. Semiring s => List (GVal s) -> List (String × GVal s) -> GVal s
 dictFrom ds kvs =
    { val: Val unit (Dictionary (DictRep (D.fromFoldable (kvs <#> \(k × v) -> k × (unit × v.val)))))
-   , inEdges: L.concat (ds <#> via \x -> Val (root x) (Dictionary (DictRep (Dict.mapWithKey (\k (_ × zu) -> fst (dictEntry k x) × zu) zd))))
-        <> L.concat (kvs <#> \(k × v) -> via (\y -> dict (Map.insert k (zero × y) zd)) v)
+   , inEdges: L.concat (ds <#> via \x -> Val (root x) (Dictionary (DictRep (Dict.mapWithKey (\k (_ × zu) -> fst (dictEntry k x) × zu) (force zd)))))
+        <> L.concat (kvs <#> \(k × v) -> via (\y -> dict (Map.insert k (zero × y) (force zd))) v)
    }
    where
-   zd = D.fromFoldable (kvs <#> \(k × v) -> k × (zero × zeros v.val))
+   zd = defer \_ -> D.fromFoldable (kvs <#> \(k × v) -> k × (zero × zeros v.val))
    dict = DictRep >>> Dictionary >>> Val zero
 
 quot :: ForeignOp

@@ -1,4 +1,4 @@
-e = @doc("e") { "a": 5, "a" + "b": 6 }
-f = @doc("f") { "ab": 12 }
+e: dict[str, int] = @doc("e") { "a": 5, "a" + "b": 6 }
+f: dict[str, int] = @doc("f") { "ab": 12 }
 
 dict_difference(e, f)

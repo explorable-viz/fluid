@@ -1,2 +1,18 @@
-tableData = load_json("../../dataset/SPM/explainable-table.json")
-likelihoods = load_json("../../dataset/SPM/likelihoods.json")
+from dataclasses import dataclass
+from fluid.stats import Likelihood
+
+@dataclass
+class Projection:
+  scenario: str
+  bestEstNear: float
+  lowNear: float
+  highNear: float
+  bestEstMid: float
+  lowMid: float
+  highMid: float
+  bestEstLate: float
+  lowLate: float
+  highLate: float
+
+tableData: list[Projection] = load_json(list[Projection], "../../dataset/SPM/explainable-table.json")
+likelihoods: list[Likelihood] = load_json(list[Likelihood], "../../dataset/SPM/likelihoods.json")

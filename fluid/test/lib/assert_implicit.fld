@@ -1,4 +1,4 @@
-def f(x):
+def f(x: int) -> int:
    assert x > 0
    return x * 2
 

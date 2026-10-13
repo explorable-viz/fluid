@@ -1,6 +1,6 @@
-d = {}
-e = { "a": 5, "a" + "b": 6 }
-f = { "ab": 12 }
+d: dict[str, int] = {}
+e: dict[str, int] = { "a": 5, "a" + "b": 6 }
+f: dict[str, int] = { "ab": 12 }
 
 {
   "d": d,

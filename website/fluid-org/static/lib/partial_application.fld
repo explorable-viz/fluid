@@ -1,4 +1,6 @@
-def add(x, y):
+from typing import Callable
+
+def add(x: int, y: int) -> int:
   return x + y
-incr = add(1)
+incr: Callable[[int], int] = add(1)
 map(incr, [4, 6, 12, 14])

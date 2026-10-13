@@ -1,4 +1,4 @@
-x = 1
+x: int = 1
 if x < 0:
-   y = "neg"
+   y: str = "neg"
 x

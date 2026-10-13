@@ -10,6 +10,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Data.NonEmpty ((:|))
 import Data.Traversable (class Foldable)
+import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
 import Expr (Pattern(..))
@@ -232,6 +233,7 @@ instance Pretty TypeExpr where
    pretty (TupleTy ψs) = text "tuple" <> brackets (prettyList ψs)
    pretty (DictTy ψ) = text "dict" <> brackets (text "str," <+> pretty ψ)
    pretty (CallableTy ψs ψ) = text "Callable" <> brackets (brackets (prettyList ψs) <> text "," <+> pretty ψ)
+   pretty (TypeTy ψ) = text "type" <> brackets (pretty ψ)
    pretty (LitTy ℓ) = text "Literal" <> brackets (pretty ℓ)
    pretty (NameTy q ψs) = text (dottedName q) <> typeArgs ψs
    pretty (UnionTy ψ ψ') = pretty ψ <+> text "|" <+> pretty ψ'
@@ -242,6 +244,7 @@ instance Pretty T.Type where
    pretty (T.TupleTy τs) = text "tuple" <> brackets (prettyList τs)
    pretty (T.DictTy τ) = text "dict" <> brackets (text "str," <+> pretty τ)
    pretty (T.CallableTy τs τ) = text "Callable" <> brackets (brackets (prettyList τs) <> text "," <+> pretty τ)
+   pretty (T.TypeTy τ) = text "type" <> brackets (pretty τ)
    pretty (T.LitTy ℓ) = text "Literal" <> brackets (pretty ℓ)
    pretty (T.VarTy α) = text α
    pretty (T.ClassTy c τs) = text "~" <> text (dottedName c) <> typeArgs τs
@@ -335,6 +338,7 @@ instance Pretty E.Expr where
    pretty (E.Matrix e1 (i × j) e2) =
       matrix (pretty e1 <+> text "for" <+> pair text i j <+> text "in" <+> pretty e2)
    pretty (E.Lambda o) = text "lambda" <+> pretty o -- really?
+   pretty (E.Type τ) = pretty τ
    pretty (E.Attribute e x) = pretty e <> text "." <> text x
    pretty (E.Subscript e x) = pretty e <> brackets (pretty x)
    pretty (E.ModMember q x) = text (dottedName q) <> text "." <> text x
@@ -417,7 +421,7 @@ instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Dictionary (DictRep svs))
       | isEmpty svs = text "{}"
       | otherwise = record (pretty <$> (toUnfoldable svs))
-   pretty (V.Constr c vs) = prettyConstr (last c) vs
+   pretty (V.Obj c xvs) = prettyConstr (last c) (snd <$> xvs)
    pretty (V.List vs) = brackets (prettyList vs)
    pretty (V.Tuple vs) = tuple (pretty <$> fromFoldable vs)
    pretty (V.Matrix (MatrixRep (vss × _ × _))) = vcommas $ fromFoldable (prettyList <$> vss) -- ???
@@ -430,7 +434,7 @@ instance Highlightable a => Pretty (BaseVal a) where
 instance Highlightable a => Pretty (Fun a) where
    pretty (V.Closure _ _ _) = text "cl"
    pretty (V.Prim phi) = pretty phi
-   pretty (V.Type c) = text (last c)
+   pretty (V.Type τ) = pretty τ
    pretty (V.Partial phi vs) = pretty phi <> parens (prettyList vs)
 
 instance Pretty ForeignOp where

@@ -1,13 +1,15 @@
-def comp(Infty(), Infty()):
+from typing import Callable
+
+def comp(Infty(): InfNum, Infty(): InfNum) -> Ordering:
   return EQ()
-def comp(Infty(), FNum(y)):
+def comp(Infty(): InfNum, FNum(y): InfNum) -> Ordering:
   return GT()
-def comp(FNum(x), Infty()):
+def comp(FNum(x): InfNum, Infty(): InfNum) -> Ordering:
   return LT()
-def comp(FNum(x), FNum(y)):
+def comp(FNum(x): InfNum, FNum(y): InfNum) -> Ordering:
   return compare(x, y)
 
-def fmin(x, y):
+def fmin(x: InfNum, y: InfNum) -> InfNum:
   match comp(x, y):
     case LT():
       return x
@@ -16,20 +18,20 @@ def fmin(x, y):
     case GT():
       return y
 
-minimal = foldl1(fmin)
+minimal: Callable[[list[InfNum]], InfNum] = foldl1(fmin)
 
-def add(Infty(), _):
+def add(Infty(): InfNum, _: InfNum) -> InfNum:
   return Infty()
-def add(FNum(x), Infty()):
+def add(FNum(x): InfNum, Infty(): InfNum) -> InfNum:
   return Infty()
-def add(FNum(x), FNum(y)):
+def add(FNum(x): InfNum, FNum(y): InfNum) -> InfNum:
   return FNum(x + y)
 
-def eq(Infty(), Infty()):
+def eq(Infty(): InfNum, Infty(): InfNum) -> bool:
   return True
-def eq(Infty(), FNum(x)):
+def eq(Infty(): InfNum, FNum(x): InfNum) -> bool:
   return False
-def eq(FNum(x), Infty()):
+def eq(FNum(x): InfNum, Infty(): InfNum) -> bool:
   return False
-def eq(FNum(x), FNum(y)):
+def eq(FNum(x): InfNum, FNum(y): InfNum) -> bool:
   return x == y

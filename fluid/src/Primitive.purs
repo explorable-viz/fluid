@@ -281,9 +281,9 @@ eqOp v@(Val α u) v'@(Val β u') = case u, u' of
    Lit (Int _), Lit (Bool _) -> undefined
    Lit (Float _), Lit (Bool _) -> undefined
    Fun _, Fun _ -> undefined
-   Constr c _, Constr d _ | c == cRange && d == cRange -> eqElems both (elements v) (elements v')
-   Constr c vs, Constr d ws
-      | c == d -> eqElems both vs ws
+   Obj c _, Obj d _ | c == cRange && d == cRange -> eqElems both (elements v) (elements v')
+   Obj c xvs, Obj d yus
+      | c == d -> eqElems both (snd <$> xvs) (snd <$> yus)
       | otherwise -> pure (false × both)
    List _, List _ -> eqElems both (elements v) (elements v')
    Tuple _, Tuple _ -> eqElems both (elements v) (elements v')

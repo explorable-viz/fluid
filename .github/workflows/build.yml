@@ -2,6 +2,7 @@ name: build
 
 on:
   push:
+    branches: [develop, staging, release, 'fluid-*']
     paths-ignore:
     - 'old/**'
     - '**.md'

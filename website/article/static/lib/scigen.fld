@@ -1,71 +1,74 @@
-from util import find_with_key_
+from typing import Callable
+from dataclasses import dataclass
+from util import findWhere
 
-ordinalMap = [
-  { "lastDigit": 1, "suffix": "st" },
-  { "lastDigit": 2, "suffix": "nd" },
-  { "lastDigit": 3, "suffix": "rd" }
-]
+@dataclass
+class Ordinal:
+  lastDigit: int
+  suffix: str
 
-def ordinal(n):
+ordinalMap: list[Ordinal] = [Ordinal(1, "st"), Ordinal(2, "nd"), Ordinal(3, "rd")]
+
+def ordinal(n: int) -> str:
   assert n > 0, "n <= 0 not supported"
   if n < 4:
-    return num_to_str(n) + find_with_key_("lastDigit", n, ordinalMap)["suffix"]
+    return num_to_str(n) + findWhere(lambda o: o.lastDigit == n, ordinalMap).suffix
   if n >= 4 and n <= 20:
     return num_to_str(n) + "th"
   assert False, "n > 20 not supported"
 
-def rankLabel(word, n):
-  prefix = "" if n == 1 else ordinal(n) + "-"
+def rankLabel(word: str, n: int) -> str:
+  prefix: str = "" if n == 1 else ordinal(n) + "-"
   return prefix + word
 
-def trendWord(n1, n2, compareWord):
+def trendWord(n1: float, n2: float, compareWord: Callable[[Ordering], str]) -> str:
   return compareWord(compare(n1, n2))
 
-def growShrink(EQ()):
+def growShrink(EQ(): Ordering) -> str:
   return "unchanging"
-def growShrink(LT()):
+def growShrink(LT(): Ordering) -> str:
   return "shrinking"
-def growShrink(GT()):
+def growShrink(GT(): Ordering) -> str:
   return "growing"
 
-def smallerHigher(EQ()):
+def smallerHigher(EQ(): Ordering) -> str:
   return "equal"
-def smallerHigher(LT()):
+def smallerHigher(LT(): Ordering) -> str:
   return "smaller"
-def smallerHigher(GT()):
+def smallerHigher(GT(): Ordering) -> str:
   return "larger"
 
-def improve(EQ()):
+def improve(EQ(): Ordering) -> str:
   return "does not further improve"
-def improve(LT()):
+def improve(LT(): Ordering) -> str:
   return "does not further improve"
-def improve(GT()):
+def improve(GT(): Ordering) -> str:
   return "further improves"
 
-def improvements(EQ()):
+def improvements(EQ(): Ordering) -> str:
   return "no further improvements"
-def improvements(LT()):
+def improvements(LT(): Ordering) -> str:
   return "no further improvements"
-def improvements(GT()):
+def improvements(GT(): Ordering) -> str:
   return "further improvements"
 
-def shorterLonger(EQ()):
+def shorterLonger(EQ(): Ordering) -> str:
   return "equal"
-def shorterLonger(LT()):
+def shorterLonger(LT(): Ordering) -> str:
   return "shorter"
-def shorterLonger(GT()):
+def shorterLonger(GT(): Ordering) -> str:
   return "longer"
 
-def betterWorse(EQ()):
+def betterWorse(EQ(): Ordering) -> str:
   return "equal"
-def betterWorse(LT()):
+def betterWorse(LT(): Ordering) -> str:
   return "worse"
-def betterWorse(GT()):
+def betterWorse(GT(): Ordering) -> str:
   return "better"
 
-def underOverPerforming(EQ()):
+def underOverPerforming(EQ(): Ordering) -> str:
   return "performing the same as"
-def underOverPerforming(LT()):
+def underOverPerforming(LT(): Ordering) -> str:
   return "performing worse than"
-def underOverPerforming(GT()):
+def underOverPerforming(GT(): Ordering) -> str:
   return "outperforming"

@@ -1,4 +1,4 @@
-def f(t):
+def f(t: tuple[()] | tuple[int] | tuple[int, int, int]) -> int:
   match t:
     case ():
       return 0
@@ -7,5 +7,5 @@ def f(t):
     case (a, b, c):
       return a + b + c
 
-t = (1, 2, 3)
+t: tuple[int, int, int] = (1, 2, 3)
 [f(()), f((4,)), f(t), t[1], t[-1], 2 in t, len(t), (1,) + ("a",), [x + 1 for x in t], (0, 0) == (0, 0)]

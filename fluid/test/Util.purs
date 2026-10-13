@@ -3,8 +3,8 @@ module Test.Util where
 import Prelude hiding (absurd, compare)
 
 import App.Util (SelStates, SelectionType(..), Selector, SetSel, getPersistent, unselected)
-import App.Util.Selector (ConstrArg, constrArg)
-import DataType (class HasClasses, ClassTable, fieldIndex)
+import App.Util.Selector (ObjArg, objArg)
+import DataType (class HasClasses)
 import Data.Array as A
 import Data.Foldable (any, minimum)
 import Data.Map as Map
@@ -74,8 +74,8 @@ data VertexSpec
 
 -- Selection and expected dependence, as given by showDeps: data ⸨ ⸩, control ⟪ ⟫.
 data Query
-   = Bwd VertexSpec (ConstrArg -> Selector Val) String
-   | Fwd VertexSpec (ConstrArg -> Selector Val) String
+   = Bwd VertexSpec (ObjArg -> Selector Val) String
+   | Fwd VertexSpec (ObjArg -> Selector Val) String
 
 type DepSpec = { file :: String, queries :: Array Query }
 
@@ -113,14 +113,13 @@ showDeps { g: { docs }, root } deps = joinWith "\n" (documented <> output)
 
 selection
    :: forall s
-    . ClassTable
-   -> DepGraph Val s
+    . DepGraph Val s
    -> Eval
    -> VertexSpec
-   -> (ConstrArg -> Selector Val)
+   -> (ObjArg -> Selector Val)
    -> Labelling (Set Pos)
-selection classes depGraph eval vertex δv =
-   maplet p (selected (selectOn δv (constrArg (fieldIndex classes)) (valAt eval.g p)))
+selection depGraph eval vertex δv =
+   maplet p (selected (selectOn δv objArg (valAt eval.g p)))
    where
    p = deriv depGraph eval vertex
 
@@ -133,12 +132,12 @@ testDep file query = do
    let
       visibleGraph = materialise eval.g (visible eval)
       deps × expect = case query of
-         Bwd vertex δv expect' -> bwd visibleGraph (selection classes depGraph eval vertex δv) × expect'
-         Fwd vertex δv expect' -> fwd visibleGraph (selection classes depGraph eval vertex δv) × expect'
+         Bwd vertex δv expect' -> bwd visibleGraph (selection depGraph eval vertex δv) × expect'
+         Fwd vertex δv expect' -> fwd visibleGraph (selection depGraph eval vertex δv) × expect'
    withMsg "expect" $ checkPretty expect (showDeps eval deps)
 
 -- Persistent selection made by δv on the output.
-selectOn :: forall a. (ConstrArg -> Selector Val) -> ConstrArg -> Val a -> Val 𝔹
+selectOn :: forall a. (ObjArg -> Selector Val) -> ObjArg -> Val a -> Val 𝔹
 selectOn δv arg v = fst (δv arg (const unselected <$> (map (const top) v :: Val 𝔹))) <#> getPersistent
 
 -- Result at this position, printed with its persistent selections, must match; leave it unselected.

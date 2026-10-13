@@ -1,7 +1,9 @@
-xs = @doc("xs") [2, 3, 4]
-ys = @doc("ys") [3, 4, 5, 6]
+from typing import Callable
 
-def zip_with(op, xs, ys):
+xs: list[int] = @doc("xs") [2, 3, 4]
+ys: list[int] = @doc("ys") [3, 4, 5, 6]
+
+def zip_with[A, B, C](op: Callable[[A, B], C], xs: list[A], ys: list[B]) -> list[C]:
   return [op(xs[i], ys[i]) for i in range(0, min(len(xs), len(ys)))]
 
 zip_with(lambda x, y: x ** 2 + y ** 2, xs, ys)

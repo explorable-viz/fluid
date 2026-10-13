@@ -3,15 +3,15 @@ module App.View.TableView where
 import Prelude hiding (absurd)
 
 import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor, selectionEventData')
-import App.Util.Selector (ConstrArg, ViewSelSetter, dictVal, listElement)
+import App.Util.Selector (ObjArg, ViewSelSetter, dictVal, listElement)
 import App.View.Util (class Viewable, Filter(..), Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
-import Bind ((↦))
+import Bind (Name, (↦))
 import Data.Array (any, elem, filter, partition, sort, transpose, (..))
 import Data.Array.NonEmpty (head)
 import Data.FoldableWithIndex (forWithIndex_)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
 import Data.Traversable (for)
@@ -29,6 +29,7 @@ type Record' = Array (Val (SelStates 𝕊)) -- somewhat anomalous, as elsewhere 
 newtype TableView = TableView
    { title :: String
    , rowFilter :: Filter
+   , className :: Maybe Name -- rows are instances of this class, or dictionaries
    , colNames :: Array String
    , rows :: Array Record' -- non-empty?
    }
@@ -77,8 +78,8 @@ highlightedBorder _ = "1px solid blue"
 instance Viewable TableView Unit where
    isLeaf = const false
 
-   setSelection :: ConstrArg -> Unit -> TableView -> Select -> D3.Selection -> Effect Unit
-   setSelection _ _ (TableView { title, colNames, rows, rowFilter }) redraw rootElement = do
+   setSelection :: ObjArg -> Unit -> TableView -> Select -> D3.Selection -> Effect Unit
+   setSelection arg _ (TableView { title, className, colNames, rows, rowFilter }) redraw rootElement = do
       cells <- rootElement # selectAll ".table-cell"
       foreachE cells \cell -> do
          { i, j, colName } :: CellIndex <- datum cell
@@ -188,7 +189,7 @@ instance Viewable TableView Unit where
          | otherwise = isTransient <<< (\(Val α _) -> α) $ rows ! i ! j
 
       tableViewSelSetter :: ViewSelSetter CellIndex
-      tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
+      tableViewSelSetter { i, colName } = listElement i <<< maybe (dictVal colName) (\c -> arg c colName) className
 
    createElement :: Unit -> TableView -> D3.Selection -> Effect D3.Selection
    createElement _ (TableView { colNames, rowFilter, rows }) parent = do

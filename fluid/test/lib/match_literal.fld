@@ -1,4 +1,4 @@
-def describe(v):
+def describe(v: object) -> str:
    match v:
       case 0:
          return "zero"

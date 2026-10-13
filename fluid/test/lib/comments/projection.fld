@@ -1,5 +1,5 @@
 import fluid.view
 
-x = { "y": 1 }
+x: dict[str, int] = { "y": 1 }
 
 @doc(f"""Doc comment on a projection""") x["y"]

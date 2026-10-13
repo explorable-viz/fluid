@@ -1,2 +1,2 @@
 from agg.item import v
-w = v + 1
+w: int = v + 1

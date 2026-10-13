@@ -1,1 +1,10 @@
-ssp126 = load_json("dataset/ssp126_2081_2100.json")
+from dataclasses import dataclass
+
+@dataclass
+class Prediction:
+  model: str
+  world: float
+  world_historical: float
+  changed: float
+
+ssp126: list[Prediction] = load_json(list[Prediction], "dataset/ssp126_2081_2100.json")

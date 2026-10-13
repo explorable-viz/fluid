@@ -3,7 +3,7 @@ module Link where
 import Prelude hiding (join)
 
 import App.Util (SelStates, Selectable, 𝕊, classes, selectionEventData')
-import App.Util.Selector (ConstrArg, ViewSelSetter)
+import App.Util.Selector (ObjArg, ViewSelSetter)
 import App.View.Text (class Textual, textAttrs)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
@@ -32,14 +32,14 @@ instance Viewable Link Unit where
       rootElement <- parent # create D3.Text [ classes [ "link" ] ]
       rootElement # setText (linkContents link) >>= setDatum link
 
-   setSelection :: ConstrArg -> Unit -> Link -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ObjArg -> Unit -> Link -> Select -> D3.Selection -> Effect Unit
    setSelection _ _ link redraw rootElement = do
       rootElement # setStyles (textAttrs link) >>= registerMouseListeners (redraw <<< uncurry selLink <<< selectionEventData')
       where
       selLink :: ViewSelSetter Link
       selLink _ δv = unsafePartial $ case _ of
-         (Val α (Constr c (v1 : v2 : Nil))) | c == cLink ->
-            first (\v1' -> Val α (Constr c (v1' : v2 : Nil))) (δv v1)
+         (Val α (Obj c ((x1 × v1) : xv2 : Nil))) | c == cLink ->
+            first (\v1' -> Val α (Obj c ((x1 × v1') : xv2 : Nil))) (δv v1)
 
 instance Textual Link where
    getText (Link v (s × _)) = s × foldr join bot v

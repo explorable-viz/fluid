@@ -208,17 +208,7 @@ dep_cases =
      , queries:
           [ Bwd Output (\_ -> list select')
                """
-               ⟪[⟪{"country": "China", ⟪"energyType"⟫: ⟪"Bio"⟫, "output": 6.2, "year": 2013}⟫, ⟪{
-                 "country": "China",
-                 ⟪"energyType"⟫: ⟪"Hydro"⟫,
-                 "output": 260,
-                 "year": 2013
-               }⟫, ⟪{
-                 "country": "China",
-                 ⟪"energyType"⟫: ⟪"Solar"⟫,
-                 "output": 19.9,
-                 "year": 2013
-               }⟫, ⟪{"country": "China", ⟪"energyType"⟫: ⟪"Wind"⟫, "output": 91, "year": 2013}⟫]⟫
+               ⟪[⟪Row(2013, "China", ⟪"Bio"⟫, 6.2)⟫, ⟪Row(2013, "China", ⟪"Hydro"⟫, 260)⟫, ⟪Row(2013, "China", ⟪"Solar"⟫, 19.9)⟫, ⟪Row(2013, "China", ⟪"Wind"⟫, 91)⟫]⟫
                ⟪[⟪"Bio"⟫, ⟪"Hydro"⟫, ⟪"Solar"⟫, ⟪"Wind"⟫]⟫
                ⸨[6.2, 260, 19.9, 91]⸩
                """
@@ -248,13 +238,7 @@ dep_cases =
      , queries:
           [ Bwd Output (\_ -> list select')
                """
-               ⟪[⟪{⟪"energyType"⟫: ⟪"Bio"⟫, "output": 6.2}⟫, ⟪{
-                 ⟪"energyType"⟫: ⟪"Hydro"⟫,
-                 "output": 260
-               }⟫, ⟪{⟪"energyType"⟫: ⟪"Solar"⟫, "output": 19.9}⟫, ⟪{
-                 ⟪"energyType"⟫: ⟪"Wind"⟫,
-                 "output": 91
-               }⟫, ⟪{⟪"energyType"⟫: ⟪"Geo"⟫, "output": 14.4}⟫]⟫
+               ⟪[⟪Row(⟪"Bio"⟫, 6.2)⟫, ⟪Row(⟪"Hydro"⟫, 260)⟫, ⟪Row(⟪"Solar"⟫, 19.9)⟫, ⟪Row(⟪"Wind"⟫, 91)⟫, ⟪Row(⟪"Geo"⟫, 14.4)⟫]⟫
                ⟪[⟪"Hydro"⟫, ⟪"Solar"⟫, ⟪"Geo"⟫]⟫
                ⸨[88, 6, 4]⸩
                """
@@ -264,13 +248,7 @@ dep_cases =
      , queries:
           [ Bwd Output (\_ -> listElement 1 select)
                """
-               ⟪[⟪{⟪"energyType"⟫: ⟪"Bio"⟫, "output": 6.2}⟫, ⟪{
-                 ⟪"energyType"⟫: ⟪"Hydro"⟫,
-                 ⟪"output"⟫: ⸨260⸩
-               }⟫, ⟪{⟪"energyType"⟫: ⟪"Solar"⟫, ⟪"output"⟫: ⸨19.9⸩}⟫, ⟪{
-                 ⟪"energyType"⟫: ⟪"Wind"⟫,
-                 "output": 91
-               }⟫, ⟪{⟪"energyType"⟫: ⟪"Geo"⟫, ⟪"output"⟫: ⸨14.4⸩}⟫]⟫
+               ⟪[⟪Row(⟪"Bio"⟫, 6.2)⟫, ⟪Row(⟪"Hydro"⟫, ⸨260⸩)⟫, ⟪Row(⟪"Solar"⟫, ⸨19.9⸩)⟫, ⟪Row(⟪"Wind"⟫, 91)⟫, ⟪Row(⟪"Geo"⟫, ⸨14.4⸩)⟫]⟫
                ⟪[⟪"Hydro"⟫, ⟪"Solar"⟫, ⟪"Geo"⟫]⟫
                [88, ⸨6⸩, 4]
                """

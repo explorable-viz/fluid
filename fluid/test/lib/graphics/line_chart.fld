@@ -1,12 +1,12 @@
 from fluid.graphics import colours1, line_chart, caption
 from dataset.renewables_restricted import data
 
-year1 = data[0]
+year1: tuple[int, list[tuple[str, list[tuple[str, float]]]]] = data[0]
 
-def addTotal(kvs):
-  return [("Total", sum(map(snd, kvs)))] + kvs
+def addTotal(kvs: list[tuple[str, float]]) -> list[tuple[str, float]]:
+  return [("Total", fsum(map(snd, kvs)))] + kvs
 
-def countryData(country):
-  return map(second(compose(addTotal, lookup(country))), data)
+def countryData(country: str) -> list[tuple[int, list[tuple[str, float]]]]:
+  return map(second(compose(addTotal, lookup_str(country))), data)
 
 (lambda country: caption(country, line_chart(True, ["black"] + colours1, fst(year1), countryData(country))))("China")

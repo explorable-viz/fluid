@@ -1,4 +1,4 @@
-def g(xs):
+def g(xs: list[int]) -> int:
    match xs:
       case []:
          return 1

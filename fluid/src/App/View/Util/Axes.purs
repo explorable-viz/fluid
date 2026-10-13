@@ -29,10 +29,10 @@ derive instance Eq Orientation
 orientation :: forall a. ToFrom Orientation a
 orientation =
    { pack: case _ of
-        Default -> Constr cDefault Nil
-        Rotated -> Constr cRotated Nil
+        Default -> Obj cDefault Nil
+        Rotated -> Obj cRotated Nil
    , unpack: case _ of
-        Constr c Nil
+        Obj c Nil
            | c == cDefault -> Right Default
            | c == cRotated -> Right Rotated
         v -> Left (typeMismatch v "Orientation")

@@ -1,1 +1,9 @@
-methane = load_json("../dataset/methane_emissions.json")
+from dataclasses import dataclass
+
+@dataclass
+class Emission:
+  year: int
+  type: str
+  emissions: float
+
+methane: list[Emission] = load_json(list[Emission], "../dataset/methane_emissions.json")

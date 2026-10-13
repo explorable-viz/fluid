@@ -43,15 +43,28 @@ yarn build && yarn preview
 
 ## Testing
 
+Before pushing, `yarn workspace @fluid-org/fluid build-strict` (fails on unused imports) and `yarn workspace @fluid-org/fluid tidy` (formats in place); the pre-push hook runs both.
+
 ### PureScript unit tests
 
 ```bash
-yarn workspace @fluid-org/fluid test
+yarn workspace @fluid-org/fluid build-test
 ```
+
+Runs `tests` in `fluid/test/Test.purs`, by default `allTests`. For a subset, set `tests = scratchpad` and select cases in `scratchpad` (`filterSuite [ "lambda.fld" ] misc_cases suite`; `illFormedSuite` for ill-formed cases); revert to `allTests` afterwards. Do not run `.fld` files through `fluid.mjs` by hand: the harness sets up paths and the prelude, and reports errors in the form the tests assert against.
+
+### PurePy compliance
+
+```bash
+yarn workspace @fluid-org/fluid bundle-fluid
+yarn workspace @fluid-org/fluid spec-compliance
+```
+
+Runs the PurePy conformance suite, at the revision in `fluid/purepy-version`, with Fluid as checker. Gaps, corpus programs Fluid gets wrong, are listed in `fluid/test/spec-gaps.txt`, and extensions, corpus programs Fluid accepts by design ahead of or beyond the spec, in `fluid/test/spec-extensions.txt` under comment lines naming the PurePy issue; `spec-compliance --update` rewrites the gaps list and the badge in `fluid/test/spec-compliance.json`.
 
 ### Website tests (Puppeteer)
 
-Tests all SvelteKit websites with Puppeteer (Chrome and Firefox):
+Tests all SvelteKit websites with Puppeteer (Chrome and Firefox). Slow (a few minutes per website), so run after changes to parsing, desugaring, evaluation or well-formedness, before pushing a completed piece of work, or when in doubt about wider impact:
 
 ```bash
 ./script/test-website-all.sh
@@ -104,4 +117,4 @@ Windows users:
 
 ## Workflow
 
-See [CLAUDE.md](CLAUDE.md) for the development workflow, including branching strategy, issue lifecycle, and milestone management.
+Branching strategy, issue lifecycle, milestone management and deployment: [release-cycle skill](.claude/skills/release-cycle/SKILL.md). Commit, issue and pull request conventions: `conventions:github` skill ([fluid-org/claude-plugins](https://github.com/fluid-org/claude-plugins)).

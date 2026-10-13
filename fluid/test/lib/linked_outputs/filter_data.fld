@@ -1,4 +1,4 @@
-xs = [8, 4, 7, 3]
-n = 5
-ys = [6, 1, 9]
-m = 2
+xs: list[int] = [8, 4, 7, 3]
+n: int = 5
+ys: list[int] = [6, 1, 9]
+m: int = 2

@@ -1,2 +1,2 @@
-y = 2 if True else 5
+y: int = 2 if True else 5
 y + 1

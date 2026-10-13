@@ -3,7 +3,7 @@ module App.View.ViewWithDoc (ViewWithDoc, SelectWithDoc, drawView) where
 import Prelude
 
 import App.Util (SelStates, SetSel)
-import App.Util.Selector (ConstrArg, docOf, valOf)
+import App.Util.Selector (ObjArg, docOf, valOf)
 import App.View.Paragraph (Paragraph)
 import App.View.Util (HTMLId, View)
 import App.View.Util as U
@@ -30,7 +30,7 @@ create { doc: Just doc, view } parent = do
 create { doc: Nothing, view } parent = U.createElement unit view parent
 
 -- Selections on the value reach its component, those on the doc its doc.
-setSelection :: ConstrArg -> ViewWithDoc -> SelectWithDoc -> D3.Selection -> Effect Unit
+setSelection :: ObjArg -> ViewWithDoc -> SelectWithDoc -> D3.Selection -> Effect Unit
 setSelection arg { doc: Just doc, view } select rootElement = do
    viewElem <- rootElement # D3.select (D3.nthChildOf D3.scope 1)
    U.setSelection arg unit view (valOf >>> select) viewElem
@@ -39,7 +39,7 @@ setSelection arg { doc: Just doc, view } select rootElement = do
 setSelection arg { doc: Nothing, view } select rootElement =
    U.setSelection arg unit view (valOf >>> select) rootElement
 
-drawView :: ConstrArg -> { divId :: HTMLId, suffix :: String, view :: ViewWithDoc } -> SelectWithDoc -> Effect Unit
+drawView :: ObjArg -> { divId :: HTMLId, suffix :: String, view :: ViewWithDoc } -> SelectWithDoc -> Effect Unit
 drawView arg { divId, suffix, view } select = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)

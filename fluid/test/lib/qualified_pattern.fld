@@ -1,4 +1,4 @@
 import dataclass_lib
-def get_sum(dataclass_lib.Coord(x, y)):
+def get_sum(dataclass_lib.Coord(x, y): dataclass_lib.Coord) -> int:
   return x + y
 get_sum(dataclass_lib.Coord(3, 4))

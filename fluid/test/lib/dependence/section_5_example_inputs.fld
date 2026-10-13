@@ -1,9 +1,16 @@
-data = @doc("data") [
-  { "energyType": "Bio", "output": 6.2 },
-  { "energyType": "Hydro", "output": 260 },
-  { "energyType": "Solar", "output": 19.9 },
-  { "energyType": "Wind", "output": 91 },
-  { "energyType": "Geo", "output": 14.4 }
+from dataclasses import dataclass
+
+@dataclass
+class Row:
+  energyType: str
+  output: float
+
+data: list[Row] = @doc("data") [
+  Row("Bio", 6.2),
+  Row("Hydro", 260),
+  Row("Solar", 19.9),
+  Row("Wind", 91),
+  Row("Geo", 14.4)
 ]
 
-types = @doc("types") ["Hydro", "Solar", "Geo"]
+types: list[str] = @doc("types") ["Hydro", "Solar", "Geo"]

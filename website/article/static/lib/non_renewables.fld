@@ -1,18 +1,18 @@
-from energy_data import nonRenewables, renewables
+from energy_data import NonRenewable, nonRenewables, renewables
 
 from fluid.view import AxisLabels, BarChart, Dimensions, MultiView, Point, ScatterPlot, Segment, StackedBar, TickLabels, Default
 
-countries = ["BRA", "EGY", "IND", "JPN"]
+countries: list[str] = ["BRA", "EGY", "IND", "JPN"]
 
-def totalFor(year, country):
-  [row] = [row for row in nonRenewables if row["year"] == year if row["country"] == country]
-  return row["nuclearOut"] + row["gasOut"] + row["coalOut"] + row["petrolOut"]
+def totalFor(year: int, country: str) -> float:
+  [row] = [row for row in nonRenewables if row.year == year if row.country == country]
+  return row.nuclearOut + row.gasOut + row.coalOut + row.petrolOut
 
-def stack(year):
+def stack(year: int) -> list[Segment]:
   return [Segment(y=country, z=totalFor(year, country)) for country in countries]
 
-def yearData(year):
-  return [row for row in nonRenewables if row["year"] == year if row["country"] in countries]
+def yearData(year: int) -> list[NonRenewable]:
+  return [row for row in nonRenewables if row.year == year if row.country in countries]
 
 MultiView([
   BarChart(
@@ -25,8 +25,8 @@ MultiView([
   ScatterPlot(
     caption="",
     points=[Point(
-      x=sum([row["nuclearOut"] for row in yearData(year)]),
-      y=sum([row["nuclearCap"] for row in yearData(year)])
+      x=fsum([row.nuclearOut for row in yearData(year)]),
+      y=fsum([row.nuclearCap for row in yearData(year)])
     ) for year in range(2014, 2019)],
     labels=AxisLabels(x="Nuclear capacity", y="Nuclear output")
   )

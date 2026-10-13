@@ -8,14 +8,14 @@ import Data.List.NonEmpty (last)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (FieldIndex, FieldName, cSegment, cStackedBar, f_segments, f_z)
+import DataType (FieldName, cSegment, cStackedBar, f_segments, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Data.Maybe (Maybe(..))
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, error, unsafeUpdateAt, (!), (×))
 import Util.Map (get, insert, update)
 import Util.Set ((∈))
-import Val (BaseVal(..), DictRep(..), EnvWithDocs(..), MatrixRep(..), Val(..), ValWithDoc(..), matrixGet, matrixPut)
+import Val (BaseVal(..), DictRep(..), EnvWithDocs(..), MatrixRep(..), Val(..), ValWithDoc(..), attr, matrixGet, matrixPut)
 
 type SelSetter f g = Setter (f (SelStates 𝔹)) (g (SelStates 𝔹))
 
@@ -45,13 +45,13 @@ persist δα = \v -> (over SelStates ((<$>) mapδ) v) × Persistent
    mapδ :: Endo (Selection a)
    mapδ s = s { persistent = (T.fst <<< δα) s.persistent }
 
-type ConstrArg = Name -> FieldName -> SelSetter Val Val
+type ObjArg = Name -> FieldName -> SelSetter Val Val
 
-barSegment :: ConstrArg -> Int -> Int -> SelSetter Val Val
+barSegment :: ObjArg -> Int -> Int -> SelSetter Val Val
 barSegment arg i j =
    nthSegment arg j >>> arg cStackedBar f_segments >>> listElement i
 
-nthSegment :: ConstrArg -> Int -> SelSetter Val Val
+nthSegment :: ObjArg -> Int -> SelSetter Val Val
 nthSegment arg n = arg cSegment f_z >>> listElement n
 
 matrixElement :: Int -> Int -> SelSetter Val Val
@@ -74,16 +74,14 @@ eachElement δv = unsafePartial $ case _ of
 none :: forall a. SetSel a
 none = (_ × Persistent)
 
-constrArg :: FieldIndex -> ConstrArg
-constrArg fieldIndex c f δv = unsafePartial $ case _ of
-   Val α (Constr c' us) | last c == last c' ->
-      first (\u' -> Val α (Constr c' $ unsafeUpdateAt n u' us)) (δv (us ! n))
-   where
-   n = fieldIndex c f
+field :: FieldName -> SelSetter Val Val
+field f δv = unsafePartial $ case _ of
+   v@(Val α (Obj c xus)) ->
+      first (\u' -> Val α (Obj c (xus <#> \(x × u) -> x × if x == f then u' else u))) (δv (attr f v))
 
-constr :: Var -> Setter (Val (SelStates 𝔹)) 𝔹
-constr c δα = unsafePartial $ case _ of
-   Val α (Constr c' vs) | c == last c' -> first (\α' -> Val α' (Constr c' vs)) (persist δα α)
+objArg :: ObjArg
+objArg c f δv = unsafePartial $ case _ of
+   v@(Val _ (Obj c' _)) | last c == last c' -> field f δv v
 
 dict :: Setter (Val (SelStates 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of

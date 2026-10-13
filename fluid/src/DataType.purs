@@ -21,17 +21,15 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (fst)
 import Effect.Exception (Error)
 import Types (Primitive(..), Type(..), baseType, subst)
-import Util (type (×), definitely', throw, (×))
+import Util (type (×), throw, (×))
 import Util.Map (get, lookup)
 
 type FieldName = String
 type Ctr = String -- newtype would require more general Dict keys
 
--- Class table entry (ᾱ; x̄:τ̄; D[σ̄]) of PurePy 0.18, named for the 0.19 entry, the class definition under its context,
--- which supersedes it.
 type ClassDef =
    { typeParams :: List Var
-   , fields :: List (Var × Type) -- own fields, distinct
+   , fields :: List (Var × Type) -- declared fields, distinct
    , base :: Maybe (Name × List Type)
    }
 
@@ -44,6 +42,9 @@ fields classes c = case def.base of
    where
    def = get c classes
 
+fieldNames :: ClassTable -> Name -> List Var
+fieldNames classes c = fst <$> fields classes c
+
 ancestors :: ClassTable -> Name -> List Name
 ancestors classes c = c : maybe Nil (ancestors classes <<< fst) (get c classes).base
 
@@ -52,7 +53,6 @@ baseAt classes c τs = def.base <#> \(d × σs) -> ClassTy d (subst τs def.type
    where
    def = get c classes
 
--- Argument for a field, positional then keyword.
 fieldMap :: forall a. ClassTable -> Name -> List a -> List (Var × a) -> Var -> Maybe a
 fieldMap classes c xs xys x = case elemIndex x (fst <$> fields classes c) of
    Just i | i < length xs -> index xs i
@@ -99,6 +99,7 @@ subtype classes σ τ
            _, PrimitiveTy Sized -> sized σ
            ListTy σ', ListTy τ' -> equiv classes σ' τ'
            DictTy σ', DictTy τ' -> equiv classes σ' τ'
+           TypeTy σ', TypeTy τ' -> subtype classes σ' τ'
            TupleTy σs, TupleTy τs -> length σs == length τs && F.and (zipWith (subtype classes) σs τs)
            CallableTy σs σ', CallableTy τs τ' ->
               length σs == length τs && F.and (zipWith (subtype classes) τs σs) && subtype classes σ' τ'
@@ -136,11 +137,6 @@ meet classes σ τ
            TupleTy σs, TupleTy τs | length σs == length τs -> TupleTy (zipWith (meet classes) σs τs)
            _, _ -> PrimitiveTy Never
 
-type FieldIndex = Name -> FieldName -> Int
-
-fieldIndex :: ClassTable -> Name -> FieldName -> Int
-fieldIndex classes c field = definitely' (elemIndex field (fst <$> fields classes c))
-
 view :: Name
 view = NE.NonEmptyList ("fluid" :| "view" : Nil)
 
@@ -161,6 +157,7 @@ cSegment = qual view "Segment" :: Name
 cStackedBar = qual view "StackedBar" :: Name
 cNonEmpty = qual prelude "NonEmpty" :: Name -- Tree
 cRange = qual builtins "range" :: Name
+cMatrix = qual builtins "Matrix" :: Name
 cText = qual view "Text" :: Name
 cLink = qual view "Link" :: Name
 -- Field names used internally by rendering layer.

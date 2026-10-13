@@ -24,7 +24,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, traverse)
 import Data.Tuple (fst, snd)
-import DataType (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fields)
+import DataType (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fieldNames)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -37,6 +37,7 @@ import Literal (Literal(..), eqLiteral)
 import ModuleGraph (ModuleName, implicit, submodules)
 import Operator (binopSymbol, unopSymbol)
 import Pretty (prettyP)
+import Types (Type(..)) as T
 import Primitive (binop, binopRel, boolean, int, string, typeMismatch, unop, unopRel, unpack, unpackVal)
 import Util (type (×), absurd, check, definitely', definitelyRight, error, orElse, orThrow, singleton, throw, withMsg, (×))
 import Util.Map (get, lookup, lookup', mapWithKey, maplet, restrict, unionWith_never, (<+>))
@@ -71,9 +72,11 @@ matches _ _ PWild = Just empty × Nil
 matches classes v (PAs p x) = first (map (_ `unionWith_never` maplet x v)) (matches classes v p)
 matches classes v@{ val: Val _ u } p = second (via root v : _) case u, p of
    V.Lit ℓ', PLit ℓ | eqLiteral ℓ ℓ' -> Just empty × Nil
-   V.Constr c' vs, PConstr c ps Nil
+   V.Obj c' xvs, PConstr c ps Nil
       | c `elem` ancestors classes c' ->
-           matchesMany classes (mapWithIndex (\i val -> { val, inEdges: via (field i) v }) (take (length ps) vs)) ps
+           matchesMany classes
+              (mapWithIndex (\i (_ × val) -> { val, inEdges: via (field i) v }) (take (length ps) xvs))
+              ps
    V.Dictionary (DictRep xvs), PRecord xps ->
       case traverse (\(x × p') -> lookup x xvs <#> \(_ × val) -> x × { val, inEdges: via (dictEntry x >>> snd) v } × p') xps of
          Just kvs -> second ((kvs <#> \(x × _) -> via (dictEntry x >>> fst) v) <> _)
@@ -153,9 +156,10 @@ eval inputs = case _ of
       vs <- for cs \inputs' -> gval <$> eval inputs' e
       constructWith ctrl (A.fromFoldable >>> V.List) vs
    Constr c es -> do
-      askClasses >>= checkArity c (length es)
+      classes <- askClasses
+      checkArity c (length es) classes
       vs <- traverse (eval inputs >>> map gval) es
-      constructWith inputs.ctrl (V.Constr c) vs
+      constructWith inputs.ctrl (V.Obj c <<< zip (fieldNames classes c)) vs
    Matrix e (x × y) e' -> do
       dims <- gval <$> eval inputs e'
       i' × j' <- case dims.val of
@@ -178,12 +182,12 @@ eval inputs = case _ of
       mat :: forall a. Product (Compose Array Array) Identity (Val a) -> BaseVal a
       mat (Product (Compose vss × Identity p)) = V.Matrix (MatrixRep (vss × element 0 p × element 1 p))
    Lambda d -> construct inputs.ctrl (closure (restrict (fv d) inputs.env) empty d)
+   Type τ -> construct inputs.ctrl { val: Val unit (V.Fun (V.Type τ)), inEdges: Nil }
    Attribute e x -> do
       v <- gval <$> eval inputs e
       case v.val of
-         Val _ (V.Constr c _) -> do
-            xs <- askClasses <#> \classes -> fst <$> fields classes c
-            i <- elemIndex x xs # orElse (dottedName c <> " has no field " <> x)
+         Val _ (V.Obj c xvs) -> do
+            i <- elemIndex x (fst <$> xvs) # orElse (dottedName c <> " has no field " <> x)
             deliver (inputs.ctrl <> via root v) { val: field i v.val, inEdges: via (field i) v }
          _ -> throw $ "Found " <> prettyP v.val <> ", expected object"
    Subscript e e' -> do
@@ -286,11 +290,13 @@ qualifiers inputs (Guard e : gs) = do
    if holds then qualifiers (inputs { ctrl = ctrl }) gs else pure (Nil × ctrl)
 qualifiers inputs (Generator p e : gs) = do
    v <- gval <$> eval inputs e
-   n <- elementCount v.val # orElse ("Found " <> prettyP v.val <> ", expected list, tuple, str or dict")
+   n <- case elementCount v.val of
+      Just n -> pure n
+      Nothing -> throw ("Found " <> prettyP v.val <> ", expected list, tuple, str or dict")
    classes <- askClasses
    fold <$> for (L.take n (L.range 0 n)) \i -> do
-      let el = { val: element i v.val, inEdges: via (element i) v }
-      case dispatch classes (singleton (p × unit)) el Nil of
+      let u = { val: element i v.val, inEdges: via (element i) v }
+      case dispatch classes (singleton (p × unit)) u Nil of
          Nothing × ctrl -> pure (Nil × (via lengthDep v <> ctrl))
          Just (ρ' × _) × ctrl -> qualifiers (inputs { env = inputs.env <+> ρ', ctrl = via lengthDep v <> ctrl }) gs
 qualifiers inputs (Decl p e : gs) = do
@@ -334,10 +340,10 @@ evalStmt inputs = case _ of
       else case e_opt of
          Nothing -> throw "AssertionError"
          Just e' -> do
-            _ × Val _ w <- eval (inputs { ctrl = ctrl }) e'
-            throw ("AssertionError: " <> either (\_ -> prettyP w) identity (string.unpack w))
+            _ × Val _ u <- eval (inputs { ctrl = ctrl }) e'
+            throw ("AssertionError: " <> either (\_ -> prettyP u) identity (string.unpack u))
    Dataclass c -> do
-      let v = constructed inputs.ctrl { val: Val unit (V.Fun (V.Type c)), inEdges: Nil }
+      let v = constructed inputs.ctrl { val: Val unit (V.Fun (V.Type (T.ClassTy c Nil))), inEdges: Nil }
       pure (Assigns (maplet (last c) v) inputs.ctrl)
    TypeAlias x αs τ -> do
       let v = constructed inputs.ctrl { val: Val unit (V.TypeAlias αs τ), inEdges: Nil }
@@ -371,7 +377,8 @@ apply ctrl f@{ val: Val _ u } vs = case u of
       arity' = case φ of
          V.Closure _ _ (Def xs _) -> pure (length xs)
          V.Prim (ForeignOp (_ × ForeignOp' φ')) -> pure φ'.arity
-         V.Type c -> askClasses >>= arity c
+         V.Type (T.ClassTy c _) -> askClasses >>= arity c
+         V.Type τ -> throw ("Not callable: " <> prettyP τ)
          V.Partial _ _ -> error absurd
 
       -- Partial application of f to vs, with root and function depending on those of f, and arguments depending on vs.
@@ -393,7 +400,9 @@ apply ctrl f@{ val: Val _ u } vs = case u of
             ρ3 = foldl (\ρ (x × v) -> if x == varAnon then ρ else ρ `unionWith_never` maplet x v) empty (zip xs vs')
          asReturns <$> evalStmt { ctrl: ctrl', env: ρ1' <+> ρ2 <+> ρ3 } s
       V.Prim (ForeignOp (_ × ForeignOp' { depOp })) -> depOp ctrl' vs'
-      V.Type c -> constructWith ctrl' (V.Constr c) vs'
+      V.Type (T.ClassTy c _) ->
+         askClasses >>= \classes -> constructWith ctrl' (V.Obj c <<< zip (fieldNames classes c)) vs'
+      V.Type _ -> error absurd
       V.Partial _ _ -> error absurd
       where
       ctrl' = via root f

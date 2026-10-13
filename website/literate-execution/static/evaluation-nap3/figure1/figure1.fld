@@ -1,38 +1,38 @@
-from math import ceil
+from math import ceil, floor
 from nap3_ccra3_data import nap3_actions, ccra3_risks
 
 from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, TickLabels, Default, Rotated, Link
 
-eval_scores = [ "Significantly addressed", "Recognised but not addressed",
+eval_scores: list[str] = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
-def actions_by(key, keys):
-  return [ StackedBar(x=key_,
-      segments=[ Segment(y=eval_score,
-          z=len([ action for action in nap3_actions
-            if action[ key ] == key_ and action[ "Evaluation score" ] == eval_score
-          ])) for eval_score in eval_scores
-      ]) for key_ in keys
+risks_: dict[str, dict[str, str]] = { r[ "ID#" ]: r for r in ccra3_risks }
+
+actions: list[dict[str, str]] = [
+    { "Action Owner": action[ "Action Owner" ], "Typology": action[ "Typology" ],
+      "Evaluation score": action[ "Evaluation score" ], "Chapter": risks_[ action[ "Risk ID#" ] ][ "Chapter" ] }
+    for action in nap3_actions
   ]
 
-risks_ = { [r[ "ID#" ]]: r for r in ccra3_risks }
-
-actions_by_chapter = [ StackedBar(x=chapter,
+def actions_by(key: str, keys: list[str]) -> list[StackedBar]:
+  def bar(key_: str) -> StackedBar:
+    actions_: list[dict[str, str]] = [ action for action in actions if action[ key ] == key_ ]
+    return StackedBar(x=key_,
       segments=[ Segment(y=eval_score,
-          z=len([ action for action in nap3_actions
-            if risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter and
-              action[ "Evaluation score" ] == eval_score
-          ])) for eval_score in eval_scores
-      ]) for chapter in [ "3", "4", "5", "6", "7" ]
-  ]
+          z=len([ action for action in actions_ if action[ "Evaluation score" ] == eval_score ]))
+        for eval_score in eval_scores
+      ])
+  return [ bar(key_) for key_ in keys ]
 
-departments = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+actions_by_chapter: list[StackedBar] = actions_by("Chapter", [ "3", "4", "5", "6", "7" ])
 
-nat_env_and_infra_depts = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
+departments: list[str] = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
-by_action_owner = actions_by("Action Owner", departments)
+nat_env_and_infra_depts: list[str] = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
 
-by_topology = actions_by(
+by_action_owner: list[StackedBar] = actions_by("Action Owner", departments)
+
+by_topology: list[StackedBar] = actions_by(
     "Typology",
     [ "No and low regret adaptation, including capacity building",
       "Climate-smart design, considering uncertainty",
@@ -42,22 +42,22 @@ by_topology = actions_by(
   )
 
 # action_counts: segments of a bar produced by actions_by
-def total_actions(action_counts):
-  return sum([ segment.z for segment in action_counts ])
+def total_actions(action_counts: list[Segment]) -> float:
+  return fsum([ segment.z for segment in action_counts ])
 
-def actions_with_score(action_counts, eval_score):
-  return sum([ segment.z for segment in action_counts if segment.y == eval_score ])
+def actions_with_score(action_counts: list[Segment], eval_score: str) -> float:
+  return fsum([ segment.z for segment in action_counts if segment.y == eval_score ])
 
-def proportion(x, y):
+def proportion(x: float, y: float) -> float:
   return 0 if y == 0 else x / y
 
-def max_with_score(actions, eval_score):
+def max_with_score(actions: list[StackedBar], eval_score: str) -> float:
   return maximum([
     proportion(actions_with_score(action_counts, eval_score), total_actions(action_counts))
     for StackedBar(x=_, segments=action_counts) in actions
   ])
 
-by_nat_env_and_infra = actions_by("Action Owner", nat_env_and_infra_depts)
+by_nat_env_and_infra: list[StackedBar] = actions_by("Action Owner", nat_env_and_infra_depts)
 
 MultiView([
   f"""
@@ -84,13 +84,13 @@ MultiView([
   Disaggregating by department revealed marked disparities in government response. {
     Link(nat_env_and_infra_depts, "Natural environment and infrastructure sectors")
   } performed relatively well, with {
-    sum([
+    floor(fsum([
       actions_with_score(action_counts, eval_score)
       for eval_score in [ "Fully addressed", "Minimally addressed" ]
       for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra
-    ])
+    ]))
   } of {
-    sum([ total_actions(action_counts) for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra])
+    floor(fsum([ total_actions(action_counts) for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra]))
   } actions at least “minimally addressed.”
   In contrast, business and industry actions lagged sharply, with nearly half unaddressed or only nominally
   recognized—an institutional lapse in private-sector resilience. Defra (Environment, Food and Rural Affairs)

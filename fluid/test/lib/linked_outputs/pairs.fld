@@ -1,5 +1,5 @@
 from linked_outputs.pairs_data import data
 
-q = 1
+q: int = 1
 
 (lambda (w, x): (w, (w, x)))(data)

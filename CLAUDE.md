@@ -19,6 +19,9 @@ Continual improvement of the workflow itself, including documenting the workflow
 
 ## Process
 
-**Before starting work, read** [docs/workflow/process.md](docs/workflow/process.md) and [docs/workflow/issue-lifecycle.md](docs/workflow/issue-lifecycle.md). They are authoritative for development process, GitHub conventions, testing, and the issue state machine.
+Before writing code, prose, commits, issues or pull requests, load the `conventions:coding-conventions`, `conventions:technical-authoring` and `conventions:github` skills, and `conventions:spec-implementor` when working against the PurePy specification.
 
-[docs/workflow/milestone-report.md](docs/workflow/milestone-report.md) covers the milestone report format and generation process — read when closing a milestone or producing release notes.
+- Branching, milestones, deployment and publishing: `release-cycle` skill
+- Building and testing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Issue state machine and invariants: [docs/workflow/issue-lifecycle.md](docs/workflow/issue-lifecycle.md)
+- Milestone reports and release notes: [docs/workflow/milestone-report.md](docs/workflow/milestone-report.md)

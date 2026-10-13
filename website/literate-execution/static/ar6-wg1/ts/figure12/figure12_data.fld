@@ -1,8 +1,22 @@
-path = "../../dataset/TS/inputdata_TS_12/v20230301/WaterCyclePanels/"
-hydroData = load_json(path + "Hydro_vars_change_20210201_derived_extra_raw.json")
+from dataclasses import dataclass
+
+@dataclass
+class Ensemble:
+  ens: dict[str, dict[str, float]]
+
+# Variable, then statistic, then region.
+@dataclass
+class Hydro:
+  pr: dict[str, dict[str, Ensemble]]
+  tas: dict[str, dict[str, Ensemble]]
+  mrro: dict[str, dict[str, Ensemble]]
+  prw: dict[str, dict[str, Ensemble]]
+
+path: str = "../../dataset/TS/inputdata_TS_12/v20230301/WaterCyclePanels/"
+hydroData: Hydro = load_json(Hydro, path + "Hydro_vars_change_20210201_derived_extra_raw.json")
 
 # extract from data set instead?
-models = [
+models: list[str] = [
     "HadGEM3-GC31-MM_ssp585",
     "EC-Earth3-Veg_ssp585",
     "ACCESS-CM2_ssp585",
@@ -20,11 +34,7 @@ models = [
     "CESM2_ssp585"
   ]
 
-def precip(ensemble_data):
+def precip(ensemble_data: dict[str, float]) -> float:
   return mean([ ensemble_data[ model ] for model in models ])
 
-hydroData_agg = {
-  "pr": {
-    "std": { "extra_annual": dict_map(precip, hydroData["pr"]["std"]["extra_annual"]["ens"]) }
-  }
-}
+precip_std_extra_annual: dict[str, float] = dict_map(precip, hydroData.pr["std"]["extra_annual"].ens)

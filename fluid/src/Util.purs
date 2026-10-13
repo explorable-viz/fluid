@@ -354,6 +354,15 @@ instance Length List where
 instance Length Array where
    length = A.length
 
+class Head (f :: Type -> Type) where
+   head :: forall a. f a -> Maybe a
+
+instance Head List where
+   head = L.head
+
+instance Head Array where
+   head = A.head
+
 class Zip (f :: Type -> Type) where
    zip :: forall a b. f a -> f b -> f (a × b)
    zipWith :: forall a b c. (a -> b -> c) -> f a -> f b -> f c

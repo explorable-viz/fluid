@@ -1,5 +1,6 @@
-d = @doc("d") {"a": 1, "b": 2}
+d: dict[str, int] = @doc("d") {"a": 1, "b": 2}
 
+y: int
 match d:
    case {"a": x}:
       y = x
