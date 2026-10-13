@@ -22,13 +22,13 @@ def minAndPrev((i, j): tuple[int, int], im1: InfNum, jm1: InfNum, ijm1: InfNum) 
     else:
       return (i, j, minim)
 
-def extractPath(indmatrix: Matrix[int | tuple[int, int]], (n, m): tuple[int, int], accum: list[tuple[int, int]]) -> list[tuple[int, int]]:
+def extractPath(indmatrix: Matrix[tuple[int, int]], (n, m): tuple[int, int], accum: list[tuple[int, int]]) -> list[tuple[int, int]]:
   if n == 0 and m == 0:
     return accum
   else:
     return extractPath(indmatrix, indmatrix[n, m], [(n - 1, m - 1)] + accum)
 
-def localMinUpdate[A](seq1: list[A], seq2: list[A], cost: Callable[[A, A], float], (costmatrix, indmatrix): tuple[Matrix[InfNum], Matrix[int | tuple[int, int]]], (i, j): tuple[int, int]) -> tuple[Matrix[InfNum], Matrix[int | tuple[int, int]]]:
+def localMinUpdate[A](seq1: list[A], seq2: list[A], cost: Callable[[A, A], float], (costmatrix, indmatrix): tuple[Matrix[InfNum], Matrix[tuple[int, int]]], (i, j): tuple[int, int]) -> tuple[Matrix[InfNum], Matrix[tuple[int, int]]]:
   iEntr: A = seq1[i]
   jEntr: A = seq2[j]
   dist: float = cost(iEntr, jEntr)
@@ -46,7 +46,7 @@ def computeDTW[A](seq1: list[A], seq2: list[A], cost: Callable[[A, A], float], w
   n: int = len(seq1)
   m: int = len(seq2)
   initD: Matrix[InfNum] = costMatrixInit(n + 1, m + 1, window)
-  initI: Matrix[int | tuple[int, int]] = [| 0 for (i, j) in (n + 1, m + 1) |]
+  initI: Matrix[tuple[int, int]] = [| (0, 0) for (i, j) in (n + 1, m + 1) |]
   indexing: list[tuple[int, int]] = nextIndices(n, m, window)
   (finished, indices) = foldl(localMinUpdate(seq1, seq2, cost), (initD, initI), indexing)
 

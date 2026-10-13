@@ -9,8 +9,8 @@ def d(x: int, y: int) -> int:
 def avg(x: int, y: int) -> float:
   return (x + y) / 2
 
-def avgSeq(seq1: list[int], seq2: list[int], f: Callable[[int, int], float]) -> Callable[[list[tuple[int, int]]], list[float]]:
-  return map(lambda (i, j): f(seq1[i], seq2[j]))
+def avgSeq(seq1: list[int], seq2: list[int], f: Callable[[int, int], float], ijs: list[tuple[int, int]]) -> list[float]:
+  return [f(seq1[i], seq2[j]) for (i, j) in ijs]
 
 (costs, matched) = computeDTW(seq1, seq2, d, window)
 avgSeq(seq1, seq2, avg, matched)
