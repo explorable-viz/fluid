@@ -1,7 +1,7 @@
 def zip3[A, B]([]: list[A], []: list[B]) -> list[tuple[A, B]]:
   return []
 def zip3[A, B]([x1]: list[A], [y1]: list[B]) -> list[tuple[A, B]]:
-  return [(x1, y1)] + zip3([], [])
+  return [(x1, y1)]
 def zip3[A, B]([x1, x2]: list[A], [y1, y2]: list[B]) -> list[tuple[A, B]]:
   return [(x1, y1)] + zip3([x2], [y2])
 def zip3[A, B]([x1, x2, x3]: list[A], [y1, y2, y3]: list[B]) -> list[tuple[A, B]]:

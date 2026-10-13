@@ -1,1 +1,5 @@
-zip_with(lambda x, xs: [x] + xs, [10, 12, 20], [[], [], [], [], []])
+def cons(x: int, xs: list[int]) -> list[int]:
+  return [x] + xs
+
+empties: list[list[int]] = [[], [], [], [], []]
+zip_with(cons, [10, 12, 20], empties)

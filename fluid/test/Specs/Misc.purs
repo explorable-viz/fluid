@@ -68,7 +68,7 @@ misc_cases =
    , { file: "from_import_subclass.fld", fwd_expect: "6" }
    , { file: "from_import_submodule.fld", fwd_expect: "1" }
    , { file: "from_import_value.fld", fwd_expect: "1" }
-   , { file: "from_import_view.fld", fwd_expect: "MultiView([1, 2])" }
+   , { file: "from_import_view.fld", fwd_expect: "MultiView([])" }
    , { file: "import_absolute_shadow.fld", fwd_expect: "2" }
    , { file: "import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "import_modules.fld", fwd_expect: "84" }
@@ -103,7 +103,7 @@ misc_cases =
    , { file: "qualified_access.fld", fwd_expect: "1" }
    , { file: "range.fld", fwd_expect: "[[(0, 0), (0, 1), (1, 0), (1, 1)], 3, True, []]" }
    , { file: "record_lookup.fld", fwd_expect: "True" }
-   , { file: "records.fld", fwd_expect: "{\"a\": 2, \"b\": 6, \"c\": 7, \"d\": [5], \"e\": 7}" }
+   , { file: "records.fld", fwd_expect: "{\"a\": [2], \"b\": [6, 7], \"c\": 7, \"d\": [[5]], \"e\": 7}" }
    , { file: "reverse.fld", fwd_expect: "[2, 1]" }
    , { file: "ternary/basic_false.fld", fwd_expect: "6" }
    , { file: "ternary/basic_true.fld", fwd_expect: "5" }

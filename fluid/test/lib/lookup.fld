@@ -6,7 +6,8 @@ def lookup[V](k: int, NonEmpty(t1, (key, val), t2): Tree[tuple[int, V]]) -> V | 
       return lookup(k, t1)
     case EQ():
       return val
-    case GT():
+    case _:
       return lookup(k, t2)
 
-lookup(6, NonEmpty(NonEmpty(Empty(), (3, "simon"), Empty()), (4, "john"), NonEmpty(NonEmpty(Empty(), (6, "sarah"), Empty()), (7, "claire"), Empty())))
+empty: Tree[tuple[int, str]] = Empty[tuple[int, str]]()
+lookup(6, NonEmpty(NonEmpty(empty, (3, "simon"), empty), (4, "john"), NonEmpty(NonEmpty(empty, (6, "sarah"), empty), (7, "claire"), empty)))

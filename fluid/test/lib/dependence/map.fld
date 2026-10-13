@@ -1,3 +1,6 @@
 xs: list[int] = @doc("xs") [3, 4]
 
-map(lambda x: 2 + x, xs)
+def add2(x: int) -> int:
+  return 2 + x
+
+map(add2, xs)

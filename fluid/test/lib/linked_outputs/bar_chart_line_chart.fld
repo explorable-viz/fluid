@@ -31,7 +31,7 @@ MultiView([
     plots=
       [ LinePlot(name=type_, points=plot)
         for type_ in [ "Bio", "Hydro", "Solar", "Wind" ]
-        for plot in [zip_with(lambda p1, p2: Point(x=p1.x, y=p1.y / p2.y), series(type_, "USA"), series(type_, "China"))]
+        for plot in [[Point(x=p1.x, y=p1.y / p2.y) for (p1, p2) in zip(series(type_, "USA"), series(type_, "China"))]]
       ]
   )
 ])

@@ -17,7 +17,7 @@ import Data.FunctorWithIndex (mapWithIndex)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.List (List(..), drop, filter, index, intersect, length, mapMaybe, null, sort, transpose, updateAt, (:))
+import Data.List (List(..), drop, filter, index, take, intersect, length, mapMaybe, null, sort, transpose, updateAt, (:))
 import Data.Foldable (any, lookup) as F
 import ModuleGraph (ModuleName, implicitFor, submodules)
 import Data.List.NonEmpty (NonEmptyList(..), head, last, snoc, unsnoc)
@@ -198,10 +198,8 @@ instance Captures (List S.Qualifier) where
 checkStmt :: Cxt -> Maybe T.Type -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 checkStmt _ _ S.Pass = pure (Assigns empty × E.Pass)
 -- Outside a function, the result of the program
-checkStmt cxt ζ (S.Return e) = (Returns × _) <<< E.Return <$> maybe (snd <$> synthExpr cxt e) (checkExpr cxt e) ζ
-checkStmt cxt _ (S.ExprStmt e) = (Assigns empty × _) <<< E.ExprStmt <$> case e of
-   S.Call e' Nil es Nil | not (isLambda e') && className cxt e' == Nothing -> callStmt cxt e' es
-   _ -> snd <$> synthExpr cxt e
+checkStmt cxt ζ (S.Return e) = (Returns × _) <<< E.Return <$> maybe (exprStmt cxt e) (checkExpr cxt e) ζ
+checkStmt cxt _ (S.ExprStmt e) = (Assigns empty × _) <<< E.ExprStmt <$> exprStmt cxt e
 checkStmt cxt (Just _) (S.Assert (S.Lit (Bool false)) e') =
    (Returns × _) <$> (E.Assert (E.Lit (Bool false)) <$> traverse (\e'' -> checkExpr cxt e'' str) e')
 checkStmt cxt _ (S.Assert e e') =
@@ -583,15 +581,20 @@ resultType cxt (T.UnionTy σ σ') es = do
    τ × es' <- resultType cxt σ es
    τ' × _ <- resultType cxt σ' es
    classTable <#> \classes -> join classes τ τ' × es'
+-- Automatic currying (PurePy extension)
 resultType cxt (T.CallableTy σs τ) es = do
-   es' <- checkArgs cxt σs es
-   -- Partial application, without spec counterpart
-   case drop (length es) σs of
-      Nil -> do
+   es' <- checkArgs cxt σs (take (length σs) es)
+   case drop (length es) σs, drop (length σs) es of
+      Nil, Nil -> do
          when (τ == none) $ throwError "Call returning None used as expression"
          pure (τ × es')
-      σs' -> pure (T.CallableTy σs' τ × es')
+      Nil, es'' -> map (es' <> _) <$> resultType cxt τ es''
+      σs', _ -> pure (T.CallableTy σs' τ × es')
 resultType _ σ _ = throwError $ "Values of type " <> prettyP σ <> " cannot be called"
+
+exprStmt :: Cxt -> S.Expr -> CheckM E.Expr
+exprStmt cxt (S.Call e Nil es Nil) | not (isLambda e) && className cxt e == Nothing = callStmt cxt e es
+exprStmt cxt e = snd <$> synthExpr cxt e
 
 callStmt :: Cxt -> S.Expr -> List S.Expr -> CheckM E.Expr
 callStmt cxt e es = callee cxt e es >>= case _ of
@@ -599,11 +602,7 @@ callStmt cxt e es = callee cxt e es >>= case _ of
    σ × e' -> E.App e' <<< snd <$> resultType cxt σ es
 
 checkArgs :: Cxt -> List T.Type -> List S.Expr -> CheckM (List E.Expr)
-checkArgs cxt σs es = do
-   when (length es > length σs)
-      $ throwError
-      $ "Call expects " <> show (length σs) <> " argument(s); given " <> show (length es)
-   sequence (zipWith (checkExpr cxt) es σs)
+checkArgs cxt σs es = sequence (zipWith (checkExpr cxt) es σs)
 
 lambdaArgs :: Cxt -> List S.Pattern -> List S.Expr -> CheckM (Map.Map Var T.Type × List S.Pattern × List E.Expr)
 lambdaArgs cxt ps es = do

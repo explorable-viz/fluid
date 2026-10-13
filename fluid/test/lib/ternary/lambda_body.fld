@@ -1,1 +1,4 @@
-map(lambda x: x if x > 0 else 0, [0, 1, 2, -5])
+from typing import Callable
+
+f: Callable[[int], int] = lambda x: x if x > 0 else 0
+map(f, [0, 1, 2, -5])

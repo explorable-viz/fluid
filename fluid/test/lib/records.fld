@@ -1,17 +1,17 @@
-def f({ "fst": x, "snd": [] }: dict[str, int | list[int]]) -> int:
+def f({ "fst": x, "snd": [] }: dict[str, list[int]]) -> list[int]:
   return x
-def f({ "fst": _, "snd": ys }: dict[str, int | list[int]]) -> int:
-  return ys[0]
+def f({ "fst": _, "snd": ys }: dict[str, list[int]]) -> list[int]:
+  return ys
 def g({  }: dict[str, int]) -> int:
   return 7
 
 {
-  "a": f({ "snd": [], "fst": 2 }),
-  "b": f({ "fst": 4, "snd": [6, 7] }),
+  "a": f({ "snd": [], "fst": [2] }),
+  "b": f({ "fst": [4], "snd": [6, 7] }),
   "c": g({ "unused": 22 }),
   "d": [x for { "fst": x, "snd": [] } in [
-    { "fst": 5, "third": "hello", "snd": [] },
-    { "fst": 6, "snd": [7, 8] }
+    { "fst": [5], "third": [9], "snd": [] },
+    { "fst": [6], "snd": [7, 8] }
   ]],
-  "e": { "a": 4, "h": { "i": 6, "j": 7 } }["h"]["j"]
+  "e": { "a": { "i": 4 }, "h": { "i": 6, "j": 7 } }["h"]["j"]
 }

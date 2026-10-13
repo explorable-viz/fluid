@@ -72,7 +72,7 @@ class MultiView(View):
 
 @dataclass
 class Paragraph(View):
-  fragments: list[View]
+  fragments: list[object]
 
 @dataclass
 class ScatterPlot(View):
