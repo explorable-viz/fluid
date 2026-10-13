@@ -68,7 +68,7 @@ class LineChart(View):
 
 @dataclass
 class MultiView(View):
-  views: list[View]
+  views: list[object]
 
 @dataclass
 class Paragraph(View):
