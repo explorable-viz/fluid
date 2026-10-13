@@ -6,7 +6,7 @@ import Data.Array (zipWith) as A
 import Data.Bifunctor (bimap)
 import Data.Foldable (length)
 import Data.List (List, zipWith)
-import Data.Map (Map, empty, unionWith) as M
+import Data.Map (Map, empty, isEmpty, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Dict (Dict)
@@ -66,10 +66,19 @@ newtype Lineage k s = Lineage (s × M.Map k s)
 instance (Ord k, DepSemiring s) => Semiring (Lineage k s) where
    zero = Lineage (zero × M.empty)
    one = Lineage (one × M.empty)
-   add (Lineage (a × m)) (Lineage (b × n)) = Lineage ((a + b) × M.unionWith add m n)
-   mul (Lineage (a × m)) (Lineage (b × n)) = Lineage ((a * b) × M.unionWith add (scale a n) (scale b m))
+   add (Lineage (a × m)) (Lineage (b × n)) = Lineage ((a + b) × union m n)
+   mul (Lineage (a × m)) (Lineage (b × n)) = Lineage ((a * b) × union (scale a n) (scale b m))
       where
-      scale c = if c == zero then const M.empty else map (mul c)
+      scale c
+         | c == zero = const M.empty
+         | c == one = identity
+         | otherwise = map (mul c)
+
+union :: forall k s. Ord k => Semiring s => M.Map k s -> M.Map k s -> M.Map k s
+union m n
+   | M.isEmpty m = n
+   | M.isEmpty n = m
+   | otherwise = M.unionWith add m n
 
 instance (Ord k, DepSemiring s) => DepSemiring (Lineage k s) where
    ctrlWeight = Lineage (ctrlWeight × M.empty)
