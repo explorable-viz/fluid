@@ -19,7 +19,7 @@ Continual improvement of the workflow itself, including documenting the workflow
 
 ## Process
 
-Before writing code, prose, commits, issues or pull requests, load the `conventions:coding-conventions`, `conventions:technical-authoring` and `conventions:github` skills, from the `conventions@fluid-org` plugin ([fluid-org/claude-plugins](https://github.com/fluid-org/claude-plugins)), which Claude Code offers to install when the project is opened.
+Before writing code, prose, commits, issues or pull requests, load the `conventions:coding-conventions`, `conventions:technical-authoring` and `conventions:github` skills.
 
 **Before starting work, read** [docs/workflow/process.md](docs/workflow/process.md) and [docs/workflow/issue-lifecycle.md](docs/workflow/issue-lifecycle.md). They are authoritative for development process, GitHub conventions, testing, and the issue state machine.
 
