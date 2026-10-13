@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Run PurePy suite with Fluid as checker, at revision in purepy-version. Gaps (corpus programs Fluid gets
-# wrong, with the spec ahead of Fluid) listed in test/spec-gaps.txt; extensions (corpus programs Fluid accepts
-# by design, with Fluid ahead of or beyond the spec) in test/spec-extensions.txt under comment lines naming
-# the spec issue. `--update` rewrites the gaps list from this run and badge in test/spec-compliance.json.
+# Run PurePy suite with Fluid as checker, at revision in purepy-version. Expected failures:
+#   test/spec-gaps.txt        Fluid behind spec
+#   test/spec-extensions.txt  Fluid ahead of spec, by design
+# `--update` rewrites gaps list and badge (test/spec-compliance.json) from this run.
 set -e
 cd "$(dirname "$0")/.."
 
