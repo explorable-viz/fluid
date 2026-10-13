@@ -9,7 +9,8 @@ def insert[A](lt: Callable[[A, A], bool], x: A, ys: list[A]) -> list[A]:
   return go(0)
 
 def insertionSort[A](lt: Callable[[A, A], bool], lst: list[A]) -> list[A]:
-  return foldl(lambda sorted, x: insert(lt, x, sorted), [], lst)
+  empty: list[A] = []
+  return foldl(lambda sorted, x: insert(lt, x, sorted), empty, lst)
 
 def findIndex[A](pred: Callable[[A], bool], ys: list[A]) -> int:
   def go(i: int) -> int:

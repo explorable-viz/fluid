@@ -16,7 +16,7 @@ class Scenario:
   longRange: tuple[float, float]
 
 def newDataTable(offset: float) -> list[Scenario]:
-  return map(lambda s: Scenario(
+  return [Scenario(
     scenario=s.scenario,
     beNear=s.bestEstNear + offset,
     nearRange=(s.lowNear, s.highNear),
@@ -24,7 +24,7 @@ def newDataTable(offset: float) -> list[Scenario]:
     midRange=(s.lowMid, s.highMid),
     beLong=s.bestEstLate,
     longRange=(s.lowLate, s.highLate)
-  ), tableData)
+  ) for s in tableData]
 
 def getByScenario(data: list[Scenario], scenario: str) -> Scenario:
   return [r for r in data if r.scenario == scenario][0]

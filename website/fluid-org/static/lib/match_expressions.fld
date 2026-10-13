@@ -6,5 +6,5 @@ def lookup[V](k: float, NonEmpty(left, (key, val), right): Tree[tuple[float, V]]
       return lookup(k, left)
     case EQ():
       return val
-    case GT():
+    case _:
       return lookup(k, right)
