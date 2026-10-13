@@ -43,10 +43,10 @@ export async function closeBrowsers() {
    }
 }
 
-export async function waitFor(page, selector, { visible = true } = {}) {
+export async function waitFor(page, selector, { visible = true, timeout = TIMEOUT } = {}) {
    log(`Waiting for ${selector}${visible ? "" : " (any)"}`)
    try {
-      await page.waitForSelector(selector, { timeout: TIMEOUT, visible })
+      await page.waitForSelector(selector, { timeout, visible })
       log("-> found")
       testOutcome(true, `${selector}: exists`)
    } catch (e) {
@@ -137,8 +137,8 @@ export async function checkWidthApprox(page, selector, expected, tolerance = 5) 
 // No figure still loading; loadFigure removes the placeholder after hydration
 const READY = "body:not(:has(.fig-loading))"
 
-export async function waitForReady(page) {
-   await waitFor(page, READY)
+export async function waitForReady(page, timeout = TIMEOUT) {
+   await waitFor(page, READY, { timeout })
 }
 
 export async function clickToggle(page) {
@@ -150,7 +150,7 @@ export async function clickToggle(page) {
    await waitFor(page, "#grid:not(.data-pane-hidden)")
 }
 
-async function browserTests(url, browserName, viewport, tests) {
+async function browserTests(url, browserName, viewport, tests, timeout = TIMEOUT) {
    const label = viewport === MOBILE ? "mobile" : "desktop"
    log(`browserTests: ${browserName} (${label})`)
    const browser = await getBrowser(browserName)
@@ -164,9 +164,9 @@ async function browserTests(url, browserName, viewport, tests) {
    await page.setViewport(viewport)
    for (const test of tests) {
       await page.goto(url)
-      await waitForReady(page)
+      await waitForReady(page, timeout)
       await test(page)
-      await waitForReady(page)
+      await waitForReady(page, timeout)
    }
    await page.close()
    if (browserErrors.length) testOutcome(false, `browser error(s): ${browserErrors.join("; ")}`)
@@ -174,10 +174,11 @@ async function browserTests(url, browserName, viewport, tests) {
 
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:8080"
 
-export async function testURL(suffix, tests) {
+// timeout: for the page to finish loading, in ms
+export async function testURL(suffix, tests, { timeout = TIMEOUT } = {}) {
    const url = `${BASE_URL}/${suffix}`
-   await browserTests(url, "chrome", VIEWPORT, tests)
-   await browserTests(url, "firefox", VIEWPORT, tests)
+   await browserTests(url, "chrome", VIEWPORT, tests, timeout)
+   await browserTests(url, "firefox", VIEWPORT, tests, timeout)
 }
 
 export async function testMobile(suffix, tests) {
