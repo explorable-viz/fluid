@@ -10,6 +10,9 @@ if [ ! -f "test.mjs" ]; then
    exit 1
 fi
 
-echo "Running tests against $BASE_URL..."
-BASE_URL="$BASE_URL" node -e "import('./test.mjs').then(({ main }) => main()).then(() => import('@fluid-org/fluid/script/webtest-lib.mjs')).then(lib => lib.closeBrowsers()).then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })"
+# One process per browser, so that a browser's memory is released before the next one starts.
+for BROWSER in chrome firefox; do
+   echo "Running tests in $BROWSER against $BASE_URL..."
+   BASE_URL="$BASE_URL" BROWSERS="$BROWSER" node -e "import('./test.mjs').then(({ main }) => main()).then(() => import('@fluid-org/fluid/script/webtest-lib.mjs')).then(lib => lib.closeBrowsers()).then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })"
+done
 echo "Tests passed."
