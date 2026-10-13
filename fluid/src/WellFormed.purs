@@ -718,22 +718,19 @@ param :: Int -> Var
 param i = "$" <> show i
 
 defSignature :: Cxt -> S.Branch -> CheckM T.Scheme
-defSignature cxt (f × S.Clause (αs × ps × ψ × _)) = do
-   let cxt_αs = cxt `override` typeParams αs
-   σs <- for ps \(S.Param _ ψ') -> annotation "parameter" ψ' >>= resolveType cxt_αs
-   τ <- annotation "return" ψ >>= resolveType cxt_αs
-   pure (Forall αs (T.CallableTy σs τ))
+defSignature cxt (_ × S.Clause (αs × ps × ψ × _)) =
+   Forall αs <$> (T.CallableTy <$> traverse (\(S.Param _ ψ') -> resolveType cxt_αs ψ') ps <*> resolveType cxt_αs ψ)
    where
-   annotation what = maybe (throwError $ "Missing " <> what <> " annotation in definition of " <> f) pure
+   cxt_αs = cxt `override` typeParams αs
 
 defBody :: Cxt -> Var -> T.Scheme -> S.Clause -> CheckM (List (S.Pattern × Maybe T.Type) × Maybe T.Type × E.Stmt)
 defBody cxt f (Forall _ (T.CallableTy σs τ)) (S.Clause (αs × ps × ψ × s)) = do
    let cxt_αs = cxt `override` typeParams αs
    let xs = unions (bv <$> ps)
    when (length ps /= length σs) $ throwError "Clauses differ in number of parameters"
-   ps' <- for ps \(S.Param p ψ') -> (×) <$> pattern cxt p <*> traverse (resolveType cxt_αs) ψ'
+   ps' <- for ps \(S.Param p ψ') -> (×) <$> pattern cxt p <*> (Just <$> resolveType cxt_αs ψ')
    cxt_p <- sequence (zipWith checkPattern (fst <$> ps') σs) <#> foldl (∪) empty
-   τ' <- traverse (resolveType cxt_αs) ψ
+   τ' <- Just <$> resolveType cxt_αs ψ
    cxt_s <- scope "parameter" xs s
    r × s' <- checkStmt (cxt_αs `override` bindings cxt_p `override` cxt_s) (Just τ) s
    classes <- classTable

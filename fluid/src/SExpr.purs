@@ -64,10 +64,10 @@ data Import = Import Name (Maybe (List Var))
 -- Case of a match statement.
 type Case = Pattern × Stmt
 
-data Param = Param Pattern (Maybe TypeExpr)
+data Param = Param Pattern TypeExpr
 
 -- Type parameters, parameters, return annotation and body.
-data Clause = Clause (List Var × List Param × Maybe TypeExpr × Stmt)
+data Clause = Clause (List Var × List Param × TypeExpr × Stmt)
 
 type Branch = Var × Clause
 

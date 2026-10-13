@@ -272,13 +272,13 @@ instance Pretty Clause where
    pretty (Clause (αs × ps × ψ × s)) = typeArgs αs <> parens (prettyList ps) <> returnAnnot ψ <> block (pretty s)
 
 instance Pretty Param where
-   pretty (Param p ψ) = pretty p <> annot ψ
+   pretty (Param p ψ) = pretty p <> annot (Just ψ)
 
 annot :: Maybe TypeExpr -> Doc
 annot = maybe mempty \ψ -> text ":" <+> pretty ψ
 
-returnAnnot :: Maybe TypeExpr -> Doc
-returnAnnot = maybe mempty \ψ -> text " ->" <+> pretty ψ
+returnAnnot :: TypeExpr -> Doc
+returnAnnot ψ = text " ->" <+> pretty ψ
 
 instance Pretty LambdaClause where
    pretty (LambdaClause (ps × e)) = text "lambda" <+> prettyList ps <> text ":" <+> pretty e
