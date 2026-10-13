@@ -202,6 +202,8 @@ checkStmt cxt ζ (S.Return e) = (Returns × _) <<< E.Return <$> maybe (snd <$> s
 checkStmt cxt _ (S.ExprStmt e) = (Assigns empty × _) <<< E.ExprStmt <$> case e of
    S.Call e' Nil es Nil | not (isLambda e') && className cxt e' == Nothing -> callStmt cxt e' es
    _ -> snd <$> synthExpr cxt e
+checkStmt cxt (Just _) (S.Assert (S.Lit (Bool false)) e') =
+   (Returns × _) <$> (E.Assert (E.Lit (Bool false)) <$> traverse (\e'' -> checkExpr cxt e'' str) e')
 checkStmt cxt _ (S.Assert e e') =
    (Assigns empty × _) <$> (E.Assert <$> checkExpr cxt e bool <*> traverse (\e'' -> checkExpr cxt e'' str) e')
 checkStmt cxt _ (S.Declare x ψ) = do
@@ -583,18 +585,22 @@ resultType cxt (T.UnionTy σ σ') es = do
    classTable <#> \classes -> join classes τ τ' × es'
 resultType cxt (T.CallableTy σs τ) es = do
    es' <- checkArgs cxt σs es
-   when (τ == none) $ throwError "Call returning None used as expression"
-   pure (τ × es')
+   -- Partial application, without spec counterpart
+   case drop (length es) σs of
+      Nil -> do
+         when (τ == none) $ throwError "Call returning None used as expression"
+         pure (τ × es')
+      σs' -> pure (T.CallableTy σs' τ × es')
 resultType _ σ _ = throwError $ "Values of type " <> prettyP σ <> " cannot be called"
 
 callStmt :: Cxt -> S.Expr -> List S.Expr -> CheckM E.Expr
 callStmt cxt e es = callee cxt e es >>= case _ of
-   T.CallableTy σs τ × e' | τ == none -> E.App e' <$> checkArgs cxt σs es
+   T.CallableTy σs τ × e' | τ == none && length σs == length es -> E.App e' <$> checkArgs cxt σs es
    σ × e' -> E.App e' <<< snd <$> resultType cxt σ es
 
 checkArgs :: Cxt -> List T.Type -> List S.Expr -> CheckM (List E.Expr)
 checkArgs cxt σs es = do
-   when (length σs /= length es)
+   when (length es > length σs)
       $ throwError
       $ "Call expects " <> show (length σs) <> " argument(s); given " <> show (length es)
    sequence (zipWith (checkExpr cxt) es σs)
