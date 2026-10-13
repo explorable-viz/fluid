@@ -3,7 +3,7 @@ module App.View.Util where
 import Prelude
 
 import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, Selector, SetSel, 𝕊, classes, selClasses, selClassesFor)
-import App.Util.Selector (ConstrArg, dictVal)
+import App.Util.Selector (ObjArg, dictVal)
 import App.View.Util.D3 (create, on, setAttrs)
 import App.View.Util.D3 as D3
 import Bind (Var)
@@ -40,7 +40,7 @@ unpack (View vw) k = vw k
 
 class Viewable a b | a -> b where
    createElement :: b -> a -> D3.Selection -> Effect D3.Selection
-   setSelection :: ConstrArg -> b -> a -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ObjArg -> b -> a -> Select -> D3.Selection -> Effect Unit
    isLeaf :: a -> Boolean
 
 instance Viewable View Unit where
@@ -63,7 +63,7 @@ instance Viewable (Dict (View × View)) Unit where
          createElement unit view child
       pure rootElement
 
-   setSelection :: ConstrArg -> Unit -> Dict (View × View) -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ObjArg -> Unit -> Dict (View × View) -> Select -> D3.Selection -> Effect Unit
    setSelection arg _ views select rootElement =
       sequence_ $
          flip mapWithIndex (toUnfoldable views :: Array _) \i (x × k_view × view) -> do

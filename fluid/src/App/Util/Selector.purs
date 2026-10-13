@@ -45,13 +45,13 @@ persist δα = \v -> (over SelStates ((<$>) mapδ) v) × Persistent
    mapδ :: Endo (Selection a)
    mapδ s = s { persistent = (T.fst <<< δα) s.persistent }
 
-type ConstrArg = Name -> FieldName -> SelSetter Val Val
+type ObjArg = Name -> FieldName -> SelSetter Val Val
 
-barSegment :: ConstrArg -> Int -> Int -> SelSetter Val Val
+barSegment :: ObjArg -> Int -> Int -> SelSetter Val Val
 barSegment arg i j =
    nthSegment arg j >>> arg cStackedBar f_segments >>> listElement i
 
-nthSegment :: ConstrArg -> Int -> SelSetter Val Val
+nthSegment :: ObjArg -> Int -> SelSetter Val Val
 nthSegment arg n = arg cSegment f_z >>> listElement n
 
 matrixElement :: Int -> Int -> SelSetter Val Val
@@ -79,13 +79,9 @@ field f δv = unsafePartial $ case _ of
    v@(Val α (Obj c xus)) ->
       first (\u' -> Val α (Obj c (xus <#> \(x × u) -> x × if x == f then u' else u))) (δv (attr f v))
 
-constrArg :: ConstrArg
-constrArg c f δv = unsafePartial $ case _ of
+objArg :: ObjArg
+objArg c f δv = unsafePartial $ case _ of
    v@(Val _ (Obj c' _)) | last c == last c' -> field f δv v
-
-constr :: Var -> Setter (Val (SelStates 𝔹)) 𝔹
-constr c δα = unsafePartial $ case _ of
-   Val α (Obj c' xvs) | c == last c' -> first (\α' -> Val α' (Obj c' xvs)) (persist δα α)
 
 dict :: Setter (Val (SelStates 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of

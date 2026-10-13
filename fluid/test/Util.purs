@@ -3,7 +3,7 @@ module Test.Util where
 import Prelude hiding (absurd, compare)
 
 import App.Util (SelStates, SelectionType(..), Selector, SetSel, getPersistent, unselected)
-import App.Util.Selector (ConstrArg, constrArg)
+import App.Util.Selector (ObjArg, objArg)
 import DataType (class HasClasses)
 import Data.Array as A
 import Data.Foldable (any, minimum)
@@ -74,8 +74,8 @@ data VertexSpec
 
 -- Selection and expected dependence, as given by showDeps: data ⸨ ⸩, control ⟪ ⟫.
 data Query
-   = Bwd VertexSpec (ConstrArg -> Selector Val) String
-   | Fwd VertexSpec (ConstrArg -> Selector Val) String
+   = Bwd VertexSpec (ObjArg -> Selector Val) String
+   | Fwd VertexSpec (ObjArg -> Selector Val) String
 
 type DepSpec = { file :: String, queries :: Array Query }
 
@@ -116,10 +116,10 @@ selection
     . DepGraph Val s
    -> Eval
    -> VertexSpec
-   -> (ConstrArg -> Selector Val)
+   -> (ObjArg -> Selector Val)
    -> Labelling (Set Pos)
 selection depGraph eval vertex δv =
-   maplet p (selected (selectOn δv constrArg (valAt eval.g p)))
+   maplet p (selected (selectOn δv objArg (valAt eval.g p)))
    where
    p = deriv depGraph eval vertex
 
@@ -137,7 +137,7 @@ testDep file query = do
    withMsg "expect" $ checkPretty expect (showDeps eval deps)
 
 -- Persistent selection made by δv on the output.
-selectOn :: forall a. (ConstrArg -> Selector Val) -> ConstrArg -> Val a -> Val 𝔹
+selectOn :: forall a. (ObjArg -> Selector Val) -> ObjArg -> Val a -> Val 𝔹
 selectOn δv arg v = fst (δv arg (const unselected <$> (map (const top) v :: Val 𝔹))) <#> getPersistent
 
 -- Result at this position, printed with its persistent selections, must match; leave it unselected.

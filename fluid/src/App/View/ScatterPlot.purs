@@ -3,7 +3,7 @@ module App.View.ScatterPlot where
 import Prelude
 
 import App.Util (Selectable, classes, contents, isPrimary, isSecondary, selClasses, selClassesFor, selectionEventData')
-import App.Util.Selector (ConstrArg, ViewSelSetter, listElement)
+import App.Util.Selector (ObjArg, ViewSelSetter, listElement)
 import App.View.Util (class Viewable, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), create, numericXAxis, numericYAxis, scaleLinear, setText, translate)
 import App.View.Util.D3 as D3
@@ -119,7 +119,7 @@ instance Viewable ScatterPlot Unit where
          void $ D3.attrs pointEl (fromFoldable (pointAttrs points idx))
          registerMouseListeners (select <<< uncurry (scatterPlotPoint arg) <<< selectionEventData') pointEl
 
-scatterPlotPoint :: ConstrArg -> ViewSelSetter PointIndex
+scatterPlotPoint :: ObjArg -> ViewSelSetter PointIndex
 scatterPlotPoint arg { i } = listElement i >>> arg cScatterPlot f_points
 
 pointAttrs :: Array (Point Number) -> PointIndex -> Array (String × String)

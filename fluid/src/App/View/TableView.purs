@@ -3,7 +3,7 @@ module App.View.TableView where
 import Prelude hiding (absurd)
 
 import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor, selectionEventData')
-import App.Util.Selector (ConstrArg, ViewSelSetter, dictVal, listElement)
+import App.Util.Selector (ObjArg, ViewSelSetter, dictVal, listElement)
 import App.View.Util (class Viewable, Filter(..), Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
@@ -78,7 +78,7 @@ highlightedBorder _ = "1px solid blue"
 instance Viewable TableView Unit where
    isLeaf = const false
 
-   setSelection :: ConstrArg -> Unit -> TableView -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ObjArg -> Unit -> TableView -> Select -> D3.Selection -> Effect Unit
    setSelection arg _ (TableView { title, className, colNames, rows, rowFilter }) redraw rootElement = do
       cells <- rootElement # selectAll ".table-cell"
       foreachE cells \cell -> do

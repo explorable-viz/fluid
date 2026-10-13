@@ -4,7 +4,7 @@ import Prelude
 
 import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelStates, Selector, isInert, isPersistent, isTransient, selStates, 𝕊)
-import App.Util.Selector (ConstrArg, constrArg, sel𝔹, valOf)
+import App.Util.Selector (ObjArg, objArg, sel𝔹, valOf)
 import App.View.Util (Fig, Options)
 import Bind (Bind)
 import DataType (class HasClasses)
@@ -37,9 +37,9 @@ type TestSpec =
 
 type TestLinkedOutputsSpec =
    { spec :: Options
-   , δ_out :: ConstrArg -> Selector Val
-   , out_expect :: ConstrArg -> Selector Val
-   , inert_expect :: ConstrArg -> Maybe (Selector Val)
+   , δ_out :: ObjArg -> Selector Val
+   , out_expect :: ObjArg -> Selector Val
+   , inert_expect :: ObjArg -> Maybe (Selector Val)
    , file :: String
    }
 
@@ -69,7 +69,7 @@ linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => HasClasses m 
 linkedOutputsTest { spec, δ_out, out_expect, inert_expect, file } = do
    fluidSrc <- loadFile spec.fluidSrcPaths (File file)
    fig0 <- loadFig spec fluidSrc
-   let arg = constrArg
+   let arg = objArg
    let fig = selectOutput (valOf (δ_out arg)) fig0
    v <- logTimeWhen timing.selectionResult file \_ ->
       pure (selectionResult fig).v

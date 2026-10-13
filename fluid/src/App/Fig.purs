@@ -4,7 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState, SelStates, Selection, SelectionType(..), Selector, 𝕊, pairSel, primary, primaryOrSecondary, selState, selStates, projSel, to𝔹, to𝕊)
-import App.Util.Selector (constrArg, envVal, sel𝔹, ViewSetter)
+import App.Util.Selector (objArg, envVal, sel𝔹, ViewSetter)
 import App.View (viewWithDoc)
 import App.View.ViewWithDoc (drawView)
 import App.View.Util (Direction(..), Fig, Options, HTMLId, QueryResult, View)
@@ -135,7 +135,7 @@ drawFig divId fig = do
          (selectIntermediate p >>> redraw)
    where
    { v, ρ, ι } = selectionResult fig
-   arg = constrArg
+   arg = objArg
    options = { rowFilter: fig.spec.rowFilter }
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
    prefix = divId <> "-" <> str.intermediate
