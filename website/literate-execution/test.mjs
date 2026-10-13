@@ -20,9 +20,11 @@ export const main = async () => {
       async page => await waitFor(page, "#fig > svg:nth-of-type(1)"),
    ])
 
-   // runs out of memory on Firefox
-   // await testURL("evaluation-nap3/figure1", [
-   //    async page => await waitFor(page, "#fig-output > svg:nth-of-type(1)"),
-   //    async page => await waitFor(page, "#fig-output > svg:nth-of-type(2)"),
-   // ])
+   // one load: Firefox doesn't finish a second load of this page in the same browser
+   await testURL("evaluation-nap3/figure1", [
+      async page => {
+         await waitFor(page, "#fig-output > svg:nth-of-type(1)")
+         await waitFor(page, "#fig-output > svg:nth-of-type(2)")
+      },
+   ])
 }
