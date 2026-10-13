@@ -117,4 +117,4 @@ Windows users:
 
 ## Workflow
 
-Branching strategy, issue lifecycle, milestone management and deployment: [release-cycle skill](.claude/skills/release-cycle/SKILL.md). Commit, issue and pull request conventions: `github` skill.
+Branching strategy, issue lifecycle, milestone management and deployment: [release-cycle skill](.claude/skills/release-cycle/SKILL.md). Commit, issue and pull request conventions: `conventions:github` skill ([fluid-org/claude-plugins](https://github.com/fluid-org/claude-plugins)).
