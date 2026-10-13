@@ -20,7 +20,6 @@ export const main = async () => {
       async page => await waitFor(page, "#fig > svg:nth-of-type(1)"),
    ])
 
-   // one load: Firefox doesn't finish a second load of this page in the same browser
    await testURL("evaluation-nap3/figure1", [
       async page => {
          await waitFor(page, "#fig-output > svg:nth-of-type(1)")
