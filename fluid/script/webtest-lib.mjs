@@ -152,7 +152,7 @@ export async function clickToggle(page) {
    await waitFor(page, "#grid:not(.data-pane-hidden)")
 }
 
-async function browserTests(url, browserName, viewport, tests, timeout = TIMEOUT) {
+async function browserTests(url, browserName, viewport, tests, loadTimeout = TIMEOUT) {
    const label = viewport === MOBILE ? "mobile" : "desktop"
    log(`browserTests: ${browserName} (${label})`)
    const browser = await getBrowser(browserName)
@@ -166,9 +166,9 @@ async function browserTests(url, browserName, viewport, tests, timeout = TIMEOUT
    await page.setViewport(viewport)
    for (const test of tests) {
       await page.goto(url)
-      await waitForReady(page, timeout)
+      await waitForReady(page, loadTimeout)
       await test(page)
-      await waitForReady(page, timeout)
+      await waitForReady(page, loadTimeout)
    }
    await page.close()
    if (browserErrors.length) testOutcome(false, `browser error(s): ${browserErrors.join("; ")}`)
@@ -176,10 +176,9 @@ async function browserTests(url, browserName, viewport, tests, timeout = TIMEOUT
 
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:8080"
 
-// timeout: for the page to finish loading, in ms
-export async function testURL(suffix, tests, { timeout = TIMEOUT } = {}) {
+export async function testURL(suffix, tests, { loadTimeout = TIMEOUT } = {}) {
    const url = `${BASE_URL}/${suffix}`
-   for (const browser of BROWSERS) await browserTests(url, browser, VIEWPORT, tests, timeout)
+   for (const browser of BROWSERS) await browserTests(url, browser, VIEWPORT, tests, loadTimeout)
 }
 
 export async function testMobile(suffix, tests) {

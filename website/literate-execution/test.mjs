@@ -26,5 +26,5 @@ export const main = async () => {
          await waitFor(page, "#fig-output > svg:nth-of-type(1)")
          await waitFor(page, "#fig-output > svg:nth-of-type(2)")
       },
-   ], { timeout: 120000 })
+   ], { loadTimeout: 120000 })
 }
