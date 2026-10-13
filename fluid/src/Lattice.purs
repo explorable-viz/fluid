@@ -6,7 +6,7 @@ import Data.Array (zipWith) as A
 import Data.Bifunctor (bimap)
 import Data.Foldable (length)
 import Data.List (List, zipWith)
-import Data.Map (Map, empty, filter, unionWith) as M
+import Data.Map (Map, empty, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Dict (Dict)
@@ -34,7 +34,7 @@ class Neg a where
 
 class (BoundedLattice a, Neg a) <= BooleanLattice a
 
--- Addition idempotent; ctrlWeight idempotent for multiplication and bounding its own multiples.
+-- Addition idempotent; ctrlWeight idempotent for multiplication and bounding its own multiples; no zero divisors.
 class (Semiring s, Ord s) <= DepSemiring s where
    ctrlWeight :: s
 
@@ -67,8 +67,9 @@ instance (Ord k, DepSemiring s) => Semiring (Lineage k s) where
    zero = Lineage (zero × M.empty)
    one = Lineage (one × M.empty)
    add (Lineage (a × m)) (Lineage (b × n)) = Lineage ((a + b) × M.unionWith add m n)
-   mul (Lineage (a × m)) (Lineage (b × n)) =
-      Lineage ((a * b) × M.filter (_ /= zero) (M.unionWith add (mul a <$> n) (mul b <$> m)))
+   mul (Lineage (a × m)) (Lineage (b × n)) = Lineage ((a * b) × M.unionWith add (scale a n) (scale b m))
+      where
+      scale c = if c == zero then const M.empty else map (mul c)
 
 instance (Ord k, DepSemiring s) => DepSemiring (Lineage k s) where
    ctrlWeight = Lineage (ctrlWeight × M.empty)
