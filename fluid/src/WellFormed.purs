@@ -30,7 +30,7 @@ import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import Classes (ClassTable, Instance(..), ancestors, elemType, equiv, fieldMap, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
 import Types.Defs (bool, cMatrix, cParagraph, cRange, int, intPair, matrix, never, none, object, str)
-import DefiniteAssignment (Entry(..), Cxt, WfResult(..), classOf, extend, mergeRes, override, overrideRes, resolveName)
+import Cxt (Entry(..), Cxt, WfResult(..), classOf, extend, mergeRes, override, overrideRes, resolveName)
 import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
 import Expr (Unop(..), bv, fv)

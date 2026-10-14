@@ -34,8 +34,8 @@ import Data.Lazy (defer, force)
 import Data.Tuple (fst, snd)
 import Classes (ClassTable, askClasses, fields)
 import Types.Defs (cMatrix, cRange, callable, matrix, var)
-import DefiniteAssignment (Entry(..)) as Entry
-import DefiniteAssignment (Cxt, Entry(Assigned), generalise)
+import Cxt (Entry(..)) as Entry
+import Cxt (Cxt, Entry(Assigned), generalise)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
