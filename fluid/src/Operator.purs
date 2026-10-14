@@ -86,21 +86,21 @@ least classes os = snd <$> find (\(σs × _) -> all (\(τs × _) -> and (zipWith
 
 binopOverloads :: ClassTable -> Binop -> List (Type -> Type -> Maybe Overload)
 binopOverloads classes op = case op of
-   Eq -> equality : Nil
-   Ne -> equality : Nil
+   Eq -> equality classes : Nil
+   Ne -> equality classes : Nil
    In -> membership
    NotIn -> membership
    Lt -> ordering
    Le -> ordering
    Gt -> ordering
    Ge -> ordering
-   Add -> arithmetic int : arithmetic float : both str str : concatList : concatTuple : Nil
+   Add -> arithmetic int : arithmetic float : both str str : concatList classes : concatTuple classes : Nil
    Sub -> arithmetic int : arithmetic float : Nil
-   Mul -> arithmetic int : arithmetic float : repeatStr : reflected repeatStr : repeatList : reflected repeatList : Nil
+   Mul -> arithmetic int : arithmetic float : repeatStr classes : reflected repeatStr classes : repeatList classes : reflected repeatList classes : Nil
    Div -> arithmetic float : Nil
    FloorDiv -> arithmetic int : arithmetic float : Nil
    Mod -> arithmetic int : arithmetic float : Nil
-   Pow -> powerInt : arithmetic float : Nil
+   Pow -> powerInt classes : arithmetic float : Nil
    where
    sub σ τ = subtype classes σ τ
 
@@ -108,30 +108,47 @@ binopOverloads classes op = case op of
    arithmetic τ = both τ τ
    ordering = both float bool : both str bool : Nil
 
-   equality σ τ =
-      whenever (comparable classes σ τ && equalityType classes σ && equalityType classes τ) ((σ : τ : Nil) × bool)
+   membership = membershipList classes : membershipTuple classes : both str bool : membershipDict classes : Nil
 
-   membership = membershipList : membershipTuple : both str bool : membershipDict : Nil
+type BinopOverload = ClassTable -> Type -> Type -> Maybe Overload
 
-   membershipList σ τ@(ListTy τ') = whenever (comparable classes σ τ') ((σ : τ : Nil) × bool)
-   membershipList _ _ = Nothing
-   membershipTuple σ τ@(TupleTy τs) = whenever (comparable classes σ (joins classes τs)) ((σ : τ : Nil) × bool)
-   membershipTuple _ _ = Nothing
-   membershipDict σ τ@(DictTy _) = whenever (sub σ str) ((str : τ : Nil) × bool)
-   membershipDict _ _ = Nothing
+equality :: BinopOverload
+equality classes σ τ =
+   whenever (comparable classes σ τ && equalityType classes σ && equalityType classes τ) ((σ : τ : Nil) × bool)
 
-   concatList σ@(ListTy σ') τ@(ListTy τ') = Just ((σ : τ : Nil) × ListTy (join classes σ' τ'))
-   concatList _ _ = Nothing
-   concatTuple σ@(TupleTy σs) τ@(TupleTy τs) = Just ((σ : τ : Nil) × TupleTy (σs <> τs))
-   concatTuple _ _ = Nothing
+membershipList :: BinopOverload
+membershipList classes σ τ@(ListTy τ') = whenever (comparable classes σ τ') ((σ : τ : Nil) × bool)
+membershipList _ _ _ = Nothing
 
-   repeatStr σ τ = whenever (sub σ str && sub τ int) ((str : int : Nil) × str)
-   repeatList σ@(ListTy _) τ = whenever (sub τ int) ((σ : int : Nil) × σ)
-   repeatList _ _ = Nothing
-   reflected overload σ τ = lmap reverse <$> overload τ σ
+membershipTuple :: BinopOverload
+membershipTuple classes σ τ@(TupleTy τs) = whenever (comparable classes σ (joins classes τs)) ((σ : τ : Nil) × bool)
+membershipTuple _ _ _ = Nothing
 
-   powerInt σ τ@(LitTy (L.Int n)) = whenever (sub σ int) ((int : τ : Nil) × if n < 0 then float else int)
-   powerInt _ _ = Nothing
+membershipDict :: BinopOverload
+membershipDict classes σ τ@(DictTy _) = whenever (subtype classes σ str) ((str : τ : Nil) × bool)
+membershipDict _ _ _ = Nothing
+
+concatList :: BinopOverload
+concatList classes σ@(ListTy σ') τ@(ListTy τ') = Just ((σ : τ : Nil) × ListTy (join classes σ' τ'))
+concatList _ _ _ = Nothing
+
+concatTuple :: BinopOverload
+concatTuple _ σ@(TupleTy σs) τ@(TupleTy τs) = Just ((σ : τ : Nil) × TupleTy (σs <> τs))
+concatTuple _ _ _ = Nothing
+
+repeatStr :: BinopOverload
+repeatStr classes σ τ = whenever (subtype classes σ str && subtype classes τ int) ((str : int : Nil) × str)
+
+repeatList :: BinopOverload
+repeatList classes σ@(ListTy _) τ = whenever (subtype classes τ int) ((σ : int : Nil) × σ)
+repeatList _ _ _ = Nothing
+
+reflected :: BinopOverload -> BinopOverload
+reflected overload classes σ τ = lmap reverse <$> overload classes τ σ
+
+powerInt :: BinopOverload
+powerInt classes σ τ@(LitTy (L.Int n)) = whenever (subtype classes σ int) ((int : τ : Nil) × if n < 0 then float else int)
+powerInt _ _ _ = Nothing
 
 unopOverloads :: ClassTable -> Unop -> List (Type -> Maybe Overload)
 unopOverloads classes op = case op of
