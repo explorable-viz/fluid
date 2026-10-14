@@ -49,13 +49,20 @@ import Util.Set (empty, (\\), (∈), (∪))
 -- Predefined modules and program (under __main__) have no body
 type CheckedModule = { cxt :: Cxt, mod :: Maybe E.Module }
 
--- Modules checked so far, over parsed modules.
+-- Modules checked so far, over parsed modules and names of all modules of program.
 type CheckState = { modules :: Map.Map ModuleName CheckedModule, classes :: ClassTable }
-type CheckM = StateT CheckState (ReaderT (Map.Map ModuleName S.Module) (Either String))
+type CheckM = StateT CheckState (ReaderT { modules :: Map.Map ModuleName S.Module, names :: Set ModuleName } (Either String))
 
-runCheckM :: forall a. CheckM a -> Map.Map ModuleName S.Module -> Map.Map ModuleName Cxt -> ClassTable -> MayFail (a × CheckState)
-runCheckM m mods predefined classes =
-   runReaderT (runStateT m { modules: predefined <#> \cxt -> { cxt, mod: Nothing }, classes }) mods
+runCheckM
+   :: forall a
+    . CheckM a
+   -> Map.Map ModuleName S.Module
+   -> Set ModuleName
+   -> Map.Map ModuleName Cxt
+   -> ClassTable
+   -> MayFail (a × CheckState)
+runCheckM m modules names predefined classes =
+   runReaderT (runStateT m { modules: predefined <#> \cxt -> { cxt, mod: Nothing }, classes }) { modules, names }
 
 classTable :: CheckM ClassTable
 classTable = gets _.classes
@@ -73,11 +80,11 @@ checkModule :: ModuleName -> CheckM Cxt
 checkModule q = gets _.modules >>= \modules -> case lookup q modules of
    Just { cxt } -> pure cxt
    Nothing -> within ("module " <> dottedName q) do
-      mods <- lift ask
+      { modules: mods, names } <- lift ask
       let mod@(S.Module ιs _) = get q mods
       cxt_imp × cxt_ιs <- checkImports q ιs
       cxt' × mod' <- checkStatements q cxt_imp cxt_ιs mod
-      let subMods = Mod <$> Map.fromFoldable (submods (keys mods) q)
+      let subMods = Mod <$> Map.fromFoldable (submods names q)
       for_ (Set.findMin ((keys cxt_ιs ∪ keys cxt') ∩ keys subMods)) \x ->
          throwError $ "Duplicate module member: " <> dottedName q <> " defines " <> x
             <> " and also has submodule "

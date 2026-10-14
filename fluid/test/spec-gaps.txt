@@ -17,4 +17,3 @@ test/module-level/excluded/static/pattern_union_base_unreachable.py (check: exit
 test/module-level/excluded/static/unsupported_builtin.py (check: exit 0, expected [3]: )
 test/module-level/excluded/syntactic/try_except.py (check: exit 3, expected [1]: Unbound name: x)
 test/module-level/python-error/syntactic/break_outside_loop.py (check: exit 3, expected [1]: Unbound name: break)
-test/program-level/excluded/static/duplicate_member_import (check: exit 0, expected [3, 4]: )

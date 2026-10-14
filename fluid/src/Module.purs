@@ -11,7 +11,10 @@ import Bind (dottedName, pathName, varName)
 import Data.List.NonEmpty (snoc)
 import Data.Either (Either(..), either)
 import Data.Foldable (foldM, for_, intercalate)
-import Data.List (List(..), catMaybes, elem, filter, reverse, takeWhile, (:))
+import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
+import Data.List as List
+import Data.List.NonEmpty as NEL
+import Data.String (Pattern(..), split)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -27,7 +30,7 @@ import Eval (evalImport, implicitMembers, load) as Dep
 import Expr (Import(..)) as E
 import Literal (Literal(..))
 import Expr (Module, Pattern(..), Stmt, fv)
-import File (class LoadFile, File(..), FileCxt(..), hasDirectory, loadModuleSource, withClasses)
+import File (class LoadFile, File(..), FileCxt(..), hasDirectory, loadModuleSource, manifest, modulePath, withClasses)
 import DepGraph (Deriv, deriv, emptyGraph)
 import Module.Defs (ModuleName, containing, implicit, implicitFor, parents)
 import Parse (parseModule, parseProgram)
@@ -144,8 +147,17 @@ prepModules
    -> ExceptT ParseFailure m { result :: a, modules :: Map ModuleName Module, classes :: ClassTable }
 prepModules imports action = do
    mods <- parseModules imports
-   result × { modules: checked, classes } <- lift (orThrow (runCheckM action mods (fst <$> predefined) predefinedClasses))
+   names <- moduleNames <$> ask
+   result × { modules: checked, classes } <-
+      lift (orThrow (runCheckM action mods names (fst <$> predefined) predefinedClasses))
    pure { result, modules: Map.mapMaybe _.mod checked, classes }
+
+-- Names of modules with source under source roots, and of packages containing them
+moduleNames :: FileCxt -> Set ModuleName
+moduleNames (FileCxt { fluidSrcPaths, manifests }) = Set.fromFoldable (qs >>= \q -> q : parents q)
+   where
+   qs = List.fromFoldable (fluidSrcPaths >>= \root -> Set.toUnfoldable (manifest root manifests))
+      # mapMaybe (modulePath >=> split (Pattern "/") >>> NEL.fromFoldable)
 
 -- Module q checked as module, not program, with modules it imports.
 prepModule
