@@ -54,11 +54,10 @@ baseAt classes c τs = def.base <#> \(d × σs) -> ClassTy d (subst τs def.type
    where
    def = get c classes
 
--- Type arguments of ancestor d of C[τs].
-ancestorAt :: ClassTable -> Name -> List Type -> Name -> List Type
-ancestorAt classes c τs d
+ancestorArgs :: ClassTable -> Name -> List Type -> Name -> List Type
+ancestorArgs classes c τs d
    | c == d = τs
-   | Just (ClassTy c' σs) <- baseAt classes c τs = ancestorAt classes c' σs d
+   | Just (ClassTy c' σs) <- baseAt classes c τs = ancestorArgs classes c' σs d
    | otherwise = error absurd
 
 fieldsAt :: ClassTable -> Name -> List Type -> List (Var × Type)
@@ -72,7 +71,7 @@ instanceAt classes c τ = instanceAbove τ <|> instanceBelow τ
    αs = (get c classes).typeParams
    monomorphic = if null αs then Instance Nil else Undetermined
 
-   instanceAbove (ClassTy d τs) | c `elem` ancestors classes d = Just (Instance (ancestorAt classes d τs c))
+   instanceAbove (ClassTy d τs) | c `elem` ancestors classes d = Just (Instance (ancestorArgs classes d τs c))
    instanceAbove (PrimitiveTy Never) = Just monomorphic
    instanceAbove _ = Nothing
 
@@ -83,7 +82,7 @@ instanceAt classes c τ = instanceAbove τ <|> instanceBelow τ
             | F.all (F.and <<< zipWith (equiv classes) τs) τss -> Just (Instance τs)
             | otherwise -> Just Undetermined
       where
-      ρs = ancestorAt classes c (VarTy <$> αs) d
+      ρs = ancestorArgs classes c (VarTy <$> αs) d
       atoms = nubEq (object : (σs >>= subterms))
       candidates = sequence (αs <#> \_ -> joins classes <$> subsets atoms)
       solves τs = F.and (zipWith (\ρ σ -> equiv classes (subst τs αs ρ) σ) ρs σs)
