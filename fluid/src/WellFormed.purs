@@ -103,6 +103,7 @@ importBindings enclosing (S.Import q Nothing) = do
    where
    { head: x, tail: xs } = NEL.uncons q
 importBindings enclosing (S.Import q (Just xs)) = do
+   checkDistinct ("Imported twice: " <> _) xs
    cxt <- checkModule q
    for_ (containing enclosing q) checkModule
    importedMembers q cxt xs
