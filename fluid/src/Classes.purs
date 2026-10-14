@@ -98,7 +98,7 @@ class TypeArgs a where
 
 instance TypeArgs Type where
    typeArgs _ αs (VarTy α) τ | α `elem` αs = singleton α (baseType τ)
-   typeArgs classes αs σ (UnionTy τ τ') = joinCxt classes (typeArgs classes αs σ τ) (typeArgs classes αs σ τ')
+   typeArgs classes αs σ (UnionTy τ τ') = join classes (typeArgs classes αs σ τ) (typeArgs classes αs σ τ')
    typeArgs classes αs (ListTy σ) (ListTy τ) = typeArgs classes αs σ τ
    typeArgs classes αs (DictTy σ) (DictTy τ) = typeArgs classes αs σ τ
    typeArgs classes αs (TupleTy σs) (TupleTy τs) = typeArgs classes αs σs τs
@@ -109,14 +109,11 @@ instance TypeArgs Type where
       _ -> empty
    typeArgs classes αs (UnionTy σ σ') τ
       | F.any (\σ'' -> Set.isEmpty (fv σ'' ∩ Set.fromFoldable αs) && subtype classes τ σ'') [ σ, σ' ] = empty
-      | otherwise = joinCxt classes (typeArgs classes αs σ τ) (typeArgs classes αs σ' τ)
+      | otherwise = join classes (typeArgs classes αs σ τ) (typeArgs classes αs σ' τ)
    typeArgs _ _ _ _ = empty
 
 instance TypeArgs a => TypeArgs (List a) where
-   typeArgs classes αs σs τs = F.foldl (joinCxt classes) empty (zipWith (typeArgs classes αs) σs τs)
-
-joinCxt :: ClassTable -> Map Var Type -> Map Var Type -> Map Var Type
-joinCxt classes = unionWith (join classes)
+   typeArgs classes αs σs τs = F.foldl (join classes) empty (zipWith (typeArgs classes αs) σs τs)
 
 elemType :: ClassTable -> Type -> Maybe Type
 elemType _ τ | baseType τ == str = Just str
@@ -189,11 +186,17 @@ subtype classes σ τ
 equiv :: ClassTable -> Type -> Type -> Boolean
 equiv classes σ τ = subtype classes σ τ && subtype classes τ σ
 
-join :: ClassTable -> Type -> Type -> Type
-join classes σ τ
-   | subtype classes σ τ = τ
-   | subtype classes τ σ = σ
-   | otherwise = UnionTy σ τ
+class Join a where
+   join :: ClassTable -> a -> a -> a
+
+instance Join Type where
+   join classes σ τ
+      | subtype classes σ τ = τ
+      | subtype classes τ σ = σ
+      | otherwise = UnionTy σ τ
+
+instance (Ord k, Join a) => Join (Map k a) where
+   join classes = unionWith (join classes)
 
 joins :: ClassTable -> List Type -> Type
 joins classes = F.foldr (join classes) never
