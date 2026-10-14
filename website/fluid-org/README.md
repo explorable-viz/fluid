@@ -20,12 +20,6 @@ This will print a URL to preview the website. The site will automatically refres
 
 Running `yarn run build` will create/update the `build` directory with the static build output. You can publish this anywhere that serves static files or run a preview server with `yarn run preview`.
 
-## Update Fluid
-
-I have included the contents of `output-es` in `src/lib/fluid`. You can update these by building Fluid and directly copying `$FLUID_PATH/output-es/*` into `src/lib/fluid`.
-
-It would be nice to have these included in the Fluid npm module, or to integrate Fluid with the build/dev steps here.
-
 ## SvelteKit
 
 This is a SvelteKit website. We are prerendering every page so in the build output there should be no server side functionality.
