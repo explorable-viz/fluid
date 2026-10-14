@@ -3,7 +3,8 @@ module Val where
 import Prelude hiding (absurd, append)
 
 import Bind (Name, Var)
-import DataType (class HasClasses, cRange)
+import DataType (class HasClasses)
+import Types.Util (cRange)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Except (ExceptT)

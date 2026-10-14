@@ -33,6 +33,9 @@ sys = pure "sys"
 prelude :: ModuleName
 prelude = NonEmptyList ("fluid" :| "prelude" : Nil)
 
+view :: ModuleName
+view = NonEmptyList ("fluid" :| "view" : Nil)
+
 -- Modules in scope without import, each under members of those before it
 implicit :: List ModuleName
 implicit = builtins : prelude : Nil

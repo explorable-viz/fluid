@@ -28,7 +28,8 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
-import DataType (ClassTable, Instance(..), ancestors, cMatrix, cParagraph, cRange, elemType, equiv, fieldMap, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
+import DataType (ClassTable, Instance(..), ancestors, elemType, equiv, fieldMap, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
+import Types.Util (bool, cMatrix, cParagraph, cRange, int, intPair, matrix, never, none, object, str)
 import DefiniteAssignment (Entry(..), Cxt, WfResult(..), classOf, extend, mergeRes, override, overrideRes, resolveName)
 import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
@@ -39,7 +40,7 @@ import Literal (Literal(..))
 import Operator (binopSymbol, resolveBinop, resolveUnop, unopSymbol)
 import Pretty (prettyP)
 import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeExpr(..), VarDef(..), assigns, binds, declares) as S
-import Types (Scheme(..), bool, int, intPair, never, none, object, str)
+import Types (Scheme(..))
 import Types as T
 import Util (MayFail, type (+), type (×), absurd, checkDistinct, definitely', error, nonEmpty, singleton, tail, zip, zipWith, (×), (∩))
 import Util.Pair (Pair(..))
@@ -425,7 +426,7 @@ synthExpr cxt e@(S.Subscript e1 e2)
 synthExpr cxt (S.Matrix e1 (x × y) e2) = do
    e2' <- checkExpr cxt e2 intPair
    τ × e1' <- synthExpr (cxt `override` bindings (Map.fromFoldable [ x × int, y × int ])) e1
-   pure (T.ClassTy cMatrix (T.baseType τ : Nil) × E.Matrix e1' (x × y) e2')
+   pure (matrix (T.baseType τ) × E.Matrix e1' (x × y) e2')
 synthExpr _ (S.Lambda _) = throwError notSynthesised
 synthExpr cxt (S.Dictionary kvs) = do
    ks' <- for kvs \(k × _) -> checkExpr cxt k str

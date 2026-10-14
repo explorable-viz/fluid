@@ -5,7 +5,7 @@ import Prim hiding (Type)
 
 import Bind (Name, Var)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), length, zip, (:))
+import Data.List (List, length, zip, (:))
 import Data.List.NonEmpty (NonEmptyList)
 import Data.Map (fromFoldable, lookup)
 import Data.Maybe (fromMaybe)
@@ -49,36 +49,12 @@ primitiveName Float = "float"
 primitiveName Str = "str"
 primitiveName Sized = "Sized"
 
-object :: Type
-object = PrimitiveTy Object
-
-never :: Type
-never = PrimitiveTy Never
-
-none :: Type
-none = PrimitiveTy None
-
-bool :: Type
-bool = PrimitiveTy Bool
-
-int :: Type
-int = PrimitiveTy Int
-
-float :: Type
-float = PrimitiveTy Float
-
-str :: Type
-str = PrimitiveTy Str
-
-intPair :: Type
-intPair = TupleTy (int : int : Nil)
-
 baseType :: Type -> Type
-baseType (LitTy (L.Int _)) = int
-baseType (LitTy (L.Float _)) = float
-baseType (LitTy (L.Str _)) = str
-baseType (LitTy (L.Bool _)) = bool
-baseType (LitTy L.None) = none
+baseType (LitTy (L.Int _)) = PrimitiveTy Int
+baseType (LitTy (L.Float _)) = PrimitiveTy Float
+baseType (LitTy (L.Str _)) = PrimitiveTy Str
+baseType (LitTy (L.Bool _)) = PrimitiveTy Bool
+baseType (LitTy L.None) = PrimitiveTy None
 baseType τ = τ
 
 subst :: List Type -> List Var -> Type -> Type

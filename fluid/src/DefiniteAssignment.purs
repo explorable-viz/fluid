@@ -9,8 +9,8 @@ import Data.List.NonEmpty as NEL
 import Data.List (List)
 import Data.Map (Map)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
-import Types (Scheme, Type) as T
+import Data.Maybe (Maybe(..), maybe)
+import Types (Scheme(..), Type, fv) as T
 import Util (type (+), absurd, error)
 import Util.Map (intersectionWith, lookup, unionWith)
 import Util.Set ((∪))
@@ -94,3 +94,5 @@ derive instance Functor WfResult
 derive instance Eq a => Eq (WfResult a)
 derive instance Eq Entry
 
+generalise :: T.Type -> Entry
+generalise τ = maybe (Assigned τ) (TypeScheme <<< flip T.Forall τ) (NEL.fromFoldable (T.fv τ))

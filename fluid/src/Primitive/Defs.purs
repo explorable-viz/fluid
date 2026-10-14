@@ -16,7 +16,7 @@ import Data.Int (quot, rem) as I
 import Data.Int as Int
 import Data.List (List(..), (:))
 import Data.List as L
-import Data.List.NonEmpty (fromFoldable, last) as NEL
+import Data.List.NonEmpty (last) as NEL
 import Data.Map (Map)
 import Data.Map as M
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -31,9 +31,10 @@ import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (for, traverse)
 import Data.Lazy (defer, force)
 import Data.Tuple (fst, snd)
-import DataType (ClassTable, askClasses, cMatrix, cRange, fields)
+import DataType (ClassTable, askClasses, fields)
+import Types.Util (cMatrix, cRange, callable, matrix, var)
 import DefiniteAssignment (Entry(..)) as Entry
-import DefiniteAssignment (Cxt, Entry(Assigned, TypeScheme))
+import DefiniteAssignment (Cxt, Entry(Assigned), generalise)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -47,8 +48,8 @@ import Util (MayFail, type (+), type (×), definitely', orElse, orThrow, singlet
 import ModuleGraph (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
-import Types (Primitive(..), Type(..), baseType, float, fv, int, intPair, none, object, str) as T
-import Types (Scheme(..))
+import Types (Primitive(..), Type(..), baseType) as T
+import Types.Util (float, int, intPair, none, object, str) as T
 import Util.Map (constMap, lookup, unionWith_never, (\\))
 import Util.Map as Dict
 import Util.Map as Map
@@ -78,13 +79,13 @@ predefined = M.fromFoldable
         , unary "str_to_float" { i: string, o: number, fwd: definitely' <<< fromString } × generalise (callable [ T.str ] T.float)
         , unary "num_to_str" { i: intOrNumber, o: string, fwd: numToStr } × generalise (callable [ T.float ] T.str) -- rename to 'str' (more Pythonic)
         -- TODO: rename the rest of these (apart from dict_map?) to lose the dict_ prefix
-        , extern dict_difference × generalise (callable [ dict (var "T"), dict (var "U") ] (dict (var "T")))
-        , extern dict_disjointUnion × generalise (callable [ dict (var "T"), dict (var "T") ] (dict (var "T")))
-        , extern foldl_with_index × generalise (callable [ callable [ T.str, var "U", var "T" ] (var "U"), var "U", dict (var "T") ] (var "U"))
-        , extern get × generalise (callable [ T.str, dict (var "T") ] (T.UnionTy (var "T") T.none))
-        , extern insert × generalise (callable [ dict (var "T"), T.str, var "T" ] (dict (var "T")))
-        , extern dict_intersectionWith × generalise (callable [ callable [ var "T", var "U" ] (var "V"), dict (var "T"), dict (var "U") ] (dict (var "V")))
-        , extern dict_map × generalise (callable [ callable [ var "T" ] (var "U"), dict (var "T") ] (dict (var "U")))
+        , extern dict_difference × generalise (callable [ T.DictTy (var "T"), T.DictTy (var "U") ] (T.DictTy (var "T")))
+        , extern dict_disjointUnion × generalise (callable [ T.DictTy (var "T"), T.DictTy (var "T") ] (T.DictTy (var "T")))
+        , extern foldl_with_index × generalise (callable [ callable [ T.str, var "U", var "T" ] (var "U"), var "U", T.DictTy (var "T") ] (var "U"))
+        , extern get × generalise (callable [ T.str, T.DictTy (var "T") ] (T.UnionTy (var "T") T.none))
+        , extern insert × generalise (callable [ T.DictTy (var "T"), T.str, var "T" ] (T.DictTy (var "T")))
+        , extern dict_intersectionWith × generalise (callable [ callable [ var "T", var "U" ] (var "V"), T.DictTy (var "T"), T.DictTy (var "U") ] (T.DictTy (var "V")))
+        , extern dict_map × generalise (callable [ callable [ var "T" ] (var "U"), T.DictTy (var "T") ] (T.DictTy (var "U")))
         , extern matrixUpdate × generalise (callable [ matrix (var "T"), T.intPair, var "T" ] (matrix (var "T")))
         , extern find_str × generalise (callable [ T.str, T.str ] T.int)
         , extern search × generalise (callable [ T.str, T.str ] (T.UnionTy T.int T.none))
@@ -95,12 +96,12 @@ predefined = M.fromFoldable
    , predefinedModule math Nil []
         [ ("pi" × Val bot (Lit (Float N.pi))) × generalise T.float
         , ("e" × Val bot (Lit (Float N.e))) × generalise T.float
-        , unary "sqrt" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sqrt) `union1` N.sqrt } × generalise floatFun
-        , unary "exp" { i: intOrNumber, o: number, fwd: (toNumber >>> N.exp) `union1` N.exp } × generalise floatFun
-        , unary "log" { i: intOrNumber, o: number, fwd: (toNumber >>> N.log) `union1` N.log } × generalise floatFun
-        , unary "sin" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sin) `union1` N.sin } × generalise floatFun
-        , unary "cos" { i: intOrNumber, o: number, fwd: (toNumber >>> N.cos) `union1` N.cos } × generalise floatFun
-        , unary "tan" { i: intOrNumber, o: number, fwd: (toNumber >>> N.tan) `union1` N.tan } × generalise floatFun
+        , unary "sqrt" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sqrt) `union1` N.sqrt } × generalise (callable [ T.float ] T.float)
+        , unary "exp" { i: intOrNumber, o: number, fwd: (toNumber >>> N.exp) `union1` N.exp } × generalise (callable [ T.float ] T.float)
+        , unary "log" { i: intOrNumber, o: number, fwd: (toNumber >>> N.log) `union1` N.log } × generalise (callable [ T.float ] T.float)
+        , unary "sin" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sin) `union1` N.sin } × generalise (callable [ T.float ] T.float)
+        , unary "cos" { i: intOrNumber, o: number, fwd: (toNumber >>> N.cos) `union1` N.cos } × generalise (callable [ T.float ] T.float)
+        , unary "tan" { i: intOrNumber, o: number, fwd: (toNumber >>> N.tan) `union1` N.tan } × generalise (callable [ T.float ] T.float)
         , unary "floor" { i: intOrNumber, o: int, fwd: identity `union1` floor } × generalise (callable [ T.float ] T.int)
         , unary "ceil" { i: intOrNumber, o: int, fwd: identity `union1` ceil } × generalise (callable [ T.float ] T.int)
         ]
@@ -124,13 +125,6 @@ predefined = M.fromFoldable
          , M.fromFoldable (classes <#> \c -> NEL.last c × Entry.Type c)
          , M.fromFoldable (members' <#> \((x × _) × θ) -> x × θ)
          ]
-
-   callable σs τ = T.CallableTy (L.fromFoldable σs) τ
-   floatFun = callable [ T.float ] T.float
-   dict = T.DictTy
-   matrix τ = T.ClassTy cMatrix (τ : Nil)
-   var = T.VarTy
-   generalise τ = maybe (Assigned τ) (TypeScheme <<< flip Forall τ) (NEL.fromFoldable (T.fv τ))
 
 len :: ForeignOp
 len =

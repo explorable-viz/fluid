@@ -3,8 +3,7 @@ module DataType where
 import Prelude hiding (absurd, join)
 import Prim hiding (Type)
 
-import Bind (Name, Var, qual)
-import ModuleGraph (builtins, prelude)
+import Bind (Name, Var)
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Except.Trans (ExceptT)
@@ -15,15 +14,15 @@ import Control.Monad.Writer.Trans (WriterT)
 import Data.Bifunctor (rmap)
 import Data.Foldable (all, and, any, foldl, foldr, lookup) as F
 import Data.List (List(..), elem, elemIndex, filter, index, length, nubEq, null, zipWith, (:))
-import Data.List.NonEmpty (NonEmptyList(..), last) as NE
-import Data.NonEmpty ((:|))
+import Data.List.NonEmpty (last) as NE
 import Data.Map (Map, empty, singleton, unionWith)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Set as Set
 import Data.Traversable (sequence)
 import Data.Tuple (fst)
 import Effect.Exception (Error)
-import Types (Primitive(..), Type(..), baseType, fv, int, never, object, str, subst, subterms)
+import Types (Primitive(..), Type(..), baseType, fv, subst, subterms)
+import Types.Util (cRange, int, never, object, str)
 import Util (type (×), absurd, error, throw, (×), (∩))
 import Util.Map (get, lookup)
 
@@ -217,29 +216,6 @@ meet classes σ τ
            TupleTy σs, TupleTy τs | length σs == length τs -> TupleTy (zipWith (meet classes) σs τs)
            _, _ -> never
 
-view :: Name
-view = NE.NonEmptyList ("fluid" :| "view" : Nil)
-
--- Used internally by primitives, desugaring or rendering layer.
-cDefault = qual view "Default" :: Name -- Orientation
-cRotated = qual view "Rotated" :: Name
-cBarChart = qual view "BarChart" :: Name -- View
-cLineChart = qual view "LineChart" :: Name
-cLinePlot = qual view "LinePlot" :: Name
-cMultiView = qual view "MultiView" :: Name
-cScatterPlot = qual view "ScatterPlot" :: Name
-cParagraph = qual view "Paragraph" :: Name
-cDimensions = qual view "Dimensions" :: Name
-cPoint = qual view "Point" :: Name
-cAxisLabels = qual view "AxisLabels" :: Name
-cTickLabels = qual view "TickLabels" :: Name
-cSegment = qual view "Segment" :: Name
-cStackedBar = qual view "StackedBar" :: Name
-cNonEmpty = qual prelude "NonEmpty" :: Name -- Tree
-cRange = qual builtins "range" :: Name
-cMatrix = qual builtins "Matrix" :: Name
-cText = qual view "Text" :: Name
-cLink = qual view "Link" :: Name
 -- Field names used internally by rendering layer.
 f_caption = "caption" :: FieldName
 f_fragments = "fragments" :: FieldName
