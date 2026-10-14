@@ -165,7 +165,7 @@ declareStmt = do
    Declare x <$> typeExpr
 
 returnStmt :: Parser Stmt
-returnStmt = reserved "return" *> (maybe ReturnNone Return <$> optionMaybe (sameOrIndented *> expr))
+returnStmt = reserved "return" *> (Return <$> optionMaybe (sameOrIndented *> expr))
 
 assertStmt :: Parser Stmt
 assertStmt = do
@@ -184,7 +184,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser Stmt
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeAliasStmt <|> defStmt <|> declareStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeAliasStmt <|> defStmt <|> declareStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <<< Just <$> expr)
 
 programStmts :: Parser Stmt
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
