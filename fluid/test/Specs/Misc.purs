@@ -69,7 +69,7 @@ misc_cases =
    , { file: "from_import_submodule.fld", fwd_expect: "1" }
    , { file: "from_import_value.fld", fwd_expect: "1" }
    , { file: "from_import_view.fld", fwd_expect: "MultiView([])" }
-   , { file: "groupby.fld", fwd_expect: "[(1, [1, 3]), (0, [2, 4, 6]), (1, [5])]" }
+   , { file: "groupby.fld", fwd_expect: """[("odd", [1, 3]), ("even", [2, 4, 6]), ("odd", [5])]""" }
    , { file: "import_absolute_shadow.fld", fwd_expect: "2" }
    , { file: "import_dataclass.fld", fwd_expect: "Coord(3, 4)" }
    , { file: "import_modules.fld", fwd_expect: "84" }

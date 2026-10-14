@@ -1,6 +1,6 @@
 from itertools import groupby
 
-def parity(n: int) -> int:
-  return n % 2
+def parity(n: int) -> str:
+  return "even" if n % 2 == 0 else "odd"
 
 groupby(parity, [1, 3, 2, 4, 6, 5])

@@ -1,6 +1,6 @@
 from typing import Callable
 
-def groupby[A, K](key: Callable[[A], K], xs: list[A]) -> list[tuple[K, list[A]]]:
+def groupby[A](key: Callable[[A], str], xs: list[A]) -> list[tuple[str, list[A]]]:
   starts: list[int] = [i for i in range(0, len(xs)) if i == 0 or key(xs[i]) != key(xs[i - 1])]
   ends: list[int] = drop(1, starts) + [len(xs)]
   return [(key(xs[i]), slice(i, j, xs)) for (i, j) in zip(starts, ends)]
