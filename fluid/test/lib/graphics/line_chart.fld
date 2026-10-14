@@ -7,6 +7,6 @@ def addTotal(kvs: list[tuple[str, float]]) -> list[tuple[str, float]]:
   return [("Total", fsum([x for (_, x) in kvs]))] + kvs
 
 def countryData(country: str) -> list[tuple[float, list[tuple[str, float]]]]:
-  return [(year, addTotal(lookup_str(country, kvs))) for (year, kvs) in data]
+  return [(year, addTotal({c: vs for (c, vs) in kvs}[country])) for (year, kvs) in data]
 
 (lambda country: caption(country, line_chart(True, ["black"] + colours1, fst(year1), countryData(country))))("China")

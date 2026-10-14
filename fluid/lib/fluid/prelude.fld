@@ -142,6 +142,7 @@ def foldr[A, B](op: Callable[[A, B], B], z: B, xs: list[A]) -> B:
 def foldr1[A](op: Callable[[A, A], A], xs: list[A]) -> A:
   return foldr(op, xs[-1], take(len(xs) - 1, xs))
 
+# Quadratic, as each concatenation copies the list; needs rewriting
 def scanl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> list[A]:
   def go(x: B, continue: Callable[[A], list[A]]) -> Callable[[A], list[A]]:
     def step(acc: A) -> list[A]:
@@ -180,16 +181,9 @@ def take[A](n: int, xs: list[A]) -> list[A]:
 def drop[A](n: int, xs: list[A]) -> list[A]:
   return [xs[i] for i in range(max(n, 0), len(xs))]
 
-# Partial; requires k to be in the map. Keyed at int and str, as equality is undefined at a type variable;
+# Partial; requires k to be in the map. Keyed at int, as equality is undefined at a type variable;
 # retire with pure-py/pure-py-spec#233.
 def lookup[V](k: int, kvs: list[tuple[int, V]]) -> V:
-  match find(lambda (k_, _): k == k_, kvs):
-    case None:
-      assert False, "Key not found in map"
-    case (_, v):
-      return v
-
-def lookup_str[V](k: str, kvs: list[tuple[str, V]]) -> V:
   match find(lambda (k_, _): k == k_, kvs):
     case None:
       assert False, "Key not found in map"
