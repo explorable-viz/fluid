@@ -214,4 +214,3 @@ instance JoinSemilattice a => JoinSemilattice (Maybe a) where
    join _ _ = shapeMismatch unit
 
 instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
-

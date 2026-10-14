@@ -261,10 +261,10 @@ matchCases :: Cxt -> Maybe T.Type -> T.Type -> List (S.Pattern × S.Stmt) -> Che
 matchCases _ _ τ Nil = pure (Nil × τ)
 matchCases cxt ζ τ ((p × s) : bs) = do
    for_ (bv p) (unbound cxt)
-   cxt_p <- checkPattern p τ
-   r × s' <- checkStmt (cxt `override` bindings cxt_p) ζ s
+   cxt' <- bindings <$> checkPattern p τ
+   r × s' <- checkStmt (cxt `override` cxt') ζ s
    τ' <- classTable <#> \classes -> remaining classes τ p
-   lmap ((override (Assigns (bindings cxt_p)) r × (p × s')) : _) <$> matchCases cxt ζ τ' bs
+   lmap ((override (Assigns cxt') r × (p × s')) : _) <$> matchCases cxt ζ τ' bs
 
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 wellFormedTop q cxt (S.Dataclass x αs b yψs) = do
@@ -365,17 +365,12 @@ synthExpr cxt (S.Call e ψs es xes) = case className cxt e of
                σ × e' <- callee cxt e es
                τ × es' <- resultType cxt σ es
                pure (τ × E.App e' es')
-      Just ψs' -> do
-         i <- traverse asIndex ψs'
-         synthExpr cxt (S.Call (S.Subscript e (indexExpr i)) Nil es xes)
+      Just ψs' -> traverse asIndex ψs' >>= case _ of
+         NonEmptyList (i :| Nil) -> synthExpr cxt (S.Call (S.Subscript e i) Nil es xes)
+         is -> synthExpr cxt (S.Call (S.Subscript e (S.Tuple (NEL.toList is))) Nil es xes)
    where
-   asIndex (S.NameTy q Nil) = pure (qualified q)
+   asIndex (S.NameTy q Nil) = pure (foldl S.Attribute (S.Var (head q)) (tail q))
    asIndex _ = throwError $ "Type arguments for non-class: " <> maybe "expression" dottedName (asName e)
-
-   indexExpr (NonEmptyList (i :| Nil)) = i
-   indexExpr is = S.Tuple (NEL.toList is)
-
-   qualified q = foldl S.Attribute (S.Var (head q)) (tail q)
 synthExpr cxt (S.BinOp e op e') = do
    σ × e1 <- synthExpr cxt e
    σ' × e2 <- synthExpr cxt e'
@@ -968,4 +963,3 @@ subsumed classes cxt (S.PConstr c ps xps) (S.PConstr c' ps' xps') = fromMaybe fa
    pure $ all (\x -> fromMaybe false (subsumed classes cxt <$> fieldMap classes name ps xps x <*> fieldMap classes name' ps' xps' x))
       (fst <$> fields classes name')
 subsumed _ _ _ _ = false
-
