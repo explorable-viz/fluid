@@ -201,11 +201,11 @@ checkStmt cxt (Just _) (S.Assert (S.Lit (Bool false)) e') =
 checkStmt cxt _ (S.Assert e e') =
    (Assigns empty × _) <$> (E.Assert <$> check cxt e bool <*> traverse (\e'' -> check cxt e'' str) e')
 checkStmt cxt _ (S.Declare x ψ) = do
-   τ <- resolveType cxt ψ
+   τ <- synth cxt ψ
    pure (Assigns (maplet x (Declared τ)) × E.Declare x)
 checkStmt cxt _ (S.Def (S.VarDef (S.PVar x) (Just ψ) e)) = do
    assignable cxt x
-   τ <- resolveType cxt ψ
+   τ <- synth cxt ψ
    e' <- check cxt e τ
    pure (Assigns (maplet x (Assigned τ)) × E.Assign (S.PVar x) e')
 checkStmt cxt _ (S.Def (S.VarDef (S.PVar x) Nothing e)) = case lookup x cxt of
@@ -224,13 +224,13 @@ checkStmt cxt _ (S.Def (S.VarDef p ψ e)) = do
 checkStmt cxt _ (S.DefRec ds) = do
    let defs = NEL.groupBy (eq `on` fst) ds
    checkDistinct ("Non-contiguous clauses for: " <> _) (NEL.toList (fst <<< head <$> defs))
-   fπs <- for defs \def -> (fst (head def) × _) <$> defSignature cxt (head def)
+   fπs <- for defs \def -> (fst (head def) × _) <$> synth cxt (head def)
    let cxt_fs = Map.fromFoldable (fπs <#> \(f × π) -> f × either Assigned TypeScheme π)
    let cxt' = cxt `override` cxt_fs
    defs' <- for (NEL.zip defs fπs) \(def × (f × π)) -> do
       void $ wellFormedPatterns cxt' (def <#> \(_ × S.Clause (_ × ps × _)) -> S.PList (ps <#> \(S.Param p _) -> p))
       within ("definition of " <> f) $
-         (f ↦ _) <$> (traverse (defBody cxt' f (either identity (\(Forall _ σ) -> σ) π) <<< snd) def >>= clauses)
+         (f ↦ _) <$> (traverse (\b -> check cxt' b (either identity (\(Forall _ σ) -> σ) π)) def >>= clauses)
    pure (Assigns cxt_fs × E.DefRec (E.RecDefs (D.fromFoldable defs')))
 checkStmt cxt ζ (S.Seq s1 s2) = do
    r1 × s1' <- checkStmt cxt ζ s1
@@ -249,7 +249,7 @@ checkStmt cxt ζ (S.If es elseBranch) = do
       Nothing -> pure (Assigns empty × Nothing)
    pure (foldl1 merge (NEL.cons rElse (fst <$> es')) × E.If (snd <$> es') elseBranch')
 checkStmt cxt ζ (S.Match e bs) = do
-   σ × e' <- synthExpr cxt e
+   σ × e' <- synth cxt e
    ps' <- wellFormedPatterns cxt (fst <$> bs)
    rbs × τ <- matchCases cxt ζ σ (NEL.toList (NEL.zip ps' (snd <$> bs)))
    let rNoMatch = if τ == never then Returns else Assigns empty
@@ -270,7 +270,7 @@ wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 wellFormedTop q cxt (S.Dataclass x αs b yψs) = do
    predefName cxt "dataclass"
    checkDistinct (\y -> "Duplicate field " <> y <> " in class " <> x) ys
-   yτs <- for yψs \(y × ψ) -> (y × _) <$> resolveType cxt_αs ψ
+   yτs <- for yψs \(y × ψ) -> (y × _) <$> synth cxt_αs ψ
    base <- for b (baseClass cxt cxt_αs x ys)
    modify_ \st -> st { classes = insert c { typeParams: αs, fields: yτs, base } st.classes }
    pure (Assigns (maplet x (Type c)) × E.Dataclass c)
@@ -279,7 +279,7 @@ wellFormedTop q cxt (S.Dataclass x αs b yψs) = do
    ys = fst <$> yψs
    c = snoc q x
 wellFormedTop _ cxt (S.TypeAlias x αs ψ) = do
-   τ <- resolveType (cxt `override` typeParams αs) ψ
+   τ <- synth (cxt `override` typeParams αs) ψ
    pure (Assigns (maplet x (TypeAlias αs τ)) × E.TypeAlias x αs τ)
 wellFormedTop q cxt (S.Seq t1 t2) = do
    r1 × t1' <- wellFormedTop q cxt t1
@@ -304,35 +304,38 @@ typeParams αs = constMap TypeVar (Set.fromFoldable αs)
 bindings :: Map.Map Var T.Type -> Cxt
 bindings = map Assigned
 
-resolveType :: Cxt -> S.TypeExpr -> CheckM T.Type
-resolveType cxt (S.PrimitiveTy ν) = T.PrimitiveTy ν <$ predefName cxt (T.primitiveName ν)
-resolveType cxt (S.NameTy q ψs) = case resolveName cxt q of
-   Just TypeVar | null ψs -> pure (T.VarTy (dottedName q))
-   Just (TypeAlias αs τ) -> do
-      τs <- traverse (resolveType cxt) ψs
-      when (length τs /= length αs) $ throwError $ arityMismatch "Type alias" q αs τs
-      pure (T.subst τs αs τ)
-   Just (Type c) -> T.ClassTy c <$> typeArguments cxt c ψs
-   Nothing -> throwError $ "Unbound name: " <> dottedName q
-   _ -> throwError $ "Not a class: " <> dottedName q
-resolveType cxt (S.LitTy ℓ) = T.LitTy ℓ <$ predefName cxt "Literal"
-resolveType cxt (S.ListTy ψ) = predefName cxt "list" *> (T.ListTy <$> resolveType cxt ψ)
-resolveType cxt (S.DictTy ψ) = predefName cxt "dict" *> predefName cxt "str" *> (T.DictTy <$> resolveType cxt ψ)
-resolveType cxt (S.TupleTy ψs) = predefName cxt "tuple" *> (T.TupleTy <$> traverse (resolveType cxt) ψs)
-resolveType cxt (S.CallableTy ψs ψ) =
-   predefName cxt "Callable" *> (T.CallableTy <$> traverse (resolveType cxt) ψs <*> resolveType cxt ψ)
-resolveType cxt (S.TypeTy ψ) = predefName cxt "type" *> resolveType cxt ψ >>= \τ -> case τ of
-   T.UnionTy _ _ -> excluded τ
-   T.LitTy _ -> excluded τ
-   T.CallableTy _ _ -> excluded τ
-   _ -> pure (T.TypeTy τ)
-   where
-   excluded τ = throwError $ "Excluded from type[...]: " <> prettyP τ
-resolveType cxt (S.UnionTy ψ ψ') = T.UnionTy <$> resolveType cxt ψ <*> resolveType cxt ψ'
+class Synth a b | a -> b where
+   synth :: Cxt -> a -> CheckM b
+
+instance Synth S.TypeExpr T.Type where
+   synth cxt (S.PrimitiveTy ν) = T.PrimitiveTy ν <$ predefName cxt (T.primitiveName ν)
+   synth cxt (S.NameTy q ψs) = case resolveName cxt q of
+      Just TypeVar | null ψs -> pure (T.VarTy (dottedName q))
+      Just (TypeAlias αs τ) -> do
+         τs <- traverse (synth cxt) ψs
+         when (length τs /= length αs) $ throwError $ arityMismatch "Type alias" q αs τs
+         pure (T.subst τs αs τ)
+      Just (Type c) -> T.ClassTy c <$> typeArguments cxt c ψs
+      Nothing -> throwError $ "Unbound name: " <> dottedName q
+      _ -> throwError $ "Not a class: " <> dottedName q
+   synth cxt (S.LitTy ℓ) = T.LitTy ℓ <$ predefName cxt "Literal"
+   synth cxt (S.ListTy ψ) = predefName cxt "list" *> (T.ListTy <$> synth cxt ψ)
+   synth cxt (S.DictTy ψ) = predefName cxt "dict" *> predefName cxt "str" *> (T.DictTy <$> synth cxt ψ)
+   synth cxt (S.TupleTy ψs) = predefName cxt "tuple" *> (T.TupleTy <$> traverse (synth cxt) ψs)
+   synth cxt (S.CallableTy ψs ψ) =
+      predefName cxt "Callable" *> (T.CallableTy <$> traverse (synth cxt) ψs <*> synth cxt ψ)
+   synth cxt (S.TypeTy ψ) = predefName cxt "type" *> synth cxt ψ >>= \τ -> case τ of
+      T.UnionTy _ _ -> excluded τ
+      T.LitTy _ -> excluded τ
+      T.CallableTy _ _ -> excluded τ
+      _ -> pure (T.TypeTy τ)
+      where
+      excluded τ = throwError $ "Excluded from type[...]: " <> prettyP τ
+   synth cxt (S.UnionTy ψ ψ') = T.UnionTy <$> synth cxt ψ <*> synth cxt ψ'
 
 typeArguments :: Cxt -> Name -> List S.TypeExpr -> CheckM (List T.Type)
 typeArguments cxt c ψs = do
-   τs <- traverse (resolveType cxt) ψs
+   τs <- traverse (synth cxt) ψs
    αs <- gets \{ classes } -> (get c classes).typeParams
    when (length τs /= length αs) $ throwError $ arityMismatch "Class" c αs τs
    pure τs
@@ -345,108 +348,108 @@ typeArgsFor :: List Var -> Map.Map Var T.Type -> CheckM (List T.Type)
 typeArgsFor αs γ = for αs \α -> maybe (throwError $ "Type parameter " <> α <> " has no type argument") pure (lookup α γ)
 
 annotated :: Cxt -> Maybe S.TypeExpr -> S.Expr -> CheckM (T.Type × E.Expr)
-annotated cxt (Just ψ) e = resolveType cxt ψ >>= \τ -> (τ × _) <$> check cxt e τ
-annotated cxt Nothing e = synthExpr cxt e
+annotated cxt (Just ψ) e = synth cxt ψ >>= \τ -> (τ × _) <$> check cxt e τ
+annotated cxt Nothing e = synth cxt e
 
-synthExpr :: Cxt -> S.Expr -> CheckM (T.Type × E.Expr)
-synthExpr cxt (S.Var x) = (_ × E.Var x) <$> varType cxt x
-synthExpr _ (S.Lit ℓ) = pure (T.LitTy ℓ × E.Lit ℓ)
-synthExpr cxt (S.Call e ψs es xes) = case className cxt e of
-   Just (c × name) -> constr cxt c name ψs es xes
-   Nothing -> case NEL.fromList ψs of
-      Nothing -> do
-         when (not (null xes)) $ throwError "Keyword arguments in call other than constructor call"
-         case e of
-            S.Lambda (S.LambdaClause (ps × e')) -> do
-               cxt_p × ps' × es' <- lambdaArgs cxt ps es
-               τ × e'' <- synthExpr (cxt `override` bindings cxt_p) e'
-               (τ × _) <<< flip E.App es' <$> lambda ps' e''
-            _ -> do
-               σ × e' <- callee cxt e es
-               τ × es' <- resultType cxt σ es
-               pure (τ × E.App e' es')
-      Just ψs' -> traverse asIndex ψs' >>= case _ of
-         NonEmptyList (i :| Nil) -> synthExpr cxt (S.Call (S.Subscript e i) Nil es xes)
-         is -> synthExpr cxt (S.Call (S.Subscript e (S.Tuple (NEL.toList is))) Nil es xes)
-   where
-   asIndex (S.NameTy q Nil) = pure (foldl S.Attribute (S.Var (head q)) (tail q))
-   asIndex _ = throwError $ "Type arguments for non-class: " <> maybe "expression" dottedName (asName e)
-synthExpr cxt (S.BinOp e op e') = do
-   σ × e1 <- synthExpr cxt e
-   σ' × e2 <- synthExpr cxt e'
-   classes <- classTable
-   τ <- maybe (throwError $ "No overload of " <> binopSymbol op <> " at operand types " <> prettyP σ <> " and " <> prettyP σ')
-      pure
-      (resolveBinop classes op σ σ')
-   pure (τ × E.BinOp e1 op e2)
-synthExpr _ (S.UnOp Neg (S.Lit (Int n))) = pure (T.LitTy (Int (-n)) × E.UnOp Neg (E.Lit (Int n)))
-synthExpr _ (S.UnOp Neg (S.Lit (Float n))) = pure (T.LitTy (Float (-n)) × E.UnOp Neg (E.Lit (Float n)))
-synthExpr cxt (S.UnOp op e) = do
-   σ × e' <- synthExpr cxt e
-   classes <- classTable
-   τ <- maybe (throwError $ "No overload of " <> unopSymbol op <> " at operand type " <> prettyP σ) pure
-      (resolveUnop classes op σ)
-   pure (τ × E.UnOp op e')
-synthExpr cxt (S.And e e') = (bool × _) <$> (E.And <$> check cxt e bool <*> check cxt e' bool)
-synthExpr cxt (S.Or e e') = (bool × _) <$> (E.Or <$> check cxt e bool <*> check cxt e' bool)
-synthExpr cxt (S.InfixApp e f e') = synthExpr cxt (S.Call (S.Var f) Nil (e : e' : Nil) Nil)
-synthExpr cxt (S.Cond e1 e e2) = do
-   e' <- check cxt e bool
-   τ × es' <- joinSynth cxt identity (e1 : e2 : Nil)
-   case es' of
-      e1' : e2' : Nil -> pure (τ × E.Cond e1' e' e2')
-      _ -> error absurd
-synthExpr cxt (S.Attribute e y) = case resolveName cxt =<< asName e of
-   Just (ModChecked q cxt') -> do
-      when (not (y ∈ cxt'))
-         $ throwError
-         $ "module " <> dottedName q <> " has no member " <> y
-      (_ × E.ModMember q y) <$> varType cxt' y
-   _ -> do
-      σ × e' <- synthExpr cxt e
+instance Synth S.Expr (T.Type × E.Expr) where
+   synth cxt (S.Var x) = (_ × E.Var x) <$> varType cxt x
+   synth _ (S.Lit ℓ) = pure (T.LitTy ℓ × E.Lit ℓ)
+   synth cxt (S.Call e ψs es xes) = case className cxt e of
+      Just (c × name) -> constr cxt c name ψs es xes
+      Nothing -> case NEL.fromList ψs of
+         Nothing -> do
+            when (not (null xes)) $ throwError "Keyword arguments in call other than constructor call"
+            case e of
+               S.Lambda (S.LambdaClause (ps × e')) -> do
+                  cxt_p × ps' × es' <- lambdaArgs cxt ps es
+                  τ × e'' <- synth (cxt `override` bindings cxt_p) e'
+                  (τ × _) <<< flip E.App es' <$> lambda ps' e''
+               _ -> do
+                  σ × e' <- callee cxt e es
+                  τ × es' <- resultType cxt σ es
+                  pure (τ × E.App e' es')
+         Just ψs' -> traverse asIndex ψs' >>= case _ of
+            NonEmptyList (i :| Nil) -> synth cxt (S.Call (S.Subscript e i) Nil es xes)
+            is -> synth cxt (S.Call (S.Subscript e (S.Tuple (NEL.toList is))) Nil es xes)
+      where
+      asIndex (S.NameTy q Nil) = pure (foldl S.Attribute (S.Var (head q)) (tail q))
+      asIndex _ = throwError $ "Type arguments for non-class: " <> maybe "expression" dottedName (asName e)
+   synth cxt (S.BinOp e op e') = do
+      σ × e1 <- synth cxt e
+      σ' × e2 <- synth cxt e'
       classes <- classTable
-      (_ × E.Attribute e' y) <$> attributeType classes σ
-   where
-   attributeType classes (T.UnionTy σ σ') = join classes <$> attributeType classes σ <*> attributeType classes σ'
-   attributeType classes (T.ClassTy c τs) =
-      maybe (throwError $ "Class " <> last c <> " has no field " <> y) pure (F.lookup y (fieldsAt classes c τs))
-   attributeType _ σ = throwError $ "Values of type " <> prettyP σ <> " have no attributes"
-synthExpr cxt e@(S.Subscript e1 e2)
-   | Just ψ <- typeValue cxt e = resolveType cxt ψ <#> \τ -> T.TypeTy τ × E.Type τ
-   | otherwise = do
-        σ × e1' <- synthExpr cxt e1
-        τ × e2' <- subscriptType cxt σ e2
-        pure (τ × E.Subscript e1' e2')
-synthExpr cxt (S.Matrix e1 (x × y) e2) = do
-   e2' <- check cxt e2 intPair
-   τ × e1' <- synthExpr (cxt `override` bindings (Map.fromFoldable [ x × int, y × int ])) e1
-   pure (matrix (T.baseType τ) × E.Matrix e1' (x × y) e2')
-synthExpr _ (S.Lambda _) = throwError notSynthesised
-synthExpr cxt (S.Dictionary kvs) = do
-   ks' <- for kvs \(k × _) -> check cxt k str
-   τ × vs' <- joinSynth cxt T.baseType (snd <$> kvs)
-   pure (T.DictTy τ × E.Dictionary (zipWith Pair ks' vs'))
-synthExpr cxt (S.Paragraph elems) =
-   (T.ClassTy cParagraph Nil × _) <<< E.Constr cParagraph <<< (_ : Nil) <<< E.List <$> traverse pe elems
-   where
-   pe (S.Unquote e) = snd <$> synthExpr cxt e
-   pe (S.Token str') = pure (E.Lit (Str str'))
-synthExpr cxt (S.List es) = lmap T.ListTy <<< map E.List <$> joinSynth cxt T.baseType es
-synthExpr cxt (S.Tuple es) = do
-   τes <- traverse (synthExpr cxt) es
-   pure (T.TupleTy (fst <$> τes) × E.Tuple (snd <$> τes))
-synthExpr cxt (S.ListComp e gs) = do
-   notCaptured (bv gs) (captures e)
-   (τ × e') × gs' <- checkQuals cxt gs \cxt' -> synthExpr cxt' e
-   pure (T.ListTy (T.baseType τ) × E.ListComp e' gs')
-synthExpr cxt (S.DictComp k e gs) = do
-   notCaptured (bv gs) (captures k ∪ captures e)
-   (k' × τ × e') × gs' <- checkQuals cxt gs \cxt' -> (×) <$> check cxt' k str <*> synthExpr cxt' e
-   pure (T.DictTy (T.baseType τ) × E.DictComp k' e' gs')
-synthExpr cxt (S.DocExpr e e') = do
-   τ × e2 <- synthExpr cxt e'
-   _ × e1 <- synthExpr (cxt `override` bindings (Map.singleton varThis τ)) e
-   pure (τ × E.DocExpr e1 e2)
+      τ <- maybe (throwError $ "No overload of " <> binopSymbol op <> " at operand types " <> prettyP σ <> " and " <> prettyP σ')
+         pure
+         (resolveBinop classes op σ σ')
+      pure (τ × E.BinOp e1 op e2)
+   synth _ (S.UnOp Neg (S.Lit (Int n))) = pure (T.LitTy (Int (-n)) × E.UnOp Neg (E.Lit (Int n)))
+   synth _ (S.UnOp Neg (S.Lit (Float n))) = pure (T.LitTy (Float (-n)) × E.UnOp Neg (E.Lit (Float n)))
+   synth cxt (S.UnOp op e) = do
+      σ × e' <- synth cxt e
+      classes <- classTable
+      τ <- maybe (throwError $ "No overload of " <> unopSymbol op <> " at operand type " <> prettyP σ) pure
+         (resolveUnop classes op σ)
+      pure (τ × E.UnOp op e')
+   synth cxt (S.And e e') = (bool × _) <$> (E.And <$> check cxt e bool <*> check cxt e' bool)
+   synth cxt (S.Or e e') = (bool × _) <$> (E.Or <$> check cxt e bool <*> check cxt e' bool)
+   synth cxt (S.InfixApp e f e') = synth cxt (S.Call (S.Var f) Nil (e : e' : Nil) Nil)
+   synth cxt (S.Cond e1 e e2) = do
+      e' <- check cxt e bool
+      τ × es' <- joinSynth cxt identity (e1 : e2 : Nil)
+      case es' of
+         e1' : e2' : Nil -> pure (τ × E.Cond e1' e' e2')
+         _ -> error absurd
+   synth cxt (S.Attribute e y) = case resolveName cxt =<< asName e of
+      Just (ModChecked q cxt') -> do
+         when (not (y ∈ cxt'))
+            $ throwError
+            $ "module " <> dottedName q <> " has no member " <> y
+         (_ × E.ModMember q y) <$> varType cxt' y
+      _ -> do
+         σ × e' <- synth cxt e
+         classes <- classTable
+         (_ × E.Attribute e' y) <$> attributeType classes σ
+      where
+      attributeType classes (T.UnionTy σ σ') = join classes <$> attributeType classes σ <*> attributeType classes σ'
+      attributeType classes (T.ClassTy c τs) =
+         maybe (throwError $ "Class " <> last c <> " has no field " <> y) pure (F.lookup y (fieldsAt classes c τs))
+      attributeType _ σ = throwError $ "Values of type " <> prettyP σ <> " have no attributes"
+   synth cxt e@(S.Subscript e1 e2)
+      | Just ψ <- typeValue cxt e = synth cxt ψ <#> \τ -> T.TypeTy τ × E.Type τ
+      | otherwise = do
+           σ × e1' <- synth cxt e1
+           τ × e2' <- subscriptType cxt σ e2
+           pure (τ × E.Subscript e1' e2')
+   synth cxt (S.Matrix e1 (x × y) e2) = do
+      e2' <- check cxt e2 intPair
+      τ × e1' <- synth (cxt `override` bindings (Map.fromFoldable [ x × int, y × int ])) e1
+      pure (matrix (T.baseType τ) × E.Matrix e1' (x × y) e2')
+   synth _ (S.Lambda _) = throwError notSynthesised
+   synth cxt (S.Dictionary kvs) = do
+      ks' <- for kvs \(k × _) -> check cxt k str
+      τ × vs' <- joinSynth cxt T.baseType (snd <$> kvs)
+      pure (T.DictTy τ × E.Dictionary (zipWith Pair ks' vs'))
+   synth cxt (S.Paragraph elems) =
+      (T.ClassTy cParagraph Nil × _) <<< E.Constr cParagraph <<< (_ : Nil) <<< E.List <$> traverse pe elems
+      where
+      pe (S.Unquote e) = snd <$> synth cxt e
+      pe (S.Token str') = pure (E.Lit (Str str'))
+   synth cxt (S.List es) = lmap T.ListTy <<< map E.List <$> joinSynth cxt T.baseType es
+   synth cxt (S.Tuple es) = do
+      τes <- traverse (synth cxt) es
+      pure (T.TupleTy (fst <$> τes) × E.Tuple (snd <$> τes))
+   synth cxt (S.ListComp e gs) = do
+      notCaptured (bv gs) (captures e)
+      (τ × e') × gs' <- checkQuals cxt gs \cxt' -> synth cxt' e
+      pure (T.ListTy (T.baseType τ) × E.ListComp e' gs')
+   synth cxt (S.DictComp k e gs) = do
+      notCaptured (bv gs) (captures k ∪ captures e)
+      (k' × τ × e') × gs' <- checkQuals cxt gs \cxt' -> (×) <$> check cxt' k str <*> synth cxt' e
+      pure (T.DictTy (T.baseType τ) × E.DictComp k' e' gs')
+   synth cxt (S.DocExpr e e') = do
+      τ × e2 <- synth cxt e'
+      _ × e1 <- synth (cxt `override` bindings (Map.singleton varThis τ)) e
+      pure (τ × E.DocExpr e1 e2)
 
 class Check a t b | a -> t b where
    check :: Cxt -> a -> t -> CheckM b
@@ -489,10 +492,10 @@ instance Check S.Expr T.Type E.Expr where
       pure (E.Matrix e1' (x × y) e2')
    check cxt (S.DocExpr e e') τ = do
       e2 <- check cxt e' τ
-      _ × e1 <- synthExpr (cxt `override` bindings (Map.singleton varThis τ)) e
+      _ × e1 <- synth (cxt `override` bindings (Map.singleton varThis τ)) e
       pure (E.DocExpr e1 e2)
    check cxt e τ = do
-      σ × e' <- synthExpr cxt e
+      σ × e' <- synth cxt e
       classes <- classTable
       unless (subtype classes σ τ) $ throwError $ typeMismatch τ σ
       pure e'
@@ -522,7 +525,7 @@ synthesises _ = true
 -- Join of types (under f) of expressions which synthesise, against which the others are checked.
 joinSynth :: Cxt -> (T.Type -> T.Type) -> List S.Expr -> CheckM (T.Type × List E.Expr)
 joinSynth cxt f es = do
-   results <- for es \e -> if synthesises e then Right <$> synthExpr cxt e else pure (Left e)
+   results <- for es \e -> if synthesises e then Right <$> synth cxt e else pure (Left e)
    let τs = results >>= either (const Nil) (pure <<< f <<< fst)
    when (null τs) $ throwError notSynthesised
    τ <- classTable <#> \classes -> joins classes τs
@@ -537,7 +540,7 @@ subscriptType cxt (T.UnionTy σ σ') e = do
 subscriptType cxt (T.ListTy τ) e = (τ × _) <$> check cxt e int
 subscriptType cxt (T.DictTy τ) e = (τ × _) <$> check cxt e str
 subscriptType cxt (T.TupleTy τs) e = do
-   σ × e' <- synthExpr cxt e
+   σ × e' <- synth cxt e
    case σ of
       T.LitTy (Int n)
          | 0 <= n && n < m -> pure (definitely' (τs `index` n) × e')
@@ -563,7 +566,7 @@ constr cxt c name ψs es xes = do
       Nothing -> do
          let αs = (get name classes).typeParams
          σes <- for (filter (synthesises <<< snd) (zip (snd <$> fields classes name) es')) \(σ × e) ->
-            (σ × _) <<< fst <$> synthExpr cxt e
+            (σ × _) <<< fst <$> synth cxt e
          typeArgsFor αs (typeArgs classes αs (fst <$> σes) (snd <$> σes))
    (T.ClassTy name τs × _) <<< E.Constr name <$>
       check cxt es' (snd <$> fieldsAt classes name τs)
@@ -572,10 +575,10 @@ callee :: Cxt -> S.Expr -> List S.Expr -> CheckM (T.Type × E.Expr)
 callee cxt e es = case schemeOf cxt e of
    Just (αs × σ@(T.CallableTy σs _)) -> do
       classes <- classTable
-      στs <- for (filter (synthesises <<< snd) (zip σs es)) \(σ' × e') -> (σ' × _) <<< fst <$> synthExpr cxt e'
+      στs <- for (filter (synthesises <<< snd) (zip σs es)) \(σ' × e') -> (σ' × _) <<< fst <$> synth cxt e'
       τs <- typeArgsFor αs (typeArgs classes αs (fst <$> στs) (snd <$> στs))
       (T.subst τs αs σ × _) <$> nameExpr cxt e
-   _ -> synthExpr cxt e
+   _ -> synth cxt e
 
 resultType :: Cxt -> T.Type -> List S.Expr -> CheckM (T.Type × List E.Expr)
 resultType cxt (T.UnionTy σ σ') es = do
@@ -595,7 +598,7 @@ resultType _ σ _ = throwError $ "Values of type " <> prettyP σ <> " cannot be 
 
 exprStmt :: Cxt -> S.Expr -> CheckM E.Expr
 exprStmt cxt (S.Call e Nil es Nil) | not (isLambda e) && className cxt e == Nothing = callStmt cxt e es
-exprStmt cxt e = snd <$> synthExpr cxt e
+exprStmt cxt e = snd <$> synth cxt e
 
 callStmt :: Cxt -> S.Expr -> List S.Expr -> CheckM E.Expr
 callStmt cxt e es = callee cxt e es >>= case _ of
@@ -609,7 +612,7 @@ lambdaArgs cxt ps es = do
       $ "Call expects " <> show (length ps) <> " argument(s); given " <> show (length es)
    distinctVars ps
    ps' <- traverse (pattern cxt) ps
-   τes <- traverse (synthExpr cxt) es
+   τes <- traverse (synth cxt) es
    cxt_p <- check cxt ps' (fst <$> τes)
    pure (cxt_p × ps' × (snd <$> τes))
 
@@ -685,7 +688,7 @@ checkQuals cxt (g : gs) body = case g of
       map (E.Guard e' : _) <$> checkQuals cxt gs body
    S.Generator p e -> do
       notCaptured (bv p) (captures gs)
-      σ × e' <- synthExpr cxt e
+      σ × e' <- synth cxt e
       classes <- classTable
       τ <- maybe (throwError $ "Values of type " <> prettyP σ <> " cannot be iterated") pure (elemType classes σ)
       p' <- pattern cxt p
@@ -715,33 +718,32 @@ positionaliseKw xs c n xbs = do
 param :: Int -> Var
 param i = "$" <> show i
 
-defSignature :: Cxt -> S.Branch -> CheckM (T.Type + T.Scheme)
-defSignature cxt (_ × S.Clause (αs × ps × ψ × _)) =
-   scheme <$> (T.CallableTy <$> traverse (\(S.Param _ ψ') -> resolveType cxt_αs ψ') ps <*> resolveType cxt_αs ψ)
-   where
-   cxt_αs = cxt `override` typeParams αs
-   scheme σ = maybe (Left σ) (\αs' -> Right (Forall αs' σ)) (NEL.fromList αs)
+instance Synth S.Branch (T.Type + T.Scheme) where
+   synth cxt (_ × S.Clause (αs × ps × ψ × _)) =
+      scheme <$> (T.CallableTy <$> traverse (\(S.Param _ ψ') -> synth cxt_αs ψ') ps <*> synth cxt_αs ψ)
+      where
+      cxt_αs = cxt `override` typeParams αs
+      scheme σ = maybe (Left σ) (\αs' -> Right (Forall αs' σ)) (NEL.fromList αs)
 
-defBody :: Cxt -> Var -> T.Type -> S.Clause -> CheckM (List (S.Pattern × Maybe T.Type) × Maybe T.Type × E.Stmt)
-defBody cxt f (T.CallableTy σs τ) (S.Clause (αs × ps × ψ × s)) = do
-   let cxt_αs = cxt `override` typeParams αs
-   let xs = unions (bv <$> ps)
-   when (length ps /= length σs) $ throwError "Clauses differ in number of parameters"
-   ps' <- for ps \(S.Param p ψ') -> (×) <$> pattern cxt p <*> (Just <$> resolveType cxt_αs ψ')
-   cxt_p <- check cxt (fst <$> ps') σs
-   τ' <- Just <$> resolveType cxt_αs ψ
-   cxt_s <- scope "parameter" xs s
-   r × s' <- checkStmt (cxt_αs `override` bindings cxt_p `override` cxt_s) (Just τ) s
-   classes <- classTable
-   case r of
-      Assigns _ | not (equiv classes τ none) ->
-         throwError $ f <> " declares result type " <> prettyP τ <> " but does not always return"
-      _ -> pure (ps' × τ' × close r s')
-   where
-   -- Body that may fall through returns None
-   close Returns s' = s'
-   close (Assigns _) s' = E.Seq s' (E.Return (E.Lit None))
-defBody _ _ _ _ = error absurd
+instance Check S.Branch T.Type (List (S.Pattern × Maybe T.Type) × Maybe T.Type × E.Stmt) where
+   check cxt (f × S.Clause (αs × ps × ψ × s)) (T.CallableTy σs τ) = do
+      when (length ps /= length σs) $ throwError "Clauses differ in number of parameters"
+      ps' <- for ps \(S.Param p ψ') -> (×) <$> pattern cxt p <*> (Just <$> synth cxt_αs ψ')
+      cxt_p <- check cxt (fst <$> ps') σs
+      τ' <- Just <$> synth cxt_αs ψ
+      cxt_s <- scope "parameter" (unions (bv <$> ps)) s
+      r × s' <- checkStmt (cxt_αs `override` bindings cxt_p `override` cxt_s) (Just τ) s
+      classes <- classTable
+      case r of
+         Assigns _ | not (equiv classes τ none) ->
+            throwError $ f <> " declares result type " <> prettyP τ <> " but does not always return"
+         _ -> pure (ps' × τ' × close r s')
+      where
+      cxt_αs = cxt `override` typeParams αs
+      -- Body that may fall through returns None
+      close Returns s' = s'
+      close (Assigns _) s' = E.Seq s' (E.Return (E.Lit None))
+   check _ _ _ = error absurd
 
 -- Clauses over k parameters as a function of k parameters. A parameter column that is the same variable in
 -- every clause is a parameter of that name; the remaining columns are matched together, as nested pairs when
