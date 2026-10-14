@@ -1,3 +1,5 @@
+from itertools import groupby
+
 def parity(n: int) -> int:
   return n % 2
 
