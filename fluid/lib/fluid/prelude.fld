@@ -142,7 +142,7 @@ def foldr[A, B](op: Callable[[A, B], B], z: B, xs: list[A]) -> B:
 def foldr1[A](op: Callable[[A, A], A], xs: list[A]) -> A:
   return foldr(op, xs[-1], take(len(xs) - 1, xs))
 
-# Quadratic, as each concatenation copies the list; needs rewriting
+# Quadratic, as each concatenation copies the list; retire with itertools.accumulate
 def scanl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> list[A]:
   def go(x: B, continue: Callable[[A], list[A]]) -> Callable[[A], list[A]]:
     def step(acc: A) -> list[A]:
@@ -215,11 +215,7 @@ def abs(x: int) -> int:
   return -x if x < 0 else x
 
 def nub[A](xs: list[A]) -> list[A]:
-  def go(i: int, ys: list[A]) -> list[A]:
-    if i == len(xs):
-      return ys
-    return go(i + 1, ys if xs[i] in ys else ys + [xs[i]])
-  return go(0, [])
+  return [xs[i] for i in range(0, len(xs)) if xs[i] not in take(i, xs)]
 
 def slice[A](begin: int, end: int, xs: list[A]) -> list[A]:
   return take(end - begin, drop(begin, xs))

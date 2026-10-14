@@ -21,6 +21,7 @@ def merge(xs: list[float], ys: list[float]) -> list[float]:
     return [ys[j]] + go(i, j + 1)
   return go(0, 0)
 
+# Retire with sorted primitive (#1607)
 def mergesort(xs: list[float]) -> list[float]:
   if len(xs) < 2:
     return xs
