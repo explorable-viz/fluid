@@ -1,0 +1,4 @@
+def parity(n: int) -> int:
+  return n % 2
+
+groupby(parity, [1, 3, 2, 4, 6, 5])

@@ -122,17 +122,10 @@ def span[A](p: Callable[[A], bool], xs: list[A]) -> dict[str, list[A]]:
   return { "init": take(n, xs), "rest": drop(n, xs) }
 
 # Each returned list is non-empty.
-def group_by[A](eq: Callable[[A, A], bool], xs: list[A]) -> list[list[A]]:
-  def go(i: int) -> list[list[A]]:
-    if i == len(xs):
-      return []
-    def run(j: int) -> int:
-      if j < len(xs) and eq(xs[i], xs[j]):
-        return run(j + 1)
-      return j
-    j: int = run(i + 1)
-    return [slice(i, j, xs)] + go(j)
-  return go(0)
+def groupby[A, K](key: Callable[[A], K], xs: list[A]) -> list[tuple[K, list[A]]]:
+  starts: list[int] = [i for i in range(0, len(xs)) if i == 0 or key(xs[i]) != key(xs[i - 1])]
+  ends: list[int] = drop(1, starts) + [len(xs)]
+  return [(key(xs[i]), slice(i, j, xs)) for (i, j) in zip(starts, ends)]
 
 def foldl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> A:
   def go(acc: A, i: int) -> A:
