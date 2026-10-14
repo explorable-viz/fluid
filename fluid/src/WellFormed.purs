@@ -60,6 +60,9 @@ runCheckM m mods predefined classes =
 classTable :: CheckM ClassTable
 classTable = gets _.classes
 
+within :: forall a. String -> CheckM a -> CheckM a
+within what = mapStateT (mapReaderT (lmap (_ <> "\nChecking " <> what)))
+
 checkProgram :: List S.Import -> S.Stmt -> CheckM E.Stmt
 checkProgram imports s = do
    cxt_imp × cxt_ιs <- checkImports mainModule imports
@@ -82,9 +85,6 @@ checkModule q = gets _.modules >>= \modules -> case lookup q modules of
       let cxt = subMods ∪ cxt'
       modify_ \st -> st { modules = insert q { cxt, mod: Just mod' } st.modules }
       pure cxt
-
-within :: forall a. String -> CheckM a -> CheckM a
-within what = mapStateT (mapReaderT (lmap (_ <> "\nChecking " <> what)))
 
 checkImports :: ModuleName -> List S.Import -> CheckM (Cxt × Cxt)
 checkImports enclosing ιs = do
