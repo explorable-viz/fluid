@@ -20,7 +20,7 @@ import Eval (evalProgram)
 import Effect.Aff.Class (class MonadAff)
 import File (class LoadFile, File(..), FileCxt, Folder(..), loadFile, (</>))
 import Lattice (𝔹)
-import Module (prepConfig)
+import Module (prepConfig, throwParseFailure)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
 import Test.Util (DepSpec, TestSuite, checkEq, checkSelection, depName, fluidSrcPaths, test, testDep)
 import Test.Util.Debug (timing)
@@ -115,5 +115,5 @@ illFormedSuite specs = specs <#> (_.file &&& asTest)
 
    run :: String -> m Unit
    run fluidSrc = do
-      { e, inputs, classes } <- prepConfig fluidSrc
+      { e, inputs, classes } <- throwParseFailure (prepConfig fluidSrc)
       void $ evalProgram inputs classes e

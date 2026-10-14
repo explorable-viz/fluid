@@ -32,7 +32,7 @@ import Eval (evalProgram, visible)
 import File (class LoadFile, File(..), FileCxt)
 import DepGraph (ConjugatePair, DepGraph, Deriv, Labelling, Pos, dimap, mask, materialise, queries, selected)
 import Lattice (DepKind(..), 𝔹, botOf, erase)
-import Module (prepConfig)
+import Module (prepConfig, throwParseFailure)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), Endo, spyWhen, (×))
@@ -159,7 +159,7 @@ boolean = dimap (map selected) (map (map (_ /= Zero)))
 
 loadFig :: forall m. HasClasses m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
 loadFig options@{ inputs, linking, query, ignoreInputs } fluidSrc = do
-   config@{ s } <- prepConfig fluidSrc
+   config@{ s } <- throwParseFailure (prepConfig fluidSrc)
    eval@{ g: g@{ docs }, root } <- evalProgram config.inputs config.classes config.e
    let
       out = withDoc g root

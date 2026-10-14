@@ -24,7 +24,7 @@ import Eval (Eval, evalProgram, visible)
 import DepGraph (DepGraph, Deriv, Labelling, Pos, bwd, fwd, materialise, selected, valAt)
 import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, DepKind(..), botOf, 𝔹)
-import Module (Config, prepConfig)
+import Module (Config, prepConfig, throwParseFailure)
 import Parse (parseProgram)
 import Pretty (class Pretty, compare, prettyP)
 import SExpr (Stmt) as SE
@@ -43,7 +43,7 @@ test ∷ forall m. HasClasses m => HasModuleStore m => MonadReader FileCxt m => 
 test file expect (n × _) = do
    fluidSrc <- loadFile fluidSrcPaths file
    log' ("**** prepConfig")
-   config <- prepConfig fluidSrc
+   config <- throwParseFailure (prepConfig fluidSrc)
    testPretty config.s
    _ × res <- runWriterT (replicateM n (testProperties config expect))
    pure $ res `divRow` n
@@ -126,7 +126,7 @@ selection depGraph eval vertex δv =
 testDep :: forall m. HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => File -> Query -> AffError m Unit
 testDep file query = do
    fluidSrc <- loadFile fluidSrcPaths file
-   { e, inputs, classes } <- prepConfig fluidSrc
+   { e, inputs, classes } <- throwParseFailure (prepConfig fluidSrc)
    { depGraph } <- moduleStore
    eval <- evalProgram inputs classes e
    let

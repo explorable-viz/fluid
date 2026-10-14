@@ -18,4 +18,3 @@ test/module-level/excluded/static/unsupported_builtin.py (check: exit 0, expecte
 test/module-level/excluded/syntactic/try_except.py (check: exit 3, expected [1]: Unbound name: x)
 test/module-level/python-error/syntactic/break_outside_loop.py (check: exit 3, expected [1]: Unbound name: break)
 test/program-level/excluded/static/duplicate_member_import (check: exit 0, expected [3, 4]: )
-test/program-level/python-error/syntactic/parse_error (check: exit 3, expected [1]: "ParseError on line 1, column 6:\nExpected EOF")
