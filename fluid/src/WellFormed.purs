@@ -194,23 +194,23 @@ instance Captures (List S.Qualifier) where
 checkStmt :: Cxt -> Maybe T.Type -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 checkStmt _ _ S.Pass = pure (Assigns empty × E.Pass)
 -- Outside a function, the result of the program
-checkStmt cxt ζ (S.Return e) = (Returns × _) <<< E.Return <$> maybe (exprStmt cxt e) (checkExpr cxt e) ζ
+checkStmt cxt ζ (S.Return e) = (Returns × _) <<< E.Return <$> maybe (exprStmt cxt e) (check cxt e) ζ
 checkStmt cxt _ (S.ExprStmt e) = (Assigns empty × _) <<< E.ExprStmt <$> exprStmt cxt e
 checkStmt cxt (Just _) (S.Assert (S.Lit (Bool false)) e') =
-   (Returns × _) <$> (E.Assert (E.Lit (Bool false)) <$> traverse (\e'' -> checkExpr cxt e'' str) e')
+   (Returns × _) <$> (E.Assert (E.Lit (Bool false)) <$> traverse (\e'' -> check cxt e'' str) e')
 checkStmt cxt _ (S.Assert e e') =
-   (Assigns empty × _) <$> (E.Assert <$> checkExpr cxt e bool <*> traverse (\e'' -> checkExpr cxt e'' str) e')
+   (Assigns empty × _) <$> (E.Assert <$> check cxt e bool <*> traverse (\e'' -> check cxt e'' str) e')
 checkStmt cxt _ (S.Declare x ψ) = do
    τ <- resolveType cxt ψ
    pure (Assigns (maplet x (Declared τ)) × E.Declare x)
 checkStmt cxt _ (S.Def (S.VarDef (S.PVar x) (Just ψ) e)) = do
    assignable cxt x
    τ <- resolveType cxt ψ
-   e' <- checkExpr cxt e τ
+   e' <- check cxt e τ
    pure (Assigns (maplet x (Assigned τ)) × E.Assign (S.PVar x) e')
 checkStmt cxt _ (S.Def (S.VarDef (S.PVar x) Nothing e)) = case lookup x cxt of
    Just (Declared τ) -> do
-      e' <- checkExpr cxt e τ
+      e' <- check cxt e τ
       pure (Assigns (maplet x (Assigned τ)) × E.Assign (S.PVar x) e')
    Just Unbound -> throwError $ "Assigned before declaration: " <> x
    _ -> assignable cxt x >>= \_ -> error absurd
@@ -219,7 +219,7 @@ checkStmt cxt _ (S.Def (S.VarDef p ψ e)) = do
    for_ (bv p) (unbound cxt)
    τ × e' <- annotated cxt ψ e
    p' <- pattern cxt p
-   cxt_p <- checkPattern p' τ
+   cxt_p <- check cxt p' τ
    pure (Assigns (bindings cxt_p) × E.Assign p' e')
 checkStmt cxt _ (S.DefRec ds) = do
    let defs = NEL.groupBy (eq `on` fst) ds
@@ -241,7 +241,7 @@ checkStmt cxt ζ (S.Seq s1 s2) = do
          pure (override r1 r2 × E.Seq s1' s2')
 checkStmt cxt ζ (S.If es elseBranch) = do
    es' <- for es \(e × s) -> do
-      e' <- checkExpr cxt e bool
+      e' <- check cxt e bool
       r × s' <- checkStmt cxt ζ s
       pure (r × E.Branch e' s')
    rElse × elseBranch' <- case elseBranch of
@@ -261,7 +261,7 @@ matchCases :: Cxt -> Maybe T.Type -> T.Type -> List (S.Pattern × S.Stmt) -> Che
 matchCases _ _ τ Nil = pure (Nil × τ)
 matchCases cxt ζ τ ((p × s) : bs) = do
    for_ (bv p) (unbound cxt)
-   cxt' <- bindings <$> checkPattern p τ
+   cxt' <- bindings <$> check cxt p τ
    r × s' <- checkStmt (cxt `override` cxt') ζ s
    τ' <- classTable <#> \classes -> remaining classes τ p
    lmap ((override (Assigns cxt') r × (p × s')) : _) <$> matchCases cxt ζ τ' bs
@@ -345,7 +345,7 @@ typeArgsFor :: List Var -> Map.Map Var T.Type -> CheckM (List T.Type)
 typeArgsFor αs γ = for αs \α -> maybe (throwError $ "Type parameter " <> α <> " has no type argument") pure (lookup α γ)
 
 annotated :: Cxt -> Maybe S.TypeExpr -> S.Expr -> CheckM (T.Type × E.Expr)
-annotated cxt (Just ψ) e = resolveType cxt ψ >>= \τ -> (τ × _) <$> checkExpr cxt e τ
+annotated cxt (Just ψ) e = resolveType cxt ψ >>= \τ -> (τ × _) <$> check cxt e τ
 annotated cxt Nothing e = synthExpr cxt e
 
 synthExpr :: Cxt -> S.Expr -> CheckM (T.Type × E.Expr)
@@ -387,11 +387,11 @@ synthExpr cxt (S.UnOp op e) = do
    τ <- maybe (throwError $ "No overload of " <> unopSymbol op <> " at operand type " <> prettyP σ) pure
       (resolveUnop classes op σ)
    pure (τ × E.UnOp op e')
-synthExpr cxt (S.And e e') = (bool × _) <$> (E.And <$> checkExpr cxt e bool <*> checkExpr cxt e' bool)
-synthExpr cxt (S.Or e e') = (bool × _) <$> (E.Or <$> checkExpr cxt e bool <*> checkExpr cxt e' bool)
+synthExpr cxt (S.And e e') = (bool × _) <$> (E.And <$> check cxt e bool <*> check cxt e' bool)
+synthExpr cxt (S.Or e e') = (bool × _) <$> (E.Or <$> check cxt e bool <*> check cxt e' bool)
 synthExpr cxt (S.InfixApp e f e') = synthExpr cxt (S.Call (S.Var f) Nil (e : e' : Nil) Nil)
 synthExpr cxt (S.Cond e1 e e2) = do
-   e' <- checkExpr cxt e bool
+   e' <- check cxt e bool
    τ × es' <- joinSynth cxt identity (e1 : e2 : Nil)
    case es' of
       e1' : e2' : Nil -> pure (τ × E.Cond e1' e' e2')
@@ -418,12 +418,12 @@ synthExpr cxt e@(S.Subscript e1 e2)
         τ × e2' <- subscriptType cxt σ e2
         pure (τ × E.Subscript e1' e2')
 synthExpr cxt (S.Matrix e1 (x × y) e2) = do
-   e2' <- checkExpr cxt e2 intPair
+   e2' <- check cxt e2 intPair
    τ × e1' <- synthExpr (cxt `override` bindings (Map.fromFoldable [ x × int, y × int ])) e1
    pure (matrix (T.baseType τ) × E.Matrix e1' (x × y) e2')
 synthExpr _ (S.Lambda _) = throwError notSynthesised
 synthExpr cxt (S.Dictionary kvs) = do
-   ks' <- for kvs \(k × _) -> checkExpr cxt k str
+   ks' <- for kvs \(k × _) -> check cxt k str
    τ × vs' <- joinSynth cxt T.baseType (snd <$> kvs)
    pure (T.DictTy τ × E.Dictionary (zipWith Pair ks' vs'))
 synthExpr cxt (S.Paragraph elems) =
@@ -441,58 +441,64 @@ synthExpr cxt (S.ListComp e gs) = do
    pure (T.ListTy (T.baseType τ) × E.ListComp e' gs')
 synthExpr cxt (S.DictComp k e gs) = do
    notCaptured (bv gs) (captures k ∪ captures e)
-   (k' × τ × e') × gs' <- checkQuals cxt gs \cxt' -> (×) <$> checkExpr cxt' k str <*> synthExpr cxt' e
+   (k' × τ × e') × gs' <- checkQuals cxt gs \cxt' -> (×) <$> check cxt' k str <*> synthExpr cxt' e
    pure (T.DictTy (T.baseType τ) × E.DictComp k' e' gs')
 synthExpr cxt (S.DocExpr e e') = do
    τ × e2 <- synthExpr cxt e'
    _ × e1 <- synthExpr (cxt `override` bindings (Map.singleton varThis τ)) e
    pure (τ × E.DocExpr e1 e2)
 
-checkExpr :: Cxt -> S.Expr -> T.Type -> CheckM E.Expr
-checkExpr cxt (S.Call (S.Lambda (S.LambdaClause (ps × e))) Nil es Nil) τ = do
-   cxt_p × ps' × es' <- lambdaArgs cxt ps es
-   e' <- checkExpr (cxt `override` bindings cxt_p) e τ
-   flip E.App es' <$> lambda ps' e'
-checkExpr cxt (S.List es) (T.ListTy τ) = E.List <$> traverse (\e -> checkExpr cxt e τ) es
-checkExpr cxt (S.Tuple es) (T.TupleTy τs)
-   | length es == length τs = E.Tuple <$> sequence (zipWith (checkExpr cxt) es τs)
-checkExpr cxt (S.Dictionary kvs) (T.DictTy τ) =
-   E.Dictionary <$> for kvs \(k × v) -> Pair <$> checkExpr cxt k str <*> checkExpr cxt v τ
-checkExpr cxt (S.Lambda (S.LambdaClause (ps × e))) τ = case τ of
-   T.CallableTy σs τ' | length σs == length ps -> do
-      distinctVars ps
-      ps' <- traverse (pattern cxt) ps
-      cxt_p <- sequence (zipWith checkPattern ps' σs) <#> foldl (∪) empty
-      e' <- checkExpr (cxt `override` bindings cxt_p) e τ'
-      lambda ps' e'
-   _ -> throwError $ "Expected type " <> prettyP τ <> "; given lambda with " <> show (length ps) <> " parameter(s)"
-checkExpr cxt e τ | Just (αs × σ) <- schemeOf cxt e = do
-   classes <- classTable
-   τs <- typeArgsFor αs (typeArgs classes αs σ τ)
-   let σ' = T.subst τs αs σ
-   unless (subtype classes σ' τ) $ throwError $ typeMismatch τ σ'
-   nameExpr cxt e
-checkExpr cxt (S.Cond e1 e e2) τ = E.Cond <$> checkExpr cxt e1 τ <*> checkExpr cxt e bool <*> checkExpr cxt e2 τ
-checkExpr cxt (S.ListComp e gs) (T.ListTy τ) = do
-   notCaptured (bv gs) (captures e)
-   (\(e' × gs') -> E.ListComp e' gs') <$> checkQuals cxt gs \cxt' -> checkExpr cxt' e τ
-checkExpr cxt (S.DictComp k e gs) (T.DictTy τ) = do
-   notCaptured (bv gs) (captures k ∪ captures e)
-   (\((k' × e') × gs') -> E.DictComp k' e' gs') <$> checkQuals cxt gs \cxt' ->
-      (×) <$> checkExpr cxt' k str <*> checkExpr cxt' e τ
-checkExpr cxt (S.Matrix e1 (x × y) e2) (T.ClassTy c (τ : Nil)) | c == cMatrix = do
-   e2' <- checkExpr cxt e2 intPair
-   e1' <- checkExpr (cxt `override` bindings (Map.fromFoldable [ x × int, y × int ])) e1 τ
-   pure (E.Matrix e1' (x × y) e2')
-checkExpr cxt (S.DocExpr e e') τ = do
-   e2 <- checkExpr cxt e' τ
-   _ × e1 <- synthExpr (cxt `override` bindings (Map.singleton varThis τ)) e
-   pure (E.DocExpr e1 e2)
-checkExpr cxt e τ = do
-   σ × e' <- synthExpr cxt e
-   classes <- classTable
-   unless (subtype classes σ τ) $ throwError $ typeMismatch τ σ
-   pure e'
+class Check a t b | a -> t b where
+   check :: Cxt -> a -> t -> CheckM b
+
+instance Check S.Expr T.Type E.Expr where
+   check cxt (S.Call (S.Lambda (S.LambdaClause (ps × e))) Nil es Nil) τ = do
+      cxt_p × ps' × es' <- lambdaArgs cxt ps es
+      e' <- check (cxt `override` bindings cxt_p) e τ
+      flip E.App es' <$> lambda ps' e'
+   check cxt (S.List es) (T.ListTy τ) = E.List <$> traverse (\e -> check cxt e τ) es
+   check cxt (S.Tuple es) (T.TupleTy τs)
+      | length es == length τs = E.Tuple <$> check cxt es τs
+   check cxt (S.Dictionary kvs) (T.DictTy τ) =
+      E.Dictionary <$> for kvs \(k × v) -> Pair <$> check cxt k str <*> check cxt v τ
+   check cxt (S.Lambda (S.LambdaClause (ps × e))) τ = case τ of
+      T.CallableTy σs τ' | length σs == length ps -> do
+         distinctVars ps
+         ps' <- traverse (pattern cxt) ps
+         cxt_p <- check cxt ps' σs
+         e' <- check (cxt `override` bindings cxt_p) e τ'
+         lambda ps' e'
+      _ -> throwError $ "Expected type " <> prettyP τ <> "; given lambda with " <> show (length ps) <> " parameter(s)"
+   check cxt e τ | Just (αs × σ) <- schemeOf cxt e = do
+      classes <- classTable
+      τs <- typeArgsFor αs (typeArgs classes αs σ τ)
+      let σ' = T.subst τs αs σ
+      unless (subtype classes σ' τ) $ throwError $ typeMismatch τ σ'
+      nameExpr cxt e
+   check cxt (S.Cond e1 e e2) τ = E.Cond <$> check cxt e1 τ <*> check cxt e bool <*> check cxt e2 τ
+   check cxt (S.ListComp e gs) (T.ListTy τ) = do
+      notCaptured (bv gs) (captures e)
+      (\(e' × gs') -> E.ListComp e' gs') <$> checkQuals cxt gs \cxt' -> check cxt' e τ
+   check cxt (S.DictComp k e gs) (T.DictTy τ) = do
+      notCaptured (bv gs) (captures k ∪ captures e)
+      (\((k' × e') × gs') -> E.DictComp k' e' gs') <$> checkQuals cxt gs \cxt' ->
+         (×) <$> check cxt' k str <*> check cxt' e τ
+   check cxt (S.Matrix e1 (x × y) e2) (T.ClassTy c (τ : Nil)) | c == cMatrix = do
+      e2' <- check cxt e2 intPair
+      e1' <- check (cxt `override` bindings (Map.fromFoldable [ x × int, y × int ])) e1 τ
+      pure (E.Matrix e1' (x × y) e2')
+   check cxt (S.DocExpr e e') τ = do
+      e2 <- check cxt e' τ
+      _ × e1 <- synthExpr (cxt `override` bindings (Map.singleton varThis τ)) e
+      pure (E.DocExpr e1 e2)
+   check cxt e τ = do
+      σ × e' <- synthExpr cxt e
+      classes <- classTable
+      unless (subtype classes σ τ) $ throwError $ typeMismatch τ σ
+      pure e'
+
+instance Check (List S.Expr) (List T.Type) (List E.Expr) where
+   check cxt es τs = sequence (zipWith (check cxt) es τs)
 
 typeMismatch :: T.Type -> T.Type -> String
 typeMismatch τ σ = "Expected type " <> prettyP τ <> "; given " <> prettyP σ
@@ -520,16 +526,16 @@ joinSynth cxt f es = do
    let τs = results >>= either (const Nil) (pure <<< f <<< fst)
    when (null τs) $ throwError notSynthesised
    τ <- classTable <#> \classes -> joins classes τs
-   (τ × _) <$> for results (either (\e -> checkExpr cxt e τ) (pure <<< snd))
+   (τ × _) <$> for results (either (\e -> check cxt e τ) (pure <<< snd))
 
 subscriptType :: Cxt -> T.Type -> S.Expr -> CheckM (T.Type × E.Expr)
-subscriptType cxt σ e | T.baseType σ == str = (str × _) <$> checkExpr cxt e int
+subscriptType cxt σ e | T.baseType σ == str = (str × _) <$> check cxt e int
 subscriptType cxt (T.UnionTy σ σ') e = do
    τ × e' <- subscriptType cxt σ e
    τ' × _ <- subscriptType cxt σ' e
    classTable <#> \classes -> join classes τ τ' × e'
-subscriptType cxt (T.ListTy τ) e = (τ × _) <$> checkExpr cxt e int
-subscriptType cxt (T.DictTy τ) e = (τ × _) <$> checkExpr cxt e str
+subscriptType cxt (T.ListTy τ) e = (τ × _) <$> check cxt e int
+subscriptType cxt (T.DictTy τ) e = (τ × _) <$> check cxt e str
 subscriptType cxt (T.TupleTy τs) e = do
    σ × e' <- synthExpr cxt e
    case σ of
@@ -541,7 +547,7 @@ subscriptType cxt (T.TupleTy τs) e = do
       _ -> throwError $ typeMismatch int σ
    where
    m = length τs
-subscriptType cxt (T.ClassTy c (τ : Nil)) e | c == cMatrix = (τ × _) <$> checkExpr cxt e intPair
+subscriptType cxt (T.ClassTy c (τ : Nil)) e | c == cMatrix = (τ × _) <$> check cxt e intPair
 subscriptType _ σ _ = throwError $ "Values of type " <> prettyP σ <> " cannot be subscripted"
 
 constr :: Cxt -> Name -> Name -> List S.TypeExpr -> List S.Expr -> List (Bind S.Expr) -> CheckM (T.Type × E.Expr)
@@ -560,7 +566,7 @@ constr cxt c name ψs es xes = do
             (σ × _) <<< fst <$> synthExpr cxt e
          typeArgsFor αs (typeArgs classes αs (fst <$> σes) (snd <$> σes))
    (T.ClassTy name τs × _) <<< E.Constr name <$>
-      sequence (zipWith (\e (_ × σ) -> checkExpr cxt e σ) es' (fieldsAt classes name τs))
+      check cxt es' (snd <$> fieldsAt classes name τs)
 
 callee :: Cxt -> S.Expr -> List S.Expr -> CheckM (T.Type × E.Expr)
 callee cxt e es = case schemeOf cxt e of
@@ -578,7 +584,7 @@ resultType cxt (T.UnionTy σ σ') es = do
    classTable <#> \classes -> join classes τ τ' × es'
 -- Automatic currying (PurePy extension)
 resultType cxt (T.CallableTy σs τ) es = do
-   es' <- checkArgs cxt σs (take (length σs) es)
+   es' <- check cxt (take (length σs) es) σs
    case drop (length es) σs, drop (length σs) es of
       Nil, Nil -> do
          when (τ == none) $ throwError "Call returning None used as expression"
@@ -593,11 +599,8 @@ exprStmt cxt e = snd <$> synthExpr cxt e
 
 callStmt :: Cxt -> S.Expr -> List S.Expr -> CheckM E.Expr
 callStmt cxt e es = callee cxt e es >>= case _ of
-   T.CallableTy σs τ × e' | τ == none && length σs == length es -> E.App e' <$> checkArgs cxt σs es
+   T.CallableTy σs τ × e' | τ == none && length σs == length es -> E.App e' <$> check cxt es σs
    σ × e' -> E.App e' <<< snd <$> resultType cxt σ es
-
-checkArgs :: Cxt -> List T.Type -> List S.Expr -> CheckM (List E.Expr)
-checkArgs cxt σs es = sequence (zipWith (checkExpr cxt) es σs)
 
 lambdaArgs :: Cxt -> List S.Pattern -> List S.Expr -> CheckM (Map.Map Var T.Type × List S.Pattern × List E.Expr)
 lambdaArgs cxt ps es = do
@@ -607,7 +610,7 @@ lambdaArgs cxt ps es = do
    distinctVars ps
    ps' <- traverse (pattern cxt) ps
    τes <- traverse (synthExpr cxt) es
-   cxt_p <- sequence (zipWith checkPattern ps' (fst <$> τes)) <#> foldl (∪) empty
+   cxt_p <- check cxt ps' (fst <$> τes)
    pure (cxt_p × ps' × (snd <$> τes))
 
 lambda :: List S.Pattern -> E.Expr -> CheckM E.Expr
@@ -678,7 +681,7 @@ checkQuals
 checkQuals cxt Nil body = (_ × Nil) <$> body cxt
 checkQuals cxt (g : gs) body = case g of
    S.Guard e -> do
-      e' <- checkExpr cxt e bool
+      e' <- check cxt e bool
       map (E.Guard e' : _) <$> checkQuals cxt gs body
    S.Generator p e -> do
       notCaptured (bv p) (captures gs)
@@ -686,13 +689,13 @@ checkQuals cxt (g : gs) body = case g of
       classes <- classTable
       τ <- maybe (throwError $ "Values of type " <> prettyP σ <> " cannot be iterated") pure (elemType classes σ)
       p' <- pattern cxt p
-      cxt_p <- checkPattern p' τ
+      cxt_p <- check cxt p' τ
       map (E.Generator p' e' : _) <$> checkQuals (cxt `override` bindings cxt_p) gs body
    S.Decl (S.VarDef p ψ e) -> do
       notCaptured (bv p) (captures gs)
       τ × e' <- annotated cxt ψ e
       p' <- pattern cxt p
-      cxt_p <- checkPattern p' τ
+      cxt_p <- check cxt p' τ
       map (E.Decl p' e' : _) <$> checkQuals (cxt `override` bindings cxt_p) gs body
 
 notCaptured :: Set Var -> Set Var -> CheckM Unit
@@ -725,7 +728,7 @@ defBody cxt f (T.CallableTy σs τ) (S.Clause (αs × ps × ψ × s)) = do
    let xs = unions (bv <$> ps)
    when (length ps /= length σs) $ throwError "Clauses differ in number of parameters"
    ps' <- for ps \(S.Param p ψ') -> (×) <$> pattern cxt p <*> (Just <$> resolveType cxt_αs ψ')
-   cxt_p <- sequence (zipWith checkPattern (fst <$> ps') σs) <#> foldl (∪) empty
+   cxt_p <- check cxt (fst <$> ps') σs
    τ' <- Just <$> resolveType cxt_αs ψ
    cxt_s <- scope "parameter" xs s
    r × s' <- checkStmt (cxt_αs `override` bindings cxt_p `override` cxt_s) (Just τ) s
@@ -856,44 +859,44 @@ pattern _ p = pure p
 distinctVars :: List S.Pattern -> CheckM Unit
 distinctVars ps = checkDistinct ("Duplicate variable in pattern: " <> _) (ps >>= Set.toUnfoldable <<< bv)
 
-checkPattern :: S.Pattern -> T.Type -> CheckM (Map.Map Var T.Type)
-checkPattern (S.PVar x) τ = pure (Map.singleton x τ)
-checkPattern S.PWild _ = pure empty
-checkPattern (S.PLit _) _ = pure empty
-checkPattern (S.PAs p x) τ = do
-   cxt_p <- checkPattern p τ
-   classTable <#> \classes -> insert x (matchedAs classes τ p) cxt_p
-checkPattern p@(S.PTuple ps) τ = do
-   classes <- classTable
-   when (hasListValues classes τ) $ throwError $ "Tuple pattern at " <> prettyP τ <> ", which has list values"
-   bindingsAt τ p case _ of
-      T.TupleTy τs | length τs == length ps -> Just (checkSeq ps τs)
+instance Check S.Pattern T.Type (Map.Map Var T.Type) where
+   check _ (S.PVar x) τ = pure (Map.singleton x τ)
+   check _ S.PWild _ = pure empty
+   check _ (S.PLit _) _ = pure empty
+   check cxt (S.PAs p x) τ = do
+      cxt_p <- check cxt p τ
+      classTable <#> \classes -> insert x (matchedAs classes τ p) cxt_p
+   check cxt p@(S.PTuple ps) τ = do
+      classes <- classTable
+      when (hasListValues classes τ) $ throwError $ "Tuple pattern at " <> prettyP τ <> ", which has list values"
+      bindingsAt τ p case _ of
+         T.TupleTy τs | length τs == length ps -> Just (check cxt ps τs)
+         _ -> Nothing
+   check cxt p@(S.PList ps) τ = do
+      classes <- classTable
+      when (hasTupleValues classes τ) $ throwError $ "List pattern at " <> prettyP τ <> ", which has tuple values"
+      bindingsAt τ p case _ of
+         T.ListTy σ -> Just (check cxt ps (ps <#> const σ))
+         _ -> Nothing
+   check cxt p@(S.PRecord xps) τ = bindingsAt τ p case _ of
+      T.DictTy σ -> Just (check cxt (snd <$> xps) (xps <#> const σ))
       _ -> Nothing
-checkPattern p@(S.PList ps) τ = do
-   classes <- classTable
-   when (hasTupleValues classes τ) $ throwError $ "List pattern at " <> prettyP τ <> ", which has tuple values"
-   bindingsAt τ p case _ of
-      T.ListTy σ -> Just (checkSeq ps (ps <#> const σ))
-      _ -> Nothing
-checkPattern p@(S.PRecord xps) τ = bindingsAt τ p case _ of
-   T.DictTy σ -> Just (checkSeq (snd <$> xps) (xps <#> const σ))
-   _ -> Nothing
-checkPattern p@(S.PConstr c ps _) τ = do
-   classes <- classTable
-   bindingsAt τ p \σ -> case instanceAt classes c σ of
-      Just Undetermined ->
-         Just (throwError $ "Type arguments of " <> last c <> " in pattern not determined by type " <> prettyP σ)
-      Just (Instance σs) -> Just (checkSeq ps (snd <$> fieldsAt classes c σs))
-      Nothing -> Nothing
+   check cxt p@(S.PConstr c ps _) τ = do
+      classes <- classTable
+      bindingsAt τ p \σ -> case instanceAt classes c σ of
+         Just Undetermined ->
+            Just (throwError $ "Type arguments of " <> last c <> " in pattern not determined by type " <> prettyP σ)
+         Just (Instance σs) -> Just (check cxt ps (snd <$> fieldsAt classes c σs))
+         Nothing -> Nothing
 
-checkSeq :: List S.Pattern -> List T.Type -> CheckM (Map.Map Var T.Type)
-checkSeq ps τs = sequence (zipWith checkPattern ps τs) <#> foldl (∪) empty
+instance Check (List S.Pattern) (List T.Type) (Map.Map Var T.Type) where
+   check cxt ps τs = sequence (zipWith (check cxt) ps τs) <#> foldl (∪) empty
 
 -- Bindings joined over disjuncts of τ; a disjunct not matched by p binds at Never.
 bindingsAt :: T.Type -> S.Pattern -> (T.Type -> Maybe (CheckM (Map.Map Var T.Type))) -> CheckM (Map.Map Var T.Type)
 bindingsAt τ p atDisjunct = do
    cxts <- for (T.disjuncts τ) \σ -> fromMaybe (pure (constMap never (bv p))) (atDisjunct σ)
-   classTable <#> \classes -> foldl1 (Map.unionWith (join classes)) (nonEmpty cxts)
+   classTable <#> \classes -> foldl1 (join classes) (nonEmpty cxts)
 
 hasListValues :: ClassTable -> T.Type -> Boolean
 hasListValues classes = hasValues classes isList (T.ListTy object)
