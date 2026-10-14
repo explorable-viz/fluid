@@ -292,7 +292,7 @@ wellFormedTop _ cxt s = checkStmt cxt Nothing s
 
 baseClass :: Cxt -> Cxt -> Var -> List Var -> S.TypeExpr -> CheckM (Name × List T.Type)
 baseClass cxt cxt_αs x ys (S.NameTy q ψs) | Just (Type d) <- resolveName cxt q = do
-   σs <- typeArguments cxt_αs d ψs
+   σs <- classTypeArgs cxt_αs d ψs
    inherited <- classTable <#> \classes -> fieldNames classes d
    for_ (ys `intersect` inherited) \y -> throwError $ "Inherited field " <> y <> " redeclared in class " <> x
    pure (d × σs)
@@ -315,7 +315,7 @@ instance Synth S.TypeExpr T.Type where
          τs <- traverse (synth cxt) ψs
          when (length τs /= length αs) $ throwError $ arityMismatch "Type alias" q αs τs
          pure (T.subst τs αs τ)
-      Just (Type c) -> T.ClassTy c <$> typeArguments cxt c ψs
+      Just (Type c) -> T.ClassTy c <$> classTypeArgs cxt c ψs
       Nothing -> throwError $ "Unbound name: " <> dottedName q
       _ -> throwError $ "Not a class: " <> dottedName q
    synth cxt (S.LitTy ℓ) = T.LitTy ℓ <$ predefName cxt "Literal"
@@ -333,8 +333,8 @@ instance Synth S.TypeExpr T.Type where
       excluded τ = throwError $ "Excluded from type[...]: " <> prettyP τ
    synth cxt (S.UnionTy ψ ψ') = T.UnionTy <$> synth cxt ψ <*> synth cxt ψ'
 
-typeArguments :: Cxt -> Name -> List S.TypeExpr -> CheckM (List T.Type)
-typeArguments cxt c ψs = do
+classTypeArgs :: Cxt -> Name -> List S.TypeExpr -> CheckM (List T.Type)
+classTypeArgs cxt c ψs = do
    τs <- traverse (synth cxt) ψs
    αs <- gets \{ classes } -> (get c classes).typeParams
    when (length τs /= length αs) $ throwError $ arityMismatch "Class" c αs τs
@@ -562,7 +562,7 @@ constr cxt c name ψs es xes = do
       $ dottedName c <> " expects " <> show (length xs) <> " argument(s); got " <> show (length es)
    es' <- (es <> _) <$> if null xes then pure Nil else positionaliseKw xs c (length es) xes
    τs <- case NEL.fromList ψs of
-      Just _ -> typeArguments cxt name ψs
+      Just _ -> classTypeArgs cxt name ψs
       Nothing -> do
          let αs = (get name classes).typeParams
          σes <- for (filter (synthesises <<< snd) (zip (snd <$> fields classes name) es')) \(σ × e) ->
