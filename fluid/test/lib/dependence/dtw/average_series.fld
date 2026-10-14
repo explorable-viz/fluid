@@ -1,6 +1,6 @@
 from typing import Callable
 import fnum
-from dtw import computeDTW
+from dtw import Cell, computeDTW
 from dependence.dtw.dtw_inputs import seq1, seq2, window
 
 def d(x: int, y: int) -> int:
@@ -9,7 +9,7 @@ def d(x: int, y: int) -> int:
 def avg(x: int, y: int) -> float:
   return (x + y) / 2
 
-def avgSeq(seq1: list[int], seq2: list[int], f: Callable[[int, int], float], ijs: list[tuple[int, int]]) -> list[float]:
+def avgSeq(seq1: list[int], seq2: list[int], f: Callable[[int, int], float], ijs: list[Cell]) -> list[float]:
   return [f(seq1[i], seq2[j]) for (i, j) in ijs]
 
 (costs, matched) = computeDTW(seq1, seq2, d, window)
