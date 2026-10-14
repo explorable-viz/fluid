@@ -13,7 +13,7 @@ import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Set as Set
 import Data.String (Pattern(..), stripSuffix)
 import Data.Traversable (for)
-import DataType (class HasClasses)
+import Classes (class HasClasses)
 import Val (class HasModuleStore, ModuleStore, emptyModuleStore)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)

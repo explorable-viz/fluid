@@ -1,10 +1,14 @@
 from typing import Callable
 from fnum import minimal, eq
 
-def nextIndices(n: int, m: int, window: int) -> list[tuple[int, int]]:
+type Cell = tuple[int, int]
+type CostMatrix = Matrix[InfNum]
+type PathMatrix = Matrix[Cell]
+
+def nextIndices(n: int, m: int, window: int) -> list[Cell]:
   return [(i, j) for i in range(0, n) for j in range(max(0, i - window), min(m, i + window + 1))]
 
-def costMatrixInit(rows: int, cols: int, window: int) -> Matrix[InfNum]:
+def costMatrixInit(rows: int, cols: int, window: int) -> CostMatrix:
   def initV(n: int, m: int) -> InfNum:
     if (n == 0 and m == 0) or (abs(n - m) <= window and not(n == 0 or m == 0)):
       return FNum(0)
@@ -12,7 +16,7 @@ def costMatrixInit(rows: int, cols: int, window: int) -> Matrix[InfNum]:
       return Infty()
   return [| initV(n, m) for (n, m) in (rows, cols) |]
 
-def minAndPrev((i, j): tuple[int, int], im1: InfNum, jm1: InfNum, ijm1: InfNum) -> tuple[int, int, InfNum]:
+def minAndPrev((i, j): Cell, im1: InfNum, jm1: InfNum, ijm1: InfNum) -> tuple[int, int, InfNum]:
   minim: InfNum = minimal([im1, jm1, ijm1])
   if minim |eq| im1:
     return (i, j + 1, minim)
@@ -22,13 +26,13 @@ def minAndPrev((i, j): tuple[int, int], im1: InfNum, jm1: InfNum, ijm1: InfNum) 
     else:
       return (i, j, minim)
 
-def extractPath(indmatrix: Matrix[int | tuple[int, int]], (n, m): tuple[int, int], accum: list[tuple[int, int]]) -> list[tuple[int, int]]:
+def extractPath(indmatrix: PathMatrix, (n, m): Cell, accum: list[Cell]) -> list[Cell]:
   if n == 0 and m == 0:
     return accum
   else:
     return extractPath(indmatrix, indmatrix[n, m], [(n - 1, m - 1)] + accum)
 
-def localMinUpdate[A](seq1: list[A], seq2: list[A], cost: Callable[[A, A], float], (costmatrix, indmatrix): tuple[Matrix[InfNum], Matrix[int | tuple[int, int]]], (i, j): tuple[int, int]) -> tuple[Matrix[InfNum], Matrix[int | tuple[int, int]]]:
+def localMinUpdate[A](seq1: list[A], seq2: list[A], cost: Callable[[A, A], float], (costmatrix, indmatrix): tuple[CostMatrix, PathMatrix], (i, j): Cell) -> tuple[CostMatrix, PathMatrix]:
   iEntr: A = seq1[i]
   jEntr: A = seq2[j]
   dist: float = cost(iEntr, jEntr)
@@ -42,12 +46,12 @@ def localMinUpdate[A](seq1: list[A], seq2: list[A], cost: Callable[[A, A], float
 
   return (matrixUpdate(costmatrix, (ip, jp), newVal), matrixUpdate(indmatrix, (ip, jp), (pi, pj)))
 
-def computeDTW[A](seq1: list[A], seq2: list[A], cost: Callable[[A, A], float], window: int) -> tuple[Matrix[InfNum], list[tuple[int, int]]]:
+def computeDTW[A](seq1: list[A], seq2: list[A], cost: Callable[[A, A], float], window: int) -> tuple[CostMatrix, list[Cell]]:
   n: int = len(seq1)
   m: int = len(seq2)
-  initD: Matrix[InfNum] = costMatrixInit(n + 1, m + 1, window)
-  initI: Matrix[int | tuple[int, int]] = [| 0 for (i, j) in (n + 1, m + 1) |]
-  indexing: list[tuple[int, int]] = nextIndices(n, m, window)
+  initD: CostMatrix = costMatrixInit(n + 1, m + 1, window)
+  initI: PathMatrix = [| (0, 0) for (i, j) in (n + 1, m + 1) |]
+  indexing: list[Cell] = nextIndices(n, m, window)
   (finished, indices) = foldl(localMinUpdate(seq1, seq2, cost), (initD, initI), indexing)
 
   return (finished, extractPath(indices, (n, m), []))

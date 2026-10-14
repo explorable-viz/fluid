@@ -7,7 +7,7 @@ import App.Util (SelStates, Selector, isInert, isPersistent, isTransient, selSta
 import App.Util.Selector (ObjArg, objArg, sel𝔹, valOf)
 import App.View.Util (Fig, Options)
 import Bind (Bind)
-import DataType (class HasClasses)
+import Classes (class HasClasses)
 import Control.Monad.Error.Class (class MonadError, catchError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Either (Either(..))

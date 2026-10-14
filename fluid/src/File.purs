@@ -23,7 +23,7 @@ import Data.Set as Set
 import Data.String (Pattern(..), stripPrefix, stripSuffix)
 import Data.Foldable (any, find, foldr, oneOf)
 import Data.Traversable (for)
-import DataType (ClassTable)
+import Classes (ClassTable)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class.Console (log)

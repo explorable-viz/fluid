@@ -24,7 +24,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, traverse)
 import Data.Tuple (fst, snd)
-import DataType (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fieldNames)
+import Classes (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fieldNames)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
@@ -34,7 +34,7 @@ import File (class LoadFile, FileCxt, withClasses)
 import DepGraph (DepGraph, Rel, Deriv, Pos, attachDoc, deriv, zeros)
 import Lattice (class DepSemiring, DepKind, Lineage, Raw, ctrlWeight)
 import Literal (Literal(..), eqLiteral)
-import ModuleGraph (ModuleName, implicit, submodules)
+import Module.Defs (ModuleName, implicit, submods)
 import Operator (binopSymbol, unopSymbol)
 import Pretty (prettyP)
 import Types (Type(..)) as T
@@ -416,15 +416,14 @@ evalModule
    -> m (Dict Deriv)
 evalModule ρ0 q (Module ιs s) = do
    ρ_imp <- foldM (evalImport q) ρ0 ιs
-   ρ_name <- maplet "__name__" <$> deriv (Val unit (V.Lit (Str (dottedName q))))
    { modules } <- moduleStore
-   ρ_subMods <- traverse moduleVal (D.fromFoldable (submodules (Map.keys modules) q))
-   ρ <- traverse gvalAt (ρ_imp <+> ρ_name)
+   ρ_subMods <- traverse moduleVal (D.fromFoldable (submods (Map.keys modules) q))
+   ρ <- traverse gvalAt ρ_imp
    ρ' × _ <- asAssigns <$> evalStmt { ctrl: Nil, env: ρ } s
    let xs = L.fromFoldable (assigns s)
    ρ_unbound <- D.fromFoldable <<< zip xs <$> traverse (const (deriv (Val unit V.Unbound))) xs
    members <- traverse (record >>> map fst) ρ'
-   pure (ρ_name <+> ρ_subMods <+> ρ_unbound <+> members)
+   pure (ρ_subMods <+> ρ_unbound <+> members)
 
 -- Bind imported members, and names of imported modules to module values.
 evalImport

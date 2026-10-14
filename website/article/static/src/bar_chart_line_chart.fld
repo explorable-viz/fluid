@@ -1,0 +1,39 @@
+from renewables import Renewable, renewables
+
+from fluid.view import BarChart, Dimensions, LineChart, MultiView, LinePlot, Point, Segment, StackedBar, TickLabels, Default
+
+def totalFor(c: str, rows: list[Renewable]) -> float:
+  return fsum([row.output for row in rows if row.country == c])
+
+data2015: list[Renewable] = [row for row in renewables if row.year == 2015]
+countryData: list[StackedBar] = [StackedBar(x=c, segments=[Segment(y="output", z=totalFor(c, data2015))]) for c in ["China", "USA", "Germany"]]
+
+def series(energyType: str, country: str) -> list[Point]:
+  return [
+    Point(x=row.year, y=row.output)
+    for year in range(2013, 2019) for row in renewables
+    if row.year == year if row.energyType == energyType if row.country == country
+  ]
+
+MultiView([
+  BarChart(
+    caption="Total renewables output by country",
+    size=Dimensions(width=275, height=185),
+    tickLabels=TickLabels(x=Default(), y=Default()),
+    stackedBars=countryData,
+    legend=True
+  ),
+  LineChart(
+    tickLabels=TickLabels(x=Default(), y=Default()),
+    size=Dimensions(width=330, height=285),
+    caption="Renewables output of USA relative to China",
+    plots=[
+     LinePlot(
+       name=energyType,
+       points=[Point(x=p1.x, y=p1.y / p2.y) for (p1, p2) in zip(usa, china)]
+     )
+     for energyType in ["Bio", "Hydro", "Solar", "Wind"]
+     for (usa, china) in [(series(energyType, "USA"), series(energyType, "China"))]
+   ]
+ )
+])

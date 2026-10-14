@@ -8,14 +8,14 @@ def isYear(year: int, x: Renewable | NonRenewable) -> bool:
   return year == x.year
 
 def plot(year: int, countries: list[str]) -> list[Point]:
-  rens: list[Renewable] = filter(isYear(year), renewables)
-  nonRens: list[NonRenewable] = filter(isYear(year), nonRenewables)
+  rens: list[Renewable] = [r for r in renewables if isYear(year, r)]
+  nonRens: list[NonRenewable] = [r for r in nonRenewables if isYear(year, r)]
 
   def plotCountry(country: str) -> Point:
-    rens_: list[Renewable] = filter(isCountry(country), rens)
-    rensOut: float = fsum(map(lambda x: x.output, rens_))
-    rensCap: float = fsum(map(lambda x: x.capacity, rens_))
-    x: NonRenewable = filter(isCountry(country), nonRens)[0]
+    rens_: list[Renewable] = [r for r in rens if isCountry(country, r)]
+    rensOut: float = fsum([x.output for x in rens_])
+    rensCap: float = fsum([x.capacity for x in rens_])
+    x: NonRenewable = [r for r in nonRens if isCountry(country, r)][0]
     nonRensCap: float = ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
 
     return Point(

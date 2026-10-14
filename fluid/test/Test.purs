@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
-import DataType (class HasClasses)
+import Classes (class HasClasses)
 import Val (class HasModuleStore)
 import Data.Array (concat, filter, elem)
 import Data.Profunctor.Strong (second)

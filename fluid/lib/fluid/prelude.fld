@@ -16,6 +16,8 @@ class NonEmpty[T](Tree[T]):
   value: T
   right: Tree[T]
 
+type SearchTree[K, V] = Tree[tuple[K, V]]
+
 @dataclass
 class Ordering:
   pass
@@ -122,18 +124,6 @@ def span[A](p: Callable[[A], bool], xs: list[A]) -> dict[str, list[A]]:
   return { "init": take(n, xs), "rest": drop(n, xs) }
 
 # Each returned list is non-empty.
-def group_by[A](eq: Callable[[A, A], bool], xs: list[A]) -> list[list[A]]:
-  def go(i: int) -> list[list[A]]:
-    if i == len(xs):
-      return []
-    def run(j: int) -> int:
-      if j < len(xs) and eq(xs[i], xs[j]):
-        return run(j + 1)
-      return j
-    j: int = run(i + 1)
-    return [slice(i, j, xs)] + go(j)
-  return go(0)
-
 def foldl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> A:
   def go(acc: A, i: int) -> A:
     if i == len(xs):
@@ -154,16 +144,13 @@ def foldr[A, B](op: Callable[[A, B], B], z: B, xs: list[A]) -> B:
 def foldr1[A](op: Callable[[A, A], A], xs: list[A]) -> A:
   return foldr(op, xs[-1], take(len(xs) - 1, xs))
 
-def scanl1[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> list[A]:
+# Quadratic, as each concatenation copies the list; retire with itertools.accumulate
+def scanl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> list[A]:
   def go(x: B, continue: Callable[[A], list[A]]) -> Callable[[A], list[A]]:
     def step(acc: A) -> list[A]:
-      next: A = op(acc, x)
-      return [next] + continue(next)
+      return [acc] + continue(op(acc, x))
     return step
-  return foldr(go, lambda _: [], xs)(z)
-
-def scanl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> list[A]:
-  return [z] + scanl1(op, z, xs)
+  return foldr(go, lambda acc: [acc], xs)(z)
 
 def map[A, B](f: Callable[[A], B], xs: list[A]) -> list[B]:
   return [f(x) for x in xs]
@@ -174,11 +161,6 @@ def join(xs: list[str]) -> str:
 def intersperse[A](xs: list[A], sep: A) -> list[A]:
   return [y for i in range(0, len(xs)) for y in ([xs[i]] if i == 0 else [sep, xs[i]])]
 
-def iterate[A](n: int, f: Callable[[A], A], z: A) -> list[A]:
-  if n == 0:
-    return []
-  return [z] + iterate(n - 1, f, f(z))
-
 # sum, fsum, max, min, fmax, fmin, maximum, minimum, abs: one type each, pending protocols
 # (pure-py/pure-py-spec#233); retire with Python's builtins.
 def sum(xs: list[int]) -> int:
@@ -188,7 +170,8 @@ def fsum(xs: list[float]) -> float:
   return foldr(lambda x, y: x + y, 0.0, xs)
 
 def mean(xs: list[float]) -> float:
-  (s, n) = foldl(lambda (s, n), x: (s + x, n + 1), (0.0, 0), xs)
+  start: tuple[float, int] = (0.0, 0)
+  (s, n) = foldl(lambda (s, n), x: (s + x, n + 1), start, xs)
   return s / n
 
 def reversed[A](xs: list[A]) -> list[A]:
@@ -200,16 +183,9 @@ def take[A](n: int, xs: list[A]) -> list[A]:
 def drop[A](n: int, xs: list[A]) -> list[A]:
   return [xs[i] for i in range(max(n, 0), len(xs))]
 
-# Partial; requires k to be in the map. Keyed at int and str, as equality is undefined at a type variable;
+# Partial; requires k to be in the map. Keyed at int, as equality is undefined at a type variable;
 # retire with pure-py/pure-py-spec#233.
 def lookup[V](k: int, kvs: list[tuple[int, V]]) -> V:
-  match find(lambda (k_, _): k == k_, kvs):
-    case None:
-      assert False, "Key not found in map"
-    case (_, v):
-      return v
-
-def lookup_str[V](k: str, kvs: list[tuple[str, V]]) -> V:
   match find(lambda (k_, _): k == k_, kvs):
     case None:
       assert False, "Key not found in map"
@@ -234,21 +210,14 @@ def maximum(xs: list[float]) -> float:
 def minimum(xs: list[float]) -> float:
   return foldr1(fmin, xs)
 
-def zip_with[A, B, C](op: Callable[[A, B], C], xs: list[A], ys: list[B]) -> list[C]:
-  return [op(xs[i], ys[i]) for i in range(0, min(len(xs), len(ys)))]
-
 def zip[A, B](xs: list[A], ys: list[B]) -> list[tuple[A, B]]:
-  return zip_with(lambda x, y: (x, y), xs, ys)
+  return [(xs[i], ys[i]) for i in range(0, min(len(xs), len(ys)))]
 
 def abs(x: int) -> int:
   return -x if x < 0 else x
 
 def nub[A](xs: list[A]) -> list[A]:
-  def go(i: int, ys: list[A]) -> list[A]:
-    if i == len(xs):
-      return ys
-    return go(i + 1, ys if xs[i] in ys else ys + [xs[i]])
-  return go(0, [])
+  return [xs[i] for i in range(0, len(xs)) if xs[i] not in take(i, xs)]
 
 def slice[A](begin: int, end: int, xs: list[A]) -> list[A]:
   return take(end - begin, drop(begin, xs))

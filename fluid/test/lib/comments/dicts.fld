@@ -1,13 +1,15 @@
+from typing import Callable
 import fluid.view
 
 d: dict[str, int] = {}
 e: dict[str, int] = { "a": 5, "a" + "b": 6 }
 f: dict[str, int] = { "ab": 12 }
+inc: Callable[[int], int] = lambda x: 1 + x
 
 @doc(f"""We can have a docComment before a dict!""") {
   "d": d,
   "e": e,
   "e_ab": e["ab"],
-  "f": dict_map(lambda x: 1 + x, e),
+  "f": dict_map(inc, e),
   "g": dict_difference(e, f)
 }

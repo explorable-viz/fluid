@@ -4,9 +4,9 @@ from dataset.renewables_restricted import data
 year1: tuple[int, list[tuple[str, list[tuple[str, float]]]]] = data[0]
 
 def addTotal(kvs: list[tuple[str, float]]) -> list[tuple[str, float]]:
-  return [("Total", fsum(map(snd, kvs)))] + kvs
+  return [("Total", fsum([x for (_, x) in kvs]))] + kvs
 
-def countryData(country: str) -> list[tuple[int, list[tuple[str, float]]]]:
-  return map(second(compose(addTotal, lookup_str(country))), data)
+def countryData(country: str) -> list[tuple[float, list[tuple[str, float]]]]:
+  return [(year, addTotal({c: vs for (c, vs) in kvs}[country])) for (year, kvs) in data]
 
 (lambda country: caption(country, line_chart(True, ["black"] + colours1, fst(year1), countryData(country))))("China")

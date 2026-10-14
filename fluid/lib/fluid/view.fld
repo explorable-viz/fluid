@@ -68,11 +68,11 @@ class LineChart(View):
 
 @dataclass
 class MultiView(View):
-  views: list[View]
+  views: list[object]
 
 @dataclass
 class Paragraph(View):
-  fragments: list[View]
+  fragments: list[object]
 
 @dataclass
 class ScatterPlot(View):

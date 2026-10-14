@@ -5,9 +5,11 @@ import Prim hiding (Type)
 
 import Bind (Name, Var)
 import Data.Generic.Rep (class Generic)
-import Data.List (List, length, zip)
+import Data.List (List, length, zip, (:))
+import Data.List.NonEmpty (NonEmptyList)
 import Data.Map (fromFoldable, lookup)
 import Data.Maybe (fromMaybe)
+import Data.Set (Set, empty, singleton, union, unions)
 import Data.Show.Generic (genericShow)
 import Literal (Literal)
 import Literal as L
@@ -34,6 +36,8 @@ data Type
    | ClassTy Name (List Type) -- class by fully-qualified name, with type arguments
    | TypeTy Type -- class as value
    | UnionTy Type Type
+
+data Scheme = Forall (NonEmptyList Var) Type
 
 primitiveName :: Primitive -> String
 primitiveName Object = "object"
@@ -68,6 +72,30 @@ subst τs αs = assert (length τs == length αs) go
    go (UnionTy σ τ) = UnionTy (go σ) (go τ)
    go τ = τ
 
+fv :: Type -> Set Var
+fv (VarTy α) = singleton α
+fv (ListTy τ) = fv τ
+fv (TupleTy τs) = unions (fv <$> τs)
+fv (DictTy τ) = fv τ
+fv (CallableTy τs τ) = unions (fv <$> τs) `union` fv τ
+fv (ClassTy _ τs) = unions (fv <$> τs)
+fv (TypeTy τ) = fv τ
+fv (UnionTy σ τ) = fv σ `union` fv τ
+fv _ = empty
+
+subterms :: Type -> List Type
+subterms (UnionTy σ τ) = subterms σ <> subterms τ
+subterms τ@(ListTy σ) = τ : subterms σ
+subterms τ@(DictTy σ) = τ : subterms σ
+subterms τ@(TupleTy σs) = τ : (σs >>= subterms)
+subterms τ@(ClassTy _ σs) = τ : (σs >>= subterms)
+subterms τ@(CallableTy σs σ) = τ : ((σ : σs) >>= subterms)
+subterms τ = pure τ
+
+disjuncts :: Type -> List Type
+disjuncts (UnionTy σ τ) = disjuncts σ <> disjuncts τ
+disjuncts τ = pure τ
+
 derive instance Eq Primitive
 derive instance Generic Primitive _
 instance Show Primitive where
@@ -77,3 +105,8 @@ derive instance Eq Type
 derive instance Generic Type _
 instance Show Type where
    show x = genericShow x
+
+derive instance Eq Scheme
+derive instance Generic Scheme _
+instance Show Scheme where
+   show = genericShow

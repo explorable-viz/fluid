@@ -166,7 +166,7 @@ def height(g: GraphicsElement) -> float:
   return h
 
 def space_right(z: float, sep: float, gs: list[GraphicsElement]) -> list[GraphicsElement]:
-  return zip_with(set_x, iterate(len(gs), lambda x: sep + x, z), gs)
+  return [set_x(z + sep * i, gs[i]) for i in range(0, len(gs))]
 
 # Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
 # different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org
@@ -251,26 +251,25 @@ def axis(orient: Orient, x: float, start: float, end: float) -> tuple[GraphicsEl
   first_tick: float = ceil_to_nearest(start, tick_sp)
   last_tick: float = ceil_to_nearest(end, tick_sp)
   n: int = floor((end - first_tick) / tick_sp) + 1
-  ticks: list[float] = iterate(n, lambda x: tick_sp + x, first_tick)
+  ticks: list[float] = [first_tick + tick_sp * i for i in range(0, n)]
   ticks_from_start: list[float] = [start] + ticks if first_tick > start else ticks
   ys: list[float] = ticks_from_start + [last_tick] if last_tick > end else ticks_from_start
   ps: list[Point] = map(mk_point(orient, x), ys)
   ax: GraphicsElement = Group([
       Line(ps[0], ps[-1], axis_colour, axis_stroke_width),
-      Polymarkers(ps, flip(map, ys, compose(labelled_tick(orient, axis_colour, tick_length), num_to_str)))
+      Polymarkers(ps, map(compose(labelled_tick(orient, axis_colour, tick_length), num_to_str), ys))
     ])
 
   return (ax, last_tick)
 
 # x is position of this axis on the other axis.
 def cat_axis(orient: Orient, x: float, cat_values: list[Cat]) -> GraphicsElement:
-  ys: list[int] = iterate(len(cat_values) + 1, lambda x: 1 + x, 0)
-  ps: list[Point] = map(mk_point(orient, x), ys)
+  ps: list[Point] = [mk_point(orient, x, y) for y in range(0, len(cat_values) + 1)]
 
   return Group([
     Line(ps[0], ps[-1], axis_colour, axis_stroke_width),
-    Polymarkers(tail(ps), map(const(tick(orient, axis_colour, tick_length)), cat_values)),
-    Polymarkers(flip(map, tail(ps), lambda Point(x, y): Point(x - 0.5, y)), map(label(orient, -0.5, 0), cat_values))
+    Polymarkers(tail(ps), [tick(orient, axis_colour, tick_length) for _ in cat_values]),
+    Polymarkers([Point(x - 0.5, y) for Point(x, y) in tail(ps)], map(label(orient, -0.5, 0), cat_values))
   ])
 
 def viewport(x_start: float, x_finish: float, y_finish: float, margin: float, gs: list[GraphicsElement]) -> GraphicsElement:
@@ -279,20 +278,20 @@ def viewport(x_start: float, x_finish: float, y_finish: float, margin: float, gs
 # Plot a map of x values to lists of (categorical value, y value) pairs. Importantly, assume all data is uniform
 # (categorical keys are the same for each x value and are ordered the same each time).
 def line_chart(with_axes: bool, colours: Colours, x_start: float, data: list[tuple[float, list[tuple[Cat, float]]]]) -> GraphicsElement:
-  xs: list[float] = map(fst, data)
+  xs: list[float] = [x for (x, _) in data]
   n_cat: int = len(snd(data[0]))
 
-  def plot((n, colour): tuple[int, Colour]) -> GraphicsElement:
-    ps: list[Point] = map(lambda (x, kvs): Point(x, snd(kvs[n])), data)
+  def plot(n: int, colour: Colour) -> GraphicsElement:
+    ps: list[Point] = [Point(x, snd(kvs[n])) for (x, kvs) in data]
 
     return Group([
       Polyline(ps, colour, 1),
-      Polymarkers(ps, [Circle(x=0, y=0, radius=marker_radius, fill=colour)] * len(ps))
+      Polymarkers(ps, [Circle(x=0, y=0, radius=marker_radius, fill=colour) for _ in ps])
     ])
 
-  lines: list[GraphicsElement] = zip_with(curry(plot), iterate(n_cat, lambda x: 1 + x, 0), colours)
+  lines: list[GraphicsElement] = [plot(n, colours[n]) for n in range(0, n_cat)]
   x_finish: float = xs[-1]
-  y_finish: float = maximum(flip(map, data, lambda (_, kvs): maximum(map(snd, kvs))))
+  y_finish: float = maximum([maximum([v for (_, v) in kvs]) for (_, kvs) in data])
 
   if with_axes:
     (x_axis, x_finish_) = axis(Horiz(), 0, x_start, x_finish)
@@ -302,26 +301,26 @@ def line_chart(with_axes: bool, colours: Colours, x_start: float, data: list[tup
 
 # Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
 def categorical_chart[A](plot_value: Callable[[Colours, list[A]], list[GraphicsElement]], with_axes: bool, colours: Colours, sep: float, data: list[tuple[Cat, A]]) -> GraphicsElement:
-  gs: list[GraphicsElement] = stack_right(sep, plot_value(colours, map(snd, data)))
+  gs: list[GraphicsElement] = stack_right(sep, plot_value(colours, [kvs for (_, kvs) in data]))
   w: int = len(gs)
   h: float = maximum(map(height, gs))
 
   if with_axes:
-    x_axis: GraphicsElement = cat_axis(Horiz(), 0, map(fst, data))
+    x_axis: GraphicsElement = cat_axis(Horiz(), 0, [x for (x, _) in data])
     (y_axis, h_) = axis(Vert(), 0, 0, h)
     return viewport(0, w, h_, default_margin, gs + [x_axis, y_axis])
   return viewport(0, w, h, 0, gs)
 
 def rects(colours: Colours, ns: list[float]) -> list[GraphicsElement]:
-  return zip_with(lambda colour, n: Rect(x=0, y=0, width=1, height=n, fill=colour), colours, ns)
+  return [Rect(x=0, y=0, width=1, height=n, fill=colour) for (colour, n) in zip(colours, ns)]
 
 # First component of data (categorical value) currently ignored; values just mapped positionally to colors.
 # Can we use Group instead of Viewport here?
 def stacked_bar(colours: Colours, ns: list[tuple[Cat, float]]) -> GraphicsElement:
-  heights: list[float] = map(snd, ns)
-  subtotals: list[float] = scanl1(lambda x, y: x + y, 0.0, heights)
-  dims: list[tuple[float, float]] = zip([0.0] + subtotals, heights)
-  bars: list[GraphicsElement] = map(lambda ((y, height), colour): Rect(x=0, y=y, width=1, height=height, fill=colour), zip(dims, colours))
+  heights: list[float] = [h for (_, h) in ns]
+  subtotals: list[float] = scanl(lambda x, y: x + y, 0.0, heights)
+  dims: list[tuple[float, float]] = zip(subtotals, heights)
+  bars: list[GraphicsElement] = [Rect(x=0, y=y, width=1, height=height, fill=colour) for ((y, height), colour) in zip(dims, colours)]
 
   return Viewport(x=0, y=0, width=1, height=subtotals[-1], fill="none", margin=0, scale=Scale(1, 1), translate=Translate(0, 0), g=Group(bars))
 
@@ -329,7 +328,7 @@ bar_chart: Callable[[bool, Colours, float, list[tuple[Cat, float]]], GraphicsEle
 
 # For each categorical value, plot a bar chart for the corresponding data.
 def grouped_bar_chart(with_axes: bool, colours: Colours, sep: float, data: list[tuple[Cat, list[tuple[Cat, float]]]]) -> GraphicsElement:
-  return categorical_chart(lambda colours_, groups: map(lambda group: bar_chart(False, colours_, 0, group), groups), with_axes, colours, sep, data)
+  return categorical_chart(lambda colours_, groups: [bar_chart(False, colours_, 0, group) for group in groups], with_axes, colours, sep, data)
 
 # See stacked_bar for strong (unjustified) assumption about uniformity of data.
 def stacked_bar_chart(with_axes: bool, colours: Colours, sep: float, data: list[tuple[Cat, list[tuple[Cat, float]]]]) -> GraphicsElement:

@@ -7,5 +7,5 @@ LineChart(
   tickLabels=TickLabels(x=Default(), y=Default()),
   caption="Change in renewable energy output of USA relative to China",
   size=Dimensions(width=330, height=285),
-  plots=[LinePlot(name=type, points=plot) for type in ["Bio", "Hydro", "Solar", "Wind"] for plot in [zip_with(lambda p1, p2: Point(x=p1.x, y=p1.y / p2.y), series(type, "USA"), series(type, "China"))]]
+  plots=[LinePlot(name=type, points=plot) for type in ["Bio", "Hydro", "Solar", "Wind"] for plot in [[Point(x=p1.x, y=p1.y / p2.y) for (p1, p2) in zip(series(type, "USA"), series(type, "China"))]]]
 )

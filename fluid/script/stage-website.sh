@@ -27,8 +27,8 @@ rm -f "$DEST/package.json.bak"
 
 # Replace symlinks with copies from the source tree
 # fluid standard library
-rm -f "$DEST/$WEBSITE_LIB_ROOT/fluid"
-cp -r "$LIB_PACKAGE" "$DEST/$WEBSITE_LIB_ROOT/fluid"
+rm -f "$DEST/$WEBSITE_LIB_ROOT"
+cp -r "$LIB_ROOT" "$DEST/$WEBSITE_LIB_ROOT"
 
 rm -rf "$WEBSITE_SHARED"
 mkdir -p "$(dirname "$WEBSITE_SHARED")"

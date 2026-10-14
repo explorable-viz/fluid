@@ -6,4 +6,7 @@ def map[A, B](f: Callable[[A], B], xs: list[A]) -> list[B]:
   return [f(x) for x in xs]
 
 output: list[float] = [row.output for type in types for row in data if row.energyType == type]
-map(lambda x: floor((x / fsum(output)) * 100), output)
+def percent(x: float) -> int:
+  return floor((x / fsum(output)) * 100)
+
+map(percent, output)

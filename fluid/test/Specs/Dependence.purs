@@ -3,7 +3,8 @@ module Test.Specs.Dependence where
 import Prelude
 
 import App.Util.Selector (dict, dictKey, dictVal, listElement, list, matrixElement, select, tupleElement, select', (>.>))
-import DataType (cParagraph, f_fragments)
+
+import Types.Defs (cParagraph, f_fragments)
 import Test.Util (DepSpec, Query(..), VertexSpec(..))
 
 dep_cases :: Array DepSpec
@@ -256,7 +257,7 @@ dep_cases =
      }
    , { file: "dependence/dict/get.fld"
      , queries:
-          [ Bwd Output (\_ -> select) "⟪{\"a\": 5, ⟪\"ab\"⟫: ⟪{\"fst\": 6, ⟪\"snd\"⟫: ⸨0⸩}⟫}⟫\n⟪\"a\"⟫\n⸨0⸩"
+          [ Bwd Output (\_ -> select) "⟪{\"a\": {\"fst\": 5}, ⟪\"ab\"⟫: ⟪{\"fst\": 6, ⟪\"snd\"⟫: ⸨0⸩}⟫}⟫\n⟪\"a\"⟫\n⸨0⸩"
           ]
      }
    , { file: "dependence/dict/create.fld"

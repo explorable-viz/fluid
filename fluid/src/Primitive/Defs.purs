@@ -2,13 +2,14 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, apply, div, mod, top)
 
-import Bind (Bind, Name, Var, dottedName, qual)
+import Bind (Bind, Name, Var, dottedName, qual, varName)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json, caseJson, isNull, stringify, toArray, toBoolean, toObject, toString)
 import Data.Argonaut.Core (toNumber) as J
 import Data.Argonaut.Decode (parseJson)
 import Data.Array as Array
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Foldable (foldM, foldl)
 import Data.Int (ceil, floor, toNumber)
@@ -31,9 +32,10 @@ import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (for, traverse)
 import Data.Lazy (defer, force)
 import Data.Tuple (fst, snd)
-import DataType (ClassTable, askClasses, cMatrix, cRange, fields)
-import DefiniteAssignment (Entry(..)) as Entry
-import DefiniteAssignment (Cxt)
+import Classes (ClassTable, askClasses, fields)
+import Types.Defs (cMatrix, cRange, callable, matrix, var)
+import Cxt (Entry(..)) as Entry
+import Cxt (Cxt, Entry(Assigned), generalise)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -43,12 +45,13 @@ import DepGraph (zeros)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, ctrlWeight)
 import Literal (Literal(..))
 import Primitive (int, intOrNumber, number, string, typeMismatch, unary, union1)
-import Util (MayFail, type (+), type (×), definitely', orElse, orThrow, singleton, throw, whenever, (×))
-import ModuleGraph (ModuleName, builtins, dataclasses, math, sys, typing)
+import Util (MayFail, cons, type (+), type (×), definitely', orElse, orThrow, singleton, throw, whenever, (×))
+import Module.Defs (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
 import Types (Primitive(..), Type(..), baseType) as T
-import Util.Map (constMap, keys, lookup, unionWith_never, (\\))
+import Types.Defs (float, int, intPair, none, object, str) as T
+import Util.Map (lookup, unionWith_never, (\\))
 import Util.Map as Dict
 import Util.Map as Map
 import Val (BaseVal(..), DepOp, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), GVal, MatrixRep(..), Val(..), construct, deliver, dictEntries, dictEntry, elementCount, fromRel, gval, matrixPut, pureRel, root, via)
@@ -67,61 +70,56 @@ predefinedClasses = M.fromFoldable
 
 predefined :: Map ModuleName (Cxt × Raw Env)
 predefined = M.fromFoldable
-   [ predefinedModule builtins ("None" : "object" : "bool" : "int" : "float" : "str" : "list" : "dict" : "tuple" : "type" : Nil)
+   [ predefinedModule builtins [ "None", "object", "bool", "int", "float", "str", "list", "dict", "tuple", "type" ]
         [ cRange, cMatrix ]
-        [ extern print_
-        , extern len
-        -- Fluid-only members, without spec counterpart
-        , extern dims
-        , extern loadJson
-        , unary "str_to_float" { i: string, o: number, fwd: definitely' <<< fromString }
-        , unary "num_to_str" { i: intOrNumber, o: string, fwd: numToStr } -- rename to 'str' (more Pythonic)
+        [ extern print_ × generalise (callable [ T.object ] T.none)
+        , extern len × generalise (callable [ T.PrimitiveTy T.Sized ] T.int)
+        , extern dims × generalise (callable [ matrix (var "T") ] T.intPair)
+        , extern loadJson × generalise (callable [ T.TypeTy (var "T"), T.str ] (var "T"))
+        , unary "str_to_float" { i: string, o: number, fwd: definitely' <<< fromString } × generalise (callable [ T.str ] T.float)
+        , unary "num_to_str" { i: intOrNumber, o: string, fwd: numToStr } × generalise (callable [ T.float ] T.str) -- rename to 'str' (more Pythonic)
         -- TODO: rename the rest of these (apart from dict_map?) to lose the dict_ prefix
-        , extern dict_difference
-        , extern dict_disjointUnion
-        , extern foldl_with_index
-        , extern get
-        , extern insert
-        , extern dict_intersectionWith
-        , extern dict_map
-        , extern matrixUpdate
-        , extern find_str
-        , extern search
-        , extern split
-        , extern quot
-        , extern rem
+        , extern dict_difference × generalise (callable [ T.DictTy (var "T"), T.DictTy (var "U") ] (T.DictTy (var "T")))
+        , extern dict_disjointUnion × generalise (callable [ T.DictTy (var "T"), T.DictTy (var "T") ] (T.DictTy (var "T")))
+        , extern foldl_with_index × generalise (callable [ callable [ T.str, var "U", var "T" ] (var "U"), var "U", T.DictTy (var "T") ] (var "U"))
+        , extern get × generalise (callable [ T.str, T.DictTy (var "T") ] (T.UnionTy (var "T") T.none))
+        , extern insert × generalise (callable [ T.DictTy (var "T"), T.str, var "T" ] (T.DictTy (var "T")))
+        , extern dict_intersectionWith × generalise (callable [ callable [ var "T", var "U" ] (var "V"), T.DictTy (var "T"), T.DictTy (var "U") ] (T.DictTy (var "V")))
+        , extern dict_map × generalise (callable [ callable [ var "T" ] (var "U"), T.DictTy (var "T") ] (T.DictTy (var "U")))
+        , extern matrixUpdate × generalise (callable [ matrix (var "T"), T.intPair, var "T" ] (matrix (var "T")))
+        , extern find_str × generalise (callable [ T.str, T.str ] T.int)
+        , extern search × generalise (callable [ T.str, T.str ] (T.UnionTy T.int T.none))
+        , extern split × generalise (callable [ T.int, T.str ] (T.TupleTy (T.str : T.str : Nil)))
+        , extern quot × generalise (callable [ T.int, T.int ] T.int)
+        , extern rem × generalise (callable [ T.int, T.int ] T.int)
         ]
-   , predefinedModule math Nil []
-        [ "pi" × Val bot (Lit (Float N.pi))
-        , "e" × Val bot (Lit (Float N.e))
-        , unary "sqrt" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sqrt) `union1` N.sqrt }
-        , unary "exp" { i: intOrNumber, o: number, fwd: (toNumber >>> N.exp) `union1` N.exp }
-        , unary "log" { i: intOrNumber, o: number, fwd: (toNumber >>> N.log) `union1` N.log }
-        , unary "sin" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sin) `union1` N.sin }
-        , unary "cos" { i: intOrNumber, o: number, fwd: (toNumber >>> N.cos) `union1` N.cos }
-        , unary "tan" { i: intOrNumber, o: number, fwd: (toNumber >>> N.tan) `union1` N.tan }
-        , unary "floor" { i: intOrNumber, o: int, fwd: identity `union1` floor }
-        , unary "ceil" { i: intOrNumber, o: int, fwd: identity `union1` ceil }
+   , predefinedModule math [] []
+        [ ("pi" × Val bot (Lit (Float N.pi))) × generalise T.float
+        , ("e" × Val bot (Lit (Float N.e))) × generalise T.float
+        , unary "sqrt" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sqrt) `union1` N.sqrt } × generalise (callable [ T.float ] T.float)
+        , unary "exp" { i: intOrNumber, o: number, fwd: (toNumber >>> N.exp) `union1` N.exp } × generalise (callable [ T.float ] T.float)
+        , unary "log" { i: intOrNumber, o: number, fwd: (toNumber >>> N.log) `union1` N.log } × generalise (callable [ T.float ] T.float)
+        , unary "sin" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sin) `union1` N.sin } × generalise (callable [ T.float ] T.float)
+        , unary "cos" { i: intOrNumber, o: number, fwd: (toNumber >>> N.cos) `union1` N.cos } × generalise (callable [ T.float ] T.float)
+        , unary "tan" { i: intOrNumber, o: number, fwd: (toNumber >>> N.tan) `union1` N.tan } × generalise (callable [ T.float ] T.float)
+        , unary "floor" { i: intOrNumber, o: int, fwd: identity `union1` floor } × generalise (callable [ T.float ] T.int)
+        , unary "ceil" { i: intOrNumber, o: int, fwd: identity `union1` ceil } × generalise (callable [ T.float ] T.int)
         ]
-   , predefinedModule sys Nil []
-        [ "argv" × Val bot (List [])
-        , extern exit
+   , predefinedModule sys [] []
+        [ ("argv" × Val bot (List [])) × generalise (T.ListTy T.str)
+        , extern exit × generalise (callable [ T.int ] (T.PrimitiveTy T.Never))
         ]
-   , predefinedModule typing ("Callable" : "Literal" : "Never" : "Sized" : Nil) [] []
-   , predefinedModule dataclasses ("dataclass" : Nil) [] []
+   , predefinedModule typing [ "Callable", "Literal", "Never", "Sized" ] [] []
+   , predefinedModule dataclasses [ "dataclass" ] [] []
    ]
    where
-   predefinedModule :: ModuleName -> List Var -> Array Name -> Array (Bind (Val Unit)) -> ModuleName × (Cxt × Raw Env)
-   predefinedModule q names classes members = q × (cxt × wrap (ρ `unionWith_never` ρ_classes `unionWith_never` ρ_names))
+   predefinedModule :: ModuleName -> Array Var -> Array Name -> Array (Bind (Val Unit) × Entry.Entry) -> ModuleName × (Cxt × Raw Env)
+   predefinedModule q names classes members =
+      q × (M.fromFoldable (lmap fst <$> bindings) × wrap (D.fromFoldable (fst <$> bindings)))
       where
-      ρ = D.fromFoldable (Array.cons ("__name__" × Val bot (Lit (Str (dottedName q)))) members)
-      ρ_classes = D.fromFoldable (classes <#> \c -> last c × Val bot (Fun (Type (T.ClassTy c Nil))))
-      ρ_names = D.fromFoldable (names <#> \x -> x × Val bot (Opaque (qual q x)))
-      cxt = M.unions
-         [ constMap Entry.PredefName (Set.fromFoldable names)
-         , M.fromFoldable (classes <#> \c -> last c × Entry.Type c)
-         , constMap Entry.Assigned (keys ρ)
-         ]
+      bindings = cons ((varName × Val bot (Lit (Str (dottedName q)))) × Assigned T.str) members
+         <> (classes <#> \c -> (last c × Val bot (Fun (Type (T.ClassTy c Nil)))) × Entry.Type c)
+         <> (names <#> \x -> (x × Val bot (Opaque (qual q x))) × Entry.PredefName)
 
 len :: ForeignOp
 len =

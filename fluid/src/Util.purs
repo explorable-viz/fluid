@@ -363,6 +363,18 @@ instance Head List where
 instance Head Array where
    head = A.head
 
+class Cons (f :: Type -> Type) where
+   cons :: forall a. a -> f a -> f a
+
+instance Cons Array where
+   cons = A.cons
+
+instance Cons List where
+   cons = L.Cons
+
+instance Cons NonEmptyList where
+   cons = NEL.cons
+
 class Zip (f :: Type -> Type) where
    zip :: forall a b. f a -> f b -> f (a × b)
    zipWith :: forall a b c. (a -> b -> c) -> f a -> f b -> f c

@@ -1,3 +1,2 @@
-# pure-py/pure-py-spec#225 First-class classes
-test/module-level/excluded/static/class_as_value.py (check: exit 0, expected [3]: )
-test/program-level/excluded/static/qualified_class_as_value (check: exit 0, expected [3, 4]: )
+# Automatic currying (PurePy extension)
+test/module-level/python-error/static/call_too_few_args.py (check: exit 0, expected [3]: )

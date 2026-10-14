@@ -15,6 +15,8 @@ type Var = String
 
 type Name = NonEmptyList Var
 
+type FieldName = String
+
 dottedName :: Name -> String
 dottedName = intercalate "."
 
@@ -36,6 +38,7 @@ simple n = case uncons n of
    _ -> Nothing
 
 varAnon = "_" :: Var
+varName = "__name__" :: Var
 varThis = "this" :: Var -- bound to the documented value within a doc
 
 -- Discrete partial order for variables.

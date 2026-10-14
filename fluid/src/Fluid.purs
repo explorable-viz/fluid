@@ -20,10 +20,10 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import Eval (evalProgram)
 import File (File(..), Folder(..), emptyFileCxt, loadFile, loadManifest, modulePath, withClasses, withRoots)
-import DataType (ClassTable)
+import Classes (ClassTable)
 import Data.Map (Map)
 import Module (Config, loadTopLevel, prepConfig, prepModule)
-import ModuleGraph (ModuleName)
+import Module.Defs (ModuleName)
 import Module.Node (NodeT, runNodeT)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (writeTextFile)
@@ -110,7 +110,7 @@ writeManifests root@(Folder dir) = do
    where
    -- proper prefixes of a path
    directories :: File -> Array (Maybe String)
-   directories (File path) = Array.range 1 (Array.length segments - 1) <#> \n -> Just (joinWith "/" (Array.take n segments))
+   directories (File path) = Array.range 1 (Array.length segments) # Array.dropEnd 1 <#> \n -> Just (joinWith "/" (Array.take n segments))
       where
       segments = split (Pattern "/") path
 

@@ -264,12 +264,12 @@ recDefs = many1 recDef
       f × αs <- try (reserved "def" *> ((×) <$> variable <*> typeParams) <* delim '(')
       ps <- commas param
       delim ')'
-      ψ <- optionMaybe (reservedOperator "->" *> typeExpr)
+      ψ <- (reservedOperator "->" *> typeExpr) <|> fail "Expected return type annotation"
       s <- blockBody
       pure $ f × Clause (αs × ps × ψ × s)
 
    param :: Parser Param
-   param = Param <$> pattern <*> optionMaybe (delim ':' *> typeExpr)
+   param = Param <$> pattern <*> ((delim ':' *> typeExpr) <|> fail "Expected parameter type annotation")
 
 expr :: Parser Expr
 expr = context "expr" $ cond <?> "expression"

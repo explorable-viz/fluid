@@ -1,19 +1,20 @@
 k: int = @doc("k") 6
-tree: Tree[tuple[int, str]] = @doc("tree") NonEmpty(
-    NonEmpty(Empty(), (3, "USA"), Empty()),
+empty: SearchTree[int, str] = Empty[tuple[int, str]]()
+tree: SearchTree[int, str] = @doc("tree") NonEmpty(
+    NonEmpty(empty, (3, "USA"), empty),
     (4, "China"),
-    NonEmpty(NonEmpty(Empty(), (6, "Germany"), Empty()), (7, "UK"), Empty())
+    NonEmpty(NonEmpty(empty, (6, "Germany"), empty), (7, "UK"), empty)
   )
 
-def lookup[V](k: int, Empty(): Tree[tuple[int, V]]) -> V | None:
+def lookup[V](k: int, Empty(): SearchTree[int, V]) -> V | None:
   return None
-def lookup[V](k: int, NonEmpty(t1, (key, val), t2): Tree[tuple[int, V]]) -> V | None:
+def lookup[V](k: int, NonEmpty(t1, (key, val), t2): SearchTree[int, V]) -> V | None:
   match compare(k, key):
     case LT():
       return lookup(k, t1)
     case EQ():
       return val
-    case GT():
+    case _:
       return lookup(k, t2)
 
 lookup(k, tree)

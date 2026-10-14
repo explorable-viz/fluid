@@ -15,7 +15,7 @@ def mkBarChart(scenName: str, table: list[Emission]) -> BarChart:
     size=Dimensions(width=275, height=185),
     tickLabels=TickLabels(x=Default(), y=Default()),
     stackedBars=
-      map(lambda record: StackedBar(x=record.type, segments=[Segment(y="emissions", z=record.emissions)]), table),
+      [StackedBar(x=record.type, segments=[Segment(y="emissions", z=record.emissions)]) for record in table],
     legend=True
   )
 
@@ -27,16 +27,16 @@ def mkHistogram(xs: list[float], name: str, nbins: int) -> BarChart:
     size=Dimensions(width=275, height=185),
     tickLabels=TickLabels(x=Default(), y=Default()),
     stackedBars=
-      map(lambda (data, edge): StackedBar(x=data, segments=[Segment(y="density", z=len(data) / binWidth)]), cut(xs, nbins)),
+      [StackedBar(x=num_to_str(edge), segments=[Segment(y="density", z=len(data) / binWidth)]) for (data, edge) in cut(xs, nbins)],
     legend=True
   )
 
 def getHeight(offset: float, bar: StackedBar) -> float:
   return bar.segments[0].z + offset
 
-changed126: list[float] = map(lambda r: r.changed, ssp126preds)
-changed245: list[float] = map(lambda r: r.changed, ssp245preds)
-ssp126Total: Emission = Emission("Total", fsum(map(lambda r: r.emissions, ssp126Source)))
+changed126: list[float] = [r.changed for r in ssp126preds]
+changed245: list[float] = [r.changed for r in ssp245preds]
+ssp126Total: Emission = Emission("Total", fsum([r.emissions for r in ssp126Source]))
 ssp126table: list[Emission] = [ssp126Total] + ssp126Source
 ssp245table: list[Emission] = [Emission("Total", find_percentile(50, changed245))] + ssp245Source
 ssp126: BarChart = mkBarChart("SSP1-2.6", ssp126table)

@@ -3,12 +3,12 @@ module App.Util.Selector where
 import Prelude hiding (absurd)
 
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, getPersistent, selStates)
-import Bind (Name, Var)
+import Bind (FieldName, Name, Var)
 import Data.List.NonEmpty (last)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (FieldName, cSegment, cStackedBar, f_segments, f_z)
+import Types.Defs (cSegment, cStackedBar, f_segments, f_z)
 import Lattice (class Neg, 𝔹, neg)
 import Data.Maybe (Maybe(..))
 import Partial.Unsafe (unsafePartial)
