@@ -40,7 +40,6 @@ assoc :: Operator -> Assoc
 assoc (Binary Pow) = AssocRight
 assoc _ = AssocLeft
 
--- Higher binds tighter
 prec :: Operator -> Int
 prec op = definitely' (findIndex (elem op) levels)
 
