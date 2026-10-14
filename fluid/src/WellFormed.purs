@@ -895,18 +895,24 @@ bindingsAt τ p atDisjunct = do
    cxts <- for (T.disjuncts τ) \σ -> fromMaybe (pure (constMap never (bv p))) (atDisjunct σ)
    classTable <#> \classes -> foldl1 (Map.unionWith (join classes)) (nonEmpty cxts)
 
--- List types stand for every list type, as a disjunct other than a list type is above all list types or none.
 hasListValues :: ClassTable -> T.Type -> Boolean
-hasListValues classes τ = F.any (\σ -> isList σ || subtype classes (T.ListTy object) σ) (T.disjuncts τ)
+hasListValues classes = hasValues classes isList (T.ListTy object)
    where
    isList (T.ListTy _) = true
    isList _ = false
 
 hasTupleValues :: ClassTable -> T.Type -> Boolean
-hasTupleValues classes τ = F.any (\σ -> isTuple σ || subtype classes (T.TupleTy Nil) σ) (T.disjuncts τ)
+hasTupleValues classes = hasValues classes isTuple (T.TupleTy Nil)
    where
    isTuple (T.TupleTy _) = true
    isTuple _ = false
+
+-- Some disjunct a type variable, of the given form, or above τ_form, a type of that form
+hasValues :: ClassTable -> (T.Type -> Boolean) -> T.Type -> T.Type -> Boolean
+hasValues classes isForm τ_form τ = F.any (\σ -> isVar σ || isForm σ || subtype classes τ_form σ) (T.disjuncts τ)
+   where
+   isVar (T.VarTy _) = true
+   isVar _ = false
 
 matchedAs :: ClassTable -> T.Type -> S.Pattern -> T.Type
 matchedAs classes (T.UnionTy σ σ') p = join classes (matchedAs classes σ p) (matchedAs classes σ' p)
