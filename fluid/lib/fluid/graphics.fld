@@ -166,7 +166,7 @@ def height(g: GraphicsElement) -> float:
   return h
 
 def space_right(z: float, sep: float, gs: list[GraphicsElement]) -> list[GraphicsElement]:
-  return zip_with(set_x, iterate(len(gs), lambda x: sep + x, z), gs)
+  return [set_x(x, g) for (x, g) in zip(iterate(len(gs), lambda x: sep + x, z), gs)]
 
 # Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
 # different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org
@@ -282,7 +282,7 @@ def line_chart(with_axes: bool, colours: Colours, x_start: float, data: list[tup
   xs: list[float] = [x for (x, _) in data]
   n_cat: int = len(snd(data[0]))
 
-  def plot((n, colour): tuple[int, Colour]) -> GraphicsElement:
+  def plot(n: int, colour: Colour) -> GraphicsElement:
     ps: list[Point] = [Point(x, snd(kvs[n])) for (x, kvs) in data]
 
     return Group([
@@ -290,7 +290,7 @@ def line_chart(with_axes: bool, colours: Colours, x_start: float, data: list[tup
       Polymarkers(ps, [Circle(x=0, y=0, radius=marker_radius, fill=colour) for _ in ps])
     ])
 
-  lines: list[GraphicsElement] = zip_with(curry(plot), iterate(n_cat, lambda x: 1 + x, 0), colours)
+  lines: list[GraphicsElement] = [plot(n, colour) for (n, colour) in zip(iterate(n_cat, lambda x: 1 + x, 0), colours)]
   x_finish: float = xs[-1]
   y_finish: float = maximum([maximum([v for (_, v) in kvs]) for (_, kvs) in data])
 

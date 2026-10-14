@@ -235,13 +235,8 @@ def maximum(xs: list[float]) -> float:
 def minimum(xs: list[float]) -> float:
   return foldr1(fmin, xs)
 
-def zip_with[A, B, C](op: Callable[[A, B], C], xs: list[A], ys: list[B]) -> list[C]:
-  return [op(xs[i], ys[i]) for i in range(0, min(len(xs), len(ys)))]
-
 def zip[A, B](xs: list[A], ys: list[B]) -> list[tuple[A, B]]:
-  def pair(x: A, y: B) -> tuple[A, B]:
-    return (x, y)
-  return zip_with(pair, xs, ys)
+  return [(xs[i], ys[i]) for i in range(0, min(len(xs), len(ys)))]
 
 def abs(x: int) -> int:
   return -x if x < 0 else x
