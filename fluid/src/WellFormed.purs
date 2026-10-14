@@ -267,22 +267,17 @@ matchCases cxt ζ τ ((p × s) : bs) = do
    lmap ((override (Assigns (bindings cxt_p)) r × (p × s')) : _) <$> matchCases cxt ζ τ' bs
 
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
-wellFormedTop q cxt (S.Dataclass c αs b xψs) = do
+wellFormedTop q cxt (S.Dataclass x αs b yψs) = do
    predefName cxt "dataclass"
-   let cxt' = cxt `override` typeParams αs
-   let xs = fst <$> xψs
-   checkDistinct (\x -> "Duplicate field " <> x <> " in class " <> c) xs
-   xτs <- for xψs \(x × ψ) -> (x × _) <$> resolveType cxt' ψ
-   base <- for b \ψ -> case ψ of
-      S.NameTy q' ψs | Just (Type d) <- resolveName cxt q' -> do
-         σs <- typeArguments cxt' d ψs
-         inherited <- gets \{ classes } -> fieldNames classes d
-         for_ (xs `intersect` inherited) \x -> throwError $ "Inherited field " <> x <> " redeclared in class " <> c
-         pure (d × σs)
-      _ -> throwError $ "Base class of " <> c <> " is not a class: " <> prettyP ψ
-   let name = snoc q c
-   modify_ \st -> st { classes = insert name { typeParams: αs, fields: xτs, base } st.classes }
-   pure (Assigns (maplet c (Type name)) × E.Dataclass name)
+   checkDistinct (\y -> "Duplicate field " <> y <> " in class " <> x) ys
+   yτs <- for yψs \(y × ψ) -> (y × _) <$> resolveType cxt_αs ψ
+   base <- for b (baseClass cxt cxt_αs x ys)
+   modify_ \st -> st { classes = insert c { typeParams: αs, fields: yτs, base } st.classes }
+   pure (Assigns (maplet x (Type c)) × E.Dataclass c)
+   where
+   cxt_αs = cxt `override` typeParams αs
+   ys = fst <$> yψs
+   c = snoc q x
 wellFormedTop _ cxt (S.TypeAlias x αs ψ) = do
    τ <- resolveType (cxt `override` typeParams αs) ψ
    pure (Assigns (maplet x (TypeAlias αs τ)) × E.TypeAlias x αs τ)
@@ -294,6 +289,14 @@ wellFormedTop q cxt (S.Seq t1 t2) = do
          r2 × t2' <- wellFormedTop q (cxt `override` cxt') t2
          pure (override r1 r2 × E.Seq t1' t2')
 wellFormedTop _ cxt s = checkStmt cxt Nothing s
+
+baseClass :: Cxt -> Cxt -> Var -> List Var -> S.TypeExpr -> CheckM (Name × List T.Type)
+baseClass cxt cxt_αs x ys (S.NameTy q ψs) | Just (Type d) <- resolveName cxt q = do
+   σs <- typeArguments cxt_αs d ψs
+   inherited <- classTable <#> \classes -> fieldNames classes d
+   for_ (ys `intersect` inherited) \y -> throwError $ "Inherited field " <> y <> " redeclared in class " <> x
+   pure (d × σs)
+baseClass _ _ x _ ψ = throwError $ "Base class of " <> x <> " is not a class: " <> prettyP ψ
 
 typeParams :: List Var -> Cxt
 typeParams αs = constMap TypeVar (Set.fromFoldable αs)
