@@ -41,29 +41,35 @@ extendEntry (Mod q) θ'@(ModChecked q' _) | q == q' = θ'
 extendEntry θ@(ModChecked q _) (Mod q') | q == q' = θ
 extendEntry _ θ' = θ'
 
-override :: Cxt -> Cxt -> Cxt
-override = flip (∪)
+class Override a where
+   override :: a -> a -> a
 
-merge :: Cxt -> Cxt -> Cxt
-merge cxt cxt' = intersectionWith mergeEntry cxt cxt' ∪ (possiblyUnassigned <$> (cxt ∪ cxt'))
-   where
-   mergeEntry θ θ' = if θ == θ' then θ else possiblyUnassigned θ
+instance Override (Map Var Entry) where
+   override = flip (∪)
 
-   possiblyUnassigned (Declared τ) = PossiblyUnassigned (Left τ)
-   possiblyUnassigned (PossiblyUnassigned π) = PossiblyUnassigned π
-   possiblyUnassigned (Assigned τ) = PossiblyUnassigned (Left τ)
-   possiblyUnassigned (TypeScheme π) = PossiblyUnassigned (Right π)
-   possiblyUnassigned _ = error absurd
+instance Override a => Override (WfResult a) where
+   override _ Returns = Returns
+   override Returns _ = Returns
+   override (Assigns cxt) (Assigns cxt') = Assigns (cxt `override` cxt')
 
-overrideRes :: WfResult Cxt -> WfResult Cxt -> WfResult Cxt
-overrideRes _ Returns = Returns
-overrideRes Returns _ = Returns
-overrideRes (Assigns cxt) (Assigns cxt') = Assigns (cxt `override` cxt')
+class Merge a where
+   merge :: a -> a -> a
 
-mergeRes :: WfResult Cxt -> WfResult Cxt -> WfResult Cxt
-mergeRes Returns r = r
-mergeRes r Returns = r
-mergeRes (Assigns cxt) (Assigns cxt') = Assigns (cxt `merge` cxt')
+instance Merge (Map Var Entry) where
+   merge cxt cxt' = intersectionWith mergeEntry cxt cxt' ∪ (possiblyUnassigned <$> (cxt ∪ cxt'))
+      where
+      mergeEntry θ θ' = if θ == θ' then θ else possiblyUnassigned θ
+
+      possiblyUnassigned (Declared τ) = PossiblyUnassigned (Left τ)
+      possiblyUnassigned (PossiblyUnassigned π) = PossiblyUnassigned π
+      possiblyUnassigned (Assigned τ) = PossiblyUnassigned (Left τ)
+      possiblyUnassigned (TypeScheme π) = PossiblyUnassigned (Right π)
+      possiblyUnassigned _ = error absurd
+
+instance Merge a => Merge (WfResult a) where
+   merge Returns r = r
+   merge r Returns = r
+   merge (Assigns cxt) (Assigns cxt') = Assigns (cxt `merge` cxt')
 
 classOf :: forall m. MonadThrow String m => Cxt -> Name -> m Name
 classOf cxt c = case resolveName cxt c of

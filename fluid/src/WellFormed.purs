@@ -30,7 +30,7 @@ import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import Classes (ClassTable, Instance(..), ancestors, elemType, equiv, fieldMap, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
 import Types.Defs (bool, cMatrix, cParagraph, cRange, int, intPair, matrix, never, none, object, str)
-import Cxt (Entry(..), Cxt, WfResult(..), classOf, extend, mergeRes, override, overrideRes, resolveName)
+import Cxt (Entry(..), Cxt, WfResult(..), classOf, extend, merge, override, resolveName)
 import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
 import Expr (Unop(..), bv, fv)
@@ -242,7 +242,7 @@ checkStmt cxt ζ (S.Seq s1 s2) = do
       Returns -> throwError "Unreachable statement"
       Assigns cxt' -> do
          r2 × s2' <- checkStmt (cxt `override` cxt') ζ s2
-         pure (overrideRes r1 r2 × E.Seq s1' s2')
+         pure (override r1 r2 × E.Seq s1' s2')
 checkStmt cxt ζ (S.If es elseBranch) = do
    es' <- for es \(e × s) -> do
       e' <- checkExpr cxt e bool
@@ -251,13 +251,13 @@ checkStmt cxt ζ (S.If es elseBranch) = do
    rElse × elseBranch' <- case elseBranch of
       Just s -> map Just <$> checkStmt cxt ζ s
       Nothing -> pure (Assigns empty × Nothing)
-   pure (foldl1 mergeRes (NEL.cons rElse (fst <$> es')) × E.If (snd <$> es') elseBranch')
+   pure (foldl1 merge (NEL.cons rElse (fst <$> es')) × E.If (snd <$> es') elseBranch')
 checkStmt cxt ζ (S.Match e bs) = do
    σ × e' <- synthExpr cxt e
    ps' <- wellFormedPatterns cxt (fst <$> bs)
    rbs × τ <- matchCases cxt ζ σ (NEL.toList (NEL.zip ps' (snd <$> bs)))
    let rNoMatch = if τ == never then Returns else Assigns empty
-   pure (foldl mergeRes rNoMatch (fst <$> rbs) × E.Match e' (nonEmpty (snd <$> rbs)))
+   pure (foldl merge rNoMatch (fst <$> rbs) × E.Match e' (nonEmpty (snd <$> rbs)))
 checkStmt _ _ (S.Dataclass _ _ _ _) = error absurd
 checkStmt _ _ (S.TypeAlias _ _ _) = error absurd
 
@@ -268,7 +268,7 @@ matchCases cxt ζ τ ((p × s) : bs) = do
    cxt_p <- checkPattern p τ
    r × s' <- checkStmt (cxt `override` bindings cxt_p) ζ s
    τ' <- classTable <#> \classes -> remaining classes τ p
-   lmap ((overrideRes (Assigns (bindings cxt_p)) r × (p × s')) : _) <$> matchCases cxt ζ τ' bs
+   lmap ((override (Assigns (bindings cxt_p)) r × (p × s')) : _) <$> matchCases cxt ζ τ' bs
 
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 wellFormedTop q cxt (S.Dataclass c αs b xψs) = do
@@ -296,7 +296,7 @@ wellFormedTop q cxt (S.Seq t1 t2) = do
       Returns -> throwError "Unreachable statement"
       Assigns cxt' -> do
          r2 × t2' <- wellFormedTop q (cxt `override` cxt') t2
-         pure (overrideRes r1 r2 × E.Seq t1' t2')
+         pure (override r1 r2 × E.Seq t1' t2')
 wellFormedTop _ cxt s = checkStmt cxt Nothing s
 
 typeParams :: List Var -> Cxt

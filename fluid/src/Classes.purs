@@ -49,15 +49,13 @@ fieldNames classes c = fst <$> fields classes c
 ancestors :: ClassTable -> Name -> List Name
 ancestors classes c = c : maybe Nil (ancestors classes <<< fst) (get c classes).base
 
-baseAt :: ClassTable -> Name -> List Type -> Maybe Type
-baseAt classes c τs = def.base <#> \(d × σs) -> ClassTy d (subst τs def.typeParams <$> σs)
-   where
-   def = get c classes
+base :: ClassTable -> Name -> Maybe Type
+base classes c = (get c classes).base <#> \(d × σs) -> ClassTy d σs
 
 ancestorArgs :: ClassTable -> Name -> List Type -> Name -> List Type
 ancestorArgs classes c τs d
    | c == d = τs
-   | Just (ClassTy c' σs) <- baseAt classes c τs = ancestorArgs classes c' σs d
+   | Just (ClassTy c' σs) <- subst τs (get c classes).typeParams <$> base classes c = ancestorArgs classes c' σs d
    | otherwise = error absurd
 
 fieldsAt :: ClassTable -> Name -> List Type -> List (Var × Type)
@@ -172,7 +170,7 @@ subtype classes σ τ
            PrimitiveTy Int, PrimitiveTy Float -> true
            LitTy _, _ -> subtype classes (baseType σ) τ
            ClassTy c σs, ClassTy d τs | c == d -> F.and (zipWith (equiv classes) σs τs)
-           ClassTy c σs, _ | Just base <- baseAt classes c σs -> subtype classes base τ
+           ClassTy c σs, _ | Just σ' <- base classes c -> subtype classes (subst σs (get c classes).typeParams σ') τ
            _, PrimitiveTy Sized -> sized σ
            ListTy σ', ListTy τ' -> equiv classes σ' τ'
            DictTy σ', DictTy τ' -> equiv classes σ' τ'
