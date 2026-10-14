@@ -5,9 +5,8 @@ import Prelude
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
 import Control.Monad.State (runStateT)
-import Bind (dottedName, pathName, prefixOf, varName)
-import Data.List.NonEmpty (snoc, unsnoc)
-import Data.List.NonEmpty (fromList) as NEL
+import Bind (dottedName, pathName, varName)
+import Data.List.NonEmpty (snoc)
 import Data.Either (Either(..))
 import Data.Foldable (foldM, for_, intercalate)
 import Data.List (List(..), catMaybes, elem, filter, reverse, takeWhile, (:))
@@ -28,7 +27,7 @@ import Literal (Literal(..))
 import Expr (Module, Pattern(..), Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), hasDirectory, loadModuleSource, withClasses)
 import DepGraph (Deriv, deriv, emptyGraph)
-import Module.Defs (ModuleName, implicit, implicitFor)
+import Module.Defs (ModuleName, containing, implicit, implicitFor, parents)
 import Parse (parseModule, parseProgram)
 import Primitive.Defs (predefined, predefinedClasses)
 import WellFormed (CheckM, checkProgram, checkModule, mainModule, runCheckM)
@@ -49,11 +48,6 @@ isModule q = do
       Just _ -> pure true
       Nothing -> hasDirectory fluidSrcPaths (File (pathName q))
 
-parents :: ModuleName -> List ModuleName
-parents q = case NEL.fromList (unsnoc q).init of
-   Nothing -> Nil
-   Just q' -> parents q' <> (q' : Nil)
-
 importDeps
    :: forall m
     . MonadAff m
@@ -71,7 +65,7 @@ importDeps enclosing (S.Import q f) = do
    let
       prefixEdges = case f of
          Nothing -> filter (_ /= enclosing) (parents q)
-         Just _ -> filter (\p -> not (p `prefixOf` enclosing)) (parents q)
+         Just _ -> containing enclosing q
    pure { edges: (q : subs) <> prefixEdges, load: ps <> (q : subs) }
    where
    keepModules = map catMaybes <<< traverse (\m' -> isModule m' <#> \b -> whenever b m')

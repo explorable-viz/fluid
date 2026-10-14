@@ -34,7 +34,7 @@ import File (class LoadFile, FileCxt, withClasses)
 import DepGraph (DepGraph, Rel, Deriv, Pos, attachDoc, deriv, zeros)
 import Lattice (class DepSemiring, DepKind, Lineage, Raw, ctrlWeight)
 import Literal (Literal(..), eqLiteral)
-import Module.Defs (ModuleName, implicit, submodules)
+import Module.Defs (ModuleName, implicit, submods)
 import Operator (binopSymbol, unopSymbol)
 import Pretty (prettyP)
 import Types (Type(..)) as T
@@ -417,7 +417,7 @@ evalModule
 evalModule ρ0 q (Module ιs s) = do
    ρ_imp <- foldM (evalImport q) ρ0 ιs
    { modules } <- moduleStore
-   ρ_subMods <- traverse moduleVal (D.fromFoldable (submodules (Map.keys modules) q))
+   ρ_subMods <- traverse moduleVal (D.fromFoldable (submods (Map.keys modules) q))
    ρ <- traverse gvalAt ρ_imp
    ρ' × _ <- asAssigns <$> evalStmt { ctrl: Nil, env: ρ } s
    let xs = L.fromFoldable (assigns s)

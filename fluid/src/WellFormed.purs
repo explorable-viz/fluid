@@ -2,7 +2,7 @@ module WellFormed where
 
 import Prelude hiding (absurd, join)
 
-import Bind (Bind, Name, Var, dottedName, prefixOf, properPrefixOf, varThis, (↦))
+import Bind (Bind, Name, Var, dottedName, properPrefixOf, varThis, (↦))
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Reader (ReaderT, ask, mapReaderT, runReaderT)
 import Control.Monad.State (StateT, gets, mapStateT, modify_, runStateT)
@@ -19,8 +19,8 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.List (List(..), drop, filter, index, take, intersect, length, mapMaybe, null, sort, transpose, updateAt, (:))
 import Data.Foldable (any, lookup) as F
-import Module.Defs (ModuleName, implicitFor, submodules)
-import Data.List.NonEmpty (NonEmptyList(..), head, last, snoc, unsnoc)
+import Module.Defs (ModuleName, containing, implicitFor, submods)
+import Data.List.NonEmpty (NonEmptyList(..), head, last, snoc)
 import Data.NonEmpty ((:|))
 import Data.List.NonEmpty as NEL
 import Data.Semigroup.Foldable (foldl1)
@@ -74,15 +74,15 @@ checkModule q = gets _.modules >>= \modules -> case lookup q modules of
    Just { cxt } -> pure cxt
    Nothing -> within ("module " <> dottedName q) do
       mods <- lift ask
-      mod@(S.Module ιs _) <- maybe (throwError ("Module not parsed: " <> dottedName q)) pure (lookup q mods)
+      let mod@(S.Module ιs _) = get q mods
       cxt_imp × cxt_ιs <- checkImports q ιs
       cxt' × mod' <- checkStatements q cxt_imp cxt_ιs mod
-      let subMods = Mod <$> Map.fromFoldable (submodules (keys mods) q)
-      for_ (Set.toUnfoldable ((keys cxt_ιs ∪ keys cxt') ∩ keys subMods) :: List Var) \x ->
+      let subMods = Mod <$> Map.fromFoldable (submods (keys mods) q)
+      for_ (Set.findMin ((keys cxt_ιs ∪ keys cxt') ∩ keys subMods)) \x ->
          throwError $ "Duplicate module member: " <> dottedName q <> " defines " <> x
             <> " and also has submodule "
             <> dottedName (snoc q x)
-      let cxt = subMods ∪ cxt'
+      let cxt = subMods `override` cxt'
       modify_ \st -> st { modules = insert q { cxt, mod: Just mod' } st.modules }
       pure cxt
 
@@ -98,26 +98,21 @@ importBindings enclosing (S.Import q Nothing) = do
    when (enclosing `properPrefixOf` q)
       $ throwError
       $ "Module " <> dottedName enclosing <> " cannot import its own descendant " <> dottedName q
-   θ <- ModChecked q <$> checkModule q
-   maplet (head q) <$> checksTo Nothing q θ
+   θ <- ModChecked (pure x) <$> checkModule (pure x)
+   maplet x <$> submodules θ xs
+   where
+   { head: x, tail: xs } = NEL.uncons q
 importBindings enclosing (S.Import q (Just xs)) = do
    cxt <- checkModule q
-   _ <- checksTo (Just enclosing) q (ModChecked q cxt) -- checks q's ancestors; contributes no bindings
+   for_ (containing enclosing q) checkModule
    importedMembers q cxt xs
 
--- Wrap the reference for module q in checked references for its proper
--- prefixes, checking each; prefixes of the bound (the enclosing module,
--- for a from-import) are exempt.
-checksTo :: Maybe ModuleName -> ModuleName -> Entry -> CheckM Entry
-checksTo bound q θ = case NEL.fromList init of
-   Nothing -> pure θ
-   Just q'
-      | maybe false (q' `prefixOf` _) bound -> pure θ
-      | otherwise -> do
-           cxt <- checkModule q'
-           checksTo bound q' (ModChecked q' (cxt `extend` maplet x θ))
-   where
-   { init, last: x } = unsnoc q
+submodules :: Entry -> List Var -> CheckM Entry
+submodules θ Nil = pure θ
+submodules (ModChecked q cxt) (x : xs) = do
+   θ <- ModChecked (snoc q x) <$> checkModule (snoc q x)
+   ModChecked q <<< (cxt `extend` _) <<< maplet x <$> submodules θ xs
+submodules _ _ = error absurd
 
 -- Bindings for names imported from module q with member context cxt.
 importedMembers :: ModuleName -> Cxt -> List Var -> CheckM Cxt

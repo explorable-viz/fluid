@@ -2,14 +2,14 @@ module Module.Defs where
 
 import Prelude
 
-import Data.List (List(..), mapMaybe, takeWhile, (:))
+import Data.List (List(..), filter, mapMaybe, takeWhile, (:))
 import Data.List.NonEmpty (NonEmptyList(..), unsnoc)
 import Data.List.NonEmpty (fromList) as NEL
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Set (Set)
 import Data.Set as Set
-import Bind (Name, Var)
+import Bind (Name, Var, prefixOf)
 import Util (type (×), whenever, (×))
 
 type ModuleName = Name
@@ -43,7 +43,15 @@ implicitFor :: ModuleName -> List ModuleName
 implicitFor q = takeWhile (_ /= q) implicit
 
 -- Immediate submodules of q in the module table, by unqualified name.
-submodules :: Set ModuleName -> ModuleName -> List (Var × ModuleName)
-submodules modules q = mapMaybe sub (Set.toUnfoldable modules)
+submods :: Set ModuleName -> ModuleName -> List (Var × ModuleName)
+submods modules q = mapMaybe sub (Set.toUnfoldable modules)
    where
    sub m = let { init, last: x } = unsnoc m in whenever (NEL.fromList init == Just q) (x × m)
+
+parents :: ModuleName -> List ModuleName
+parents q = case NEL.fromList (unsnoc q).init of
+   Nothing -> Nil
+   Just q' -> parents q' <> (q' : Nil)
+
+containing :: ModuleName -> ModuleName -> List ModuleName
+containing q q' = filter (not <<< (_ `prefixOf` q)) (parents q')
