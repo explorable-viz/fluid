@@ -7,8 +7,8 @@ import App.View.Util (class Viewable, Select, View, createElement, isLeaf, setSe
 import App.View.Util.D3 (ElementType(..), create, createText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import DataType (f_fragments)
-import Types.Defs (cParagraph)
+
+import Types.Defs (cParagraph, f_fragments)
 import Data.Array (mapWithIndex)
 import Data.Foldable (all, sequence_)
 import Effect (Effect)

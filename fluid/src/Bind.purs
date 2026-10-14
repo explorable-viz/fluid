@@ -15,6 +15,8 @@ type Var = String
 
 type Name = NonEmptyList Var
 
+type FieldName = String
+
 dottedName :: Name -> String
 dottedName = intercalate "."
 

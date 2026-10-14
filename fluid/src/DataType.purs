@@ -26,7 +26,6 @@ import Types.Defs (cRange, int, never, object, str)
 import Util (type (×), absurd, error, throw, (×), (∩))
 import Util.Map (get, lookup)
 
-type FieldName = String
 type Ctr = String -- newtype would require more general Dict keys
 
 type ClassDef =
@@ -215,28 +214,3 @@ meet classes σ τ
               CallableTy (zipWith (join classes) σs τs) (meet classes σ' τ')
            TupleTy σs, TupleTy τs | length σs == length τs -> TupleTy (zipWith (meet classes) σs τs)
            _, _ -> never
-
--- Field names used internally by rendering layer.
-f_caption = "caption" :: FieldName
-f_fragments = "fragments" :: FieldName
-f_label = "label" :: FieldName
-f_text = "text" :: FieldName
-f_value = "value" :: FieldName
-f_colour = "c" :: FieldName
-f_left = "left" :: FieldName
-f_right = "right" :: FieldName
-f_height = "height" :: FieldName
-f_labels = "labels" :: FieldName
-f_legend = "legend" :: FieldName
-f_name = "name" :: FieldName
-f_plots = "plots" :: FieldName
-f_points = "points" :: FieldName
-f_segments = "segments" :: FieldName
-f_size = "size" :: FieldName
-f_stackedBars = "stackedBars" :: FieldName
-f_tickLabels = "tickLabels" :: FieldName
-f_views = "views" :: FieldName
-f_width = "width" :: FieldName
-f_x = "x" :: FieldName
-f_y = "y" :: FieldName
-f_z = "z" :: FieldName

@@ -6,8 +6,8 @@ import App.Util.Selector (ObjArg, listElement)
 import App.View.Util (class Viewable, Select, View, createElement, setSelection)
 import App.View.Util.D3 (create)
 import App.View.Util.D3 as D3
-import DataType (f_views)
-import Types.Defs (cMultiView)
+
+import Types.Defs (cMultiView, f_views)
 import Data.Foldable (sequence_)
 import Data.FunctorWithIndex (mapWithIndex)
 import Effect (Effect)

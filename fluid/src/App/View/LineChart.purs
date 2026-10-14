@@ -10,8 +10,8 @@ import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, dat
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
-import DataType (f_plots, f_points)
-import Types.Defs (cLineChart, cLinePlot)
+
+import Types.Defs (cLineChart, cLinePlot, f_plots, f_points)
 import Data.Array (concat, elemIndex, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
 import Data.Foldable (length)

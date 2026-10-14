@@ -13,8 +13,8 @@ import Data.Array.NonEmpty (NonEmptyArray, cons', init, toArray)
 import Data.Foldable (sum)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Newtype (class Newtype)
-import DataType (f_segments)
-import Types.Defs (cStackedBar)
+
+import Types.Defs (cStackedBar, f_segments)
 import Effect (Effect)
 import Util ((!))
 

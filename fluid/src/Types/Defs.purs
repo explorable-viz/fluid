@@ -2,7 +2,7 @@ module Types.Defs where
 
 import Prim hiding (Type)
 
-import Bind (Name, Var, qual)
+import Bind (FieldName, Name, Var, qual)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, (:))
 import ModuleGraph (builtins, prelude, view)
@@ -61,3 +61,27 @@ cRange = qual builtins "range" :: Name
 cMatrix = qual builtins "Matrix" :: Name
 cText = qual view "Text" :: Name
 cLink = qual view "Link" :: Name
+-- Field names used internally by rendering layer.
+f_caption = "caption" :: FieldName
+f_fragments = "fragments" :: FieldName
+f_label = "label" :: FieldName
+f_text = "text" :: FieldName
+f_value = "value" :: FieldName
+f_colour = "c" :: FieldName
+f_left = "left" :: FieldName
+f_right = "right" :: FieldName
+f_height = "height" :: FieldName
+f_labels = "labels" :: FieldName
+f_legend = "legend" :: FieldName
+f_name = "name" :: FieldName
+f_plots = "plots" :: FieldName
+f_points = "points" :: FieldName
+f_segments = "segments" :: FieldName
+f_size = "size" :: FieldName
+f_stackedBars = "stackedBars" :: FieldName
+f_tickLabels = "tickLabels" :: FieldName
+f_views = "views" :: FieldName
+f_width = "width" :: FieldName
+f_x = "x" :: FieldName
+f_y = "y" :: FieldName
+f_z = "z" :: FieldName
