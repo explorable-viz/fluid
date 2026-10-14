@@ -645,21 +645,21 @@ typeValue cxt e@(S.Subscript e' _) = do
       Just (Type _), _ -> true
       _, NonEmptyList (x :| Nil) -> lookup x cxt == Just PredefName && x `elem` [ "list", "dict", "tuple" ]
       _, _ -> false
-   typeExprOf e
+   asTypeExpr e
 typeValue _ _ = Nothing
 
-typeExprOf :: S.Expr -> Maybe S.TypeExpr
-typeExprOf (S.Subscript e e') = do
+asTypeExpr :: S.Expr -> Maybe S.TypeExpr
+asTypeExpr (S.Subscript e e') = do
    q <- asName e
    ψs <- case e' of
-      S.Tuple es -> traverse typeExprOf es
-      _ -> singleton <$> typeExprOf e'
+      S.Tuple es -> traverse asTypeExpr es
+      _ -> singleton <$> asTypeExpr e'
    case dottedName q, ψs of
       "list", ψ : Nil -> pure (S.ListTy ψ)
       "dict", S.PrimitiveTy T.Str : ψ : Nil -> pure (S.DictTy ψ)
       "tuple", _ -> pure (S.TupleTy ψs)
       _, _ -> pure (S.NameTy q ψs)
-typeExprOf e = asName e <#> \q -> case dottedName q of
+asTypeExpr e = asName e <#> \q -> case dottedName q of
    "None" -> S.PrimitiveTy T.None
    "object" -> S.PrimitiveTy T.Object
    "bool" -> S.PrimitiveTy T.Bool
