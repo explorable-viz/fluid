@@ -13,7 +13,7 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Writer.Trans (WriterT)
 import Data.Bifunctor (rmap)
 import Data.Foldable (all, and, any, foldl, foldr, lookup) as F
-import Data.List (List(..), elem, elemIndex, filter, index, length, nubEq, null, zipWith, (:))
+import Data.List (List(..), elem, elemIndex, filter, filterM, index, length, nubEq, null, zipWith, (:))
 import Data.List.NonEmpty (last) as NE
 import Data.Map (Map, empty, singleton, unionWith)
 import Data.Maybe (Maybe(..), maybe)
@@ -88,8 +88,7 @@ instanceAt classes c τ = instanceAbove τ <|> instanceBelow τ
    instanceBelow _ = Nothing
 
 subsets :: forall a. List a -> List (List a)
-subsets Nil = pure Nil
-subsets (x : xs) = subsets xs >>= \ys -> ys : (x : ys) : Nil
+subsets = filterM (const (false : true : Nil))
 
 comparable :: ClassTable -> Type -> Type -> Boolean
 comparable classes σ τ = subtype classes σ τ || subtype classes τ σ
