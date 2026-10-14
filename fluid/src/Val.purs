@@ -35,7 +35,7 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Def, Module, fv)
 import File (class LoadFile, FileCxt)
-import ModuleGraph (ModuleName)
+import Module.Defs (ModuleName)
 import DepGraph (DepGraph, Labelling, Rel, addEdge, deriv, emptyGraph, scale, valAt, zeros)
 import DepGraph (Deriv, Pos) as Dep
 import Lattice (class BoundedLattice, class DepSemiring, DepKind(..), class JoinSemilattice, class MeetSemilattice, Lineage, Raw, ctrlWeight, (∧), (∨))

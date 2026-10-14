@@ -46,7 +46,7 @@ import Lattice (class BoundedJoinSemilattice, Raw, bot, ctrlWeight)
 import Literal (Literal(..))
 import Primitive (int, intOrNumber, number, string, typeMismatch, unary, union1)
 import Util (MayFail, cons, type (+), type (×), definitely', orElse, orThrow, singleton, throw, whenever, (×))
-import ModuleGraph (ModuleName, builtins, dataclasses, math, sys, typing)
+import Module.Defs (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
 import Types (Primitive(..), Type(..), baseType) as T

@@ -28,7 +28,7 @@ import Expr (Module, Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), hasDirectory, loadModuleSource, withClasses)
 import DepGraph (Deriv, deriv, emptyGraph)
 import Literal (Literal(..))
-import ModuleGraph (DependencyGraph, ModuleName, implicit, implicitFor)
+import Module.Defs (ModuleName, implicit, implicitFor)
 import Parse (parseModule, parseProgram)
 import Primitive.Defs (predefined, predefinedClasses)
 import WellFormed (CheckM, checkProgram, checkModule, mainModule, runCheckM)
@@ -37,6 +37,8 @@ import Util (MayFail, type (×), orThrow, throw, throwLeft, whenever, withMsg, (
 import Util.Map (constMap, findWithDefault, maplet, restrict, (<+>))
 import Val (class HasModuleStore, ModuleState(..), modifyModuleStore, Env(..), Val(..))
 import Val (BaseVal(..)) as V
+
+type DependencyGraph = Map ModuleName (List ModuleName)
 
 type Config = { s :: S.Stmt, e :: Stmt, inputs :: Dict Deriv, classes :: ClassTable }
 

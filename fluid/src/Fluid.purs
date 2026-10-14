@@ -23,7 +23,7 @@ import File (File(..), Folder(..), emptyFileCxt, loadFile, loadManifest, moduleP
 import Classes (ClassTable)
 import Data.Map (Map)
 import Module (Config, loadTopLevel, prepConfig, prepModule)
-import ModuleGraph (ModuleName)
+import Module.Defs (ModuleName)
 import Module.Node (NodeT, runNodeT)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (writeTextFile)

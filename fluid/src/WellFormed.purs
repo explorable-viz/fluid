@@ -19,7 +19,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.List (List(..), drop, filter, index, take, intersect, length, mapMaybe, null, sort, transpose, updateAt, (:))
 import Data.Foldable (any, lookup) as F
-import ModuleGraph (ModuleName, implicitFor, submodules)
+import Module.Defs (ModuleName, implicitFor, submodules)
 import Data.List.NonEmpty (NonEmptyList(..), head, last, snoc, unsnoc)
 import Data.NonEmpty ((:|))
 import Data.List.NonEmpty as NEL

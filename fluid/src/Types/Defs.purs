@@ -5,7 +5,7 @@ import Prim hiding (Type)
 import Bind (FieldName, Name, Var, qual)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, (:))
-import ModuleGraph (builtins, prelude, view)
+import Module.Defs (builtins, prelude, view)
 import Types (Primitive(..), Type(..))
 
 object :: Type

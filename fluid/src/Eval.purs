@@ -34,7 +34,7 @@ import File (class LoadFile, FileCxt, withClasses)
 import DepGraph (DepGraph, Rel, Deriv, Pos, attachDoc, deriv, zeros)
 import Lattice (class DepSemiring, DepKind, Lineage, Raw, ctrlWeight)
 import Literal (Literal(..), eqLiteral)
-import ModuleGraph (ModuleName, implicit, submodules)
+import Module.Defs (ModuleName, implicit, submodules)
 import Operator (binopSymbol, unopSymbol)
 import Pretty (prettyP)
 import Types (Type(..)) as T
