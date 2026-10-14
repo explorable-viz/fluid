@@ -58,7 +58,45 @@ instance Parseable Char where
    parse = char
 
 keywords :: Array String
-keywords = [ "False", "None", "True", "and", "as", "assert", "case", "class", "def", "else", "for", "from", "if", "import", "in", "lambda", "match", "not", "or", "pass", "return" ]
+keywords =
+   [ "False"
+   , "None"
+   , "True"
+   , "and"
+   , "as"
+   , "assert"
+   , "async"
+   , "await"
+   , "break"
+   , "case"
+   , "class"
+   , "continue"
+   , "def"
+   , "del"
+   , "elif"
+   , "else"
+   , "except"
+   , "finally"
+   , "for"
+   , "from"
+   , "global"
+   , "if"
+   , "import"
+   , "in"
+   , "is"
+   , "lambda"
+   , "match"
+   , "nonlocal"
+   , "not"
+   , "or"
+   , "pass"
+   , "raise"
+   , "return"
+   , "try"
+   , "while"
+   , "with"
+   , "yield"
+   ]
 
 context :: forall a. String -> Parser a -> Parser a
 context s p = do

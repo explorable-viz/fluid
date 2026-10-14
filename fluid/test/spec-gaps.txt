@@ -15,5 +15,3 @@ test/module-level/excluded/static/pat_tuple_wrong_length.py (check: exit 0, expe
 test/module-level/excluded/static/pattern_subclass_unreachable.py (check: exit 0, expected [3]: )
 test/module-level/excluded/static/pattern_union_base_unreachable.py (check: exit 0, expected [3]: )
 test/module-level/excluded/static/unsupported_builtin.py (check: exit 0, expected [3]: )
-test/module-level/excluded/syntactic/try_except.py (check: exit 3, expected [1]: Unbound name: x)
-test/module-level/python-error/syntactic/break_outside_loop.py (check: exit 3, expected [1]: Unbound name: break)

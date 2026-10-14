@@ -146,9 +146,9 @@ def foldr1[A](op: Callable[[A, A], A], xs: list[A]) -> A:
 
 # Quadratic, as each concatenation copies the list; retire with itertools.accumulate
 def scanl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> list[A]:
-  def go(x: B, continue: Callable[[A], list[A]]) -> Callable[[A], list[A]]:
+  def go(x: B, rest: Callable[[A], list[A]]) -> Callable[[A], list[A]]:
     def step(acc: A) -> list[A]:
-      return [acc] + continue(op(acc, x))
+      return [acc] + rest(op(acc, x))
     return step
   return foldr(go, lambda acc: [acc], xs)(z)
 
