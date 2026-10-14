@@ -47,7 +47,7 @@ import Util (MayFail, type (+), type (×), definitely', orElse, orThrow, singlet
 import ModuleGraph (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
-import Types (Primitive(..), Type(..), baseType, fv) as T
+import Types (Primitive(..), Type(..), baseType, float, fv, int, intPair, none, object, str) as T
 import Types (Scheme(..))
 import Util.Map (constMap, lookup, unionWith_never, (\\))
 import Util.Map as Dict
@@ -70,43 +70,43 @@ predefined :: Map ModuleName (Cxt × Raw Env)
 predefined = M.fromFoldable
    [ predefinedModule builtins ("None" : "object" : "bool" : "int" : "float" : "str" : "list" : "dict" : "tuple" : "type" : Nil)
         [ cRange, cMatrix ]
-        [ extern print_ × generalise (callable [ objectTy ] noneTy)
-        , extern len × generalise (callable [ T.PrimitiveTy T.Sized ] intTy)
+        [ extern print_ × generalise (callable [ T.object ] T.none)
+        , extern len × generalise (callable [ T.PrimitiveTy T.Sized ] T.int)
         -- Fluid-only members, without spec counterpart
-        , extern dims × generalise (callable [ matrix (var "T") ] intPair)
-        , extern loadJson × generalise (callable [ T.TypeTy (var "T"), strTy ] (var "T"))
-        , unary "str_to_float" { i: string, o: number, fwd: definitely' <<< fromString } × generalise (callable [ strTy ] floatTy)
-        , unary "num_to_str" { i: intOrNumber, o: string, fwd: numToStr } × generalise (callable [ floatTy ] strTy) -- rename to 'str' (more Pythonic)
+        , extern dims × generalise (callable [ matrix (var "T") ] T.intPair)
+        , extern loadJson × generalise (callable [ T.TypeTy (var "T"), T.str ] (var "T"))
+        , unary "str_to_float" { i: string, o: number, fwd: definitely' <<< fromString } × generalise (callable [ T.str ] T.float)
+        , unary "num_to_str" { i: intOrNumber, o: string, fwd: numToStr } × generalise (callable [ T.float ] T.str) -- rename to 'str' (more Pythonic)
         -- TODO: rename the rest of these (apart from dict_map?) to lose the dict_ prefix
         , extern dict_difference × generalise (callable [ dict (var "T"), dict (var "U") ] (dict (var "T")))
         , extern dict_disjointUnion × generalise (callable [ dict (var "T"), dict (var "T") ] (dict (var "T")))
-        , extern foldl_with_index × generalise (callable [ callable [ strTy, var "U", var "T" ] (var "U"), var "U", dict (var "T") ] (var "U"))
-        , extern get × generalise (callable [ strTy, dict (var "T") ] (T.UnionTy (var "T") noneTy))
-        , extern insert × generalise (callable [ dict (var "T"), strTy, var "T" ] (dict (var "T")))
+        , extern foldl_with_index × generalise (callable [ callable [ T.str, var "U", var "T" ] (var "U"), var "U", dict (var "T") ] (var "U"))
+        , extern get × generalise (callable [ T.str, dict (var "T") ] (T.UnionTy (var "T") T.none))
+        , extern insert × generalise (callable [ dict (var "T"), T.str, var "T" ] (dict (var "T")))
         , extern dict_intersectionWith × generalise (callable [ callable [ var "T", var "U" ] (var "V"), dict (var "T"), dict (var "U") ] (dict (var "V")))
         , extern dict_map × generalise (callable [ callable [ var "T" ] (var "U"), dict (var "T") ] (dict (var "U")))
-        , extern matrixUpdate × generalise (callable [ matrix (var "T"), intPair, var "T" ] (matrix (var "T")))
-        , extern find_str × generalise (callable [ strTy, strTy ] intTy)
-        , extern search × generalise (callable [ strTy, strTy ] (T.UnionTy intTy noneTy))
-        , extern split × generalise (callable [ intTy, strTy ] (T.TupleTy (strTy : strTy : Nil)))
-        , extern quot × generalise (callable [ intTy, intTy ] intTy)
-        , extern rem × generalise (callable [ intTy, intTy ] intTy)
+        , extern matrixUpdate × generalise (callable [ matrix (var "T"), T.intPair, var "T" ] (matrix (var "T")))
+        , extern find_str × generalise (callable [ T.str, T.str ] T.int)
+        , extern search × generalise (callable [ T.str, T.str ] (T.UnionTy T.int T.none))
+        , extern split × generalise (callable [ T.int, T.str ] (T.TupleTy (T.str : T.str : Nil)))
+        , extern quot × generalise (callable [ T.int, T.int ] T.int)
+        , extern rem × generalise (callable [ T.int, T.int ] T.int)
         ]
    , predefinedModule math Nil []
-        [ ("pi" × Val bot (Lit (Float N.pi))) × generalise floatTy
-        , ("e" × Val bot (Lit (Float N.e))) × generalise floatTy
+        [ ("pi" × Val bot (Lit (Float N.pi))) × generalise T.float
+        , ("e" × Val bot (Lit (Float N.e))) × generalise T.float
         , unary "sqrt" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sqrt) `union1` N.sqrt } × generalise floatFun
         , unary "exp" { i: intOrNumber, o: number, fwd: (toNumber >>> N.exp) `union1` N.exp } × generalise floatFun
         , unary "log" { i: intOrNumber, o: number, fwd: (toNumber >>> N.log) `union1` N.log } × generalise floatFun
         , unary "sin" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sin) `union1` N.sin } × generalise floatFun
         , unary "cos" { i: intOrNumber, o: number, fwd: (toNumber >>> N.cos) `union1` N.cos } × generalise floatFun
         , unary "tan" { i: intOrNumber, o: number, fwd: (toNumber >>> N.tan) `union1` N.tan } × generalise floatFun
-        , unary "floor" { i: intOrNumber, o: int, fwd: identity `union1` floor } × generalise (callable [ floatTy ] intTy)
-        , unary "ceil" { i: intOrNumber, o: int, fwd: identity `union1` ceil } × generalise (callable [ floatTy ] intTy)
+        , unary "floor" { i: intOrNumber, o: int, fwd: identity `union1` floor } × generalise (callable [ T.float ] T.int)
+        , unary "ceil" { i: intOrNumber, o: int, fwd: identity `union1` ceil } × generalise (callable [ T.float ] T.int)
         ]
    , predefinedModule sys Nil []
-        [ ("argv" × Val bot (List [])) × generalise (T.ListTy strTy)
-        , extern exit × generalise (callable [ intTy ] (T.PrimitiveTy T.Never))
+        [ ("argv" × Val bot (List [])) × generalise (T.ListTy T.str)
+        , extern exit × generalise (callable [ T.int ] (T.PrimitiveTy T.Never))
         ]
    , predefinedModule typing ("Callable" : "Literal" : "Never" : "Sized" : Nil) [] []
    , predefinedModule dataclasses ("dataclass" : Nil) [] []
@@ -115,7 +115,7 @@ predefined = M.fromFoldable
    predefinedModule :: ModuleName -> List Var -> Array Name -> Array (Bind (Val Unit) × Entry.Entry) -> ModuleName × (Cxt × Raw Env)
    predefinedModule q names classes members = q × (cxt × wrap (ρ `unionWith_never` ρ_classes `unionWith_never` ρ_names))
       where
-      members' = Array.cons (("__name__" × Val bot (Lit (Str (dottedName q)))) × Assigned strTy) members
+      members' = Array.cons (("__name__" × Val bot (Lit (Str (dottedName q)))) × Assigned T.str) members
       ρ = D.fromFoldable (fst <$> members')
       ρ_classes = D.fromFoldable (classes <#> \c -> NEL.last c × Val bot (Fun (Type (T.ClassTy c Nil))))
       ρ_names = D.fromFoldable (names <#> \x -> x × Val bot (Opaque (qual q x)))
@@ -126,13 +126,7 @@ predefined = M.fromFoldable
          ]
 
    callable σs τ = T.CallableTy (L.fromFoldable σs) τ
-   objectTy = T.PrimitiveTy T.Object
-   noneTy = T.PrimitiveTy T.None
-   intTy = T.PrimitiveTy T.Int
-   floatTy = T.PrimitiveTy T.Float
-   strTy = T.PrimitiveTy T.Str
-   floatFun = callable [ floatTy ] floatTy
-   intPair = T.TupleTy (intTy : intTy : Nil)
+   floatFun = callable [ T.float ] T.float
    dict = T.DictTy
    matrix τ = T.ClassTy cMatrix (τ : Nil)
    var = T.VarTy

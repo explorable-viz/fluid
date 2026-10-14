@@ -39,7 +39,7 @@ import Literal (Literal(..))
 import Operator (binopSymbol, resolveBinop, resolveUnop, unopSymbol)
 import Pretty (prettyP)
 import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeExpr(..), VarDef(..), assigns, binds, declares) as S
-import Types (Scheme(..))
+import Types (Scheme(..), bool, int, intPair, never, none, object, str)
 import Types as T
 import Util (MayFail, type (+), type (×), absurd, checkDistinct, definitely', error, nonEmpty, singleton, tail, zip, zipWith, (×), (∩))
 import Util.Pair (Pair(..))
@@ -969,23 +969,3 @@ subsumed classes cxt (S.PConstr c ps xps) (S.PConstr c' ps' xps') = fromMaybe fa
       (fst <$> fields classes name')
 subsumed _ _ _ _ = false
 
-bool :: T.Type
-bool = T.PrimitiveTy T.Bool
-
-int :: T.Type
-int = T.PrimitiveTy T.Int
-
-str :: T.Type
-str = T.PrimitiveTy T.Str
-
-none :: T.Type
-none = T.PrimitiveTy T.None
-
-never :: T.Type
-never = T.PrimitiveTy T.Never
-
-object :: T.Type
-object = T.PrimitiveTy T.Object
-
-intPair :: T.Type
-intPair = T.TupleTy (int : int : Nil)

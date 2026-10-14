@@ -13,7 +13,7 @@ import DataType (ClassTable, comparable, fieldsAt, join, joins, subtype)
 import Expr (Binop(..), Unop(..))
 import Literal as L
 import Parsing.Expr (Assoc(..))
-import Types (Primitive(..), Type(..), baseType)
+import Types (Type(..), baseType, bool, float, int, str)
 import Util (type (×), definitely', whenever, (×))
 
 data Operator = Binary Binop | Unary Unop | AndOp | OrOp | InfixOp
@@ -100,10 +100,6 @@ binopOverloads classes op = case op of
    Mod -> arithmetic int : arithmetic float : Nil
    Pow -> powerInt : arithmetic float : Nil
    where
-   int = PrimitiveTy Int
-   float = PrimitiveTy Float
-   str = PrimitiveTy Str
-   bool = PrimitiveTy Bool
    sub σ τ = subtype classes σ τ
 
    both bound result σ τ = whenever (sub σ bound && sub τ bound) ((bound : bound : Nil) × result)
@@ -138,9 +134,9 @@ binopOverloads classes op = case op of
 
 unopOverloads :: ClassTable -> Unop -> List (Type -> Maybe Overload)
 unopOverloads classes op = case op of
-   Not -> sign (PrimitiveTy Bool) : Nil
-   Pos -> sign (PrimitiveTy Int) : sign (PrimitiveTy Float) : Nil
-   Neg -> sign (PrimitiveTy Int) : sign (PrimitiveTy Float) : Nil
+   Not -> sign bool : Nil
+   Pos -> sign int : sign float : Nil
+   Neg -> sign int : sign float : Nil
    where
    sign τ σ = whenever (subtype classes σ τ) ((τ : Nil) × τ)
 

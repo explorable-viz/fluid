@@ -23,7 +23,7 @@ import Data.Set as Set
 import Data.Traversable (sequence)
 import Data.Tuple (fst)
 import Effect.Exception (Error)
-import Types (Primitive(..), Type(..), baseType, fv, subst, subterms)
+import Types (Primitive(..), Type(..), baseType, fv, int, never, object, str, subst, subterms)
 import Util (type (×), absurd, error, throw, (×), (∩))
 import Util.Map (get, lookup)
 
@@ -86,7 +86,7 @@ instanceAt classes c τ = instanceAbove τ <|> instanceBelow τ
             | otherwise -> Just Undetermined
       where
       ρs = ancestorAt classes c (VarTy <$> αs) d
-      atoms = nubEq (PrimitiveTy Object : (σs >>= subterms))
+      atoms = nubEq (object : (σs >>= subterms))
       candidates = sequence (αs <#> \_ -> joins classes <$> subsets atoms)
       solves τs = F.and (zipWith (\ρ σ -> equiv classes (subst τs αs ρ) σ) ρs σs)
    instanceBelow (PrimitiveTy Object) = Just monomorphic
@@ -125,10 +125,10 @@ joinCxt :: ClassTable -> Map Var Type -> Map Var Type -> Map Var Type
 joinCxt classes = unionWith (join classes)
 
 elemType :: ClassTable -> Type -> Maybe Type
-elemType _ τ | baseType τ == PrimitiveTy Str = Just (PrimitiveTy Str)
+elemType _ τ | baseType τ == str = Just str
 elemType _ (ListTy σ) = Just σ
-elemType _ (DictTy _) = Just (PrimitiveTy Str)
-elemType _ (ClassTy c Nil) | c == cRange = Just (PrimitiveTy Int)
+elemType _ (DictTy _) = Just str
+elemType _ (ClassTy c Nil) | c == cRange = Just int
 elemType classes (TupleTy τs) = Just (joins classes (baseType <$> τs))
 elemType classes (UnionTy σ τ) = join classes <$> elemType classes σ <*> elemType classes τ
 elemType _ _ = Nothing
@@ -202,7 +202,7 @@ join classes σ τ
    | otherwise = UnionTy σ τ
 
 joins :: ClassTable -> List Type -> Type
-joins classes = F.foldr (join classes) (PrimitiveTy Never)
+joins classes = F.foldr (join classes) never
 
 meet :: ClassTable -> Type -> Type -> Type
 meet classes σ τ
@@ -215,7 +215,7 @@ meet classes σ τ
            CallableTy σs σ', CallableTy τs τ' | length σs == length τs ->
               CallableTy (zipWith (join classes) σs τs) (meet classes σ' τ')
            TupleTy σs, TupleTy τs | length σs == length τs -> TupleTy (zipWith (meet classes) σs τs)
-           _, _ -> PrimitiveTy Never
+           _, _ -> never
 
 view :: Name
 view = NE.NonEmptyList ("fluid" :| "view" : Nil)
