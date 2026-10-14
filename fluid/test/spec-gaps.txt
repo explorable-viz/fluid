@@ -1,4 +1,3 @@
-test/module-level/excluded/static/bare_return_optional.py (check: exit 0, expected [3]: )
 test/module-level/excluded/static/match_bool_catch_all.py (check: exit 0, expected [3]: )
 test/module-level/excluded/static/match_dead_catch_all.py (check: exit 0, expected [3]: )
 test/module-level/excluded/static/match_dict_empty_catch_all.py (check: exit 0, expected [3]: )

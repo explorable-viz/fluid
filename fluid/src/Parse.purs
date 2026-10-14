@@ -14,7 +14,7 @@ import Data.Foldable (foldl)
 import Data.Identity (Identity)
 import Data.List (List(..), nub, (:))
 import Data.List.NonEmpty (NonEmptyList(..), cons, toList)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.NonEmpty ((:|))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
@@ -165,10 +165,7 @@ declareStmt = do
    Declare x <$> typeExpr
 
 returnStmt :: Parser Stmt
-returnStmt = do
-   reserved "return"
-   e <- optionMaybe (sameOrIndented *> expr)
-   pure $ Return $ fromMaybe (Lit None) e
+returnStmt = reserved "return" *> (maybe ReturnNone Return <$> optionMaybe (sameOrIndented *> expr))
 
 assertStmt :: Parser Stmt
 assertStmt = do

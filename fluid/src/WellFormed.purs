@@ -196,6 +196,10 @@ checkStmt :: Cxt -> Maybe T.Type -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 checkStmt _ _ S.Pass = pure (Assigns empty × E.Pass)
 -- Outside a function, the result of the program
 checkStmt cxt ζ (S.Return e) = (Returns × _) <<< E.Return <$> maybe (exprStmt cxt e) (check cxt e) ζ
+checkStmt _ ζ S.ReturnNone = do
+   classes <- classTable
+   for_ ζ \τ -> unless (equiv classes τ none) $ throwError $ "Bare return with result type " <> prettyP τ
+   pure (Returns × E.Return (E.Lit None))
 checkStmt cxt _ (S.ExprStmt e) = (Assigns empty × _) <<< E.ExprStmt <$> exprStmt cxt e
 checkStmt cxt (Just _) (S.Assert (S.Lit (Bool false)) e') =
    (Returns × _) <$> (E.Assert (E.Lit (Bool false)) <$> traverse (\e'' -> check cxt e'' str) e')

@@ -47,6 +47,7 @@ type Paragraph = List ParagraphElem
 
 data Stmt
    = Return Expr
+   | ReturnNone
    | If (NonEmptyList (Expr × Stmt)) (Maybe Stmt)
    | Match Expr (NonEmptyList Case)
    | Declare Var TypeExpr
@@ -178,6 +179,7 @@ instance FV Expr where
 
 instance FV Stmt where
    fv (Return e) = fv e
+   fv ReturnNone = empty
    fv (If ess s_opt) =
       unions ((\(e × s) -> fv e ∪ fv s) <$> ess) ∪ fv s_opt
    fv (Match scrut branches) =
@@ -209,6 +211,7 @@ assigns (Def (VarDef p _ _)) = bv p
 assigns (ExprStmt _) = empty
 assigns (Assert _ _) = empty
 assigns (Return _) = empty
+assigns ReturnNone = empty
 assigns (If es s) = unions (assigns <$> (snd <$> es)) ∪ maybe empty assigns s
 assigns (Match _ ps) = unions ((\(p × s) -> bv p ∪ assigns s) <$> ps)
 assigns (DefRec ds) = unions (singleton <<< fst <$> ds)

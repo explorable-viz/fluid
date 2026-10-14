@@ -201,6 +201,7 @@ instance Pretty Module where
 
 instance Pretty Stmt where
    pretty (Return e) = text "return" <+> pretty e
+   pretty ReturnNone = text "return"
    pretty (If (NonEmptyList (ss :| sss)) e) =
       vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))
          <++> maybe mempty (\b -> text "else" <> block (pretty b)) e
