@@ -21,7 +21,7 @@ data Operator = Binary Binop | Unary Unop | AndOp | OrOp | InfixOp
 
 derive instance Eq Operator
 
--- Precedence levels, loosest first, per the spec; e |f| e' is Fluid's
+-- Precedence levels, loosest first; infix application of a named function is Fluid-only
 levels :: Array (Array Operator)
 levels =
    [ [ OrOp ]
