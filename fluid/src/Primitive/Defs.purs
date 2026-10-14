@@ -9,6 +9,7 @@ import Data.Argonaut.Core (Json, caseJson, isNull, stringify, toArray, toBoolean
 import Data.Argonaut.Core (toNumber) as J
 import Data.Argonaut.Decode (parseJson)
 import Data.Array as Array
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Foldable (foldM, foldl)
 import Data.Int (ceil, floor, toNumber)
@@ -16,7 +17,7 @@ import Data.Int (quot, rem) as I
 import Data.Int as Int
 import Data.List (List(..), (:))
 import Data.List as L
-import Data.List.NonEmpty (last) as NEL
+import Data.List.NonEmpty (last)
 import Data.Map (Map)
 import Data.Map as M
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -44,13 +45,13 @@ import DepGraph (zeros)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, ctrlWeight)
 import Literal (Literal(..))
 import Primitive (int, intOrNumber, number, string, typeMismatch, unary, union1)
-import Util (MayFail, type (+), type (×), definitely', orElse, orThrow, singleton, throw, whenever, (×))
+import Util (MayFail, cons, type (+), type (×), definitely', orElse, orThrow, singleton, throw, whenever, (×))
 import ModuleGraph (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
 import Types (Primitive(..), Type(..), baseType) as T
 import Types.Util (float, int, intPair, none, object, str) as T
-import Util.Map (constMap, lookup, unionWith_never, (\\))
+import Util.Map (lookup, unionWith_never, (\\))
 import Util.Map as Dict
 import Util.Map as Map
 import Val (BaseVal(..), DepOp, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), GVal, MatrixRep(..), Val(..), construct, deliver, dictEntries, dictEntry, elementCount, fromRel, gval, matrixPut, pureRel, root, via)
@@ -69,7 +70,7 @@ predefinedClasses = M.fromFoldable
 
 predefined :: Map ModuleName (Cxt × Raw Env)
 predefined = M.fromFoldable
-   [ predefinedModule builtins ("None" : "object" : "bool" : "int" : "float" : "str" : "list" : "dict" : "tuple" : "type" : Nil)
+   [ predefinedModule builtins [ "None", "object", "bool", "int", "float", "str", "list", "dict", "tuple", "type" ]
         [ cRange, cMatrix ]
         [ extern print_ × generalise (callable [ T.object ] T.none)
         , extern len × generalise (callable [ T.PrimitiveTy T.Sized ] T.int)
@@ -93,7 +94,7 @@ predefined = M.fromFoldable
         , extern quot × generalise (callable [ T.int, T.int ] T.int)
         , extern rem × generalise (callable [ T.int, T.int ] T.int)
         ]
-   , predefinedModule math Nil []
+   , predefinedModule math [] []
         [ ("pi" × Val bot (Lit (Float N.pi))) × generalise T.float
         , ("e" × Val bot (Lit (Float N.e))) × generalise T.float
         , unary "sqrt" { i: intOrNumber, o: number, fwd: (toNumber >>> N.sqrt) `union1` N.sqrt } × generalise (callable [ T.float ] T.float)
@@ -105,26 +106,21 @@ predefined = M.fromFoldable
         , unary "floor" { i: intOrNumber, o: int, fwd: identity `union1` floor } × generalise (callable [ T.float ] T.int)
         , unary "ceil" { i: intOrNumber, o: int, fwd: identity `union1` ceil } × generalise (callable [ T.float ] T.int)
         ]
-   , predefinedModule sys Nil []
+   , predefinedModule sys [] []
         [ ("argv" × Val bot (List [])) × generalise (T.ListTy T.str)
         , extern exit × generalise (callable [ T.int ] (T.PrimitiveTy T.Never))
         ]
-   , predefinedModule typing ("Callable" : "Literal" : "Never" : "Sized" : Nil) [] []
-   , predefinedModule dataclasses ("dataclass" : Nil) [] []
+   , predefinedModule typing [ "Callable", "Literal", "Never", "Sized" ] [] []
+   , predefinedModule dataclasses [ "dataclass" ] [] []
    ]
    where
-   predefinedModule :: ModuleName -> List Var -> Array Name -> Array (Bind (Val Unit) × Entry.Entry) -> ModuleName × (Cxt × Raw Env)
-   predefinedModule q names classes members = q × (cxt × wrap (ρ `unionWith_never` ρ_classes `unionWith_never` ρ_names))
+   predefinedModule :: ModuleName -> Array Var -> Array Name -> Array (Bind (Val Unit) × Entry.Entry) -> ModuleName × (Cxt × Raw Env)
+   predefinedModule q names classes members =
+      q × (M.fromFoldable (lmap fst <$> bindings) × wrap (D.fromFoldable (fst <$> bindings)))
       where
-      members' = Array.cons (("__name__" × Val bot (Lit (Str (dottedName q)))) × Assigned T.str) members
-      ρ = D.fromFoldable (fst <$> members')
-      ρ_classes = D.fromFoldable (classes <#> \c -> NEL.last c × Val bot (Fun (Type (T.ClassTy c Nil))))
-      ρ_names = D.fromFoldable (names <#> \x -> x × Val bot (Opaque (qual q x)))
-      cxt = M.unions
-         [ constMap Entry.PredefName (Set.fromFoldable names)
-         , M.fromFoldable (classes <#> \c -> NEL.last c × Entry.Type c)
-         , M.fromFoldable (members' <#> \((x × _) × θ) -> x × θ)
-         ]
+      bindings = cons (("__name__" × Val bot (Lit (Str (dottedName q)))) × Assigned T.str) members
+         <> (classes <#> \c -> (last c × Val bot (Fun (Type (T.ClassTy c Nil)))) × Entry.Type c)
+         <> (names <#> \x -> (x × Val bot (Opaque (qual q x))) × Entry.PredefName)
 
 len :: ForeignOp
 len =
@@ -184,7 +180,7 @@ jsonVal classes τ json = case τ of
       obj <- expect "object" (toObject json)
       let xσs = fields classes c
       when (Set.fromFoldable (O.keys obj) /= Set.fromFoldable (fst <$> xσs))
-         $ Left ("Expected fields of " <> NEL.last c <> ": " <> show (fst <$> xσs) <> "; got " <> show (O.keys obj))
+         $ Left ("Expected fields of " <> last c <> ": " <> show (fst <$> xσs) <> "; got " <> show (O.keys obj))
       val <<< Obj c <$> traverse (\(x × σ) -> (x × _) <$> jsonVal classes σ (definitely' (O.lookup x obj))) xσs
    T.PrimitiveTy T.Int -> val <<< Lit <<< Int <$> expect "integer" (J.toNumber json >>= Int.fromNumber)
    T.PrimitiveTy T.Float -> val <<< Lit <<< Float <$> expect "number" (J.toNumber json)
