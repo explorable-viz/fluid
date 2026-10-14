@@ -16,6 +16,8 @@ class NonEmpty[T](Tree[T]):
   value: T
   right: Tree[T]
 
+type SearchTree[K, V] = Tree[tuple[K, V]]
+
 @dataclass
 class Ordering:
   pass

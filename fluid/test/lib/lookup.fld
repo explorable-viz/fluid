@@ -1,6 +1,6 @@
-def lookup[V](k: int, Empty(): Tree[tuple[int, V]]) -> V | None:
+def lookup[V](k: int, Empty(): SearchTree[int, V]) -> V | None:
   return None
-def lookup[V](k: int, NonEmpty(t1, (key, val), t2): Tree[tuple[int, V]]) -> V | None:
+def lookup[V](k: int, NonEmpty(t1, (key, val), t2): SearchTree[int, V]) -> V | None:
   match compare(k, key):
     case LT():
       return lookup(k, t1)
@@ -9,5 +9,5 @@ def lookup[V](k: int, NonEmpty(t1, (key, val), t2): Tree[tuple[int, V]]) -> V | 
     case _:
       return lookup(k, t2)
 
-empty: Tree[tuple[int, str]] = Empty[tuple[int, str]]()
+empty: SearchTree[int, str] = Empty[tuple[int, str]]()
 lookup(6, NonEmpty(NonEmpty(empty, (3, "simon"), empty), (4, "john"), NonEmpty(NonEmpty(empty, (6, "sarah"), empty), (7, "claire"), empty)))
