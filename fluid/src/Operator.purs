@@ -6,7 +6,8 @@ import Prim hiding (Type)
 import Bind (Name)
 import Data.Array (findIndex)
 import Data.Foldable (all, and, elem, find)
-import Data.List (List(..), mapMaybe, nubEq, zipWith, (:))
+import Data.Bifunctor (lmap)
+import Data.List (List(..), mapMaybe, nubEq, reverse, zipWith, (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
 import Classes (ClassTable, comparable, fieldsAt, join, joins, subtype)
@@ -95,7 +96,7 @@ binopOverloads classes op = case op of
    Ge -> ordering
    Add -> arithmetic int : arithmetic float : both str str : concatList : concatTuple : Nil
    Sub -> arithmetic int : arithmetic float : Nil
-   Mul -> arithmetic int : arithmetic float : repeatStr : repeatStrLeft : repeatList : repeatListLeft : Nil
+   Mul -> arithmetic int : arithmetic float : repeatStr : reflected repeatStr : repeatList : reflected repeatList : Nil
    Div -> arithmetic float : Nil
    FloorDiv -> arithmetic int : arithmetic float : Nil
    Mod -> arithmetic int : arithmetic float : Nil
@@ -111,6 +112,7 @@ binopOverloads classes op = case op of
       whenever (comparable classes σ τ && equalityType classes σ && equalityType classes τ) ((σ : τ : Nil) × bool)
 
    membership = membershipList : membershipTuple : both str bool : membershipDict : Nil
+
    membershipList σ τ@(ListTy τ') = whenever (comparable classes σ τ') ((σ : τ : Nil) × bool)
    membershipList _ _ = Nothing
    membershipTuple σ τ@(TupleTy τs) = whenever (comparable classes σ (joins classes τs)) ((σ : τ : Nil) × bool)
@@ -124,11 +126,9 @@ binopOverloads classes op = case op of
    concatTuple _ _ = Nothing
 
    repeatStr σ τ = whenever (sub σ str && sub τ int) ((str : int : Nil) × str)
-   repeatStrLeft σ τ = whenever (sub σ int && sub τ str) ((int : str : Nil) × str)
    repeatList σ@(ListTy _) τ = whenever (sub τ int) ((σ : int : Nil) × σ)
    repeatList _ _ = Nothing
-   repeatListLeft σ τ@(ListTy _) = whenever (sub σ int) ((int : τ : Nil) × τ)
-   repeatListLeft _ _ = Nothing
+   reflected overload σ τ = lmap reverse <$> overload τ σ
 
    powerInt σ τ@(LitTy (L.Int n)) = whenever (sub σ int) ((int : τ : Nil) × if n < 0 then float else int)
    powerInt _ _ = Nothing
