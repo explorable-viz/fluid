@@ -5,7 +5,7 @@ import Prelude
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
 import Control.Monad.State (runStateT)
-import Bind (dottedName, pathName, prefixOf)
+import Bind (dottedName, pathName, prefixOf, varName)
 import Data.List.NonEmpty (snoc, unsnoc)
 import Data.List.NonEmpty (fromList) as NEL
 import Data.Either (Either(..))
@@ -22,9 +22,10 @@ import Classes (class HasClasses, ClassTable)
 import Dict (Dict)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Eval (evalImport, implicitMembers, load, nameBinding) as Dep
+import Eval (evalImport, implicitMembers, load) as Dep
 import Expr (Import(..)) as E
-import Expr (Module, Stmt, fv)
+import Literal (Literal(..))
+import Expr (Module, Pattern(..), Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), hasDirectory, loadModuleSource, withClasses)
 import DepGraph (Deriv, deriv, emptyGraph)
 import Module.Defs (ModuleName, implicit, implicitFor)
@@ -32,8 +33,9 @@ import Parse (parseModule, parseProgram)
 import Primitive.Defs (predefined, predefinedClasses)
 import WellFormed (CheckM, checkProgram, checkModule, mainModule, runCheckM)
 import SExpr as S
+import Types (Primitive(..)) as T
 import Util (MayFail, type (×), orThrow, throw, throwLeft, whenever, withMsg, (×))
-import Util.Map (constMap, findWithDefault, restrict, (<+>))
+import Util.Map (constMap, findWithDefault, mapWithKey, restrict)
 import Val (class HasModuleStore, ModuleState(..), modifyModuleStore, Env(..))
 
 type DependencyGraph = Map ModuleName (List ModuleName)
@@ -102,8 +104,7 @@ loadTopLevel modules imports = do
       modifyModuleStore (_ { modules = Map.union predefined' (Parsed <$> modules) })
       for_ implicit Dep.load
       ρ0 <- Dep.implicitMembers
-      ρ1 <- foldM (\ρ (S.Import q f) -> Dep.evalImport mainModule ρ (E.Import q f)) ρ0 imports
-      (ρ1 <+> _) <$> Dep.nameBinding mainModule
+      foldM (\ρ (S.Import q f) -> Dep.evalImport mainModule ρ (E.Import q f)) ρ0 imports
    modifyModuleStore (_ { depGraph = depGraph })
    pure inputs
 
@@ -119,10 +120,14 @@ prepConfig
    -> m Config
 prepConfig fluidSrc = do
    s × imports <- throwLeft $ parseProgram fluidSrc
-   { result: e, modules: mods, classes } <- prepModules imports (checkProgram imports s)
+   { result: e, modules: mods, classes } <- prepModules imports (checkProgram imports (named mainModule s))
    withClasses classes do
       inputs <- loadTopLevel mods imports
       pure { s, e, inputs: restrict (fv e) inputs, classes }
+
+-- Statement preceded by declaration of module name
+named :: ModuleName -> S.Stmt -> S.Stmt
+named q = S.Seq (S.Def (S.VarDef (PVar varName) (Just (S.PrimitiveTy T.Str)) (S.Lit (Str (dottedName q)))))
 
 -- Parse modules reachable through imports and run checking action over them, yielding its result, modules
 -- checked, and class table.
@@ -166,7 +171,7 @@ parseModules imports = do
    orThrow (checkAcyclic moduleDeps (deps >>= _.edges))
    -- prefix-closed: a package with no source file of its own is an empty module
    let ancestors = Set.fromFoldable ((Set.toUnfoldable (Map.keys mods) :: List ModuleName) >>= parents)
-   pure (mods `Map.union` constMap (S.Module Nil S.Pass) ancestors)
+   pure (mapWithKey (\q (S.Module ιs s) -> S.Module ιs (named q s)) (mods `Map.union` constMap (S.Module Nil S.Pass) ancestors))
 
    where
 

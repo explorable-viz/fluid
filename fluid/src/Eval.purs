@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 
-import Bind (dottedName, prefixOf, varAnon, varName, varThis)
+import Bind (dottedName, prefixOf, varAnon, varThis)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Control.Monad.State (runStateT)
@@ -416,18 +416,14 @@ evalModule
    -> m (Dict Deriv)
 evalModule ρ0 q (Module ιs s) = do
    ρ_imp <- foldM (evalImport q) ρ0 ιs
-   ρ_name <- nameBinding q
    { modules } <- moduleStore
    ρ_subMods <- traverse moduleVal (D.fromFoldable (submodules (Map.keys modules) q))
-   ρ <- traverse gvalAt (ρ_imp <+> ρ_name)
+   ρ <- traverse gvalAt ρ_imp
    ρ' × _ <- asAssigns <$> evalStmt { ctrl: Nil, env: ρ } s
    let xs = L.fromFoldable (assigns s)
    ρ_unbound <- D.fromFoldable <<< zip xs <$> traverse (const (deriv (Val unit V.Unbound))) xs
    members <- traverse (record >>> map fst) ρ'
-   pure (ρ_name <+> ρ_subMods <+> ρ_unbound <+> members)
-
-nameBinding :: forall m s. MonadEval s m => ModuleName -> m (Dict Deriv)
-nameBinding q = maplet varName <$> deriv (Val unit (V.Lit (Str (dottedName q))))
+   pure (ρ_subMods <+> ρ_unbound <+> members)
 
 -- Bind imported members, and names of imported modules to module values.
 evalImport
