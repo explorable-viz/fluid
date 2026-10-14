@@ -166,7 +166,7 @@ def height(g: GraphicsElement) -> float:
   return h
 
 def space_right(z: float, sep: float, gs: list[GraphicsElement]) -> list[GraphicsElement]:
-  return [set_x(x, g) for (x, g) in zip(iterate(len(gs), lambda x: sep + x, z), gs)]
+  return [set_x(z + sep * i, gs[i]) for i in range(0, len(gs))]
 
 # Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
 # different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org
@@ -251,7 +251,7 @@ def axis(orient: Orient, x: float, start: float, end: float) -> tuple[GraphicsEl
   first_tick: float = ceil_to_nearest(start, tick_sp)
   last_tick: float = ceil_to_nearest(end, tick_sp)
   n: int = floor((end - first_tick) / tick_sp) + 1
-  ticks: list[float] = iterate(n, lambda x: tick_sp + x, first_tick)
+  ticks: list[float] = [first_tick + tick_sp * i for i in range(0, n)]
   ticks_from_start: list[float] = [start] + ticks if first_tick > start else ticks
   ys: list[float] = ticks_from_start + [last_tick] if last_tick > end else ticks_from_start
   ps: list[Point] = map(mk_point(orient, x), ys)
@@ -264,8 +264,7 @@ def axis(orient: Orient, x: float, start: float, end: float) -> tuple[GraphicsEl
 
 # x is position of this axis on the other axis.
 def cat_axis(orient: Orient, x: float, cat_values: list[Cat]) -> GraphicsElement:
-  ys: list[int] = iterate(len(cat_values) + 1, lambda x: 1 + x, 0)
-  ps: list[Point] = [mk_point(orient, x, y) for y in ys]
+  ps: list[Point] = [mk_point(orient, x, y) for y in range(0, len(cat_values) + 1)]
 
   return Group([
     Line(ps[0], ps[-1], axis_colour, axis_stroke_width),
@@ -290,7 +289,7 @@ def line_chart(with_axes: bool, colours: Colours, x_start: float, data: list[tup
       Polymarkers(ps, [Circle(x=0, y=0, radius=marker_radius, fill=colour) for _ in ps])
     ])
 
-  lines: list[GraphicsElement] = [plot(n, colour) for (n, colour) in zip(iterate(n_cat, lambda x: 1 + x, 0), colours)]
+  lines: list[GraphicsElement] = [plot(n, colours[n]) for n in range(0, n_cat)]
   x_finish: float = xs[-1]
   y_finish: float = maximum([maximum([v for (_, v) in kvs]) for (_, kvs) in data])
 

@@ -174,11 +174,6 @@ def join(xs: list[str]) -> str:
 def intersperse[A](xs: list[A], sep: A) -> list[A]:
   return [y for i in range(0, len(xs)) for y in ([xs[i]] if i == 0 else [sep, xs[i]])]
 
-def iterate[A](n: int, f: Callable[[A], A], z: A) -> list[A]:
-  if n == 0:
-    return []
-  return [z] + iterate(n - 1, f, f(z))
-
 # sum, fsum, max, min, fmax, fmin, maximum, minimum, abs: one type each, pending protocols
 # (pure-py/pure-py-spec#233); retire with Python's builtins.
 def sum(xs: list[int]) -> int:
