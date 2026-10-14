@@ -2,7 +2,7 @@ module WellFormed where
 
 import Prelude hiding (absurd, join)
 
-import Bind (Bind, Name, Var, dottedName, prefixOf, properPrefixOf, varThis, (↦))
+import Bind (Bind, Name, Var, dottedName, prefixOf, properPrefixOf, varName, varThis, (↦))
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Reader (ReaderT, ask, mapReaderT, runReaderT)
 import Control.Monad.State (StateT, gets, mapStateT, modify_, runStateT)
@@ -137,13 +137,13 @@ checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
    case r of
       -- Program may return, with the returned value as its result; spec treats __main__ as a module
       Returns -> throwError "Module body cannot return"
-      Assigns cxt' -> pure (insert "__name__" (Assigned str) cxt' × E.Module imports' s')
+      Assigns cxt' -> pure (insert varName (Assigned str) cxt' × E.Module imports' s')
    where
    imports' = imports <#> \(S.Import q' xs) -> E.Import q' xs
 
 moduleScope :: Cxt -> Cxt -> S.Stmt -> CheckM Cxt
 moduleScope cxt_imp cxt_ιs s =
-   insert "__name__" (Assigned str) <<< (cxt_imp `extend` cxt_ιs `override` _) <$> scope "imported name" (keys cxt_ιs) s
+   insert varName (Assigned str) <<< (cxt_imp `extend` cxt_ιs `override` _) <$> scope "imported name" (keys cxt_ιs) s
 
 scope :: String -> Set Var -> S.Stmt -> CheckM Cxt
 scope what ys s = do

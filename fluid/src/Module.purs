@@ -22,21 +22,19 @@ import Classes (class HasClasses, ClassTable)
 import Dict (Dict)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Eval (evalImport, implicitMembers, load) as Dep
+import Eval (evalImport, implicitMembers, load, nameBinding) as Dep
 import Expr (Import(..)) as E
 import Expr (Module, Stmt, fv)
 import File (class LoadFile, File(..), FileCxt(..), hasDirectory, loadModuleSource, withClasses)
 import DepGraph (Deriv, deriv, emptyGraph)
-import Literal (Literal(..))
 import Module.Defs (ModuleName, implicit, implicitFor)
 import Parse (parseModule, parseProgram)
 import Primitive.Defs (predefined, predefinedClasses)
 import WellFormed (CheckM, checkProgram, checkModule, mainModule, runCheckM)
 import SExpr as S
 import Util (MayFail, type (×), orThrow, throw, throwLeft, whenever, withMsg, (×))
-import Util.Map (constMap, findWithDefault, maplet, restrict, (<+>))
-import Val (class HasModuleStore, ModuleState(..), modifyModuleStore, Env(..), Val(..))
-import Val (BaseVal(..)) as V
+import Util.Map (constMap, findWithDefault, restrict, (<+>))
+import Val (class HasModuleStore, ModuleState(..), modifyModuleStore, Env(..))
 
 type DependencyGraph = Map ModuleName (List ModuleName)
 
@@ -105,8 +103,7 @@ loadTopLevel modules imports = do
       for_ implicit Dep.load
       ρ0 <- Dep.implicitMembers
       ρ1 <- foldM (\ρ (S.Import q f) -> Dep.evalImport mainModule ρ (E.Import q f)) ρ0 imports
-      name <- deriv (Val unit (V.Lit (Str "__main__")))
-      pure (ρ1 <+> maplet "__name__" name)
+      (ρ1 <+> _) <$> Dep.nameBinding mainModule
    modifyModuleStore (_ { depGraph = depGraph })
    pure inputs
 

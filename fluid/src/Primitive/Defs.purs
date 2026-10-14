@@ -2,7 +2,7 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, apply, div, mod, top)
 
-import Bind (Bind, Name, Var, dottedName, qual)
+import Bind (Bind, Name, Var, dottedName, qual, varName)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json, caseJson, isNull, stringify, toArray, toBoolean, toObject, toString)
@@ -117,7 +117,7 @@ predefined = M.fromFoldable
    predefinedModule q names classes members =
       q × (M.fromFoldable (lmap fst <$> bindings) × wrap (D.fromFoldable (fst <$> bindings)))
       where
-      bindings = cons (("__name__" × Val bot (Lit (Str (dottedName q)))) × Assigned T.str) members
+      bindings = cons ((varName × Val bot (Lit (Str (dottedName q)))) × Assigned T.str) members
          <> (classes <#> \c -> (last c × Val bot (Fun (Type (T.ClassTy c Nil)))) × Entry.Type c)
          <> (names <#> \x -> (x × Val bot (Opaque (qual q x))) × Entry.PredefName)
 
