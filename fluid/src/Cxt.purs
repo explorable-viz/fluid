@@ -31,6 +31,9 @@ data Entry
 
 type Cxt = Map Var Entry
 
+generalise :: T.Type -> Entry
+generalise τ = maybe (Assigned τ) (TypeScheme <<< flip T.Forall τ) (NEL.fromFoldable (T.fv τ))
+
 data WfResult a = Returns | Assigns a
 
 class Extend a where
@@ -108,6 +111,3 @@ resolveName cxt name = case NEL.fromList init of
 derive instance Functor WfResult
 derive instance Eq a => Eq (WfResult a)
 derive instance Eq Entry
-
-generalise :: T.Type -> Entry
-generalise τ = maybe (Assigned τ) (TypeScheme <<< flip T.Forall τ) (NEL.fromFoldable (T.fv τ))
