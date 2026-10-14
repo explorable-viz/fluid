@@ -9,7 +9,7 @@ import Data.Foldable (all, and, elem, find)
 import Data.List (List(..), mapMaybe, nubEq, zipWith, (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
-import DataType (ClassTable, comparable, fieldsAt, join, joins, subtype)
+import Classes (ClassTable, comparable, fieldsAt, join, joins, subtype)
 import Expr (Binop(..), Unop(..))
 import Literal as L
 import Parsing.Expr (Assoc(..))

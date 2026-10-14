@@ -4,7 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.Util (SelStates, SelectionType(..), Selector, SetSel, getPersistent, unselected)
 import App.Util.Selector (ObjArg, objArg)
-import DataType (class HasClasses)
+import Classes (class HasClasses)
 import Data.Array as A
 import Data.Foldable (any, minimum)
 import Data.Map as Map

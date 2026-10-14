@@ -18,7 +18,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
 import Data.Tuple (fst)
-import DataType (class HasClasses, ClassTable)
+import Classes (class HasClasses, ClassTable)
 import Dict (Dict)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)

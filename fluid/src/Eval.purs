@@ -24,7 +24,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, traverse)
 import Data.Tuple (fst, snd)
-import DataType (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fieldNames)
+import Classes (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fieldNames)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)

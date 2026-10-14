@@ -1,4 +1,4 @@
-module DataType where
+module Classes where
 
 import Prelude hiding (absurd, join)
 import Prim hiding (Type)

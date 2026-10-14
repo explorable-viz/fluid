@@ -11,7 +11,7 @@ import Data.Newtype (class Newtype)
 import Data.NonEmpty ((:|))
 import Data.Traversable (class Foldable)
 import Data.Tuple (snd)
-import DataType (Ctr)
+import Classes (Ctr)
 import Dict (Dict)
 import Expr (Pattern(..))
 import Expr as E

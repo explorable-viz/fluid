@@ -32,7 +32,7 @@ import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (for, traverse)
 import Data.Lazy (defer, force)
 import Data.Tuple (fst, snd)
-import DataType (ClassTable, askClasses, fields)
+import Classes (ClassTable, askClasses, fields)
 import Types.Defs (cMatrix, cRange, callable, matrix, var)
 import DefiniteAssignment (Entry(..)) as Entry
 import DefiniteAssignment (Cxt, Entry(Assigned), generalise)
