@@ -4,7 +4,7 @@
 	let showDataPane = false;
 
 	const spec = {
-		fluidSrcPath: ['../lib'],
+		fluidSrcPath: ['../src', '../lib'],
 		inputs: ['renewables'],
 		ignoreInputs: { renewables: ['year', 'country'] },
 		query: false,
@@ -30,6 +30,6 @@
 	</DataPane>
 
 	<div class="flex-left-align">
-		<Figure {spec} fld="../lib/bar_chart_line_chart.fld" />
+		<Figure {spec} fld="../src/bar_chart_line_chart.fld" />
 	</div>
 </Grid>
