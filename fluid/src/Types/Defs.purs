@@ -61,6 +61,7 @@ cRange = qual builtins "range" :: Name
 cMatrix = qual builtins "Matrix" :: Name
 cText = qual view "Text" :: Name
 cLink = qual view "Link" :: Name
+
 -- Field names used internally by rendering layer.
 f_caption = "caption" :: FieldName
 f_fragments = "fragments" :: FieldName
