@@ -90,9 +90,6 @@ instanceAt classes c τ = instanceAbove τ <|> instanceBelow τ
 subsets :: forall a. List a -> List (List a)
 subsets = filterM (const (false : true : Nil))
 
-comparable :: ClassTable -> Type -> Type -> Boolean
-comparable classes σ τ = subtype classes σ τ || subtype classes τ σ
-
 class TypeArgs a where
    typeArgs :: ClassTable -> List Var -> a -> a -> Map Var Type
 
@@ -185,6 +182,9 @@ subtype classes σ τ
 
 equiv :: ClassTable -> Type -> Type -> Boolean
 equiv classes σ τ = subtype classes σ τ && subtype classes τ σ
+
+comparable :: ClassTable -> Type -> Type -> Boolean
+comparable classes σ τ = subtype classes σ τ || subtype classes τ σ
 
 class Join a where
    join :: ClassTable -> a -> a -> a
