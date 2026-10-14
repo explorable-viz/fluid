@@ -56,13 +56,13 @@ simplePattern = pLit <|> pConstr <|> pVar <|> pRecord <|> pList <|> parensPatter
       pure $ PConstr q (takeLefts args) (takeRights args)
       where
       constrArg :: Parser (Pattern + Bind Pattern)
-      constrArg = defer \_ -> (Right <$> try kwArg) <|> (Left <$> simplePattern)
+      constrArg = defer \_ -> (Right <$> try kwArg) <|> (Left <$> pattern)
 
       kwArg :: Parser (Bind Pattern)
       kwArg = defer \_ -> do
          x <- variable
          delim '='
-         p <- simplePattern
+         p <- pattern
          pure (x ↦ p)
 
       takeLefts :: forall a b. List (a + b) -> List a
