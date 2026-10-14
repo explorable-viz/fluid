@@ -39,9 +39,9 @@ import Literal (Literal(..))
 import Operator (binopSymbol, resolveBinop, resolveUnop, unopSymbol)
 import Pretty (prettyP)
 import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeExpr(..), VarDef(..), assigns, binds, declares) as S
-import Types (Scheme(..), mono)
+import Types (Scheme(..))
 import Types as T
-import Util (MayFail, type (×), absurd, checkDistinct, definitely', error, nonEmpty, singleton, tail, zip, zipWith, (×), (∩))
+import Util (MayFail, type (+), type (×), absurd, checkDistinct, definitely', error, nonEmpty, singleton, tail, zip, zipWith, (×), (∩))
 import Util.Pair (Pair(..))
 import Util.Set (empty, (\\), (∈), (∪))
 
@@ -136,13 +136,13 @@ checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
    case r of
       -- Program may return, with the returned value as its result; spec treats __main__ as a module
       Returns -> throwError "Module body cannot return"
-      Assigns cxt' -> pure (insert "__name__" (Assigned (mono str)) cxt' × E.Module imports' s')
+      Assigns cxt' -> pure (insert "__name__" (Assigned str) cxt' × E.Module imports' s')
    where
    imports' = imports <#> \(S.Import q' xs) -> E.Import q' xs
 
 moduleScope :: Cxt -> Cxt -> S.Stmt -> CheckM Cxt
 moduleScope cxt_imp cxt_ιs s =
-   insert "__name__" (Assigned (mono str)) <<< (cxt_imp `extend` cxt_ιs `override` _) <$> scope "imported name" (keys cxt_ιs) s
+   insert "__name__" (Assigned str) <<< (cxt_imp `extend` cxt_ιs `override` _) <$> scope "imported name" (keys cxt_ιs) s
 
 scope :: String -> Set Var -> S.Stmt -> CheckM Cxt
 scope what ys s = do
@@ -211,11 +211,11 @@ checkStmt cxt _ (S.Def (S.VarDef (S.PVar x) (Just ψ) e)) = do
    assignable cxt x
    τ <- resolveType cxt ψ
    e' <- checkExpr cxt e τ
-   pure (Assigns (maplet x (Assigned (mono τ))) × E.Assign (S.PVar x) e')
+   pure (Assigns (maplet x (Assigned τ)) × E.Assign (S.PVar x) e')
 checkStmt cxt _ (S.Def (S.VarDef (S.PVar x) Nothing e)) = case lookup x cxt of
    Just (Declared τ) -> do
       e' <- checkExpr cxt e τ
-      pure (Assigns (maplet x (Assigned (mono τ))) × E.Assign (S.PVar x) e')
+      pure (Assigns (maplet x (Assigned τ)) × E.Assign (S.PVar x) e')
    Just Unbound -> throwError $ "Assigned before declaration: " <> x
    _ -> assignable cxt x >>= \_ -> error absurd
 -- Assignment to a pattern; the spec has only variables
@@ -229,11 +229,11 @@ checkStmt cxt _ (S.DefRec ds) = do
    let defs = NEL.groupBy (eq `on` fst) ds
    checkDistinct ("Non-contiguous clauses for: " <> _) (NEL.toList (fst <<< head <$> defs))
    fπs <- for defs \def -> (fst (head def) × _) <$> defSignature cxt (head def)
-   let cxt_fs = Map.fromFoldable (fπs <#> \(f × π) -> f × Assigned π)
+   let cxt_fs = Map.fromFoldable (fπs <#> \(f × π) -> f × either Assigned TypeScheme π)
    let cxt' = cxt `override` cxt_fs
    defs' <- for (NEL.zip defs fπs) \(def × (f × π)) -> do
       void $ wellFormedPatterns cxt' (def <#> \(_ × S.Clause (_ × ps × _)) -> S.PList (ps <#> \(S.Param p _) -> p))
-      within ("definition of " <> f) $ (f ↦ _) <$> (traverse (defBody cxt' f π <<< snd) def >>= clauses)
+      within ("definition of " <> f) $ (f ↦ _) <$> (traverse (defBody cxt' f (either identity (\(Forall _ σ) -> σ) π) <<< snd) def >>= clauses)
    pure (Assigns cxt_fs × E.DefRec (E.RecDefs (D.fromFoldable defs')))
 checkStmt cxt ζ (S.Seq s1 s2) = do
    r1 × s1' <- checkStmt cxt ζ s1
@@ -302,7 +302,7 @@ typeParams :: List Var -> Cxt
 typeParams αs = constMap TypeVar (Set.fromFoldable αs)
 
 bindings :: Map.Map Var T.Type -> Cxt
-bindings = map (Assigned <<< mono)
+bindings = map Assigned
 
 resolveType :: Cxt -> S.TypeExpr -> CheckM T.Type
 resolveType cxt (S.PrimitiveTy ν) = T.PrimitiveTy ν <$ predefName cxt (T.primitiveName ν)
@@ -629,7 +629,7 @@ className cxt e = asName e >>= \c -> case resolveName cxt c of
 
 schemeOf :: Cxt -> S.Expr -> Maybe (List Var × T.Type)
 schemeOf cxt e = asName e >>= resolveName cxt >>= case _ of
-   Assigned (Forall αs@(_ : _) σ) -> Just (αs × σ)
+   TypeScheme (Forall αs σ) -> Just (NEL.toList αs × σ)
    _ -> Nothing
 
 nameExpr :: Cxt -> S.Expr -> CheckM E.Expr
@@ -717,14 +717,15 @@ positionaliseKw xs c n xbs = do
 param :: Int -> Var
 param i = "$" <> show i
 
-defSignature :: Cxt -> S.Branch -> CheckM T.Scheme
+defSignature :: Cxt -> S.Branch -> CheckM (T.Type + T.Scheme)
 defSignature cxt (_ × S.Clause (αs × ps × ψ × _)) =
-   Forall αs <$> (T.CallableTy <$> traverse (\(S.Param _ ψ') -> resolveType cxt_αs ψ') ps <*> resolveType cxt_αs ψ)
+   scheme <$> (T.CallableTy <$> traverse (\(S.Param _ ψ') -> resolveType cxt_αs ψ') ps <*> resolveType cxt_αs ψ)
    where
    cxt_αs = cxt `override` typeParams αs
+   scheme σ = maybe (Left σ) (\αs' -> Right (Forall αs' σ)) (NEL.fromList αs)
 
-defBody :: Cxt -> Var -> T.Scheme -> S.Clause -> CheckM (List (S.Pattern × Maybe T.Type) × Maybe T.Type × E.Stmt)
-defBody cxt f (Forall _ (T.CallableTy σs τ)) (S.Clause (αs × ps × ψ × s)) = do
+defBody :: Cxt -> Var -> T.Type -> S.Clause -> CheckM (List (S.Pattern × Maybe T.Type) × Maybe T.Type × E.Stmt)
+defBody cxt f (T.CallableTy σs τ) (S.Clause (αs × ps × ψ × s)) = do
    let cxt_αs = cxt `override` typeParams αs
    let xs = unions (bv <$> ps)
    when (length ps /= length σs) $ throwError "Clauses differ in number of parameters"
@@ -778,8 +779,8 @@ clauses cs = do
 
 varType :: Cxt -> Var -> CheckM T.Type
 varType cxt x = case lookup x cxt of
-   Just (Assigned (Forall Nil τ)) -> pure τ
-   Just (Assigned _) -> throwError $ "Type arguments of " <> x <> " cannot be inferred"
+   Just (Assigned τ) -> pure τ
+   Just (TypeScheme _) -> throwError $ "Type arguments of " <> x <> " cannot be inferred"
    Just (Type c) -> do
       αs <- classTable <#> \classes -> (get c classes).typeParams
       unless (null αs) $ throwError $ "Type arguments of class " <> x <> " cannot be inferred"
@@ -797,6 +798,7 @@ assignable cxt x = case lookup x cxt of
    Just (Declared _) -> pure unit
    Just Unbound -> pure unit
    Just (Assigned _) -> throwError $ "Already initialised: " <> x
+   Just (TypeScheme _) -> throwError $ "Already initialised: " <> x
    Just (PossiblyUnassigned _) -> throwError $ "Possibly initialised already: " <> x
    Just θ -> throwError $ "Reassigned " <> kind θ <> " name: " <> x
    Nothing -> error absurd

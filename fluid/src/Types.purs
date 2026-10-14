@@ -5,7 +5,8 @@ import Prim hiding (Type)
 
 import Bind (Name, Var)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), length, zip, (:))
+import Data.List (List, length, zip, (:))
+import Data.List.NonEmpty (NonEmptyList)
 import Data.Map (fromFoldable, lookup)
 import Data.Maybe (fromMaybe)
 import Data.Set (Set, empty, singleton, union, unions)
@@ -36,11 +37,7 @@ data Type
    | TypeTy Type -- class as value
    | UnionTy Type Type
 
--- Type scheme; monomorphic without type parameters
-data Scheme = Forall (List Var) Type
-
-mono :: Type -> Scheme
-mono = Forall Nil
+data Scheme = Forall (NonEmptyList Var) Type
 
 primitiveName :: Primitive -> String
 primitiveName Object = "object"

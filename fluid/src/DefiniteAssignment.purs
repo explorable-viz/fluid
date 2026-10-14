@@ -8,17 +8,19 @@ import Data.List.NonEmpty (unsnoc)
 import Data.List.NonEmpty as NEL
 import Data.List (List)
 import Data.Map (Map)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Types (Scheme, Type, mono) as T
-import Util (absurd, error)
+import Types (Scheme, Type) as T
+import Util (type (+), absurd, error)
 import Util.Map (intersectionWith, lookup, unionWith)
 import Util.Set ((∪))
 
 data Entry
    = Unbound -- declared later in scope
    | Declared T.Type -- definitely unassigned
-   | PossiblyUnassigned T.Scheme
-   | Assigned T.Scheme
+   | PossiblyUnassigned (T.Type + T.Scheme)
+   | Assigned T.Type
+   | TypeScheme T.Scheme
    | Type Name -- class, by fully-qualified name
    | Mod Name
    | ModChecked Name Cxt
@@ -47,9 +49,10 @@ merge cxt cxt' = intersectionWith mergeEntry cxt cxt' ∪ (possiblyUnassigned <$
    where
    mergeEntry θ θ' = if θ == θ' then θ else possiblyUnassigned θ
 
-   possiblyUnassigned (Declared τ) = PossiblyUnassigned (T.mono τ)
+   possiblyUnassigned (Declared τ) = PossiblyUnassigned (Left τ)
    possiblyUnassigned (PossiblyUnassigned π) = PossiblyUnassigned π
-   possiblyUnassigned (Assigned π) = PossiblyUnassigned π
+   possiblyUnassigned (Assigned τ) = PossiblyUnassigned (Left τ)
+   possiblyUnassigned (TypeScheme π) = PossiblyUnassigned (Right π)
    possiblyUnassigned _ = error absurd
 
 overrideRes :: WfResult Cxt -> WfResult Cxt -> WfResult Cxt
@@ -77,6 +80,7 @@ resolveName cxt name = case NEL.fromList init of
    { init, last: x } = unsnoc name
    simpleEntry g y = case lookup y g of
       Just e@(Assigned _) -> Just e
+      Just e@(TypeScheme _) -> Just e
       Just e@(ModChecked _ _) -> Just e
       Just e@(Type _) -> Just e
       Just e@TypeVar -> Just e
