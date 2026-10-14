@@ -142,16 +142,12 @@ def foldr[A, B](op: Callable[[A, B], B], z: B, xs: list[A]) -> B:
 def foldr1[A](op: Callable[[A, A], A], xs: list[A]) -> A:
   return foldr(op, xs[-1], take(len(xs) - 1, xs))
 
-def scanl1[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> list[A]:
+def scanl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> list[A]:
   def go(x: B, continue: Callable[[A], list[A]]) -> Callable[[A], list[A]]:
     def step(acc: A) -> list[A]:
-      next: A = op(acc, x)
-      return [next] + continue(next)
+      return [acc] + continue(op(acc, x))
     return step
-  return foldr(go, lambda _: [], xs)(z)
-
-def scanl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> list[A]:
-  return [z] + scanl1(op, z, xs)
+  return foldr(go, lambda acc: [acc], xs)(z)
 
 def map[A, B](f: Callable[[A], B], xs: list[A]) -> list[B]:
   return [f(x) for x in xs]

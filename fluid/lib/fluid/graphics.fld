@@ -318,8 +318,8 @@ def rects(colours: Colours, ns: list[float]) -> list[GraphicsElement]:
 # Can we use Group instead of Viewport here?
 def stacked_bar(colours: Colours, ns: list[tuple[Cat, float]]) -> GraphicsElement:
   heights: list[float] = [h for (_, h) in ns]
-  subtotals: list[float] = scanl1(lambda x, y: x + y, 0.0, heights)
-  dims: list[tuple[float, float]] = zip([0.0] + subtotals, heights)
+  subtotals: list[float] = scanl(lambda x, y: x + y, 0.0, heights)
+  dims: list[tuple[float, float]] = zip(subtotals, heights)
   bars: list[GraphicsElement] = [Rect(x=0, y=y, width=1, height=height, fill=colour) for ((y, height), colour) in zip(dims, colours)]
 
   return Viewport(x=0, y=0, width=1, height=subtotals[-1], fill="none", margin=0, scale=Scale(1, 1), translate=Translate(0, 0), g=Group(bars))
