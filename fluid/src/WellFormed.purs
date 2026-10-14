@@ -229,7 +229,8 @@ checkStmt cxt _ (S.DefRec ds) = do
    let cxt' = cxt `override` cxt_fs
    defs' <- for (NEL.zip defs fπs) \(def × (f × π)) -> do
       void $ wellFormedPatterns cxt' (def <#> \(_ × S.Clause (_ × ps × _)) -> S.PList (ps <#> \(S.Param p _) -> p))
-      within ("definition of " <> f) $ (f ↦ _) <$> (traverse (defBody cxt' f (either identity (\(Forall _ σ) -> σ) π) <<< snd) def >>= clauses)
+      within ("definition of " <> f) $
+         (f ↦ _) <$> (traverse (defBody cxt' f (either identity (\(Forall _ σ) -> σ) π) <<< snd) def >>= clauses)
    pure (Assigns cxt_fs × E.DefRec (E.RecDefs (D.fromFoldable defs')))
 checkStmt cxt ζ (S.Seq s1 s2) = do
    r1 × s1' <- checkStmt cxt ζ s1
