@@ -14,7 +14,7 @@ import Data.Foldable (sum)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Newtype (class Newtype)
 import DataType (f_segments)
-import Types.Util (cStackedBar)
+import Types.Defs (cStackedBar)
 import Effect (Effect)
 import Util ((!))
 

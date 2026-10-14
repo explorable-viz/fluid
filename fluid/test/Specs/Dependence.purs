@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util.Selector (dict, dictKey, dictVal, listElement, list, matrixElement, select, tupleElement, select', (>.>))
 import DataType (f_fragments)
-import Types.Util (cParagraph)
+import Types.Defs (cParagraph)
 import Test.Util (DepSpec, Query(..), VertexSpec(..))
 
 dep_cases :: Array DepSpec

@@ -9,7 +9,7 @@ import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
 import DataType (FieldName, f_segments, f_z)
-import Types.Util (cSegment, cStackedBar)
+import Types.Defs (cSegment, cStackedBar)
 import Lattice (class Neg, 𝔹, neg)
 import Data.Maybe (Maybe(..))
 import Partial.Unsafe (unsafePartial)

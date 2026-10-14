@@ -33,7 +33,7 @@ import Data.Traversable (for, traverse)
 import Data.Lazy (defer, force)
 import Data.Tuple (fst, snd)
 import DataType (ClassTable, askClasses, fields)
-import Types.Util (cMatrix, cRange, callable, matrix, var)
+import Types.Defs (cMatrix, cRange, callable, matrix, var)
 import DefiniteAssignment (Entry(..)) as Entry
 import DefiniteAssignment (Cxt, Entry(Assigned), generalise)
 import Dict (fromFoldable) as D
@@ -50,7 +50,7 @@ import ModuleGraph (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
 import Types (Primitive(..), Type(..), baseType) as T
-import Types.Util (float, int, intPair, none, object, str) as T
+import Types.Defs (float, int, intPair, none, object, str) as T
 import Util.Map (lookup, unionWith_never, (\\))
 import Util.Map as Dict
 import Util.Map as Map

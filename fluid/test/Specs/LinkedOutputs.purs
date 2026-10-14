@@ -3,7 +3,7 @@ module Test.Specs.LinkedOutputs where
 import App.Util.Selector (barSegment, eachElement, envVal, field, valOf, listElement, matrixDims, matrixElement, none, topα, tupleElement, (>.>), select, select')
 import Data.Maybe (Maybe(..))
 import DataType (f_plots, f_points, f_stackedBars, f_views, f_y)
-import Types.Util (cBarChart, cLineChart, cLinePlot, cMultiView, cPoint, cScatterPlot)
+import Types.Defs (cBarChart, cLineChart, cLinePlot, cMultiView, cPoint, cScatterPlot)
 import Test.Util (at, fluidSrcPaths)
 import Test.Util.Suite (TestLinkedOutputsSpec)
 

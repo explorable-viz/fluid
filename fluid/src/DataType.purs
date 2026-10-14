@@ -22,7 +22,7 @@ import Data.Traversable (sequence)
 import Data.Tuple (fst)
 import Effect.Exception (Error)
 import Types (Primitive(..), Type(..), baseType, fv, subst, subterms)
-import Types.Util (cRange, int, never, object, str)
+import Types.Defs (cRange, int, never, object, str)
 import Util (type (×), absurd, error, throw, (×), (∩))
 import Util.Map (get, lookup)
 

@@ -4,7 +4,7 @@ import Prelude hiding (absurd, append)
 
 import Bind (Name, Var)
 import DataType (class HasClasses)
-import Types.Util (cRange)
+import Types.Defs (cRange)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Except (ExceptT)

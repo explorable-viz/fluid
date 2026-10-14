@@ -13,7 +13,7 @@ import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
 import DataType (f_stackedBars)
-import Types.Util (cBarChart)
+import Types.Defs (cBarChart)
 import Data.Array (range)
 import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
 import Data.Foldable (length)

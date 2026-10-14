@@ -14,7 +14,7 @@ import Expr (Binop(..), Unop(..))
 import Literal as L
 import Parsing.Expr (Assoc(..))
 import Types (Type(..), baseType)
-import Types.Util (bool, float, int, str)
+import Types.Defs (bool, float, int, str)
 import Util (type (×), definitely', whenever, (×))
 
 data Operator = Binary Binop | Unary Unop | AndOp | OrOp | InfixOp

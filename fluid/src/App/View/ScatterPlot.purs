@@ -10,7 +10,7 @@ import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
 import DataType (f_points)
-import Types.Util (cScatterPlot)
+import Types.Defs (cScatterPlot)
 import Data.Array (length, range)
 import Data.Foldable (maximum, minimum)
 import Data.FoldableWithIndex (forWithIndex_)

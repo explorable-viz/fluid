@@ -1,4 +1,4 @@
-module Types.Util where
+module Types.Defs where
 
 import Prim hiding (Type)
 
