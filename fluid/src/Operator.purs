@@ -163,6 +163,7 @@ equalityType classes = go Nil
    where
    go :: List Name -> Type -> Boolean
    go _ (CallableTy _ _) = false
+   go _ (VarTy _) = false
    go cs (ListTy σ) = go cs σ
    go cs (DictTy σ) = go cs σ
    go cs (TupleTy τs) = all (go cs) τs
