@@ -110,7 +110,7 @@ writeManifests root@(Folder dir) = do
    where
    -- proper prefixes of a path
    directories :: File -> Array (Maybe String)
-   directories (File path) = Array.range 1 (Array.length segments - 1) <#> \n -> Just (joinWith "/" (Array.take n segments))
+   directories (File path) = Array.range 1 (Array.length segments) # Array.dropEnd 1 <#> \n -> Just (joinWith "/" (Array.take n segments))
       where
       segments = split (Pattern "/") path
 
