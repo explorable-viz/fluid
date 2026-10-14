@@ -74,7 +74,6 @@ predefined = M.fromFoldable
         [ cRange, cMatrix ]
         [ extern print_ × generalise (callable [ T.object ] T.none)
         , extern len × generalise (callable [ T.PrimitiveTy T.Sized ] T.int)
-        -- Fluid-only members, without spec counterpart
         , extern dims × generalise (callable [ matrix (var "T") ] T.intPair)
         , extern loadJson × generalise (callable [ T.TypeTy (var "T"), T.str ] (var "T"))
         , unary "str_to_float" { i: string, o: number, fwd: definitely' <<< fromString } × generalise (callable [ T.str ] T.float)
