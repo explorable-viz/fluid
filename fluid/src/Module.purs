@@ -152,7 +152,7 @@ prepModules imports action = do
       lift (orThrow (runCheckM action mods names (fst <$> predefined) predefinedClasses))
    pure { result, modules: Map.mapMaybe _.mod checked, classes }
 
--- Names of modules with source under source roots, and of packages containing them
+-- Names of modules with source under source roots, and of their containing modules
 moduleNames :: FileCxt -> Set ModuleName
 moduleNames (FileCxt { fluidSrcPaths, manifests }) = Set.fromFoldable (qs >>= \q -> q : parents q)
    where
@@ -183,7 +183,7 @@ parseModules imports = do
    let roots = implicit <> (deps >>= _.load)
    moduleDeps × mods <- collectModules Set.empty Map.empty Map.empty roots
    lift (orThrow (checkAcyclic moduleDeps (deps >>= _.edges)))
-   -- prefix-closed: a package with no source file of its own is an empty module
+   -- every containing module of a loaded module is present, and is empty if it has no source file
    let ancestors = Set.fromFoldable ((Set.toUnfoldable (Map.keys mods) :: List ModuleName) >>= parents)
    pure (mapWithKey (\q (S.Module ιs s) -> S.Module ιs (named q s)) (mods `Map.union` constMap (S.Module Nil S.Pass) ancestors))
 
