@@ -34,6 +34,7 @@ illFormed_cases =
    , { file: "submodule_self_import.fld", expected_error: "import cycle: 'ssi.b' -> 'ssi.b'" }
    , { file: "subscript_matrix_out_of_range.fld", expected_error: "Index (2, 0) out of range" }
    , { file: "subscript_non_dict.fld", expected_error: "Values of type ~__main__.Point cannot be subscripted" }
+   , { file: "unreachable_clause.fld", expected_error: "clause f(b) is unreachable\nChecking definition of 'f'" }
    , { file: "use_before_import.fld", expected_error: "ParseError on line 2, column 6: imports must precede statements\nLoading module 'use_before_import_mod'" }
    ]
 

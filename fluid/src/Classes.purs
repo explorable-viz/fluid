@@ -64,28 +64,33 @@ fieldsAt classes c τs = rmap (subst τs (get c classes).typeParams) <$> fields 
 data Instance = Instance (List Type) | Undetermined
 
 instanceAt :: ClassTable -> Name -> Type -> Maybe Instance
-instanceAt classes c τ = instanceAbove τ <|> instanceBelow τ
+instanceAt classes c τ = instanceAbove classes c τ <|> instanceBelow classes c τ
+
+instanceAbove :: ClassTable -> Name -> Type -> Maybe Instance
+instanceAbove classes c (ClassTy d τs) | c `elem` ancestors classes d = Just (Instance (ancestorArgs classes d τs c))
+instanceAbove classes c (PrimitiveTy Never) = Just (monomorphic classes c)
+instanceAbove _ _ _ = Nothing
+
+-- Instance of c below τ; undetermined if instantiations below τ are not all equivalent
+instanceBelow :: ClassTable -> Name -> Type -> Maybe Instance
+instanceBelow classes c (ClassTy d σs) | d `elem` ancestors classes c =
+   case filter solves candidates of
+      Nil -> Nothing
+      τs : τss
+         | F.all (F.and <<< zipWith (equiv classes) τs) τss -> Just (Instance τs)
+         | otherwise -> Just Undetermined
    where
    αs = (get c classes).typeParams
-   monomorphic = if null αs then Instance Nil else Undetermined
+   ρs = ancestorArgs classes c (VarTy <$> αs) d
+   atoms = nubEq (object : (σs >>= subterms))
+   candidates = sequence (αs <#> \_ -> joins classes <$> subsets atoms)
+   solves τs = F.and (zipWith (\ρ σ -> equiv classes (subst τs αs ρ) σ) ρs σs)
+instanceBelow classes c (PrimitiveTy Object) = Just (monomorphic classes c)
+instanceBelow _ _ _ = Nothing
 
-   instanceAbove (ClassTy d τs) | c `elem` ancestors classes d = Just (Instance (ancestorArgs classes d τs c))
-   instanceAbove (PrimitiveTy Never) = Just monomorphic
-   instanceAbove _ = Nothing
-
-   instanceBelow (ClassTy d σs) | d `elem` ancestors classes c =
-      case filter solves candidates of
-         Nil -> Nothing
-         τs : τss
-            | F.all (F.and <<< zipWith (equiv classes) τs) τss -> Just (Instance τs)
-            | otherwise -> Just Undetermined
-      where
-      ρs = ancestorArgs classes c (VarTy <$> αs) d
-      atoms = nubEq (object : (σs >>= subterms))
-      candidates = sequence (αs <#> \_ -> joins classes <$> subsets atoms)
-      solves τs = F.and (zipWith (\ρ σ -> equiv classes (subst τs αs ρ) σ) ρs σs)
-   instanceBelow (PrimitiveTy Object) = Just monomorphic
-   instanceBelow _ = Nothing
+-- Instance of c at object or Never, determined only if c has no type parameters
+monomorphic :: ClassTable -> Name -> Instance
+monomorphic classes c = if null (get c classes).typeParams then Instance Nil else Undetermined
 
 subsets :: forall a. List a -> List (List a)
 subsets = filterM (const (false : true : Nil))

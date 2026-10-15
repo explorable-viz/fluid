@@ -230,23 +230,23 @@ instance Pretty Stmt where
 
 instance Pretty TypeExpr where
    pretty (PrimitiveTy ν) = pretty ν
-   pretty (ListTy ψ) = text "list" <> brackets (pretty ψ)
-   pretty (TupleTy ψs) = text "tuple" <> brackets (prettyList ψs)
-   pretty (DictTy ψ) = text "dict" <> brackets (text "str," <+> pretty ψ)
-   pretty (CallableTy ψs ψ) = text "Callable" <> brackets (brackets (prettyList ψs) <> text "," <+> pretty ψ)
-   pretty (TypeTy ψ) = text "type" <> brackets (pretty ψ)
-   pretty (LitTy ℓ) = text "Literal" <> brackets (pretty ℓ)
+   pretty (ListTy ψ) = typeCtr T.ListCtr <> brackets (pretty ψ)
+   pretty (TupleTy ψs) = typeCtr T.TupleCtr <> brackets (prettyList ψs)
+   pretty (DictTy ψ) = typeCtr T.DictCtr <> brackets (pretty T.Str <> text "," <+> pretty ψ)
+   pretty (CallableTy ψs ψ) = typeCtr T.CallableCtr <> brackets (brackets (prettyList ψs) <> text "," <+> pretty ψ)
+   pretty (TypeTy ψ) = typeCtr T.TypeTyCtr <> brackets (pretty ψ)
+   pretty (LitTy ℓ) = typeCtr T.LiteralCtr <> brackets (pretty ℓ)
    pretty (NameTy q ψs) = text (dottedName q) <> typeArgs ψs
    pretty (UnionTy ψ ψ') = pretty ψ <+> text "|" <+> pretty ψ'
 
 instance Pretty T.Type where
    pretty (T.PrimitiveTy ν) = pretty ν
-   pretty (T.ListTy τ) = text "list" <> brackets (pretty τ)
-   pretty (T.TupleTy τs) = text "tuple" <> brackets (prettyList τs)
-   pretty (T.DictTy τ) = text "dict" <> brackets (text "str," <+> pretty τ)
-   pretty (T.CallableTy τs τ) = text "Callable" <> brackets (brackets (prettyList τs) <> text "," <+> pretty τ)
-   pretty (T.TypeTy τ) = text "type" <> brackets (pretty τ)
-   pretty (T.LitTy ℓ) = text "Literal" <> brackets (pretty ℓ)
+   pretty (T.ListTy τ) = typeCtr T.ListCtr <> brackets (pretty τ)
+   pretty (T.TupleTy τs) = typeCtr T.TupleCtr <> brackets (prettyList τs)
+   pretty (T.DictTy τ) = typeCtr T.DictCtr <> brackets (pretty T.Str <> text "," <+> pretty τ)
+   pretty (T.CallableTy τs τ) = typeCtr T.CallableCtr <> brackets (brackets (prettyList τs) <> text "," <+> pretty τ)
+   pretty (T.TypeTy τ) = typeCtr T.TypeTyCtr <> brackets (pretty τ)
+   pretty (T.LitTy ℓ) = typeCtr T.LiteralCtr <> brackets (pretty ℓ)
    pretty (T.VarTy α) = text α
    pretty (T.ClassTy c τs) = text "~" <> text (dottedName c) <> typeArgs τs
    pretty (T.UnionTy σ τ) = pretty σ <+> text "|" <+> pretty τ
@@ -257,6 +257,9 @@ typeArgs xs = brackets (prettyList xs)
 
 instance Pretty (NonEmptyList String) where
    pretty = text <<< dottedName
+
+typeCtr :: T.TypeCtr -> Doc
+typeCtr = text <<< T.typeCtrName
 
 instance Pretty T.Primitive where
    pretty = text <<< T.primitiveName

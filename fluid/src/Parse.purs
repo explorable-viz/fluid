@@ -15,6 +15,7 @@ import Data.Foldable (any, foldl)
 import Data.Identity (Identity)
 import Data.List (List(..), dropWhile, nub, (:))
 import Data.List.NonEmpty (NonEmptyList(..), cons, toList)
+import Data.Map (lookup)
 import Data.Maybe (Maybe(..), maybe)
 import Data.NonEmpty ((:|))
 import Data.String (codePointFromChar)
@@ -33,7 +34,7 @@ import Parsing.String (eof, satisfy)
 import Operator (Operator(..), assoc, binopSymbol, levels, unopSymbol)
 import Expr (Binop(..), Pattern(..))
 import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), RecDefs, Stmt(..), TypeExpr(..), VarDef(..), VarDefs)
-import Types (Primitive(..)) as T
+import Types (Primitive(..), TypeCtr(..), primitiveName, primitives, typeCtrs) as T
 import Util (MayFail, type (+), type (×), nonEmpty, singleton, (×))
 
 pattern :: Parser Pattern
@@ -108,22 +109,18 @@ typeExpr = defer \_ -> do
    typeAtom = defer \_ -> (reserved "None" $> PrimitiveTy T.None) <|> (qualifiedName >>= namedType)
 
    namedType :: Name -> Parser TypeExpr
-   namedType (NonEmptyList (x :| Nil)) = case x of
-      "Never" -> pure (PrimitiveTy T.Never)
-      "Sized" -> pure (PrimitiveTy T.Sized)
-      "Callable" -> brackets (CallableTy <$> brackets (commas typeExpr) <* delim ',' <*> typeExpr)
-      "Literal" -> LitTy <$> brackets literal
-      "object" -> pure (PrimitiveTy T.Object)
-      "bool" -> pure (PrimitiveTy T.Bool)
-      "int" -> pure (PrimitiveTy T.Int)
-      "float" -> pure (PrimitiveTy T.Float)
-      "str" -> pure (PrimitiveTy T.Str)
-      "list" -> ListTy <$> brackets typeExpr
-      "tuple" -> TupleTy <$> brackets ((delim '(' *> delim ')' $> Nil) <|> commas typeExpr)
-      "dict" -> brackets (reserved "str" *> delim ',' *> (DictTy <$> typeExpr))
-      "type" -> TypeTy <$> brackets typeExpr
-      _ -> NameTy (singleton x) <$> typeArgs
+   namedType (NonEmptyList (x :| Nil))
+      | Just π <- lookup x T.primitives = pure (PrimitiveTy π)
+      | Just c <- lookup x T.typeCtrs = ctrApp c
    namedType q = NameTy q <$> typeArgs
+
+   ctrApp :: T.TypeCtr -> Parser TypeExpr
+   ctrApp T.ListCtr = ListTy <$> brackets typeExpr
+   ctrApp T.DictCtr = brackets (reserved (T.primitiveName T.Str) *> delim ',' *> (DictTy <$> typeExpr))
+   ctrApp T.TupleCtr = TupleTy <$> brackets ((delim '(' *> delim ')' $> Nil) <|> commas typeExpr)
+   ctrApp T.CallableCtr = brackets (CallableTy <$> brackets (commas typeExpr) <* delim ',' <*> typeExpr)
+   ctrApp T.TypeTyCtr = TypeTy <$> brackets typeExpr
+   ctrApp T.LiteralCtr = LitTy <$> brackets literal
 
    typeArgs :: Parser (List TypeExpr)
    typeArgs = defer \_ -> option Nil (brackets (commas typeExpr))
