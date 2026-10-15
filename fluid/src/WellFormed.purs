@@ -122,15 +122,13 @@ submodules _ _ = error absurd
 
 -- Bindings for names imported from module q with member context cxt.
 importedMembers :: ModuleName -> Cxt -> List Var -> CheckM Cxt
-importedMembers _ _ Nil = pure empty
-importedMembers q cxt (x : xs) = do
-   othersCxt <- importedMembers q cxt xs
-   case lookup x cxt of
-      Just (Mod q') -> checkModule q' <#> \cxt' -> insert x (ModChecked q' cxt') othersCxt
-      Just (Declared _) -> throwError $ "Not definitely initialised: " <> quoted x
-      Just (PossiblyUnassigned _) -> throwError $ "Not definitely initialised: " <> quoted x
-      Just θ -> pure (insert x θ othersCxt)
-      Nothing -> throwError $ "Cannot import name " <> quoted x <> " from module " <> quoted (dottedName q)
+importedMembers q cxt xs = Map.fromFoldable <$> for xs \x -> (x × _) <$> member x
+   where
+   member x = lookup x cxt # maybe (throwError $ "Cannot import name " <> quoted x <> " from module " <> quoted (dottedName q)) case _ of
+      Mod q' -> ModChecked q' <$> checkModule q'
+      Declared _ -> throwError $ "Not definitely initialised: " <> quoted x
+      PossiblyUnassigned _ -> throwError $ "Not definitely initialised: " <> quoted x
+      θ -> pure θ
 
 checkStatements :: Name -> Cxt -> Cxt -> S.Module -> CheckM (Cxt × E.Module)
 checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
