@@ -197,4 +197,4 @@ parseModules imports = do
             pure (mod × (deps >>= _.edges) × (implicitFor path <> (deps >>= _.load)))
          Nothing -> lift (hasDirectory fluidSrcPaths (File (pathName path))) >>= case _ of
             true -> pure (S.Module Nil S.Pass × Nil × Nil)
-            false -> lift (throw ("Module not found in any path: " <> dottedName path))
+            false -> lift (throw ("No module named " <> dottedName path))
