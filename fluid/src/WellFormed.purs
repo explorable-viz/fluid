@@ -124,11 +124,12 @@ submodules _ _ = error absurd
 importedMembers :: ModuleName -> Cxt -> List Var -> CheckM Cxt
 importedMembers q cxt xs = Map.fromFoldable <$> for xs \x -> (x × _) <$> member x
    where
-   member x = lookup x cxt # maybe (throwError $ "Cannot import name " <> quoted x <> " from module " <> quoted (dottedName q)) case _ of
+   member x = lookup x cxt # maybe (throwError $ notMember x) case _ of
       Mod q' -> ModChecked q' <$> checkModule q'
       Declared _ -> throwError $ "Not definitely initialised: " <> quoted x
       PossiblyUnassigned _ -> throwError $ "Not definitely initialised: " <> quoted x
       θ -> pure θ
+   notMember x = "Cannot import name " <> quoted x <> " from module " <> quoted (dottedName q)
 
 checkStatements :: Name -> Cxt -> Cxt -> S.Module -> CheckM (Cxt × E.Module)
 checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
@@ -335,13 +336,14 @@ instance Synth S.TypeExpr T.Type where
       Just (Type c) -> T.ClassTy c <$> classTypeArgs cxt c ψs
       Nothing -> throwError $ "Unbound name: " <> quoted (dottedName q)
       _ -> throwError $ "Not a class: " <> quoted (dottedName q)
-   synth cxt (S.LitTy ℓ) = T.LitTy ℓ <$ predefName cxt "Literal"
-   synth cxt (S.ListTy ψ) = predefName cxt "list" *> (T.ListTy <$> synth cxt ψ)
-   synth cxt (S.DictTy ψ) = predefName cxt "dict" *> predefName cxt "str" *> (T.DictTy <$> synth cxt ψ)
-   synth cxt (S.TupleTy ψs) = predefName cxt "tuple" *> (T.TupleTy <$> traverse (synth cxt) ψs)
+   synth cxt (S.LitTy ℓ) = T.LitTy ℓ <$ predefCtr cxt T.LiteralCtr
+   synth cxt (S.ListTy ψ) = predefCtr cxt T.ListCtr *> (T.ListTy <$> synth cxt ψ)
+   synth cxt (S.DictTy ψ) =
+      predefCtr cxt T.DictCtr *> predefName cxt (T.primitiveName T.Str) *> (T.DictTy <$> synth cxt ψ)
+   synth cxt (S.TupleTy ψs) = predefCtr cxt T.TupleCtr *> (T.TupleTy <$> traverse (synth cxt) ψs)
    synth cxt (S.CallableTy ψs ψ) =
-      predefName cxt "Callable" *> (T.CallableTy <$> traverse (synth cxt) ψs <*> synth cxt ψ)
-   synth cxt (S.TypeTy ψ) = predefName cxt "type" *> synth cxt ψ >>= \τ -> case τ of
+      predefCtr cxt T.CallableCtr *> (T.CallableTy <$> traverse (synth cxt) ψs <*> synth cxt ψ)
+   synth cxt (S.TypeTy ψ) = predefCtr cxt T.TypeTyCtr *> synth cxt ψ >>= \τ -> case τ of
       T.UnionTy _ _ -> excluded τ
       T.LitTy _ -> excluded τ
       T.CallableTy _ _ -> excluded τ
@@ -663,7 +665,8 @@ typeValue cxt e@(S.Subscript e' _) = do
    q <- asName e'
    guard case resolveName cxt q, q of
       Just (Type _), _ -> true
-      _, NonEmptyList (x :| Nil) -> lookup x cxt == Just PredefName && x `elem` [ "list", "dict", "tuple" ]
+      _, NonEmptyList (x :| Nil) ->
+         lookup x cxt == Just PredefName && maybe false (_ `elem` [ T.ListCtr, T.DictCtr, T.TupleCtr ]) (lookup x T.typeCtrs)
       _, _ -> false
    asTypeExpr e
 typeValue _ _ = Nothing
@@ -674,10 +677,10 @@ asTypeExpr (S.Subscript e e') = do
    ψs <- case e' of
       S.Tuple es -> traverse asTypeExpr es
       _ -> singleton <$> asTypeExpr e'
-   case dottedName q, ψs of
-      "list", ψ : Nil -> pure (S.ListTy ψ)
-      "dict", S.PrimitiveTy T.Str : ψ : Nil -> pure (S.DictTy ψ)
-      "tuple", _ -> pure (S.TupleTy ψs)
+   case lookup (dottedName q) T.typeCtrs, ψs of
+      Just T.ListCtr, ψ : Nil -> pure (S.ListTy ψ)
+      Just T.DictCtr, S.PrimitiveTy T.Str : ψ : Nil -> pure (S.DictTy ψ)
+      Just T.TupleCtr, _ -> pure (S.TupleTy ψs)
       _, _ -> pure (S.NameTy q ψs)
 asTypeExpr e = asName e <#> \q -> maybe (S.NameTy q Nil) S.PrimitiveTy (lookup (dottedName q) T.primitives)
 
@@ -686,12 +689,7 @@ asName (S.Var x) = Just (singleton x)
 asName (S.Attribute e y) = asName e <#> (_ <> singleton y)
 asName _ = Nothing
 
-checkQuals
-   :: forall b
-    . Cxt
-   -> List S.Qualifier
-   -> (Cxt -> CheckM b)
-   -> CheckM (b × List E.Qualifier)
+checkQuals :: forall b. Cxt -> List S.Qualifier -> (Cxt -> CheckM b) -> CheckM (b × List E.Qualifier)
 checkQuals cxt Nil body = (_ × Nil) <$> body cxt
 checkQuals cxt (g : gs) body = case g of
    S.Guard e -> do
@@ -828,6 +826,9 @@ kind (ModChecked _ _) = "module"
 kind PredefName = "predefined name"
 kind TypeVar = "type parameter"
 kind _ = "variable"
+
+predefCtr :: Cxt -> T.TypeCtr -> CheckM Unit
+predefCtr cxt = predefName cxt <<< T.typeCtrName
 
 predefName :: Cxt -> Var -> CheckM Unit
 predefName cxt x = case lookup x cxt of

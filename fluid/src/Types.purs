@@ -56,6 +56,26 @@ primitiveName Sized = "Sized"
 primitives :: Map String Primitive
 primitives = fromFoldable ((\π -> primitiveName π × π) <$> (upFromIncluding bottom :: List Primitive))
 
+data TypeCtr
+   = ListCtr
+   | DictCtr
+   | TupleCtr
+   | CallableCtr
+   | TypeTyCtr
+   | LiteralCtr
+
+typeCtrName :: TypeCtr -> String
+typeCtrName ListCtr = "list"
+typeCtrName DictCtr = "dict"
+typeCtrName TupleCtr = "tuple"
+typeCtrName CallableCtr = "Callable"
+typeCtrName TypeTyCtr = "type"
+typeCtrName LiteralCtr = "Literal"
+
+-- Type constructors by name
+typeCtrs :: Map String TypeCtr
+typeCtrs = fromFoldable ((\c -> typeCtrName c × c) <$> (upFromIncluding bottom :: List TypeCtr))
+
 baseType :: Type -> Type
 baseType (LitTy (L.Int _)) = PrimitiveTy Int
 baseType (LitTy (L.Float _)) = PrimitiveTy Float
@@ -112,6 +132,18 @@ instance Bounded Primitive where
    top = genericTop
 
 instance Enum Primitive where
+   succ = genericSucc
+   pred = genericPred
+
+derive instance Eq TypeCtr
+derive instance Ord TypeCtr
+derive instance Generic TypeCtr _
+
+instance Bounded TypeCtr where
+   bottom = genericBottom
+   top = genericTop
+
+instance Enum TypeCtr where
    succ = genericSucc
    pred = genericPred
 
