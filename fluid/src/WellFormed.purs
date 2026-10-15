@@ -5,12 +5,12 @@ import Prelude hiding (absurd, join)
 import Bind (Bind, Name, Var, dottedName, properPrefixOf, varThis, (↦))
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Reader (ReaderT, ask, mapReaderT, runReaderT)
-import Control.Monad.State (StateT, gets, mapStateT, modify_, runStateT)
+import Control.Monad.State (StateT(..), evalStateT, gets, mapStateT, modify_, runStateT)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
 import Control.MonadPlus (guard)
-import Data.Foldable (all, and, elem, find, foldM, foldl, for_)
+import Data.Foldable (all, and, elem, find, foldM, foldl, for_, intercalate)
 import Data.Function (on)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
@@ -240,8 +240,8 @@ checkStmt cxt _ (S.DefRec ds) = do
    let cxt' = cxt `override` cxt_fs
    defs' <- for (NEL.zip defs fπs) \(def × (f × π)) -> within ("definition of " <> quoted f) do
       let σ = either identity (\(Forall _ σ') -> σ') π
-      cs <- traverse (\b -> check cxt' b σ) def
-      reachableClauses σ (cs <#> \(ps × _) -> fst <$> ps)
+      classes <- classTable
+      cs <- evalStateT (traverse (\b -> StateT \ls -> check cxt' b (σ × ls)) def) (argShapes classes σ)
       (f ↦ _) <$> clauses cs
    pure (Assigns cxt_fs × E.DefRec (E.RecDefs (D.fromFoldable defs')))
 checkStmt cxt ζ (S.Seq s1 s2) = do
@@ -746,36 +746,34 @@ instance Synth S.Branch (T.Type + T.Scheme) where
       cxt_αs = cxt `override` typeParams αs
       scheme σ = maybe (Left σ) (\αs' -> Right (Forall αs' σ)) (NEL.fromList αs)
 
-instance Check S.Branch T.Type (List (S.Pattern × Maybe T.Type) × Maybe T.Type × E.Stmt) where
-   check cxt (f × S.Clause (αs × ps × ψ × s)) (T.CallableTy σs τ) = do
+-- Clause against function type and residual of earlier clauses
+instance
+   Check S.Branch (T.Type × List Shape) ((List (S.Pattern × Maybe T.Type) × Maybe T.Type × E.Stmt) × List Shape) where
+   check cxt (f × S.Clause (αs × ps × ψ × s)) (T.CallableTy σs τ × ls) = do
       when (length ps /= length σs) $ throwError "Clauses differ in number of parameters"
       distinctVars (ps <#> \(S.Param p _) -> p)
       ps' <- for ps \(S.Param p ψ') -> (×) <$> pattern cxt p <*> (Just <$> synth cxt_αs ψ')
       cxt_p <- check cxt (fst <$> ps') σs
+      classes <- classTable
+      _ × ls' <- matchesShapes classes ls (S.PTuple (fst <$> ps')) # maybe (throwError unreachable) pure
       τ' <- Just <$> synth cxt_αs ψ
       cxt_s <- scope "parameter" (unions (bv <$> ps)) s
       r × s' <- checkStmt (cxt_αs `override` bindings cxt_p `override` cxt_s) (Just τ) s
-      classes <- classTable
       case r of
          Assigns _ | not (equiv classes τ none) ->
             throwError $ quoted f <> " declares result type " <> prettyP τ <> " but does not always return"
-         _ -> pure (ps' × τ' × close r s')
+         _ -> pure ((ps' × τ' × close r s') × ls')
       where
       cxt_αs = cxt `override` typeParams αs
+      unreachable = "clause " <> f <> "(" <> intercalate ", " (ps <#> \(S.Param p _) -> prettyP p) <> ") is unreachable"
       -- Body that may fall through returns None
       close Returns s' = s'
       close (Assigns _) s' = E.Seq s' (E.Return (E.Lit None))
    check _ _ _ = error absurd
 
--- Each clause matching some arguments not matched by an earlier clause
-reachableClauses :: T.Type -> NonEmptyList (List S.Pattern) -> CheckM Unit
-reachableClauses (T.CallableTy σs _) pss = do
-   classes <- classTable
-   void $ foldM (residual classes) (shapes classes (T.TupleTy σs) Nil) (mapWithIndex (×) (NEL.toList pss))
-   where
-   residual classes ls (i × ps) =
-      snd <$> matchesShapes classes ls (S.PTuple ps) # maybe (throwError $ "clause " <> show (i + 1) <> " is unreachable") pure
-reachableClauses _ _ = error absurd
+argShapes :: ClassTable -> T.Type -> List Shape
+argShapes classes (T.CallableTy σs _) = shapes classes (T.TupleTy σs) Nil
+argShapes _ _ = error absurd
 
 -- Clauses over k parameters as a function of k parameters. A parameter column that is the same variable in
 -- every clause is a parameter of that name; the remaining columns are matched together, as nested pairs when
