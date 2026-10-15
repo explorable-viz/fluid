@@ -64,11 +64,12 @@ fieldsAt classes c τs = rmap (subst τs (get c classes).typeParams) <$> fields 
 data Instance = Instance (List Type) | Undetermined
 
 instanceAt :: ClassTable -> Name -> Type -> Maybe Instance
-instanceAt classes c τ = instanceAbove τ <|> instanceBelow classes c τ
-   where
-   instanceAbove (ClassTy d τs) | c `elem` ancestors classes d = Just (Instance (ancestorArgs classes d τs c))
-   instanceAbove (PrimitiveTy Never) = Just (monomorphic classes c)
-   instanceAbove _ = Nothing
+instanceAt classes c τ = instanceAbove classes c τ <|> instanceBelow classes c τ
+
+instanceAbove :: ClassTable -> Name -> Type -> Maybe Instance
+instanceAbove classes c (ClassTy d τs) | c `elem` ancestors classes d = Just (Instance (ancestorArgs classes d τs c))
+instanceAbove classes c (PrimitiveTy Never) = Just (monomorphic classes c)
+instanceAbove _ _ _ = Nothing
 
 -- Instance of c below τ; undetermined if instantiations below τ are not all equivalent
 instanceBelow :: ClassTable -> Name -> Type -> Maybe Instance
