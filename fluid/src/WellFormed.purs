@@ -803,30 +803,28 @@ clauses cs = E.Def (fst <$> named) body
    sharedVar _ = Nothing
 
 varType :: Cxt -> Var -> CheckM T.Type
-varType cxt x = case lookup x cxt of
-   Just (Assigned τ) -> pure τ
-   Just (TypeScheme _) -> throwError $ "Type arguments of " <> quoted x <> " cannot be inferred"
-   Just (Type c) -> do
+varType cxt x = lookup x cxt # maybe (throwError $ "Unbound name: " <> quoted x) case _ of
+   Assigned τ -> pure τ
+   TypeScheme _ -> throwError $ "Type arguments of " <> quoted x <> " cannot be inferred"
+   Type c -> do
       αs <- classTable <#> \classes -> (get c classes).typeParams
       unless (null αs) $ throwError $ "Type arguments of class " <> quoted x <> " cannot be inferred"
       pure (T.TypeTy (T.ClassTy c Nil))
-   Just Unbound -> throwError $ "Declared later in scope: " <> quoted x
-   Just (Declared _) -> throwError $ "Declared but not initialised: " <> quoted x
-   Just (PossiblyUnassigned _) -> throwError $ "Possibly uninitialised: " <> quoted x
-   Just (Mod q) -> throwError $ "module " <> quoted (dottedName q) <> " is not a value"
-   Just (ModChecked q _) -> throwError $ "module " <> quoted (dottedName q) <> " is not a value"
-   Just θ -> throwError $ kind θ <> " " <> quoted x <> " is not a value"
-   Nothing -> throwError $ "Unbound name: " <> quoted x
+   Unbound -> throwError $ "Declared later in scope: " <> quoted x
+   Declared _ -> throwError $ "Declared but not initialised: " <> quoted x
+   PossiblyUnassigned _ -> throwError $ "Possibly uninitialised: " <> quoted x
+   Mod q -> throwError $ "module " <> quoted (dottedName q) <> " is not a value"
+   ModChecked q _ -> throwError $ "module " <> quoted (dottedName q) <> " is not a value"
+   θ -> throwError $ kind θ <> " " <> quoted x <> " is not a value"
 
 assignable :: Cxt -> Var -> CheckM Unit
-assignable cxt x = case lookup x cxt of
-   Just (Declared _) -> pure unit
-   Just Unbound -> pure unit
-   Just (Assigned _) -> throwError $ "Already initialised: " <> quoted x
-   Just (TypeScheme _) -> throwError $ "Already initialised: " <> quoted x
-   Just (PossiblyUnassigned _) -> throwError $ "Possibly initialised already: " <> quoted x
-   Just θ -> throwError $ "Reassigned " <> kind θ <> " name: " <> quoted x
-   Nothing -> error absurd
+assignable cxt x = case get x cxt of
+   Declared _ -> pure unit
+   Unbound -> pure unit
+   Assigned _ -> throwError $ "Already initialised: " <> quoted x
+   TypeScheme _ -> throwError $ "Already initialised: " <> quoted x
+   PossiblyUnassigned _ -> throwError $ "Possibly initialised already: " <> quoted x
+   θ -> throwError $ "Reassigned " <> kind θ <> " name: " <> quoted x
 
 unbound :: Cxt -> Var -> CheckM Unit
 unbound cxt x = case lookup x cxt of
