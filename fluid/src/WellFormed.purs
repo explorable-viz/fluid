@@ -8,13 +8,11 @@ import Control.Monad.Reader (ReaderT, ask, mapReaderT, runReaderT)
 import Control.Monad.State (StateT, gets, mapStateT, modify_, runStateT)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..), either, hush)
+import Data.Either (Either(..), either)
 import Control.MonadPlus (guard)
 import Data.Foldable (all, and, elem, find, foldM, foldl, for_)
 import Data.Function (on)
-import Data.FoldableWithIndex (forWithIndex_)
 import Data.FunctorWithIndex (mapWithIndex)
-import Data.TraversableWithIndex (forWithIndex)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.List (List(..), drop, filter, index, take, intersect, length, mapMaybe, null, sort, transpose, updateAt, (:))
@@ -28,7 +26,8 @@ import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
-import Classes (ClassTable, Instance(..), ancestors, elemType, equiv, fieldMap, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
+import Shapes (Shape, matchesShapes, shapes)
+import Classes (ClassTable, Instance(..), elemType, equiv, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
 import Types.Defs (bool, cMatrix, cParagraph, cRange, int, intPair, matrix, never, none, object, str)
 import Cxt (Entry(..), Cxt, WfResult(..), classOf, extend, merge, override, resolveName)
 import Dict as D
@@ -239,10 +238,11 @@ checkStmt cxt _ (S.DefRec ds) = do
    fπs <- for defs \def -> (fst (head def) × _) <$> synth cxt (head def)
    let cxt_fs = Map.fromFoldable (fπs <#> \(f × π) -> f × either Assigned TypeScheme π)
    let cxt' = cxt `override` cxt_fs
-   defs' <- for (NEL.zip defs fπs) \(def × (f × π)) -> do
-      void $ wellFormedPatterns cxt' (def <#> \(_ × S.Clause (_ × ps × _)) -> S.PList (ps <#> \(S.Param p _) -> p))
-      within ("definition of " <> quoted f) $
-         (f ↦ _) <$> (traverse (\b -> check cxt' b (either identity (\(Forall _ σ) -> σ) π)) def >>= clauses)
+   defs' <- for (NEL.zip defs fπs) \(def × (f × π)) -> within ("definition of " <> quoted f) do
+      let σ = either identity (\(Forall _ σ') -> σ') π
+      cs <- traverse (\b -> check cxt' b σ) def
+      reachableClauses σ (cs <#> \(ps × _) -> fst <$> ps)
+      (f ↦ _) <$> clauses cs
    pure (Assigns cxt_fs × E.DefRec (E.RecDefs (D.fromFoldable defs')))
 checkStmt cxt ζ (S.Seq s1 s2) = do
    r1 × s1' <- checkStmt cxt ζ s1
@@ -262,21 +262,30 @@ checkStmt cxt ζ (S.If es elseBranch) = do
    pure (foldl1 merge (NEL.cons rElse (fst <$> es')) × E.If (snd <$> es') elseBranch')
 checkStmt cxt ζ (S.Match e bs) = do
    σ × e' <- synth cxt e
-   ps' <- wellFormedPatterns cxt (fst <$> bs)
-   rbs × τ <- matchCases cxt ζ σ (NEL.toList (NEL.zip ps' (snd <$> bs)))
+   ps' <- traverse (pattern cxt) (fst <$> bs)
+   classes <- classTable
+   rbs × τ <- matchCases cxt ζ σ (shapes classes σ Nil) (NEL.toList (NEL.zip (NEL.zip (fst <$> bs) ps') (snd <$> bs)))
    let rNoMatch = if τ == never then Returns else Assigns empty
    pure (foldl merge rNoMatch (fst <$> rbs) × E.Match e' (nonEmpty (snd <$> rbs)))
 checkStmt _ _ (S.Dataclass _ _ _ _) = error absurd
 checkStmt _ _ (S.TypeAlias _ _ _) = error absurd
 
-matchCases :: Cxt -> Maybe T.Type -> T.Type -> List (S.Pattern × S.Stmt) -> CheckM (List (WfResult Cxt × E.Case) × T.Type)
-matchCases _ _ τ Nil = pure (Nil × τ)
-matchCases cxt ζ τ ((p × s) : bs) = do
+-- Cases as written and with class patterns in positional form, against remaining type and residual
+matchCases
+   :: Cxt
+   -> Maybe T.Type
+   -> T.Type
+   -> List Shape
+   -> List ((S.Pattern × S.Pattern) × S.Stmt)
+   -> CheckM (List (WfResult Cxt × E.Case) × T.Type)
+matchCases _ _ τ _ Nil = pure (Nil × τ)
+matchCases cxt ζ τ ls (((p0 × p) × s) : bs) = do
    for_ (bv p) (unbound cxt)
    cxt' <- bindings <$> check cxt p τ
+   classes <- classTable
+   _ × ls' <- matchesShapes classes ls p # maybe (throwError $ "case " <> prettyP p0 <> " is unreachable") pure
    r × s' <- checkStmt (cxt `override` cxt') ζ s
-   τ' <- classTable <#> \classes -> remaining classes τ p
-   lmap ((override (Assigns cxt') r × (p × s')) : _) <$> matchCases cxt ζ τ' bs
+   lmap ((override (Assigns cxt') r × (p × s')) : _) <$> matchCases cxt ζ (remaining classes τ p) ls' bs
 
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 wellFormedTop q cxt (S.Dataclass x αs b yψs) = do
@@ -740,6 +749,7 @@ instance Synth S.Branch (T.Type + T.Scheme) where
 instance Check S.Branch T.Type (List (S.Pattern × Maybe T.Type) × Maybe T.Type × E.Stmt) where
    check cxt (f × S.Clause (αs × ps × ψ × s)) (T.CallableTy σs τ) = do
       when (length ps /= length σs) $ throwError "Clauses differ in number of parameters"
+      distinctVars (ps <#> \(S.Param p _) -> p)
       ps' <- for ps \(S.Param p ψ') -> (×) <$> pattern cxt p <*> (Just <$> synth cxt_αs ψ')
       cxt_p <- check cxt (fst <$> ps') σs
       τ' <- Just <$> synth cxt_αs ψ
@@ -756,6 +766,16 @@ instance Check S.Branch T.Type (List (S.Pattern × Maybe T.Type) × Maybe T.Type
       close Returns s' = s'
       close (Assigns _) s' = E.Seq s' (E.Return (E.Lit None))
    check _ _ _ = error absurd
+
+-- Each clause matching some arguments not matched by an earlier clause
+reachableClauses :: T.Type -> NonEmptyList (List S.Pattern) -> CheckM Unit
+reachableClauses (T.CallableTy σs _) pss = do
+   classes <- classTable
+   void $ foldM (residual classes) (shapes classes (T.TupleTy σs) Nil) (mapWithIndex (×) (NEL.toList pss))
+   where
+   residual classes ls (i × ps) =
+      snd <$> matchesShapes classes ls (S.PTuple ps) # maybe (throwError $ "clause " <> show (i + 1) <> " is unreachable") pure
+reachableClauses _ _ = error absurd
 
 -- Clauses over k parameters as a function of k parameters. A parameter column that is the same variable in
 -- every clause is a parameter of that name; the remaining columns are matched together, as nested pairs when
@@ -833,15 +853,6 @@ predefName :: Cxt -> Var -> CheckM Unit
 predefName cxt x = case lookup x cxt of
    Just PredefName -> pure unit
    _ -> throwError $ "Not bound as a predefined name: " <> quoted x
-
--- Each case pattern well-formed and not subsumed by an earlier one.
-wellFormedPatterns :: Cxt -> NonEmptyList S.Pattern -> CheckM (NonEmptyList S.Pattern)
-wellFormedPatterns cxt ps = do
-   classes <- gets _.classes
-   forWithIndex ps \i p -> do
-      forWithIndex_ (drop (i + 1) (NEL.toList ps)) \j p' ->
-         when (subsumed classes cxt p' p) $ throwError $ "case " <> show (i + j + 2) <> " is unreachable"
-      pattern cxt p
 
 -- Class patterns in positional form, by fully-qualified class name.
 pattern :: Cxt -> S.Pattern -> CheckM S.Pattern
@@ -968,21 +979,3 @@ remaining classes τ (S.PConstr c ps _) = case instanceAt classes c τ of
       , and (zipWith (\(_ × σ) p -> remaining classes σ p == never) (fieldsAt classes c σs) ps) -> never
    _ -> τ
 remaining _ τ _ = τ
-
-subsumed :: ClassTable -> Cxt -> S.Pattern -> S.Pattern -> Boolean
-subsumed _ _ _ (S.PVar _) = true
-subsumed _ _ _ S.PWild = true
-subsumed classes cxt (S.PAs p _) p' = subsumed classes cxt p p'
-subsumed classes cxt p (S.PAs p' _) = subsumed classes cxt p p'
-subsumed _ _ (S.PLit ℓ) (S.PLit ℓ') = ℓ == ℓ'
-subsumed classes cxt (S.PRecord xps) (S.PRecord xps') =
-   all (\(x × p') -> maybe false (\p -> subsumed classes cxt p p') (F.lookup x xps)) xps'
-subsumed classes cxt (S.PList ps) (S.PList ps') = length ps == length ps' && and (zipWith (subsumed classes cxt) ps ps')
-subsumed classes cxt (S.PTuple ps) (S.PTuple ps') = length ps == length ps' && and (zipWith (subsumed classes cxt) ps ps')
-subsumed classes cxt (S.PConstr c ps xps) (S.PConstr c' ps' xps') = fromMaybe false do
-   name <- hush (classOf cxt c)
-   name' <- hush (classOf cxt c')
-   guard (name' `elem` ancestors classes name)
-   pure $ all (\x -> fromMaybe false (subsumed classes cxt <$> fieldMap classes name ps xps x <*> fieldMap classes name' ps' xps' x))
-      (fst <$> fields classes name')
-subsumed _ _ _ _ = false
