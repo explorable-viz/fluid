@@ -4,16 +4,19 @@ import Prelude
 import Prim hiding (Type)
 
 import Bind (Name, Var)
+import Data.Bounded.Generic (genericBottom, genericTop)
+import Data.Enum (class Enum, upFromIncluding)
+import Data.Enum.Generic (genericPred, genericSucc)
 import Data.Generic.Rep (class Generic)
 import Data.List (List, length, zip, (:))
 import Data.List.NonEmpty (NonEmptyList)
-import Data.Map (fromFoldable, lookup)
+import Data.Map (Map, fromFoldable, lookup)
 import Data.Maybe (fromMaybe)
 import Data.Set (Set, empty, singleton, union, unions)
 import Data.Show.Generic (genericShow)
 import Literal (Literal)
 import Literal as L
-import Util (assert)
+import Util (assert, (×))
 
 data Primitive
    = Object
@@ -48,6 +51,10 @@ primitiveName Int = "int"
 primitiveName Float = "float"
 primitiveName Str = "str"
 primitiveName Sized = "Sized"
+
+-- Primitive types by name
+primitives :: Map String Primitive
+primitives = fromFoldable ((\π -> primitiveName π × π) <$> (upFromIncluding bottom :: List Primitive))
 
 baseType :: Type -> Type
 baseType (LitTy (L.Int _)) = PrimitiveTy Int
@@ -97,7 +104,17 @@ disjuncts (UnionTy σ τ) = disjuncts σ <> disjuncts τ
 disjuncts τ = pure τ
 
 derive instance Eq Primitive
+derive instance Ord Primitive
 derive instance Generic Primitive _
+
+instance Bounded Primitive where
+   bottom = genericBottom
+   top = genericTop
+
+instance Enum Primitive where
+   succ = genericSucc
+   pred = genericPred
+
 instance Show Primitive where
    show = genericShow
 

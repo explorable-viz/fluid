@@ -679,16 +679,7 @@ asTypeExpr (S.Subscript e e') = do
       "dict", S.PrimitiveTy T.Str : ψ : Nil -> pure (S.DictTy ψ)
       "tuple", _ -> pure (S.TupleTy ψs)
       _, _ -> pure (S.NameTy q ψs)
-asTypeExpr e = asName e <#> \q -> case dottedName q of
-   "None" -> S.PrimitiveTy T.None
-   "object" -> S.PrimitiveTy T.Object
-   "bool" -> S.PrimitiveTy T.Bool
-   "int" -> S.PrimitiveTy T.Int
-   "float" -> S.PrimitiveTy T.Float
-   "str" -> S.PrimitiveTy T.Str
-   "Never" -> S.PrimitiveTy T.Never
-   "Sized" -> S.PrimitiveTy T.Sized
-   _ -> S.NameTy q Nil
+asTypeExpr e = asName e <#> \q -> maybe (S.NameTy q Nil) S.PrimitiveTy (lookup (dottedName q) T.primitives)
 
 asName :: S.Expr -> Maybe Name
 asName (S.Var x) = Just (singleton x)
