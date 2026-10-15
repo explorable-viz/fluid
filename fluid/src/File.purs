@@ -54,7 +54,7 @@ instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (StateT s m) w
    loadFileFromPath = lift <<< loadFileFromPath
    loadManifest = lift <<< loadManifest
 
--- Monad in which source files are loaded from source roots
+-- Monad for loading source files from source roots
 class (MonadAff m, MonadError Error m, MonadReader FileCxt m, LoadFile m) <= MonadLoad m
 
 instance (MonadAff m, MonadError Error m, MonadReader FileCxt m, LoadFile m) => MonadLoad m

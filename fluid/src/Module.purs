@@ -87,7 +87,7 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
            ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
 
--- Load modules into a new dependence graph, kept in the store; return the top-level environment as a vertex per variable.
+-- Load modules into new dependence graph, kept in module store; return top-level environment as vertex per variable
 loadTopLevel
    :: forall m
     . HasClasses m
@@ -160,7 +160,7 @@ parseModules imports = do
    let roots = implicit <> (deps >>= _.load)
    moduleDeps × mods <- collectModules Set.empty Map.empty Map.empty roots
    lift (orThrow (checkAcyclic moduleDeps (deps >>= _.edges)))
-   -- every containing module of a loaded module is present, and is empty if it has no source file
+   -- every containing module of loaded module present, and empty if without source file
    let ancestors = Set.fromFoldable ((Set.toUnfoldable (Map.keys mods) :: List ModuleName) >>= parents)
    pure (mapWithKey (\q (S.Module ιs s) -> S.Module ιs (named q s)) (mods `Map.union` constMap (S.Module Nil S.Pass) ancestors))
 

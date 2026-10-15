@@ -261,7 +261,7 @@ dictionary ctrl kvs =
    mk :: forall a. Compose Dict Pair (Val a) -> BaseVal a
    mk (Compose d) = Dictionary (DictRep (d <#> \(Pair key v) -> root key × v))
 
--- Monad in which a program is evaluated into a dependence graph with weights in s.
+-- Monad for evaluating program into dependence graph with weights in s
 class
    ( HasClasses m
    , HasModuleStore m
