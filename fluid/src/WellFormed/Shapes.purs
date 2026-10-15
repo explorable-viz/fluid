@@ -1,4 +1,4 @@
-module Shapes where
+module WellFormed.Shapes where
 
 import Prelude hiding (absurd)
 import Prim hiding (Type)
