@@ -418,9 +418,7 @@ instance Synth S.Expr (T.Type × E.Expr) where
          _ -> error absurd
    synth cxt (S.Attribute e y) = case resolveName cxt =<< asName e of
       Just (ModChecked q cxt') -> do
-         when (not (y ∈ cxt'))
-            $ throwError
-            $ "module " <> quoted (dottedName q) <> " has no member " <> quoted y
+         unless (y ∈ cxt') $ throwError $ "module " <> quoted (dottedName q) <> " has no member " <> quoted y
          (_ × E.ModMember q y) <$> varType cxt' y
       _ -> do
          σ × e' <- synth cxt e
