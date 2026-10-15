@@ -286,12 +286,12 @@ wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 wellFormedTop q cxt (S.Dataclass x αs b yψs) = do
    predefName cxt "dataclass"
    checkDistinct (\y -> "Duplicate field " <> quoted y <> " in class " <> quoted x) ys
-   yτs <- for yψs \(y × ψ) -> (y × _) <$> synth cxt_αs ψ
-   base <- for b (baseClass cxt cxt_αs x ys)
+   yτs <- for yψs \(y × ψ) -> (y × _) <$> synth cxt' ψ
+   base <- for b (baseClass cxt cxt' x ys)
    modify_ \st -> st { classes = insert c { typeParams: αs, fields: yτs, base } st.classes }
    pure (Assigns (maplet x (Type c)) × E.Dataclass c)
    where
-   cxt_αs = cxt `override` typeParams αs
+   cxt' = cxt `override` typeParams αs
    ys = fst <$> yψs
    c = snoc q x
 wellFormedTop _ cxt (S.TypeAlias x αs ψ) = do
@@ -307,8 +307,8 @@ wellFormedTop q cxt (S.Seq t1 t2) = do
 wellFormedTop _ cxt s = checkStmt cxt Nothing s
 
 baseClass :: Cxt -> Cxt -> Var -> List Var -> S.TypeExpr -> CheckM (Name × List T.Type)
-baseClass cxt cxt_αs x ys (S.NameTy q ψs) | Just (Type d) <- resolveName cxt q = do
-   σs <- classTypeArgs cxt_αs d ψs
+baseClass cxt cxt' x ys (S.NameTy q ψs) | Just (Type d) <- resolveName cxt q = do
+   σs <- classTypeArgs cxt' d ψs
    inherited <- classTable <#> \classes -> fieldNames classes d
    for_ (ys `intersect` inherited) \y -> throwError $ "Inherited field " <> quoted y <> " redeclared in class " <> quoted x
    pure (d × σs)
@@ -729,9 +729,9 @@ param i = "$" <> show i
 
 instance Synth S.Branch (T.Type + T.Scheme) where
    synth cxt (_ × S.Clause (αs × ps × ψ × _)) =
-      scheme <$> (T.CallableTy <$> traverse (\(S.Param _ ψ') -> synth cxt_αs ψ') ps <*> synth cxt_αs ψ)
+      scheme <$> (T.CallableTy <$> traverse (\(S.Param _ ψ') -> synth cxt' ψ') ps <*> synth cxt' ψ)
       where
-      cxt_αs = cxt `override` typeParams αs
+      cxt' = cxt `override` typeParams αs
       scheme σ = maybe (Left σ) (\αs' -> Right (Forall αs' σ)) (fromList αs)
 
 -- Clause against function type and residual of earlier clauses
