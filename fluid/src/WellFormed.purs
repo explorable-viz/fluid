@@ -916,24 +916,21 @@ bindingsAt τ p atDisjunct = do
    cxts <- for (T.disjuncts τ) \σ -> fromMaybe (pure (constMap never (bv p))) (atDisjunct σ)
    classTable <#> \classes -> foldl1 (join classes) (nonEmpty cxts)
 
+-- Disjunct other than list type above every list type or none, so list[object] stands for all
 hasListValues :: ClassTable -> T.Type -> Boolean
-hasListValues classes = hasValues classes isList (T.ListTy object)
+hasListValues classes τ = F.any listValues (T.disjuncts τ)
    where
-   isList (T.ListTy _) = true
-   isList _ = false
+   listValues (T.ListTy _) = true
+   listValues (T.VarTy _) = true
+   listValues σ = subtype classes (T.ListTy object) σ
 
+-- Disjunct other than tuple type above every tuple type or none, so tuple[()] stands for all
 hasTupleValues :: ClassTable -> T.Type -> Boolean
-hasTupleValues classes = hasValues classes isTuple (T.TupleTy Nil)
+hasTupleValues classes τ = F.any tupleValues (T.disjuncts τ)
    where
-   isTuple (T.TupleTy _) = true
-   isTuple _ = false
-
--- Some disjunct a type variable, of the given form, or above τ_form, a type of that form
-hasValues :: ClassTable -> (T.Type -> Boolean) -> T.Type -> T.Type -> Boolean
-hasValues classes isForm τ_form τ = F.any (\σ -> isVar σ || isForm σ || subtype classes τ_form σ) (T.disjuncts τ)
-   where
-   isVar (T.VarTy _) = true
-   isVar _ = false
+   tupleValues (T.TupleTy _) = true
+   tupleValues (T.VarTy _) = true
+   tupleValues σ = subtype classes (T.TupleTy Nil) σ
 
 matchedAs :: ClassTable -> T.Type -> S.Pattern -> T.Type
 matchedAs classes (T.UnionTy σ σ') p = join classes (matchedAs classes σ p) (matchedAs classes σ' p)
