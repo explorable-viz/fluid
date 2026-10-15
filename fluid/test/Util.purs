@@ -10,7 +10,6 @@ import Data.Foldable (any, minimum)
 import Data.Map as Map
 import Data.Set (Set)
 import Control.Monad.Error.Class (class MonadError)
-import Control.Monad.Reader (class MonadReader)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
@@ -22,7 +21,7 @@ import Data.Tuple (fst)
 import Effect.Exception (Error)
 import Eval (Eval, evalProgram, visible)
 import DepGraph (DepGraph, Deriv, Labelling, Pos, bwd, fwd, materialise, selected, valAt)
-import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
+import File (class MonadLoad, File, Folder(..), loadFile)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, DepKind(..), botOf, 𝔹)
 import Module (Config, prepConfig, throwParseFailure)
 import Parse (parseProgram)
@@ -39,7 +38,7 @@ type TestSuite m = Array (String × m Unit)
 fluidSrcPaths :: Array Folder
 fluidSrcPaths = [ Folder "lib", Folder "test/lib" ]
 
-test ∷ forall m. HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => File -> String -> Int × Boolean -> AffError m BenchRow
+test ∷ forall m. HasClasses m => HasModuleStore m => MonadLoad m => File -> String -> Int × Boolean -> m BenchRow
 test file expect (n × _) = do
    fluidSrc <- loadFile fluidSrcPaths file
    log' ("**** prepConfig")
@@ -53,12 +52,11 @@ testProperties
    :: forall m
     . HasClasses m
    => HasModuleStore m
-   => MonadReader FileCxt m
-   => LoadFile m
+   => MonadLoad m
    => MonadWriter BenchRow m
    => Config
    -> String
-   -> AffError m Unit
+   -> m Unit
 testProperties { e, inputs, classes } expect = do
    eval@{ g, root } <- benchmark "Dep" \_ ->
       evalProgram inputs classes e
@@ -123,7 +121,7 @@ selection depGraph eval vertex δv =
    where
    p = deriv depGraph eval vertex
 
-testDep :: forall m. HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => File -> Query -> AffError m Unit
+testDep :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => File -> Query -> m Unit
 testDep file query = do
    fluidSrc <- loadFile fluidSrcPaths file
    { e, inputs, classes } <- throwParseFailure (prepConfig fluidSrc)

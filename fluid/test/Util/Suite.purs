@@ -8,17 +8,15 @@ import App.Util.Selector (ObjArg, objArg, sel𝔹, valOf)
 import App.View.Util (Fig, Options)
 import Bind (Bind)
 import Classes (class HasClasses)
-import Control.Monad.Error.Class (class MonadError, catchError)
-import Control.Monad.Reader (class MonadReader)
+import Control.Monad.Error.Class (catchError)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe)
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry)
-import Effect.Aff (Error, message)
+import Effect.Aff (message)
 import Eval (evalProgram)
-import Effect.Aff.Class (class MonadAff)
-import File (class LoadFile, File(..), FileCxt, Folder(..), loadFile, (</>))
+import File (class MonadLoad, File(..), Folder(..), loadFile, (</>))
 import Lattice (𝔹)
 import Module (prepConfig, throwParseFailure)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
@@ -50,22 +48,22 @@ type TestLinkedInputsSpec =
    , file :: String
    }
 
-type SuiteFactory r m = MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array { file :: String | r } -> BenchSuite m
+type SuiteFactory r m = HasClasses m => HasModuleStore m => MonadLoad m => Array { file :: String | r } -> BenchSuite m
 
-suite :: forall m. MonadAff m => MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array TestSpec -> BenchSuite m
+suite :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => Array TestSpec -> BenchSuite m
 suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
    asTest { file, fwd_expect } = do
       test (File file) fwd_expect (n × is_bench)
 
-depSuite :: forall m. MonadAff m => MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array DepSpec -> TestSuite m
+depSuite :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => Array DepSpec -> TestSuite m
 depSuite specs = specs >>= \{ file, queries } -> queries <#> \query -> depName file query × testDep (File file) query
 
 selected :: SelStates 𝕊 -> SelStates 𝔹
 selected s = selStates (isInert s) (isPersistent s) (isTransient s)
 
-linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
+linkedOutputsTest :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect, inert_expect, file } = do
    fluidSrc <- loadFile spec.fluidSrcPaths (File file)
    fig0 <- loadFig spec fluidSrc
@@ -77,10 +75,10 @@ linkedOutputsTest { spec, δ_out, out_expect, inert_expect, file } = do
    for_ (inert_expect arg) \sel -> checkEq "inert" "inert_expect" (isInert <$> v) (sel𝔹 (valOf sel) v)
    pure fig
 
-linkedOutputsSuite :: forall m. MonadAff m => MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array TestLinkedOutputsSpec -> Array (String × m Unit)
+linkedOutputsSuite :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => Array TestLinkedOutputsSpec -> Array (String × m Unit)
 linkedOutputsSuite testSpecs = testSpecs <#> (_.file &&& (linkedOutputsTest >>> void))
 
-linkedInputsTest :: forall m. MonadAff m => MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => TestLinkedInputsSpec -> m Fig
+linkedInputsTest :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => TestLinkedInputsSpec -> m Fig
 linkedInputsTest { spec, δ_in, in_expect, file } = do
    fluidSrc <- loadFile spec.fluidSrcPaths (File file)
    fig <- loadFig spec fluidSrc <#> uncurry selectInput (valOf <$> δ_in)
@@ -89,7 +87,7 @@ linkedInputsTest { spec, δ_in, in_expect, file } = do
    checkSelection in_expect (selected <$> ρ)
    pure fig
 
-linkedInputsSuite :: forall m. MonadAff m => MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array TestLinkedInputsSpec -> Array (String × m Unit)
+linkedInputsSuite :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => Array TestLinkedInputsSpec -> Array (String × m Unit)
 linkedInputsSuite testSpecs = testSpecs <#> (_.file &&& (linkedInputsTest >>> void))
 
 type IllFormedSpec =
@@ -97,7 +95,7 @@ type IllFormedSpec =
    , expected_error :: String
    }
 
-illFormedSuite :: forall m. MonadAff m => MonadError Error m => HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => Array IllFormedSpec -> Array (String × m Unit)
+illFormedSuite :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => Array IllFormedSpec -> Array (String × m Unit)
 illFormedSuite specs = specs <#> (_.file &&& asTest)
    where
    folder = Folder "ill_formed"

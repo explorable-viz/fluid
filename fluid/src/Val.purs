@@ -6,9 +6,8 @@ import Bind (Name, Var)
 import Classes (class HasClasses)
 import Types.Defs (cRange)
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Except (ExceptT)
-import Control.Monad.Reader (class MonadReader, ReaderT)
+import Control.Monad.Reader (ReaderT)
 import Control.Monad.State (class MonadState, StateT, gets)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Writer (WriterT)
@@ -31,10 +30,8 @@ import Data.Tuple (snd)
 import Data.Traversable (class Traversable, mapAccumL, sequenceDefault, traverse)
 import Dict (Dict)
 import Dict as D
-import Effect.Aff.Class (class MonadAff)
-import Effect.Exception (Error)
 import Expr (Def, Module, fv)
-import File (class LoadFile, FileCxt)
+import File (class MonadLoad)
 import Module.Defs (ModuleName)
 import DepGraph (DepGraph, Labelling, Rel, addEdge, deriv, emptyGraph, scale, valAt, zeros)
 import DepGraph (Deriv, Pos) as Dep
@@ -268,10 +265,7 @@ dictionary ctrl kvs =
 class
    ( HasClasses m
    , HasModuleStore m
-   , MonadError Error m
-   , MonadAff m
-   , MonadReader FileCxt m
-   , LoadFile m
+   , MonadLoad m
    , MonadState (DepGraph Val s) m
    , DepSemiring s
    ) <=
@@ -281,10 +275,7 @@ class
 instance
    ( HasClasses m
    , HasModuleStore m
-   , MonadError Error m
-   , MonadAff m
-   , MonadReader FileCxt m
-   , LoadFile m
+   , MonadLoad m
    , MonadState (DepGraph Val s) m
    , DepSemiring s
    ) =>

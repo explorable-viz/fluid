@@ -4,7 +4,6 @@ import Prelude hiding (absurd, apply)
 
 import Bind (dottedName, prefixOf, varAnon, varThis)
 import Control.Monad.Error.Class (class MonadError)
-import Control.Monad.Reader (class MonadReader)
 import Control.Monad.State (runStateT)
 import Data.Array as A
 import Data.Either (either)
@@ -27,10 +26,9 @@ import Data.Tuple (fst, snd)
 import Classes (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fieldNames)
 import Dict (Dict)
 import Dict (fromFoldable) as D
-import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Branch(..), Def(..), Expr(..), Import(..), Module(..), Pattern(..), Qualifier(..), RecDefs(..), Stmt(..), assigns, fv)
-import File (class LoadFile, FileCxt, withClasses)
+import File (class MonadLoad, withClasses)
 import DepGraph (DepGraph, Rel, Deriv, Pos, attachDoc, deriv, zeros)
 import Lattice (class DepSemiring, DepKind, Lineage, Raw, ctrlWeight)
 import Literal (Literal(..), eqLiteral)
@@ -494,10 +492,7 @@ evalProgram
    :: forall m
     . HasClasses m
    => HasModuleStore m
-   => MonadError Error m
-   => MonadAff m
-   => MonadReader FileCxt m
-   => LoadFile m
+   => MonadLoad m
    => Dict Deriv -- top-level environment, as vertices of the module store's dependence graph
    -> ClassTable
    -> Stmt

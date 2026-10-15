@@ -3,7 +3,7 @@ module Module where
 import Prelude
 
 import Control.Monad.Except (class MonadError, ExceptT, except, runExceptT)
-import Control.Monad.Reader (class MonadReader, ask)
+import Control.Monad.Reader (ask)
 import Control.Monad.State (runStateT)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (lmap)
@@ -24,13 +24,12 @@ import Data.Traversable (traverse)
 import Data.Tuple (fst)
 import Classes (class HasClasses, ClassTable)
 import Dict (Dict)
-import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Eval (evalImport, implicitMembers, load) as Dep
 import Expr (Import(..)) as E
 import Literal (Literal(..))
 import Expr (Module, Pattern(..), Stmt, fv)
-import File (class LoadFile, File(..), FileCxt(..), hasDirectory, loadModuleSource, manifest, modulePath, withClasses)
+import File (class MonadLoad, File(..), FileCxt(..), hasDirectory, loadModuleSource, manifest, modulePath, withClasses)
 import DepGraph (Deriv, deriv, emptyGraph)
 import Module.Defs (ModuleName, containing, implicit, implicitFor, parents)
 import Parse (parseModule, parseProgram)
@@ -52,7 +51,7 @@ newtype ParseFailure = ParseFailure String
 throwParseFailure :: forall m a. MonadError Error m => ExceptT ParseFailure m a -> m a
 throwParseFailure m = runExceptT m >>= either (\(ParseFailure msg) -> throw msg) pure
 
-isModule :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
+isModule :: forall m. MonadLoad m => ModuleName -> m Boolean
 isModule q = do
    FileCxt { fluidSrcPaths } <- ask
    loadModuleSource fluidSrcPaths (pathName q) >>= case _ of
@@ -61,10 +60,7 @@ isModule q = do
 
 importDeps
    :: forall m
-    . MonadAff m
-   => MonadError Error m
-   => MonadReader FileCxt m
-   => LoadFile m
+    . MonadLoad m
    => ModuleName
    -> S.Import
    -> m { edges :: List ModuleName, load :: List ModuleName }
@@ -96,10 +92,7 @@ loadTopLevel
    :: forall m
     . HasClasses m
    => HasModuleStore m
-   => MonadAff m
-   => MonadError Error m
-   => MonadReader FileCxt m
-   => LoadFile m
+   => MonadLoad m
    => Map ModuleName Module
    -> List S.Import
    -> m (Dict Deriv)
@@ -117,10 +110,7 @@ prepConfig
    :: forall m
     . HasClasses m
    => HasModuleStore m
-   => MonadAff m
-   => MonadError Error m
-   => MonadReader FileCxt m
-   => LoadFile m
+   => MonadLoad m
    => String
    -> ExceptT ParseFailure m Config
 prepConfig fluidSrc = do
@@ -138,10 +128,7 @@ named q = S.Seq (S.Def (S.VarDef (PVar varName) (Just (S.PrimitiveTy T.Str)) (S.
 -- checked, and class table.
 prepModules
    :: forall m a
-    . MonadAff m
-   => MonadError Error m
-   => MonadReader FileCxt m
-   => LoadFile m
+    . MonadLoad m
    => List S.Import
    -> CheckM a
    -> ExceptT ParseFailure m { result :: a, modules :: Map ModuleName Module, classes :: ClassTable }
@@ -162,22 +149,12 @@ moduleNames (FileCxt { fluidSrcPaths, manifests }) = Set.fromFoldable (qs >>= \q
 -- Module q checked as module, not program, with modules it imports.
 prepModule
    :: forall m
-    . MonadAff m
-   => MonadError Error m
-   => MonadReader FileCxt m
-   => LoadFile m
+    . MonadLoad m
    => ModuleName
    -> ExceptT ParseFailure m { modules :: Map ModuleName Module, classes :: ClassTable }
 prepModule q = prepModules (S.Import q Nothing : Nil) (checkModule q) <#> \{ modules, classes } -> { modules, classes }
 
-parseModules
-   :: forall m
-    . MonadAff m
-   => MonadError Error m
-   => MonadReader FileCxt m
-   => LoadFile m
-   => List S.Import
-   -> ExceptT ParseFailure m (Map ModuleName S.Module)
+parseModules :: forall m. MonadLoad m => List S.Import -> ExceptT ParseFailure m (Map ModuleName S.Module)
 parseModules imports = do
    deps <- lift (traverse (importDeps mainModule) imports)
    let roots = implicit <> (deps >>= _.load)
