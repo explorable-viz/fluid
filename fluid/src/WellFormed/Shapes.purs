@@ -7,11 +7,13 @@ import Bind (Name, Var)
 import Classes (ClassTable, Instance(..), ancestors, fieldsAt, instanceAt, instanceBelow, meet, subtype)
 import Control.Alt ((<|>))
 import Data.Bifunctor (bimap)
+import Data.Either (Either(..))
+import Data.Filterable (partitionMap)
 import Data.Foldable (any, find)
-import Data.List (List(..), drop, elem, filter, length, mapMaybe, zip, (:))
+import Data.List (List(..), drop, elem, filter, length, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), isJust, isNothing)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (replicate)
@@ -103,11 +105,9 @@ matchesSeq classes (k : ks) (p : ps) = do
 matchesSeq _ _ _ = error absurd
 
 matchesShapes :: ClassTable -> List Shape -> Pattern -> Maybe (List Shape × List Shape)
-matchesShapes classes ls p = case mapMaybe snd results of
-   Nil -> Nothing
-   kls -> Just ((kls >>= fst) × ((kls >>= snd) <> (fst <$> filter (isNothing <<< snd) results)))
-   where
-   results = ls <#> \k -> k × matches classes k p
+matchesShapes classes ls p = case partitionMap (\k -> maybe (Left k) Right (matches classes k p)) ls of
+   { right: Nil } -> Nothing
+   { left: unmatched, right: kls } -> Just ((kls >>= fst) × ((kls >>= snd) <> unmatched))
 
 splits :: ClassTable -> Shape -> Pattern -> Maybe (List Shape × List Shape)
 splits _ (Rest (LitTy _) _) (PLit _) = Nothing
