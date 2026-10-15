@@ -194,9 +194,7 @@ parseModules imports = do
          Just src -> do
             mod × _ <- except (lmap (\msg -> ParseFailure (msg <> "\nLoading module " <> dottedName path)) (parseModule src))
             deps <- lift case mod of S.Module ιs _ -> traverse (importDeps path) ιs
-            let edges = deps >>= _.edges
-            let toLoad = implicitFor path <> (deps >>= _.load)
-            pure $ mod × edges × toLoad
+            pure (mod × (deps >>= _.edges) × (implicitFor path <> (deps >>= _.load)))
          Nothing -> lift (hasDirectory fluidSrcPaths (File (pathName path))) >>= case _ of
             true -> pure (S.Module Nil S.Pass × Nil × Nil)
             false -> lift (throw ("Module not found in any path: " <> dottedName path))
