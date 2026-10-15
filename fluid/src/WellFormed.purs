@@ -241,7 +241,7 @@ checkStmt cxt _ (S.DefRec ds) = do
       let σ = either identity (\(Forall _ σ') -> σ') π
       classes <- classTable
       cs <- evalStateT (traverse (\b -> StateT \ls -> check cxt' b (σ × ls)) def) (argShapes classes σ)
-      (f ↦ _) <$> clauses cs
+      pure (f ↦ clauses cs)
    pure (Assigns cxt_fs × E.DefRec (E.RecDefs (D.fromFoldable defs')))
 checkStmt cxt ζ (S.Seq s1 s2) = do
    r1 × s1' <- checkStmt cxt ζ s1
@@ -382,7 +382,7 @@ instance Synth S.Expr (T.Type × E.Expr) where
                S.Lambda (S.LambdaClause (ps × e')) -> do
                   cxt_p × ps' × es' <- lambdaArgs cxt ps es
                   τ × e'' <- synth (cxt `override` bindings cxt_p) e'
-                  (τ × _) <<< flip E.App es' <$> lambda ps' e''
+                  pure (τ × E.App (lambda ps' e'') es')
                _ -> do
                   σ × e' <- callee cxt e es
                   τ × es' <- resultType cxt σ es
@@ -477,7 +477,7 @@ instance Check S.Expr T.Type E.Expr where
    check cxt (S.Call (S.Lambda (S.LambdaClause (ps × e))) Nil es Nil) τ = do
       cxt_p × ps' × es' <- lambdaArgs cxt ps es
       e' <- check (cxt `override` bindings cxt_p) e τ
-      flip E.App es' <$> lambda ps' e'
+      pure (E.App (lambda ps' e') es')
    check cxt (S.List es) (T.ListTy τ) = E.List <$> traverse (\e -> check cxt e τ) es
    check cxt (S.Tuple es) (T.TupleTy τs)
       | length es == length τs = E.Tuple <$> check cxt es τs
@@ -489,7 +489,7 @@ instance Check S.Expr T.Type E.Expr where
          ps' <- traverse (pattern cxt) ps
          cxt_p <- check cxt ps' σs
          e' <- check (cxt `override` bindings cxt_p) e τ'
-         lambda ps' e'
+         pure (lambda ps' e')
       _ -> throwError $ "Expected type " <> prettyP τ <> "; given lambda with " <> show (length ps) <> " parameter(s)"
    check cxt e τ | Just (αs × σ) <- schemeOf cxt e = do
       classes <- classTable
@@ -635,8 +635,8 @@ lambdaArgs cxt ps es = do
    cxt_p <- check cxt ps' (fst <$> τes)
    pure (cxt_p × ps' × (snd <$> τes))
 
-lambda :: List S.Pattern -> E.Expr -> CheckM E.Expr
-lambda ps e = E.Lambda <$> clauses (singleton ((ps <#> (_ × Nothing)) × Nothing × E.Return e))
+lambda :: List S.Pattern -> E.Expr -> E.Expr
+lambda ps e = E.Lambda (clauses (singleton (ps × E.Return e)))
 
 isLambda :: S.Expr -> Boolean
 isLambda (S.Lambda _) = true
@@ -745,22 +745,24 @@ instance Synth S.Branch (T.Type + T.Scheme) where
       scheme σ = maybe (Left σ) (\αs' -> Right (Forall αs' σ)) (fromList αs)
 
 -- Clause against function type and residual of earlier clauses
-instance
-   Check S.Branch (T.Type × List Shape) ((List (S.Pattern × Maybe T.Type) × Maybe T.Type × E.Stmt) × List Shape) where
+instance Check S.Branch (T.Type × List Shape) ((List S.Pattern × E.Stmt) × List Shape) where
    check cxt (f × S.Clause (αs × ps × ψ × s)) (T.CallableTy σs τ × ls) = do
       when (length ps /= length σs) $ throwError "Clauses differ in number of parameters"
+      σs' <- traverse (\(S.Param _ ψ') -> synth cxt_αs ψ') ps
+      when (σs' /= σs) $ throwError "Clauses differ in parameter annotations"
+      τ' <- synth cxt_αs ψ
+      when (τ' /= τ) $ throwError "Clauses differ in return annotation"
       distinctVars (ps <#> \(S.Param p _) -> p)
-      ps' <- for ps \(S.Param p ψ') -> (×) <$> pattern cxt p <*> (Just <$> synth cxt_αs ψ')
-      cxt_p <- check cxt (fst <$> ps') σs
+      ps' <- traverse (\(S.Param p _) -> pattern cxt p) ps
+      cxt_p <- check cxt ps' σs
       classes <- classTable
-      _ × ls' <- matchesShapes classes ls (S.PTuple (fst <$> ps')) # maybe (throwError unreachable) pure
-      τ' <- Just <$> synth cxt_αs ψ
+      _ × ls' <- matchesShapes classes ls (S.PTuple ps') # maybe (throwError unreachable) pure
       cxt_s <- scope "parameter" (unions (bv <$> ps)) s
       r × s' <- checkStmt (cxt_αs `override` bindings cxt_p `override` cxt_s) (Just τ) s
       case r of
          Assigns _ | not (equiv classes τ none) ->
             throwError $ quoted f <> " declares result type " <> prettyP τ <> " but does not always return"
-         _ -> pure ((ps' × τ' × close r s') × ls')
+         _ -> pure ((ps' × close r s') × ls')
       where
       cxt_αs = cxt `override` typeParams αs
       unreachable = "clause " <> f <> "(" <> intercalate ", " (ps <#> \(S.Param p _) -> prettyP p) <> ") is unreachable"
@@ -776,34 +778,24 @@ argShapes _ _ = error absurd
 -- Clauses over k parameters as a function of k parameters. A parameter column that is the same variable in
 -- every clause is a parameter of that name; the remaining columns are matched together, as nested pairs when
 -- there are several.
-clauses :: NonEmptyList (List (S.Pattern × Maybe T.Type) × Maybe T.Type × E.Stmt) -> CheckM E.Def
-clauses cs = do
-   let n = length (fst (head cs)) :: Int
-   for_ cs \(ps × _) ->
-      when (length ps /= n) $ throwError "Clauses differ in number of parameters"
-   for_ (transpose (toList (cs <#> \(ps × _) -> snd <$> ps))) (agree "parameter annotations" <<< nonEmpty)
-   agree "return annotation" (cs <#> \(_ × ψ × _) -> ψ)
-   let
-      columns = transpose (toList (cs <#> \(ps × _) -> fst <$> ps))
-      named = columns # mapWithIndex \i ps -> case sharedVar ps of
-         Just x -> x × Nothing
-         Nothing -> param (i + 1) × Just ps
-      matched = named # mapMaybe \(x × ps_opt) -> (x × _) <$> ps_opt
-      ss = cs <#> \(_ × _ × s) -> s
-      body = case matched of
-         Nil -> head ss
-         (x × ps) : Nil -> E.Match (E.Var x) (zip (nonEmpty ps) ss)
-         _ -> E.Match (E.Tuple (E.Var <<< fst <$> matched))
-            (zipWith (\ps s -> S.PTuple ps × s) (nonEmpty (transpose (snd <$> matched))) ss)
-   pure (E.Def (fst <$> named) body)
+clauses :: NonEmptyList (List S.Pattern × E.Stmt) -> E.Def
+clauses cs = E.Def (fst <$> named) body
    where
+   columns = transpose (toList (fst <$> cs))
+   named = columns # mapWithIndex \i ps -> case sharedVar ps of
+      Just x -> x × Nothing
+      Nothing -> param (i + 1) × Just ps
+   matched = named # mapMaybe \(x × ps_opt) -> (x × _) <$> ps_opt
+   ss = snd <$> cs
+   body = case matched of
+      Nil -> head ss
+      (x × ps) : Nil -> E.Match (E.Var x) (zip (nonEmpty ps) ss)
+      _ -> E.Match (E.Tuple (E.Var <<< fst <$> matched))
+         (zipWith (\ps s -> S.PTuple ps × s) (nonEmpty (transpose (snd <$> matched))) ss)
+
    sharedVar :: List S.Pattern -> Maybe Var
    sharedVar (S.PVar x : ps) | all (_ == S.PVar x) ps = Just x
    sharedVar _ = Nothing
-
-   agree :: String -> NonEmptyList (Maybe T.Type) -> CheckM Unit
-   agree what ψs =
-      unless (all (\ψ -> ψ == Nothing || ψ == head ψs) (tail ψs)) $ throwError ("Clauses differ in " <> what)
 
 varType :: Cxt -> Var -> CheckM T.Type
 varType cxt x = case lookup x cxt of
