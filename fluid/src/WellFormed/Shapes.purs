@@ -136,7 +136,8 @@ splits classes (Constr c τs ks hs) (PConstr d _ _)
         Just (constrShapes classes d σs ks hs × (Constr c τs ks (HClass d : hs) : Nil))
 splits _ _ _ = Nothing
 
--- Constructor shapes for d with type arguments σs and leading field shapes ks; excluded heads those of hs typed there
+-- Constructor shapes for class d with type arguments σs whose first fields have shapes ks, excluding the heads in hs
+-- typed at that class
 constrShapes :: ClassTable -> Name -> List Type -> List Shape -> List Head -> List Shape
 constrShapes classes d σs ks hs =
    shapesSeq classes (drop (length ks) (snd <$> fieldsAt classes d σs)) <#> \ks' ->

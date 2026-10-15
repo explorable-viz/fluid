@@ -18,9 +18,8 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.List (List(..), drop, filter, index, take, intersect, length, mapMaybe, null, sort, transpose, updateAt, (:))
 import Data.Foldable (any, lookup) as F
 import Module.Defs (ModuleName, containing, implicitFor, submods)
-import Data.List.NonEmpty (NonEmptyList(..), head, last, snoc)
+import Data.List.NonEmpty (NonEmptyList(..), cons, fromList, groupBy, head, last, snoc, toList, uncons)
 import Data.NonEmpty ((:|))
-import Data.List.NonEmpty as NEL
 import Data.Semigroup.Foldable (foldl1)
 import Data.Set (Set, unions)
 import Data.Set as Set
@@ -107,7 +106,7 @@ importBindings enclosing (S.Import q Nothing) = do
    θ <- ModChecked (pure x) <$> checkModule (pure x)
    maplet x <$> submodules θ xs
    where
-   { head: x, tail: xs } = NEL.uncons q
+   { head: x, tail: xs } = uncons q
 importBindings enclosing (S.Import q (Just xs)) = do
    checkDistinct (\x -> "Imported twice: " <> quoted x) xs
    cxt <- checkModule q
@@ -233,12 +232,12 @@ checkStmt cxt _ (S.Def (S.VarDef p ψ e)) = do
    cxt_p <- check cxt p' τ
    pure (Assigns (bindings cxt_p) × E.Assign p' e')
 checkStmt cxt _ (S.DefRec ds) = do
-   let defs = NEL.groupBy (eq `on` fst) ds
-   checkDistinct (\f -> "Non-contiguous clauses for: " <> quoted f) (NEL.toList (fst <<< head <$> defs))
+   let defs = groupBy (eq `on` fst) ds
+   checkDistinct (\f -> "Non-contiguous clauses for: " <> quoted f) (toList (fst <<< head <$> defs))
    fπs <- for defs \def -> (fst (head def) × _) <$> synth cxt (head def)
    let cxt_fs = Map.fromFoldable (fπs <#> \(f × π) -> f × either Assigned TypeScheme π)
    let cxt' = cxt `override` cxt_fs
-   defs' <- for (NEL.zip defs fπs) \(def × (f × π)) -> within ("definition of " <> quoted f) do
+   defs' <- for (zip defs fπs) \(def × (f × π)) -> within ("definition of " <> quoted f) do
       let σ = either identity (\(Forall _ σ') -> σ') π
       classes <- classTable
       cs <- evalStateT (traverse (\b -> StateT \ls -> check cxt' b (σ × ls)) def) (argShapes classes σ)
@@ -259,33 +258,32 @@ checkStmt cxt ζ (S.If es elseBranch) = do
    rElse × elseBranch' <- case elseBranch of
       Just s -> map Just <$> checkStmt cxt ζ s
       Nothing -> pure (Assigns empty × Nothing)
-   pure (foldl1 merge (NEL.cons rElse (fst <$> es')) × E.If (snd <$> es') elseBranch')
+   pure (foldl1 merge (cons rElse (fst <$> es')) × E.If (snd <$> es') elseBranch')
 checkStmt cxt ζ (S.Match e bs) = do
    σ × e' <- synth cxt e
-   ps' <- traverse (pattern cxt) (fst <$> bs)
    classes <- classTable
-   rbs × τ <- matchCases cxt ζ σ (shapes classes σ Nil) (NEL.toList (NEL.zip (NEL.zip (fst <$> bs) ps') (snd <$> bs)))
+   rbs × τ <- matchCases cxt ζ σ (shapes classes σ Nil) (toList bs)
    let rNoMatch = if τ == never then Returns else Assigns empty
    pure (foldl merge rNoMatch (fst <$> rbs) × E.Match e' (nonEmpty (snd <$> rbs)))
 checkStmt _ _ (S.Dataclass _ _ _ _) = error absurd
 checkStmt _ _ (S.TypeAlias _ _ _) = error absurd
 
--- Cases as written and with class patterns in positional form, against remaining type and residual
 matchCases
    :: Cxt
    -> Maybe T.Type
    -> T.Type
    -> List Shape
-   -> List ((S.Pattern × S.Pattern) × S.Stmt)
+   -> List (S.Pattern × S.Stmt)
    -> CheckM (List (WfResult Cxt × E.Case) × T.Type)
 matchCases _ _ τ _ Nil = pure (Nil × τ)
-matchCases cxt ζ τ ls (((p0 × p) × s) : bs) = do
-   for_ (bv p) (unbound cxt)
-   cxt' <- bindings <$> check cxt p τ
+matchCases cxt ζ τ ls ((p × s) : bs) = do
+   p' <- pattern cxt p
+   for_ (bv p') (unbound cxt)
+   cxt' <- bindings <$> check cxt p' τ
    classes <- classTable
-   _ × ls' <- matchesShapes classes ls p # maybe (throwError $ "case " <> prettyP p0 <> " is unreachable") pure
+   _ × ls' <- matchesShapes classes ls p' # maybe (throwError $ "case " <> prettyP p <> " is unreachable") pure
    r × s' <- checkStmt (cxt `override` cxt') ζ s
-   lmap ((override (Assigns cxt') r × (p × s')) : _) <$> matchCases cxt ζ (remaining classes τ p) ls' bs
+   lmap ((override (Assigns cxt') r × (p' × s')) : _) <$> matchCases cxt ζ (remaining classes τ p') ls' bs
 
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 wellFormedTop q cxt (S.Dataclass x αs b yψs) = do
@@ -377,7 +375,7 @@ instance Synth S.Expr (T.Type × E.Expr) where
    synth _ (S.Lit ℓ) = pure (T.LitTy ℓ × E.Lit ℓ)
    synth cxt (S.Call e ψs es xes) = case className cxt e of
       Just (c × name) -> constr cxt c name ψs es xes
-      Nothing -> case NEL.fromList ψs of
+      Nothing -> case fromList ψs of
          Nothing -> do
             when (not (null xes)) $ throwError "Keyword arguments in call other than constructor call"
             case e of
@@ -391,7 +389,7 @@ instance Synth S.Expr (T.Type × E.Expr) where
                   pure (τ × E.App e' es')
          Just ψs' -> traverse asIndex ψs' >>= case _ of
             NonEmptyList (i :| Nil) -> synth cxt (S.Call (S.Subscript e i) Nil es xes)
-            is -> synth cxt (S.Call (S.Subscript e (S.Tuple (NEL.toList is))) Nil es xes)
+            is -> synth cxt (S.Call (S.Subscript e (S.Tuple (toList is))) Nil es xes)
       where
       asIndex (S.NameTy q Nil) = pure (foldl S.Attribute (S.Var (head q)) (tail q))
       asIndex _ = throwError $ "Type arguments for non-class: " <> maybe "expression" (quoted <<< dottedName) (asName e)
@@ -582,7 +580,7 @@ constr cxt c name ψs es xes = do
       $ throwError
       $ quoted (dottedName c) <> " expects " <> show (length xs) <> " argument(s); got " <> show (length es)
    es' <- (es <> _) <$> if null xes then pure Nil else positionaliseKw xs c (length es) xes
-   τs <- case NEL.fromList ψs of
+   τs <- case fromList ψs of
       Just _ -> classTypeArgs cxt name ψs
       Nothing -> do
          let αs = (get name classes).typeParams
@@ -638,7 +636,7 @@ lambdaArgs cxt ps es = do
    pure (cxt_p × ps' × (snd <$> τes))
 
 lambda :: List S.Pattern -> E.Expr -> CheckM E.Expr
-lambda ps e = E.Lambda <$> clauses (NEL.singleton ((ps <#> (_ × Nothing)) × Nothing × E.Return e))
+lambda ps e = E.Lambda <$> clauses (singleton ((ps <#> (_ × Nothing)) × Nothing × E.Return e))
 
 isLambda :: S.Expr -> Boolean
 isLambda (S.Lambda _) = true
@@ -651,7 +649,7 @@ className cxt e = asName e >>= \c -> case resolveName cxt c of
 
 schemeOf :: Cxt -> S.Expr -> Maybe (List Var × T.Type)
 schemeOf cxt e = asName e >>= resolveName cxt >>= case _ of
-   TypeScheme (Forall αs σ) -> Just (NEL.toList αs × σ)
+   TypeScheme (Forall αs σ) -> Just (toList αs × σ)
    _ -> Nothing
 
 nameExpr :: Cxt -> S.Expr -> CheckM E.Expr
@@ -744,7 +742,7 @@ instance Synth S.Branch (T.Type + T.Scheme) where
       scheme <$> (T.CallableTy <$> traverse (\(S.Param _ ψ') -> synth cxt_αs ψ') ps <*> synth cxt_αs ψ)
       where
       cxt_αs = cxt `override` typeParams αs
-      scheme σ = maybe (Left σ) (\αs' -> Right (Forall αs' σ)) (NEL.fromList αs)
+      scheme σ = maybe (Left σ) (\αs' -> Right (Forall αs' σ)) (fromList αs)
 
 -- Clause against function type and residual of earlier clauses
 instance
@@ -783,10 +781,10 @@ clauses cs = do
    let n = length (fst (head cs)) :: Int
    for_ cs \(ps × _) ->
       when (length ps /= n) $ throwError "Clauses differ in number of parameters"
-   for_ (transpose (NEL.toList (cs <#> \(ps × _) -> snd <$> ps))) (agree "parameter annotations" <<< nonEmpty)
+   for_ (transpose (toList (cs <#> \(ps × _) -> snd <$> ps))) (agree "parameter annotations" <<< nonEmpty)
    agree "return annotation" (cs <#> \(_ × ψ × _) -> ψ)
    let
-      columns = transpose (NEL.toList (cs <#> \(ps × _) -> fst <$> ps))
+      columns = transpose (toList (cs <#> \(ps × _) -> fst <$> ps))
       named = columns # mapWithIndex \i ps -> case sharedVar ps of
          Just x -> x × Nothing
          Nothing -> param (i + 1) × Just ps
