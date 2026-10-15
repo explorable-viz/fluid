@@ -110,10 +110,12 @@ matchesShapes classes ls p = case mapMaybe snd results of
    results = ls <#> \k -> k × matches classes k p
 
 splits :: ClassTable -> Shape -> Pattern -> Maybe (List Shape × List Shape)
+splits _ (Rest (LitTy _) _) (PLit _) = Nothing
 splits classes (Rest τ hs) (PLit ℓ)
-   | not (HLit ℓ `elem` hs), subtype classes (LitTy ℓ) τ, not (isLitTy τ) =
+   | not (HLit ℓ `elem` hs), subtype classes (LitTy ℓ) τ =
         Just ((Rest (LitTy ℓ) Nil : Nil) × shapes classes τ (HLit ℓ : hs))
-splits classes (Rest (TupleTy τs) _) (PTuple ps) | length τs == length ps = Just ((Tuple <$> shapesSeq classes τs) × Nil)
+splits classes (Rest (TupleTy τs) _) (PTuple ps)
+   | length τs == length ps = Just ((Tuple <$> shapesSeq classes τs) × Nil)
 splits classes (Rest τ@(ListTy σ) hs) (PList ps)
    | not (HList (length ps) `elem` hs) =
         Just ((List σ <$> shapesSeq classes (replicate (length ps) σ)) × shapes classes τ (HList (length ps) : hs))
@@ -125,22 +127,17 @@ splits classes (Rest τ hs) (PConstr c _ _)
    | not (belowExcluded classes c hs)
    , Just (Instance τs) <- instanceAt classes c τ
    , ClassTy d σs <- meet classes τ (ClassTy c τs) =
-        Just
-           ( (shapesSeq classes (snd <$> fieldsAt classes d σs) <#> \ks -> Constr d σs ks (typedHeads classes hs (ClassTy d σs)))
-                × shapes classes τ (HClass c : hs)
-           )
+        Just (constrShapes classes d σs Nil hs × shapes classes τ (HClass c : hs))
 splits classes (Constr c τs ks hs) (PConstr d _ _)
    | d /= c
    , not (belowExcluded classes d hs)
    , Just (Instance σs) <- instanceAt classes d (ClassTy c τs)
    , subtype classes (ClassTy d σs) (ClassTy c τs) =
-        Just
-           ( ( shapesSeq classes (drop (length ks) (snd <$> fieldsAt classes d σs))
-                  <#> \ks' -> Constr d σs (ks <> ks') (typedHeads classes hs (ClassTy d σs))
-             ) × (Constr c τs ks (HClass d : hs) : Nil)
-           )
+        Just (constrShapes classes d σs ks hs × (Constr c τs ks (HClass d : hs) : Nil))
 splits _ _ _ = Nothing
 
-isLitTy :: Type -> Boolean
-isLitTy (LitTy _) = true
-isLitTy _ = false
+-- Constructor shapes for d with type arguments σs and leading field shapes ks; excluded heads those of hs typed there
+constrShapes :: ClassTable -> Name -> List Type -> List Shape -> List Head -> List Shape
+constrShapes classes d σs ks hs =
+   shapesSeq classes (drop (length ks) (snd <$> fieldsAt classes d σs)) <#> \ks' ->
+      Constr d σs (ks <> ks') (typedHeads classes hs (ClassTy d σs))
