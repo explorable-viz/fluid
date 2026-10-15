@@ -40,7 +40,7 @@ import Pretty (prettyP)
 import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeExpr(..), VarDef(..), assigns, binds, declares) as S
 import Types (Scheme(..))
 import Types as T
-import Util (MayFail, type (+), type (×), absurd, checkDistinct, definitely', error, nonEmpty, quoted, quotedList, singleton, tail, zip, zipWith, (×), (∩))
+import Util (MayFail, type (+), type (×), absurd, checkDistinct, definitely', error, nonEmpty, quoted, quotedList, singleton, tail, unzip, zip, zipWith, (×), (∩))
 import Util.Pair (Pair(..))
 import Util.Set (empty, (\\), (∈), (∪))
 
@@ -227,8 +227,7 @@ checkStmt cxt _ (S.Def (S.VarDef (S.PVar x) Nothing e)) = case lookup x cxt of
 checkStmt cxt _ (S.Def (S.VarDef p ψ e)) = do
    for_ (bv p) (unbound cxt)
    τ × e' <- annotated cxt ψ e
-   p' <- pattern cxt p
-   cxt' <- check cxt p' τ
+   p' × cxt' <- checkPattern cxt p τ
    pure (Assigns cxt' × E.Assign p' e')
 checkStmt cxt _ (S.DefRec ds) = do
    let defs = groupBy (eq `on` fst) ds
@@ -276,9 +275,8 @@ matchCases
    -> CheckM (List (WfResult Cxt × E.Case) × T.Type)
 matchCases _ _ τ _ Nil = pure (Nil × τ)
 matchCases cxt ζ τ ls ((p × s) : bs) = do
-   p' <- pattern cxt p
-   for_ (bv p') (unbound cxt)
-   cxt' <- check cxt p' τ
+   for_ (bv p) (unbound cxt)
+   p' × cxt' <- checkPattern cxt p τ
    classes <- classTable
    _ × ls' <- matchesShapes classes ls p' # maybe (throwError $ "case " <> prettyP p <> " is unreachable") pure
    r × s' <- checkStmt (cxt `override` cxt') ζ s
@@ -631,12 +629,17 @@ lambdaArgs cxt ps es = do
    ps' × cxt' <- paramPatterns cxt ps (fst <$> τes)
    pure (cxt' × ps' × (snd <$> τes))
 
+-- Pattern in positional form, with its bindings at type τ
+checkPattern :: Cxt -> S.Pattern -> T.Type -> CheckM (S.Pattern × Cxt)
+checkPattern cxt p τ = do
+   p' <- pattern cxt p
+   (p' × _) <$> check cxt p' τ
+
 -- Parameter patterns in positional form, with their bindings at parameter types σs
 paramPatterns :: Cxt -> List S.Pattern -> List T.Type -> CheckM (List S.Pattern × Cxt)
 paramPatterns cxt ps σs = do
    distinctVars ps
-   ps' <- traverse (pattern cxt) ps
-   (ps' × _) <$> check cxt ps' σs
+   map (foldl (∪) empty) <<< unzip <$> sequence (zipWith (checkPattern cxt) ps σs)
 
 lambda :: List S.Pattern -> E.Expr -> E.Expr
 lambda ps e = E.Lambda (clauses (singleton (ps × E.Return e)))
@@ -700,14 +703,12 @@ checkQuals cxt (g : gs) body = case g of
       σ × e' <- synth cxt e
       classes <- classTable
       τ <- maybe (throwError $ "Values of type " <> prettyP σ <> " cannot be iterated") pure (elemType classes σ)
-      p' <- pattern cxt p
-      cxt' <- check cxt p' τ
+      p' × cxt' <- checkPattern cxt p τ
       map (E.Generator p' e' : _) <$> checkQuals (cxt `override` cxt') gs body
    S.Decl (S.VarDef p ψ e) -> do
       notCaptured (bv p) (captures gs)
       τ × e' <- annotated cxt ψ e
-      p' <- pattern cxt p
-      cxt' <- check cxt p' τ
+      p' × cxt' <- checkPattern cxt p τ
       map (E.Decl p' e' : _) <$> checkQuals (cxt `override` cxt') gs body
 
 notCaptured :: Set Var -> Set Var -> CheckM Unit
