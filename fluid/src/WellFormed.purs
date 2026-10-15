@@ -238,7 +238,7 @@ checkStmt cxt _ (S.DefRec ds) = do
    let cxt_fs = Map.fromFoldable (fπs <#> \(f × π) -> f × either Assigned TypeScheme π)
    let cxt' = cxt `override` cxt_fs
    defs' <- for (zip defs fπs) \(def × (f × π)) -> within ("definition of " <> quoted f) do
-      let σ = either identity (\(Forall _ σ') -> σ') π
+      let σ = signatureType π
       classes <- classTable
       cs <- evalStateT (traverse (\b -> StateT \ls -> check cxt' b (σ × ls)) def) (argShapes classes σ)
       pure (f ↦ clauses cs)
@@ -485,9 +485,7 @@ instance Check S.Expr T.Type E.Expr where
       E.Dictionary <$> for kvs \(k × v) -> Pair <$> check cxt k str <*> check cxt v τ
    check cxt (S.Lambda (S.LambdaClause (ps × e))) τ = case τ of
       T.CallableTy σs τ' | length σs == length ps -> do
-         distinctVars ps
-         ps' <- traverse (pattern cxt) ps
-         cxt_p <- check cxt ps' σs
+         ps' × cxt_p <- paramPatterns cxt ps σs
          e' <- check (cxt `override` bindings cxt_p) e τ'
          pure (lambda ps' e')
       _ -> throwError $ "Expected type " <> prettyP τ <> "; given lambda with " <> show (length ps) <> " parameter(s)"
@@ -629,11 +627,16 @@ lambdaArgs cxt ps es = do
    when (length ps /= length es)
       $ throwError
       $ "Call expects " <> show (length ps) <> " argument(s); given " <> show (length es)
+   τes <- traverse (synth cxt) es
+   ps' × cxt_p <- paramPatterns cxt ps (fst <$> τes)
+   pure (cxt_p × ps' × (snd <$> τes))
+
+-- Parameter patterns in positional form, with their bindings at parameter types σs
+paramPatterns :: Cxt -> List S.Pattern -> List T.Type -> CheckM (List S.Pattern × Map.Map Var T.Type)
+paramPatterns cxt ps σs = do
    distinctVars ps
    ps' <- traverse (pattern cxt) ps
-   τes <- traverse (synth cxt) es
-   cxt_p <- check cxt ps' (fst <$> τes)
-   pure (cxt_p × ps' × (snd <$> τes))
+   (ps' × _) <$> check cxt ps' σs
 
 lambda :: List S.Pattern -> E.Expr -> E.Expr
 lambda ps e = E.Lambda (clauses (singleton (ps × E.Return e)))
@@ -746,30 +749,32 @@ instance Synth S.Branch (T.Type + T.Scheme) where
 
 -- Clause against function type and residual of earlier clauses
 instance Check S.Branch (T.Type × List Shape) ((List S.Pattern × E.Stmt) × List Shape) where
-   check cxt (f × S.Clause (αs × ps × ψ × s)) (T.CallableTy σs τ × ls) = do
-      when (length ps /= length σs) $ throwError "Clauses differ in number of parameters"
-      σs' <- traverse (\(S.Param _ ψ') -> synth cxt_αs ψ') ps
-      when (σs' /= σs) $ throwError "Clauses differ in parameter annotations"
-      τ' <- synth cxt_αs ψ
-      when (τ' /= τ) $ throwError "Clauses differ in return annotation"
-      distinctVars (ps <#> \(S.Param p _) -> p)
-      ps' <- traverse (\(S.Param p _) -> pattern cxt p) ps
-      cxt_p <- check cxt ps' σs
+   check cxt b@(f × S.Clause (αs × ps × _ × s)) (σ@(T.CallableTy σs τ) × ls) = do
+      π <- synth cxt b
+      when (signatureType π /= σ) $ throwError "Clauses differ in signature"
+      ps' × cxt_p <- paramPatterns cxt (ps <#> \(S.Param p _) -> p) σs
       classes <- classTable
       _ × ls' <- matchesShapes classes ls (S.PTuple ps') # maybe (throwError unreachable) pure
       cxt_s <- scope "parameter" (unions (bv <$> ps)) s
-      r × s' <- checkStmt (cxt_αs `override` bindings cxt_p `override` cxt_s) (Just τ) s
-      case r of
-         Assigns _ | not (equiv classes τ none) ->
-            throwError $ quoted f <> " declares result type " <> prettyP τ <> " but does not always return"
-         _ -> pure ((ps' × close r s') × ls')
+      s' <- funBody (cxt `override` typeParams αs `override` bindings cxt_p `override` cxt_s) f τ s
+      pure ((ps' × s') × ls')
       where
-      cxt_αs = cxt `override` typeParams αs
       unreachable = "clause " <> f <> "(" <> intercalate ", " (ps <#> \(S.Param p _) -> prettyP p) <> ") is unreachable"
-      -- Body that may fall through returns None
-      close Returns s' = s'
-      close (Assigns _) s' = E.Seq s' (E.Return (E.Lit None))
    check _ _ _ = error absurd
+
+signatureType :: T.Type + T.Scheme -> T.Type
+signatureType = either identity \(Forall _ σ) -> σ
+
+-- Body of function f against result type τ; body that may fall through returns None
+funBody :: Cxt -> Var -> T.Type -> S.Stmt -> CheckM E.Stmt
+funBody cxt f τ s = do
+   r × s' <- checkStmt cxt (Just τ) s
+   classes <- classTable
+   case r of
+      Returns -> pure s'
+      Assigns _
+         | equiv classes τ none -> pure (E.Seq s' (E.Return (E.Lit None)))
+         | otherwise -> throwError $ quoted f <> " declares result type " <> prettyP τ <> " but does not always return"
 
 argShapes :: ClassTable -> T.Type -> List Shape
 argShapes classes (T.CallableTy σs _) = shapes classes (T.TupleTy σs) Nil
