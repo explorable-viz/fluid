@@ -37,7 +37,7 @@ import Operator (binopSymbol, unopSymbol)
 import Pretty (prettyP)
 import Types (Type(..)) as T
 import Primitive (binop, binopRel, boolean, int, string, typeMismatch, unop, unopRel, unpack, unpackVal)
-import Util (type (×), absurd, check, definitely', definitelyRight, error, orElse, orThrow, singleton, throw, withMsg, (×))
+import Util (type (×), absurd, check, definitely', definitelyRight, error, orElse, orThrow, quoted, singleton, throw, withMsg, (×))
 import Util.Map (get, lookup, lookup', mapWithKey, maplet, restrict, unionWith_never, (<+>))
 import Util.Pair (Pair(..))
 import Util.Set (empty, (∪))
@@ -185,7 +185,7 @@ eval inputs = case _ of
       v <- gval <$> eval inputs e
       case v.val of
          Val _ (V.Obj c xvs) -> do
-            i <- elemIndex x (fst <$> xvs) # orElse (dottedName c <> " has no field " <> x)
+            i <- elemIndex x (fst <$> xvs) # orElse (quoted (dottedName c) <> " has no field " <> quoted x)
             deliver (inputs.ctrl <> via root v) { val: field i v.val, inEdges: via (field i) v }
          _ -> throw $ "Found " <> prettyP v.val <> ", expected object"
    Subscript e e' -> do
@@ -258,7 +258,7 @@ eval inputs = case _ of
       pure (s × gval k × gval u)
 
    funName :: Expr -> String
-   funName (Var x) = x
+   funName (Var x) = quoted x
    funName (App e _) = funName e
    funName _ = "unknown"
 

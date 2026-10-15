@@ -37,7 +37,7 @@ import Primitive.Defs (predefined, predefinedClasses)
 import WellFormed (CheckM, checkProgram, checkModule, mainModule, runCheckM)
 import SExpr as S
 import Types (Primitive(..)) as T
-import Util (MayFail, type (×), orThrow, throw, whenever, (×))
+import Util (MayFail, type (×), orThrow, quoted, throw, whenever, (×))
 import Util.Map (constMap, findWithDefault, mapWithKey, restrict)
 import Val (class HasModuleStore, ModuleState(..), modifyModuleStore, Env(..))
 
@@ -84,7 +84,7 @@ checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
    go path done q
       | Set.member q done = pure done
       | q `elem` path = Left
-           ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
+           ("import cycle: " <> intercalate " -> " (quoted <<< dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
 
 -- Load modules into new dependence graph, kept in module store; return top-level environment as vertex per variable
@@ -177,7 +177,7 @@ parseModules imports = do
          | Set.member mod visited -> collectModules visited moduleDeps mods rest
          | Map.member mod predefined -> do
               shadowed <- lift (isModule mod)
-              when shadowed $ lift $ throw $ "Predefined module cannot have a source file: " <> dottedName mod
+              when shadowed $ lift $ throw $ "Predefined module cannot have a source file: " <> quoted (dottedName mod)
               collectModules (Set.insert mod visited) moduleDeps mods rest
          | otherwise -> do
               mod' × edges × toLoad <- parseAndCollect mod
@@ -192,9 +192,9 @@ parseModules imports = do
       FileCxt { fluidSrcPaths } <- ask
       lift (loadModuleSource fluidSrcPaths (pathName path)) >>= case _ of
          Just src -> do
-            mod × _ <- except (lmap (\msg -> ParseFailure (msg <> "\nLoading module " <> dottedName path)) (parseModule src))
+            mod × _ <- except (lmap (\msg -> ParseFailure (msg <> "\nLoading module " <> quoted (dottedName path))) (parseModule src))
             deps <- lift case mod of S.Module ιs _ -> traverse (importDeps path) ιs
             pure (mod × (deps >>= _.edges) × (implicitFor path <> (deps >>= _.load)))
          Nothing -> lift (hasDirectory fluidSrcPaths (File (pathName path))) >>= case _ of
             true -> pure (S.Module Nil S.Pass × Nil × Nil)
-            false -> lift (throw ("No module named " <> dottedName path))
+            false -> lift (throw ("No module named " <> quoted (dottedName path)))

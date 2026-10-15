@@ -21,7 +21,7 @@ import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy, string)
 import Parsing.String.Basic (alphaNum, letter)
 import Parsing.Token (oneOf)
-import Util (type (×), (×))
+import Util (type (×), quoted, (×))
 
 opChars :: Array Char
 opChars =
@@ -134,7 +134,7 @@ identifier start letter = lexeme $ do
 unreserved :: Parser String -> Parser String
 unreserved p = do
    name <- p
-   if name `elem` keywords then fail $ "Reserved identifier: " <> name
+   if name `elem` keywords then fail $ "Reserved identifier: " <> quoted name
    else pure name
 
 variable :: Parser String
