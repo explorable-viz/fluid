@@ -165,7 +165,6 @@ parseModules imports = do
    pure (mapWithKey (\q (S.Module ιs s) -> S.Module ιs (named q s)) (mods `Map.union` constMap (S.Module Nil S.Pass) ancestors))
 
    where
-
    collectModules
       :: Set ModuleName
       -> DependencyGraph
