@@ -9,15 +9,17 @@ import Data.Array (reverse, some)
 import Data.Bifunctor (lmap)
 import Data.CodePoint.Unicode (isSpace)
 import Bind (Bind, Name, Var, varAnon, (↦))
-import Data.Either (Either(..))
-import Data.Foldable (foldl)
+import Data.Either (Either(..), isLeft)
+import Data.Filterable (partitionMap)
+import Data.Foldable (any, foldl)
 import Data.Identity (Identity)
-import Data.List (List(..), nub, (:))
+import Data.List (List(..), dropWhile, nub, (:))
 import Data.List.NonEmpty (NonEmptyList(..), cons, toList)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.NonEmpty ((:|))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
+import Data.Tuple (uncurry)
 import Data.Traversable (foldr)
 import Literal (Literal(..))
 import Parse.Number (float, integer)
@@ -53,27 +55,17 @@ simplePattern = pLit <|> pConstr <|> pVar <|> pRecord <|> pList <|> parensPatter
       q <- try (qualifiedName <* delim '(')
       args <- commas constrArg
       delim ')'
-      pure $ PConstr q (takeLefts args) (takeRights args)
+      uncurry (PConstr q) <$> positionalThenKeyword args
       where
       constrArg :: Parser (Pattern + Bind Pattern)
-      constrArg = defer \_ -> (Right <$> try kwArg) <|> (Left <$> simplePattern)
+      constrArg = defer \_ -> (Right <$> try kwArg) <|> (Left <$> pattern)
 
       kwArg :: Parser (Bind Pattern)
       kwArg = defer \_ -> do
          x <- variable
          delim '='
-         p <- simplePattern
+         p <- pattern
          pure (x ↦ p)
-
-      takeLefts :: forall a b. List (a + b) -> List a
-      takeLefts Nil = Nil
-      takeLefts (Left x : xs) = x : takeLefts xs
-      takeLefts (Right _ : _) = Nil
-
-      takeRights :: forall a b. List (a + b) -> List b
-      takeRights Nil = Nil
-      takeRights (Right x : xs) = x : takeRights xs
-      takeRights (Left _ : xs) = takeRights xs
 
    pRecord :: Parser Pattern
    pRecord = defer \_ -> braces (fields stringLiteral pattern) <#> PRecord
@@ -97,6 +89,14 @@ simplePattern = pLit <|> pConstr <|> pVar <|> pRecord <|> pList <|> parensPatter
                       pure $ PTuple (p : ps)
                  ]
          ]
+
+-- Split arguments into positional and keyword, rejecting positional after keyword
+positionalThenKeyword :: forall a b. List (a + b) -> Parser (List a × List b)
+positionalThenKeyword args
+   | any isLeft (dropWhile isLeft args) = fail "positional argument follows keyword argument"
+   | otherwise = pure (left × right)
+        where
+        { left, right } = partitionMap identity args
 
 typeExpr :: Parser TypeExpr
 typeExpr = defer \_ -> do
@@ -165,10 +165,7 @@ declareStmt = do
    Declare x <$> typeExpr
 
 returnStmt :: Parser Stmt
-returnStmt = do
-   reserved "return"
-   e <- optionMaybe (sameOrIndented *> expr)
-   pure $ Return $ fromMaybe (Lit None) e
+returnStmt = reserved "return" *> (Return <$> optionMaybe (sameOrIndented *> expr))
 
 assertStmt :: Parser Stmt
 assertStmt = do
@@ -187,7 +184,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser Stmt
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeAliasStmt <|> defStmt <|> declareStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeAliasStmt <|> defStmt <|> declareStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <<< Just <$> expr)
 
 programStmts :: Parser Stmt
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
@@ -345,7 +342,7 @@ expr = context "expr" $ cond <?> "expression"
                delim '('
                args <- commas arg
                close ')'
-               chain (Call e ψs (takeLefts args) (takeRights args))
+               positionalThenKeyword args >>= uncurry (Call e ψs) >>> chain
                where
                arg :: Parser (Expr + Bind Expr)
                arg = defer \_ -> (Right <$> try kwArg) <|> (Left <$> cond)
@@ -356,15 +353,6 @@ expr = context "expr" $ cond <?> "expression"
                   delim '='
                   v <- cond
                   pure (x ↦ v)
-
-               takeLefts :: forall p q. List (p + q) -> List p
-               takeLefts (Left x : xs) = x : takeLefts xs
-               takeLefts _ = Nil
-
-               takeRights :: forall p q. List (p + q) -> List q
-               takeRights (Right x : xs) = x : takeRights xs
-               takeRights (Left _ : xs) = takeRights xs
-               takeRights Nil = Nil
 
       simple :: Parser Expr
       simple = context "simple" $
@@ -585,7 +573,7 @@ parse parser input =
    where
    printError :: ParseError -> String
    printError (ParseError msg (Position { line, column })) =
-      "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
+      "ParseError on line " <> show line <> ", column " <> show column <> ": " <> msg
 
 parseProgram :: String -> MayFail (Stmt × List Import)
 parseProgram src = parse (topLevel programBody) src

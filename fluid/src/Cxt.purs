@@ -12,7 +12,7 @@ import Data.Map (unionWith) as M
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), maybe)
 import Types (Scheme(..), Type, fv) as T
-import Util (type (+), absurd, error)
+import Util (type (+), absurd, error, quoted)
 import Util.Map (intersectionWith, lookup)
 import Util.Set ((∪))
 
@@ -86,7 +86,7 @@ instance Merge a => Merge (WfResult a) where
 classOf :: forall m. MonadThrow String m => Cxt -> Name -> m Name
 classOf cxt c = case resolveName cxt c of
    Just (Type c') -> pure c'
-   _ -> throwError $ "Unknown dataclass: " <> dottedName c
+   _ -> throwError $ "Unknown dataclass: " <> quoted (dottedName c)
 
 resolveName :: Cxt -> Name -> Maybe Entry
 resolveName cxt name = case NEL.fromList init of

@@ -46,7 +46,7 @@ data ParagraphElem = Token String | Unquote Expr
 type Paragraph = List ParagraphElem
 
 data Stmt
-   = Return Expr
+   = Return (Maybe Expr)
    | If (NonEmptyList (Expr × Stmt)) (Maybe Stmt)
    | Match Expr (NonEmptyList Case)
    | Declare Var TypeExpr

@@ -12,8 +12,6 @@ import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Classes (class HasClasses)
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadError)
-import Control.Monad.Reader (class MonadReader)
 import Data.Array as A
 import Data.Foldable (elem, or)
 import Data.FunctorWithIndex (mapWithIndex)
@@ -26,13 +24,11 @@ import Data.Set as Set
 import Data.Traversable (for_, sequence_)
 import Data.Tuple (fst)
 import Effect (Effect)
-import Effect.Aff.Class (class MonadAff)
-import Effect.Exception (Error)
 import Eval (evalProgram, visible)
-import File (class LoadFile, File(..), FileCxt)
+import File (class MonadLoad, File(..))
 import DepGraph (ConjugatePair, DepGraph, Deriv, Labelling, Pos, dimap, mask, materialise, queries, selected)
 import Lattice (DepKind(..), 𝔹, botOf, erase)
-import Module (prepConfig)
+import Module (prepConfig, throwParseFailure)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), Endo, spyWhen, (×))
@@ -157,9 +153,9 @@ boolean
    -> ConjugatePair (Labelling (Val 𝔹)) (Labelling (Val 𝔹))
 boolean = dimap (map selected) (map (map (_ /= Zero)))
 
-loadFig :: forall m. HasClasses m => HasModuleStore m => MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
+loadFig :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => Options -> String -> m Fig
 loadFig options@{ inputs, linking, query, ignoreInputs } fluidSrc = do
-   config@{ s } <- prepConfig fluidSrc
+   config@{ s } <- throwParseFailure (prepConfig fluidSrc)
    eval@{ g: g@{ docs }, root } <- evalProgram config.inputs config.classes config.e
    let
       out = withDoc g root

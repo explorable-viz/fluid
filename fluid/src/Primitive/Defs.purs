@@ -45,7 +45,7 @@ import DepGraph (zeros)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, ctrlWeight)
 import Literal (Literal(..))
 import Primitive (int, intOrNumber, number, string, typeMismatch, unary, union1)
-import Util (MayFail, cons, type (+), type (×), definitely', orElse, orThrow, singleton, throw, whenever, (×))
+import Util (MayFail, cons, type (+), type (×), definitely', orElse, orThrow, quoted, quotedList, singleton, throw, whenever, (×))
 import Module.Defs (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
@@ -179,7 +179,7 @@ jsonVal classes τ json = case τ of
       obj <- expect "object" (toObject json)
       let xσs = fields classes c
       when (Set.fromFoldable (O.keys obj) /= Set.fromFoldable (fst <$> xσs))
-         $ Left ("Expected fields of " <> last c <> ": " <> show (fst <$> xσs) <> "; got " <> show (O.keys obj))
+         $ Left ("Expected fields of " <> quoted (last c) <> ": " <> quotedList (fst <$> xσs) <> "; got " <> quotedList (O.keys obj))
       val <<< Obj c <$> traverse (\(x × σ) -> (x × _) <$> jsonVal classes σ (definitely' (O.lookup x obj))) xσs
    T.PrimitiveTy T.Int -> val <<< Lit <<< Int <$> expect "integer" (J.toNumber json >>= Int.fromNumber)
    T.PrimitiveTy T.Float -> val <<< Lit <<< Float <$> expect "number" (J.toNumber json)

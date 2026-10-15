@@ -42,20 +42,27 @@ import Pretty (prettyP)
 import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeExpr(..), VarDef(..), assigns, binds, declares) as S
 import Types (Scheme(..))
 import Types as T
-import Util (MayFail, type (+), type (×), absurd, checkDistinct, definitely', error, nonEmpty, singleton, tail, zip, zipWith, (×), (∩))
+import Util (MayFail, type (+), type (×), absurd, checkDistinct, definitely', error, nonEmpty, quoted, quotedList, singleton, tail, zip, zipWith, (×), (∩))
 import Util.Pair (Pair(..))
 import Util.Set (empty, (\\), (∈), (∪))
 
 -- Predefined modules and program (under __main__) have no body
 type CheckedModule = { cxt :: Cxt, mod :: Maybe E.Module }
 
--- Modules checked so far, over parsed modules.
+-- Modules checked so far, over parsed modules and names of all modules of program.
 type CheckState = { modules :: Map.Map ModuleName CheckedModule, classes :: ClassTable }
-type CheckM = StateT CheckState (ReaderT (Map.Map ModuleName S.Module) (Either String))
+type CheckM = StateT CheckState (ReaderT { modules :: Map.Map ModuleName S.Module, names :: Set ModuleName } (Either String))
 
-runCheckM :: forall a. CheckM a -> Map.Map ModuleName S.Module -> Map.Map ModuleName Cxt -> ClassTable -> MayFail (a × CheckState)
-runCheckM m mods predefined classes =
-   runReaderT (runStateT m { modules: predefined <#> \cxt -> { cxt, mod: Nothing }, classes }) mods
+runCheckM
+   :: forall a
+    . CheckM a
+   -> Map.Map ModuleName S.Module
+   -> Set ModuleName
+   -> Map.Map ModuleName Cxt
+   -> ClassTable
+   -> MayFail (a × CheckState)
+runCheckM m modules names predefined classes =
+   runReaderT (runStateT m { modules: predefined <#> \cxt -> { cxt, mod: Nothing }, classes }) { modules, names }
 
 classTable :: CheckM ClassTable
 classTable = gets _.classes
@@ -72,16 +79,16 @@ checkProgram imports s = do
 checkModule :: ModuleName -> CheckM Cxt
 checkModule q = gets _.modules >>= \modules -> case lookup q modules of
    Just { cxt } -> pure cxt
-   Nothing -> within ("module " <> dottedName q) do
-      mods <- lift ask
+   Nothing -> within ("module " <> quoted (dottedName q)) do
+      { modules: mods, names } <- lift ask
       let mod@(S.Module ιs _) = get q mods
       cxt_imp × cxt_ιs <- checkImports q ιs
       cxt' × mod' <- checkStatements q cxt_imp cxt_ιs mod
-      let subMods = Mod <$> Map.fromFoldable (submods (keys mods) q)
+      let subMods = Mod <$> Map.fromFoldable (submods names q)
       for_ (Set.findMin ((keys cxt_ιs ∪ keys cxt') ∩ keys subMods)) \x ->
-         throwError $ "Duplicate module member: " <> dottedName q <> " defines " <> x
+         throwError $ "Duplicate module member: " <> quoted (dottedName q) <> " defines " <> quoted x
             <> " and also has submodule "
-            <> dottedName (snoc q x)
+            <> quoted (dottedName (snoc q x))
       let cxt = subMods `override` cxt'
       modify_ \st -> st { modules = insert q { cxt, mod: Just mod' } st.modules }
       pure cxt
@@ -97,12 +104,13 @@ importBindings :: ModuleName -> S.Import -> CheckM Cxt
 importBindings enclosing (S.Import q Nothing) = do
    when (enclosing `properPrefixOf` q)
       $ throwError
-      $ "Module " <> dottedName enclosing <> " cannot import its own descendant " <> dottedName q
+      $ "Module " <> quoted (dottedName enclosing) <> " cannot import its own descendant " <> quoted (dottedName q)
    θ <- ModChecked (pure x) <$> checkModule (pure x)
    maplet x <$> submodules θ xs
    where
    { head: x, tail: xs } = NEL.uncons q
 importBindings enclosing (S.Import q (Just xs)) = do
+   checkDistinct (\x -> "Imported twice: " <> quoted x) xs
    cxt <- checkModule q
    for_ (containing enclosing q) checkModule
    importedMembers q cxt xs
@@ -121,10 +129,10 @@ importedMembers q cxt (x : xs) = do
    othersCxt <- importedMembers q cxt xs
    case lookup x cxt of
       Just (Mod q') -> checkModule q' <#> \cxt' -> insert x (ModChecked q' cxt') othersCxt
-      Just (Declared _) -> throwError $ "Not definitely initialised: " <> x
-      Just (PossiblyUnassigned _) -> throwError $ "Not definitely initialised: " <> x
+      Just (Declared _) -> throwError $ "Not definitely initialised: " <> quoted x
+      Just (PossiblyUnassigned _) -> throwError $ "Not definitely initialised: " <> quoted x
       Just θ -> pure (insert x θ othersCxt)
-      Nothing -> throwError $ "Cannot import name " <> x <> " from module " <> dottedName q
+      Nothing -> throwError $ "Cannot import name " <> quoted x <> " from module " <> quoted (dottedName q)
 
 checkStatements :: Name -> Cxt -> Cxt -> S.Module -> CheckM (Cxt × E.Module)
 checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
@@ -142,10 +150,10 @@ moduleScope cxt_imp cxt_ιs s =
 
 scope :: String -> Set Var -> S.Stmt -> CheckM Cxt
 scope what ys s = do
-   checkDistinct ("Declared twice: " <> _) (S.declares s)
-   for_ (declared ∩ ys) \x -> throwError $ "Redeclared " <> what <> ": " <> x
-   for_ (S.binds s ∩ declared) \x -> throwError $ "Pattern variable also declared: " <> x
-   for_ (S.binds s ∩ ys) \x -> throwError $ "Pattern variable shadows " <> what <> ": " <> x
+   checkDistinct (\x -> "Declared twice: " <> quoted x) (S.declares s)
+   for_ (declared ∩ ys) \x -> throwError $ "Redeclared " <> what <> ": " <> quoted x
+   for_ (S.binds s ∩ declared) \x -> throwError $ "Pattern variable also declared: " <> quoted x
+   for_ (S.binds s ∩ ys) \x -> throwError $ "Pattern variable shadows " <> what <> ": " <> quoted x
    pure (constMap Unbound (S.assigns s \\ ys))
    where
    declared = Set.fromFoldable (S.declares s)
@@ -194,7 +202,11 @@ instance Captures (List S.Qualifier) where
 checkStmt :: Cxt -> Maybe T.Type -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 checkStmt _ _ S.Pass = pure (Assigns empty × E.Pass)
 -- Outside a function, the result of the program
-checkStmt cxt ζ (S.Return e) = (Returns × _) <<< E.Return <$> maybe (exprStmt cxt e) (check cxt e) ζ
+checkStmt cxt ζ (S.Return (Just e)) = (Returns × _) <<< E.Return <$> maybe (exprStmt cxt e) (check cxt e) ζ
+checkStmt _ ζ (S.Return Nothing) = do
+   classes <- classTable
+   for_ ζ \τ -> unless (equiv classes τ none) $ throwError $ "Bare return with result type " <> prettyP τ
+   pure (Returns × E.Return (E.Lit None))
 checkStmt cxt _ (S.ExprStmt e) = (Assigns empty × _) <<< E.ExprStmt <$> exprStmt cxt e
 checkStmt cxt (Just _) (S.Assert (S.Lit (Bool false)) e') =
    (Returns × _) <$> (E.Assert (E.Lit (Bool false)) <$> traverse (\e'' -> check cxt e'' str) e')
@@ -212,7 +224,7 @@ checkStmt cxt _ (S.Def (S.VarDef (S.PVar x) Nothing e)) = case lookup x cxt of
    Just (Declared τ) -> do
       e' <- check cxt e τ
       pure (Assigns (maplet x (Assigned τ)) × E.Assign (S.PVar x) e')
-   Just Unbound -> throwError $ "Assigned before declaration: " <> x
+   Just Unbound -> throwError $ "Assigned before declaration: " <> quoted x
    _ -> assignable cxt x >>= \_ -> error absurd
 -- Assignment to a pattern; the spec has only variables
 checkStmt cxt _ (S.Def (S.VarDef p ψ e)) = do
@@ -223,13 +235,13 @@ checkStmt cxt _ (S.Def (S.VarDef p ψ e)) = do
    pure (Assigns (bindings cxt_p) × E.Assign p' e')
 checkStmt cxt _ (S.DefRec ds) = do
    let defs = NEL.groupBy (eq `on` fst) ds
-   checkDistinct ("Non-contiguous clauses for: " <> _) (NEL.toList (fst <<< head <$> defs))
+   checkDistinct (\f -> "Non-contiguous clauses for: " <> quoted f) (NEL.toList (fst <<< head <$> defs))
    fπs <- for defs \def -> (fst (head def) × _) <$> synth cxt (head def)
    let cxt_fs = Map.fromFoldable (fπs <#> \(f × π) -> f × either Assigned TypeScheme π)
    let cxt' = cxt `override` cxt_fs
    defs' <- for (NEL.zip defs fπs) \(def × (f × π)) -> do
       void $ wellFormedPatterns cxt' (def <#> \(_ × S.Clause (_ × ps × _)) -> S.PList (ps <#> \(S.Param p _) -> p))
-      within ("definition of " <> f) $
+      within ("definition of " <> quoted f) $
          (f ↦ _) <$> (traverse (\b -> check cxt' b (either identity (\(Forall _ σ) -> σ) π)) def >>= clauses)
    pure (Assigns cxt_fs × E.DefRec (E.RecDefs (D.fromFoldable defs')))
 checkStmt cxt ζ (S.Seq s1 s2) = do
@@ -269,7 +281,7 @@ matchCases cxt ζ τ ((p × s) : bs) = do
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 wellFormedTop q cxt (S.Dataclass x αs b yψs) = do
    predefName cxt "dataclass"
-   checkDistinct (\y -> "Duplicate field " <> y <> " in class " <> x) ys
+   checkDistinct (\y -> "Duplicate field " <> quoted y <> " in class " <> quoted x) ys
    yτs <- for yψs \(y × ψ) -> (y × _) <$> synth cxt_αs ψ
    base <- for b (baseClass cxt cxt_αs x ys)
    modify_ \st -> st { classes = insert c { typeParams: αs, fields: yτs, base } st.classes }
@@ -294,9 +306,9 @@ baseClass :: Cxt -> Cxt -> Var -> List Var -> S.TypeExpr -> CheckM (Name × List
 baseClass cxt cxt_αs x ys (S.NameTy q ψs) | Just (Type d) <- resolveName cxt q = do
    σs <- classTypeArgs cxt_αs d ψs
    inherited <- classTable <#> \classes -> fieldNames classes d
-   for_ (ys `intersect` inherited) \y -> throwError $ "Inherited field " <> y <> " redeclared in class " <> x
+   for_ (ys `intersect` inherited) \y -> throwError $ "Inherited field " <> quoted y <> " redeclared in class " <> quoted x
    pure (d × σs)
-baseClass _ _ x _ ψ = throwError $ "Base class of " <> x <> " is not a class: " <> prettyP ψ
+baseClass _ _ x _ ψ = throwError $ "Base class of " <> quoted x <> " is not a class: " <> prettyP ψ
 
 typeParams :: List Var -> Cxt
 typeParams αs = constMap TypeVar (Set.fromFoldable αs)
@@ -316,8 +328,8 @@ instance Synth S.TypeExpr T.Type where
          when (length τs /= length αs) $ throwError $ arityMismatch "Type alias" q αs τs
          pure (T.subst τs αs τ)
       Just (Type c) -> T.ClassTy c <$> classTypeArgs cxt c ψs
-      Nothing -> throwError $ "Unbound name: " <> dottedName q
-      _ -> throwError $ "Not a class: " <> dottedName q
+      Nothing -> throwError $ "Unbound name: " <> quoted (dottedName q)
+      _ -> throwError $ "Not a class: " <> quoted (dottedName q)
    synth cxt (S.LitTy ℓ) = T.LitTy ℓ <$ predefName cxt "Literal"
    synth cxt (S.ListTy ψ) = predefName cxt "list" *> (T.ListTy <$> synth cxt ψ)
    synth cxt (S.DictTy ψ) = predefName cxt "dict" *> predefName cxt "str" *> (T.DictTy <$> synth cxt ψ)
@@ -342,10 +354,10 @@ classTypeArgs cxt c ψs = do
 
 arityMismatch :: String -> Name -> List Var -> List T.Type -> String
 arityMismatch what q αs τs =
-   what <> " " <> dottedName q <> " expects " <> show (length αs) <> " type argument(s); got " <> show (length τs)
+   what <> " " <> quoted (dottedName q) <> " expects " <> show (length αs) <> " type argument(s); got " <> show (length τs)
 
 typeArgsFor :: List Var -> Map.Map Var T.Type -> CheckM (List T.Type)
-typeArgsFor αs γ = for αs \α -> maybe (throwError $ "Type parameter " <> α <> " has no type argument") pure (lookup α γ)
+typeArgsFor αs γ = for αs \α -> maybe (throwError $ "Type parameter " <> quoted α <> " has no type argument") pure (lookup α γ)
 
 annotated :: Cxt -> Maybe S.TypeExpr -> S.Expr -> CheckM (T.Type × E.Expr)
 annotated cxt (Just ψ) e = synth cxt ψ >>= \τ -> (τ × _) <$> check cxt e τ
@@ -373,7 +385,7 @@ instance Synth S.Expr (T.Type × E.Expr) where
             is -> synth cxt (S.Call (S.Subscript e (S.Tuple (NEL.toList is))) Nil es xes)
       where
       asIndex (S.NameTy q Nil) = pure (foldl S.Attribute (S.Var (head q)) (tail q))
-      asIndex _ = throwError $ "Type arguments for non-class: " <> maybe "expression" dottedName (asName e)
+      asIndex _ = throwError $ "Type arguments for non-class: " <> maybe "expression" (quoted <<< dottedName) (asName e)
    synth cxt (S.BinOp e op e') = do
       σ × e1 <- synth cxt e
       σ' × e2 <- synth cxt e'
@@ -403,7 +415,7 @@ instance Synth S.Expr (T.Type × E.Expr) where
       Just (ModChecked q cxt') -> do
          when (not (y ∈ cxt'))
             $ throwError
-            $ "module " <> dottedName q <> " has no member " <> y
+            $ "module " <> quoted (dottedName q) <> " has no member " <> quoted y
          (_ × E.ModMember q y) <$> varType cxt' y
       _ -> do
          σ × e' <- synth cxt e
@@ -412,7 +424,7 @@ instance Synth S.Expr (T.Type × E.Expr) where
       where
       attributeType classes (T.UnionTy σ σ') = join classes <$> attributeType classes σ <*> attributeType classes σ'
       attributeType classes (T.ClassTy c τs) =
-         maybe (throwError $ "Class " <> last c <> " has no field " <> y) pure (F.lookup y (fieldsAt classes c τs))
+         maybe (throwError $ "Class " <> quoted (last c) <> " has no field " <> quoted y) pure (F.lookup y (fieldsAt classes c τs))
       attributeType _ σ = throwError $ "Values of type " <> prettyP σ <> " have no attributes"
    synth cxt e@(S.Subscript e1 e2)
       | Just ψ <- typeValue cxt e = synth cxt ψ <#> \τ -> T.TypeTy τ × E.Type τ
@@ -559,7 +571,7 @@ constr cxt c name ψs es xes = do
    let xs = fieldNames classes name
    when (null xes && length es /= length xs)
       $ throwError
-      $ dottedName c <> " expects " <> show (length xs) <> " argument(s); got " <> show (length es)
+      $ quoted (dottedName c) <> " expects " <> show (length xs) <> " argument(s); got " <> show (length es)
    es' <- (es <> _) <$> if null xes then pure Nil else positionaliseKw xs c (length es) xes
    τs <- case NEL.fromList ψs of
       Just _ -> classTypeArgs cxt name ψs
@@ -702,13 +714,13 @@ checkQuals cxt (g : gs) body = case g of
       map (E.Decl p' e' : _) <$> checkQuals (cxt `override` bindings cxt_p) gs body
 
 notCaptured :: Set Var -> Set Var -> CheckM Unit
-notCaptured xs captured = for_ (xs ∩ captured) \x -> throwError $ "Comprehension variable captured by lambda: " <> x
+notCaptured xs captured = for_ (xs ∩ captured) \x -> throwError $ "Comprehension variable captured by lambda: " <> quoted x
 
 -- Keyword arguments in field order; must cover fields xs after first n exactly.
 positionaliseKw :: forall b. List Var -> Name -> Int -> List (Bind b) -> CheckM (List b)
 positionaliseKw xs c n xbs = do
    when (sort provided /= sort remaining') $ throwError $
-      "Class " <> last c <> " keyword fields mismatch: expected " <> show remaining' <> ", got " <> show provided
+      "Class " <> quoted (last c) <> " keyword fields mismatch: expected " <> quotedList remaining' <> "; got " <> quotedList provided
    pure $ remaining' <#> \f -> definitely' (snd <$> find (\(k ↦ _) -> k == f) xbs)
    where
    remaining' = drop n xs
@@ -736,7 +748,7 @@ instance Check S.Branch T.Type (List (S.Pattern × Maybe T.Type) × Maybe T.Type
       classes <- classTable
       case r of
          Assigns _ | not (equiv classes τ none) ->
-            throwError $ f <> " declares result type " <> prettyP τ <> " but does not always return"
+            throwError $ quoted f <> " declares result type " <> prettyP τ <> " but does not always return"
          _ -> pure (ps' × τ' × close r s')
       where
       cxt_αs = cxt `override` typeParams αs
@@ -780,33 +792,33 @@ clauses cs = do
 varType :: Cxt -> Var -> CheckM T.Type
 varType cxt x = case lookup x cxt of
    Just (Assigned τ) -> pure τ
-   Just (TypeScheme _) -> throwError $ "Type arguments of " <> x <> " cannot be inferred"
+   Just (TypeScheme _) -> throwError $ "Type arguments of " <> quoted x <> " cannot be inferred"
    Just (Type c) -> do
       αs <- classTable <#> \classes -> (get c classes).typeParams
-      unless (null αs) $ throwError $ "Type arguments of class " <> x <> " cannot be inferred"
+      unless (null αs) $ throwError $ "Type arguments of class " <> quoted x <> " cannot be inferred"
       pure (T.TypeTy (T.ClassTy c Nil))
-   Just Unbound -> throwError $ "Declared later in scope: " <> x
-   Just (Declared _) -> throwError $ "Declared but not initialised: " <> x
-   Just (PossiblyUnassigned _) -> throwError $ "Possibly uninitialised: " <> x
-   Just (Mod q) -> throwError $ "module " <> dottedName q <> " is not a value"
-   Just (ModChecked q _) -> throwError $ "module " <> dottedName q <> " is not a value"
-   Just θ -> throwError $ kind θ <> " " <> x <> " is not a value"
-   Nothing -> throwError $ "Unbound name: " <> x
+   Just Unbound -> throwError $ "Declared later in scope: " <> quoted x
+   Just (Declared _) -> throwError $ "Declared but not initialised: " <> quoted x
+   Just (PossiblyUnassigned _) -> throwError $ "Possibly uninitialised: " <> quoted x
+   Just (Mod q) -> throwError $ "module " <> quoted (dottedName q) <> " is not a value"
+   Just (ModChecked q _) -> throwError $ "module " <> quoted (dottedName q) <> " is not a value"
+   Just θ -> throwError $ kind θ <> " " <> quoted x <> " is not a value"
+   Nothing -> throwError $ "Unbound name: " <> quoted x
 
 assignable :: Cxt -> Var -> CheckM Unit
 assignable cxt x = case lookup x cxt of
    Just (Declared _) -> pure unit
    Just Unbound -> pure unit
-   Just (Assigned _) -> throwError $ "Already initialised: " <> x
-   Just (TypeScheme _) -> throwError $ "Already initialised: " <> x
-   Just (PossiblyUnassigned _) -> throwError $ "Possibly initialised already: " <> x
-   Just θ -> throwError $ "Reassigned " <> kind θ <> " name: " <> x
+   Just (Assigned _) -> throwError $ "Already initialised: " <> quoted x
+   Just (TypeScheme _) -> throwError $ "Already initialised: " <> quoted x
+   Just (PossiblyUnassigned _) -> throwError $ "Possibly initialised already: " <> quoted x
+   Just θ -> throwError $ "Reassigned " <> kind θ <> " name: " <> quoted x
    Nothing -> error absurd
 
 unbound :: Cxt -> Var -> CheckM Unit
 unbound cxt x = case lookup x cxt of
    Just Unbound -> pure unit
-   _ -> throwError $ "Already declared: " <> x
+   _ -> throwError $ "Already declared: " <> quoted x
 
 kind :: Entry -> String
 kind (Type _) = "class"
@@ -820,7 +832,7 @@ kind _ = "variable"
 predefName :: Cxt -> Var -> CheckM Unit
 predefName cxt x = case lookup x cxt of
    Just PredefName -> pure unit
-   _ -> throwError $ "Not bound as a predefined name: " <> x
+   _ -> throwError $ "Not bound as a predefined name: " <> quoted x
 
 -- Each case pattern well-formed and not subsumed by an earlier one.
 wellFormedPatterns :: Cxt -> NonEmptyList S.Pattern -> CheckM (NonEmptyList S.Pattern)
@@ -839,12 +851,12 @@ pattern cxt (S.PConstr c ps xps) = do
    xs <- gets \{ classes } -> fieldNames classes name
    when (null xps && length ps /= length xs)
       $ throwError
-      $ dottedName c <> " expects " <> show (length xs) <> " argument(s); got " <> show (length ps)
+      $ quoted (dottedName c) <> " expects " <> show (length xs) <> " argument(s); got " <> show (length ps)
    distinctVars (ps <> (snd <$> xps))
    xps' <- if null xps then pure Nil else positionaliseKw xs c (length ps) xps
    S.PConstr name <$> traverse (pattern cxt) (ps <> xps') <@> Nil
 pattern cxt (S.PRecord xps) = do
-   checkDistinct ("Duplicate key in pattern: " <> _) (fst <$> xps)
+   checkDistinct (\x -> "Duplicate key in pattern: " <> quoted x) (fst <$> xps)
    distinctVars (snd <$> xps)
    S.PRecord <$> traverse (traverse (pattern cxt)) xps
 pattern cxt (S.PList ps) = do
@@ -859,7 +871,7 @@ pattern cxt (S.PAs p x) = do
 pattern _ p = pure p
 
 distinctVars :: List S.Pattern -> CheckM Unit
-distinctVars ps = checkDistinct ("Duplicate variable in pattern: " <> _) (ps >>= Set.toUnfoldable <<< bv)
+distinctVars ps = checkDistinct (\x -> "Duplicate variable in pattern: " <> quoted x) (ps >>= Set.toUnfoldable <<< bv)
 
 instance Check S.Pattern T.Type (Map.Map Var T.Type) where
    check _ (S.PVar x) τ = pure (Map.singleton x τ)
@@ -887,7 +899,7 @@ instance Check S.Pattern T.Type (Map.Map Var T.Type) where
       classes <- classTable
       bindingsAt τ p \σ -> case instanceAt classes c σ of
          Just Undetermined ->
-            Just (throwError $ "Type arguments of " <> last c <> " in pattern not determined by type " <> prettyP σ)
+            Just (throwError $ "Type arguments of " <> quoted (last c) <> " in pattern not determined by type " <> prettyP σ)
          Just (Instance σs) -> Just (check cxt ps (snd <$> fieldsAt classes c σs))
          Nothing -> Nothing
 

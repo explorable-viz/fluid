@@ -200,7 +200,8 @@ instance Pretty Module where
    pretty (Module imports s) = vsep ((pretty <$> imports) <> singleton (pretty s))
 
 instance Pretty Stmt where
-   pretty (Return e) = text "return" <+> pretty e
+   pretty (Return (Just e)) = text "return" <+> pretty e
+   pretty (Return Nothing) = text "return"
    pretty (If (NonEmptyList (ss :| sss)) e) =
       vsep (prettyClause "if" ss : (prettyClause "elif" <$> sss))
          <++> maybe mempty (\b -> text "else" <> block (pretty b)) e

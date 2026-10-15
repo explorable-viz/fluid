@@ -2,6 +2,8 @@ module Fluid where
 
 import Prelude
 
+import Control.Monad.Except (runExceptT)
+import Control.Monad.Trans.Class (lift)
 import Data.Argonaut.Core (stringifyWithIndent)
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array as Array
@@ -22,7 +24,7 @@ import Eval (evalProgram)
 import File (File(..), Folder(..), emptyFileCxt, loadFile, loadManifest, modulePath, withClasses, withRoots)
 import Classes (ClassTable)
 import Data.Map (Map)
-import Module (Config, loadTopLevel, prepConfig, prepModule)
+import Module (Config, ParseFailure(..), loadTopLevel, prepConfig, prepModule)
 import Module.Defs (ModuleName)
 import Module.Node (NodeT, runNodeT)
 import Node.Encoding (Encoding(..))
@@ -126,21 +128,17 @@ data Prepared = AsProgram Config | AsModule ModuleName { modules :: Map ModuleNa
 stages :: FileArgs -> (Prepared -> NodeT Aff (Maybe String)) -> NodeT Aff (Int × Maybe String)
 stages { local, fileName, fluidSrcPaths, asModule } run = do
    fluidSrc <- loadFile (srcPaths local fluidSrcPaths) (File fileName)
-   let
-      parsed = if asModule then void (parseModule fluidSrc) else void (parseProgram fluidSrc)
-      prepare =
-         if asModule then do
-            q <- moduleName
-            AsModule q <$> prepModule q
-         else AsProgram <$> prepConfig fluidSrc
-   case parsed of
-      Left err -> rejected exitCode.prohibited err
-      Right _ -> try prepare >>= case _ of
-         Left err -> rejected exitCode.illFormed (message err)
-         Right prepared -> try (run prepared) >>= case _ of
-            Left err -> rejected 1 (message err)
-            Right msg -> pure (exitCode.accepted × msg)
+   try (runExceptT (prepare fluidSrc)) >>= case _ of
+      Left err -> rejected exitCode.illFormed (message err)
+      Right (Left (ParseFailure msg)) -> rejected exitCode.prohibited msg
+      Right (Right prepared) -> try (run prepared) >>= case _ of
+         Left err -> rejected 1 (message err)
+         Right msg -> pure (exitCode.accepted × msg)
    where
+   prepare fluidSrc
+      | asModule = lift moduleName >>= \q -> AsModule q <$> prepModule q
+      | otherwise = AsProgram <$> prepConfig fluidSrc
+
    -- module name of file, relative to its root
    moduleName = do
       path <- modulePath (File fileName) # orElse ("Not a source file: " <> fileName)

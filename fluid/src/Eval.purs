@@ -4,7 +4,6 @@ import Prelude hiding (absurd, apply)
 
 import Bind (dottedName, prefixOf, varAnon, varThis)
 import Control.Monad.Error.Class (class MonadError)
-import Control.Monad.Reader (class MonadReader)
 import Control.Monad.State (runStateT)
 import Data.Array as A
 import Data.Either (either)
@@ -27,10 +26,9 @@ import Data.Tuple (fst, snd)
 import Classes (class HasClasses, ClassTable, ancestors, arity, askClasses, checkArity, fieldNames)
 import Dict (Dict)
 import Dict (fromFoldable) as D
-import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Branch(..), Def(..), Expr(..), Import(..), Module(..), Pattern(..), Qualifier(..), RecDefs(..), Stmt(..), assigns, fv)
-import File (class LoadFile, FileCxt, withClasses)
+import File (class MonadLoad, withClasses)
 import DepGraph (DepGraph, Rel, Deriv, Pos, attachDoc, deriv, zeros)
 import Lattice (class DepSemiring, DepKind, Lineage, Raw, ctrlWeight)
 import Literal (Literal(..), eqLiteral)
@@ -39,7 +37,7 @@ import Operator (binopSymbol, unopSymbol)
 import Pretty (prettyP)
 import Types (Type(..)) as T
 import Primitive (binop, binopRel, boolean, int, string, typeMismatch, unop, unopRel, unpack, unpackVal)
-import Util (type (×), absurd, check, definitely', definitelyRight, error, orElse, orThrow, singleton, throw, withMsg, (×))
+import Util (type (×), absurd, check, definitely', definitelyRight, error, orElse, orThrow, quoted, singleton, throw, withMsg, (×))
 import Util.Map (get, lookup, lookup', mapWithKey, maplet, restrict, unionWith_never, (<+>))
 import Util.Pair (Pair(..))
 import Util.Set (empty, (∪))
@@ -187,7 +185,7 @@ eval inputs = case _ of
       v <- gval <$> eval inputs e
       case v.val of
          Val _ (V.Obj c xvs) -> do
-            i <- elemIndex x (fst <$> xvs) # orElse (dottedName c <> " has no field " <> x)
+            i <- elemIndex x (fst <$> xvs) # orElse (quoted (dottedName c) <> " has no field " <> quoted x)
             deliver (inputs.ctrl <> via root v) { val: field i v.val, inEdges: via (field i) v }
          _ -> throw $ "Found " <> prettyP v.val <> ", expected object"
    Subscript e e' -> do
@@ -260,7 +258,7 @@ eval inputs = case _ of
       pure (s × gval k × gval u)
 
    funName :: Expr -> String
-   funName (Var x) = x
+   funName (Var x) = quoted x
    funName (App e _) = funName e
    funName _ = "unknown"
 
@@ -494,10 +492,7 @@ evalProgram
    :: forall m
     . HasClasses m
    => HasModuleStore m
-   => MonadError Error m
-   => MonadAff m
-   => MonadReader FileCxt m
-   => LoadFile m
+   => MonadLoad m
    => Dict Deriv -- top-level environment, as vertices of the module store's dependence graph
    -> ClassTable
    -> Stmt

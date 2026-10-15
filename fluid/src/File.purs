@@ -54,6 +54,11 @@ instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (StateT s m) w
    loadFileFromPath = lift <<< loadFileFromPath
    loadManifest = lift <<< loadManifest
 
+-- Monad for loading source files from source roots
+class (MonadAff m, MonadError Error m, MonadReader FileCxt m, LoadFile m) <= MonadLoad m
+
+instance (MonadAff m, MonadError Error m, MonadReader FileCxt m, LoadFile m) => MonadLoad m
+
 instance LoadFile Aff where
    loadFileFromPath (File path) = do
       result <- runExceptT $ do
@@ -122,7 +127,7 @@ manifestFile = File "manifest.json"
 searchPaths :: Array Folder -> File -> Array File
 searchPaths folders file = prependFolder <$> folders <*> [ file ]
 
-withRoots :: forall m a. LoadFile m => MonadError Error m => MonadAff m => MonadReader FileCxt m => Array Folder -> m a -> m a
+withRoots :: forall m a. MonadLoad m => Array Folder -> m a -> m a
 withRoots roots m = do
    manifests <- Map.fromFoldable <$> for roots \root -> (root × _) <$> loadManifest root
    local (\(FileCxt cxt) -> FileCxt cxt { fluidSrcPaths = cxt.fluidSrcPaths <> roots, manifests = Map.union cxt.manifests manifests }) m
@@ -130,19 +135,19 @@ withRoots roots m = do
 manifest :: Folder -> Manifests -> Set File
 manifest root = Map.lookup root >>> definitely'
 
-loadFileMaybe :: forall m. LoadFile m => MonadError Error m => MonadAff m => MonadReader FileCxt m => Array Folder -> File -> m (Maybe String)
+loadFileMaybe :: forall m. MonadLoad m => Array Folder -> File -> m (Maybe String)
 loadFileMaybe folders file = do
    FileCxt { manifests } <- ask
    case find (\folder -> file ∈ manifest folder manifests) folders of
       Nothing -> pure Nothing
       Just folder -> loadFileFromPath (folder </> file)
 
-loadFile :: forall m. LoadFile m => MonadError Error m => MonadAff m => MonadReader FileCxt m => Array Folder -> File -> m String
+loadFile :: forall m. MonadLoad m => Array Folder -> File -> m String
 loadFile folders file =
    loadFileMaybe folders file >>= orElse ("File not found in any path: " <> show (searchPaths folders file))
 
 -- Source of module at given path.
-loadModuleSource :: forall m. LoadFile m => MonadError Error m => MonadAff m => MonadReader FileCxt m => Array Folder -> String -> m (Maybe String)
+loadModuleSource :: forall m. MonadLoad m => Array Folder -> String -> m (Maybe String)
 loadModuleSource folders path = findMapM (loadFileMaybe folders) (moduleFiles path)
    where
    findMapM f = foldr (\x rest -> f x >>= maybe rest (pure <<< Just)) (pure Nothing)

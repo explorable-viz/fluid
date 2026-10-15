@@ -23,7 +23,7 @@ import Data.Tuple (fst)
 import Effect.Exception (Error)
 import Types (Primitive(..), Type(..), baseType, fv, subst, subterms)
 import Types.Defs (cRange, int, never, object, str)
-import Util (type (×), absurd, error, throw, (×), (∩))
+import Util (type (×), absurd, error, quoted, throw, (×), (∩))
 import Util.Map (get, lookup)
 
 type Ctr = String -- newtype would require more general Dict keys
@@ -143,13 +143,13 @@ instance (Monad m, HasClasses m, Monoid w) => HasClasses (WriterT w m) where
 
 arity :: forall m. MonadError Error m => Name -> ClassTable -> m Int
 arity c classes = case lookup c classes of
-   Nothing -> throw $ "Unknown dataclass: " <> NE.last c
+   Nothing -> throw $ "Unknown dataclass: " <> quoted (NE.last c)
    Just _ -> pure (length (fields classes c))
 
 checkArity :: forall m. MonadError Error m => Name -> Int -> ClassTable -> m Unit
 checkArity c n classes = do
    n' <- arity c classes
-   when (n' /= n) $ throw $ NE.last c <> " arity " <> show n' <> "; got " <> show n
+   when (n' /= n) $ throw $ quoted (NE.last c) <> " arity " <> show n' <> "; got " <> show n
 
 subtype :: ClassTable -> Type -> Type -> Boolean
 subtype classes σ τ
