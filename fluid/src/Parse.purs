@@ -573,7 +573,7 @@ parse parser input =
    where
    printError :: ParseError -> String
    printError (ParseError msg (Position { line, column })) =
-      "ParseError on line " <> show line <> ", column " <> show column <> ":\n" <> msg
+      "ParseError on line " <> show line <> ", column " <> show column <> ": " <> msg
 
 parseProgram :: String -> MayFail (Stmt × List Import)
 parseProgram src = parse (topLevel programBody) src
