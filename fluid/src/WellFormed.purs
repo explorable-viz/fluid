@@ -229,8 +229,8 @@ checkStmt cxt _ (S.Def (S.VarDef p ψ e)) = do
    for_ (bv p) (unbound cxt)
    τ × e' <- annotated cxt ψ e
    p' <- pattern cxt p
-   cxt_p <- check cxt p' τ
-   pure (Assigns (bindings cxt_p) × E.Assign p' e')
+   cxt' <- check cxt p' τ
+   pure (Assigns cxt' × E.Assign p' e')
 checkStmt cxt _ (S.DefRec ds) = do
    let defs = groupBy (eq `on` fst) ds
    checkDistinct (\f -> "Non-contiguous clauses for: " <> quoted f) (toList (fst <<< head <$> defs))
@@ -279,7 +279,7 @@ matchCases _ _ τ _ Nil = pure (Nil × τ)
 matchCases cxt ζ τ ls ((p × s) : bs) = do
    p' <- pattern cxt p
    for_ (bv p') (unbound cxt)
-   cxt' <- bindings <$> check cxt p' τ
+   cxt' <- check cxt p' τ
    classes <- classTable
    _ × ls' <- matchesShapes classes ls p' # maybe (throwError $ "case " <> prettyP p <> " is unreachable") pure
    r × s' <- checkStmt (cxt `override` cxt') ζ s
@@ -380,8 +380,8 @@ instance Synth S.Expr (T.Type × E.Expr) where
             when (not (null xes)) $ throwError "Keyword arguments in call other than constructor call"
             case e of
                S.Lambda (S.LambdaClause (ps × e')) -> do
-                  cxt_p × ps' × es' <- lambdaArgs cxt ps es
-                  τ × e'' <- synth (cxt `override` bindings cxt_p) e'
+                  cxt' × ps' × es' <- lambdaArgs cxt ps es
+                  τ × e'' <- synth (cxt `override` cxt') e'
                   pure (τ × E.App (lambda ps' e'') es')
                _ -> do
                   σ × e' <- callee cxt e es
@@ -475,8 +475,8 @@ class Check a t b | a -> t b where
 
 instance Check S.Expr T.Type E.Expr where
    check cxt (S.Call (S.Lambda (S.LambdaClause (ps × e))) Nil es Nil) τ = do
-      cxt_p × ps' × es' <- lambdaArgs cxt ps es
-      e' <- check (cxt `override` bindings cxt_p) e τ
+      cxt' × ps' × es' <- lambdaArgs cxt ps es
+      e' <- check (cxt `override` cxt') e τ
       pure (E.App (lambda ps' e') es')
    check cxt (S.List es) (T.ListTy τ) = E.List <$> traverse (\e -> check cxt e τ) es
    check cxt (S.Tuple es) (T.TupleTy τs)
@@ -485,8 +485,8 @@ instance Check S.Expr T.Type E.Expr where
       E.Dictionary <$> for kvs \(k × v) -> Pair <$> check cxt k str <*> check cxt v τ
    check cxt (S.Lambda (S.LambdaClause (ps × e))) τ = case τ of
       T.CallableTy σs τ' | length σs == length ps -> do
-         ps' × cxt_p <- paramPatterns cxt ps σs
-         e' <- check (cxt `override` bindings cxt_p) e τ'
+         ps' × cxt' <- paramPatterns cxt ps σs
+         e' <- check (cxt `override` cxt') e τ'
          pure (lambda ps' e')
       _ -> throwError $ "Expected type " <> prettyP τ <> "; given lambda with " <> show (length ps) <> " parameter(s)"
    check cxt e τ | Just (αs × σ) <- schemeOf cxt e = do
@@ -622,17 +622,17 @@ callStmt cxt e es = callee cxt e es >>= case _ of
    T.CallableTy σs τ × e' | τ == none && length σs == length es -> E.App e' <$> check cxt es σs
    σ × e' -> E.App e' <<< snd <$> resultType cxt σ es
 
-lambdaArgs :: Cxt -> List S.Pattern -> List S.Expr -> CheckM (Map.Map Var T.Type × List S.Pattern × List E.Expr)
+lambdaArgs :: Cxt -> List S.Pattern -> List S.Expr -> CheckM (Cxt × List S.Pattern × List E.Expr)
 lambdaArgs cxt ps es = do
    when (length ps /= length es)
       $ throwError
       $ "Call expects " <> show (length ps) <> " argument(s); given " <> show (length es)
    τes <- traverse (synth cxt) es
-   ps' × cxt_p <- paramPatterns cxt ps (fst <$> τes)
-   pure (cxt_p × ps' × (snd <$> τes))
+   ps' × cxt' <- paramPatterns cxt ps (fst <$> τes)
+   pure (cxt' × ps' × (snd <$> τes))
 
 -- Parameter patterns in positional form, with their bindings at parameter types σs
-paramPatterns :: Cxt -> List S.Pattern -> List T.Type -> CheckM (List S.Pattern × Map.Map Var T.Type)
+paramPatterns :: Cxt -> List S.Pattern -> List T.Type -> CheckM (List S.Pattern × Cxt)
 paramPatterns cxt ps σs = do
    distinctVars ps
    ps' <- traverse (pattern cxt) ps
@@ -714,14 +714,14 @@ checkQuals cxt (g : gs) body = case g of
       classes <- classTable
       τ <- maybe (throwError $ "Values of type " <> prettyP σ <> " cannot be iterated") pure (elemType classes σ)
       p' <- pattern cxt p
-      cxt_p <- check cxt p' τ
-      map (E.Generator p' e' : _) <$> checkQuals (cxt `override` bindings cxt_p) gs body
+      cxt' <- check cxt p' τ
+      map (E.Generator p' e' : _) <$> checkQuals (cxt `override` cxt') gs body
    S.Decl (S.VarDef p ψ e) -> do
       notCaptured (bv p) (captures gs)
       τ × e' <- annotated cxt ψ e
       p' <- pattern cxt p
-      cxt_p <- check cxt p' τ
-      map (E.Decl p' e' : _) <$> checkQuals (cxt `override` bindings cxt_p) gs body
+      cxt' <- check cxt p' τ
+      map (E.Decl p' e' : _) <$> checkQuals (cxt `override` cxt') gs body
 
 notCaptured :: Set Var -> Set Var -> CheckM Unit
 notCaptured xs captured = for_ (xs ∩ captured) \x -> throwError $ "Comprehension variable captured by lambda: " <> quoted x
@@ -756,7 +756,7 @@ instance Check S.Branch (T.Type × List Shape) ((List S.Pattern × E.Stmt) × Li
       classes <- classTable
       _ × ls' <- matchesShapes classes ls (S.PTuple ps') # maybe (throwError unreachable) pure
       cxt_s <- scope "parameter" (unions (bv <$> ps)) s
-      s' <- funBody (cxt `override` typeParams αs `override` bindings cxt_p `override` cxt_s) f τ s
+      s' <- funBody (cxt `override` typeParams αs `override` cxt_p `override` cxt_s) f τ s
       pure ((ps' × s') × ls')
       where
       unreachable = "clause " <> f <> "(" <> intercalate ", " (ps <#> \(S.Param p _) -> prettyP p) <> ") is unreachable"
@@ -877,13 +877,13 @@ pattern _ p = pure p
 distinctVars :: List S.Pattern -> CheckM Unit
 distinctVars ps = checkDistinct (\x -> "Duplicate variable in pattern: " <> quoted x) (ps >>= Set.toUnfoldable <<< bv)
 
-instance Check S.Pattern T.Type (Map.Map Var T.Type) where
-   check _ (S.PVar x) τ = pure (Map.singleton x τ)
+instance Check S.Pattern T.Type Cxt where
+   check _ (S.PVar x) τ = pure (Map.singleton x (Assigned τ))
    check _ S.PWild _ = pure empty
    check _ (S.PLit _) _ = pure empty
    check cxt (S.PAs p x) τ = do
-      cxt_p <- check cxt p τ
-      classTable <#> \classes -> insert x (matchedAs classes τ p) cxt_p
+      cxt' <- check cxt p τ
+      classTable <#> \classes -> insert x (Assigned (matchedAs classes τ p)) cxt'
    check cxt p@(S.PTuple ps) τ = do
       classes <- classTable
       when (hasListValues classes τ) $ throwError $ "Tuple pattern at " <> prettyP τ <> ", which has list values"
@@ -901,20 +901,22 @@ instance Check S.Pattern T.Type (Map.Map Var T.Type) where
       _ -> Nothing
    check cxt p@(S.PConstr c ps _) τ = do
       classes <- classTable
-      bindingsAt τ p \σ -> case instanceAt classes c σ of
-         Just Undetermined ->
-            Just (throwError $ "Type arguments of " <> quoted (last c) <> " in pattern not determined by type " <> prettyP σ)
-         Just (Instance σs) -> Just (check cxt ps (snd <$> fieldsAt classes c σs))
-         Nothing -> Nothing
+      bindingsAt τ p \σ -> instanceAt classes c σ <#> case _ of
+         Undetermined ->
+            throwError $ "Type arguments of " <> quoted (last c) <> " in pattern not determined by type " <> prettyP σ
+         Instance σs -> check cxt ps (snd <$> fieldsAt classes c σs)
 
-instance Check (List S.Pattern) (List T.Type) (Map.Map Var T.Type) where
+instance Check (List S.Pattern) (List T.Type) Cxt where
    check cxt ps τs = sequence (zipWith (check cxt) ps τs) <#> foldl (∪) empty
 
 -- Bindings joined over disjuncts of τ; a disjunct not matched by p binds at Never.
-bindingsAt :: T.Type -> S.Pattern -> (T.Type -> Maybe (CheckM (Map.Map Var T.Type))) -> CheckM (Map.Map Var T.Type)
+bindingsAt :: T.Type -> S.Pattern -> (T.Type -> Maybe (CheckM Cxt)) -> CheckM Cxt
 bindingsAt τ p atDisjunct = do
-   cxts <- for (T.disjuncts τ) \σ -> fromMaybe (pure (constMap never (bv p))) (atDisjunct σ)
-   classTable <#> \classes -> foldl1 (join classes) (nonEmpty cxts)
+   cxts <- for (T.disjuncts τ) \σ -> fromMaybe (pure (constMap (Assigned never) (bv p))) (atDisjunct σ)
+   classTable <#> \classes -> foldl1 (Map.unionWith (joinAssigned classes)) (nonEmpty cxts)
+   where
+   joinAssigned classes (Assigned σ) (Assigned σ') = Assigned (join classes σ σ')
+   joinAssigned _ _ _ = error absurd
 
 -- Disjunct other than list type above every list type or none, so list[object] stands for all
 hasListValues :: ClassTable -> T.Type -> Boolean
