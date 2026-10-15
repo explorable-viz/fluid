@@ -423,12 +423,7 @@ instance Synth S.Expr (T.Type × E.Expr) where
       _ -> do
          σ × e' <- synth cxt e
          classes <- classTable
-         (_ × E.Attribute e' y) <$> attributeType classes σ
-      where
-      attributeType classes (T.UnionTy σ σ') = join classes <$> attributeType classes σ <*> attributeType classes σ'
-      attributeType classes (T.ClassTy c τs) =
-         maybe (throwError $ "Class " <> quoted (last c) <> " has no field " <> quoted y) pure (F.lookup y (fieldsAt classes c τs))
-      attributeType _ σ = throwError $ "Values of type " <> prettyP σ <> " have no attributes"
+         (_ × E.Attribute e' y) <$> attributeType classes σ y
    synth cxt e@(S.Subscript e1 e2)
       | Just ψ <- typeValue cxt e = synth cxt ψ <#> \τ -> T.TypeTy τ × E.Type τ
       | otherwise = do
@@ -543,6 +538,12 @@ joinSynth cxt f es = do
    when (null τs) $ throwError notSynthesised
    τ <- classTable <#> \classes -> joins classes τs
    (τ × _) <$> for results (either (\e -> check cxt e τ) (pure <<< snd))
+
+attributeType :: ClassTable -> T.Type -> Var -> CheckM T.Type
+attributeType classes (T.UnionTy σ σ') y = join classes <$> attributeType classes σ y <*> attributeType classes σ' y
+attributeType classes (T.ClassTy c τs) y =
+   maybe (throwError $ "Class " <> quoted (last c) <> " has no field " <> quoted y) pure (F.lookup y (fieldsAt classes c τs))
+attributeType _ σ _ = throwError $ "Values of type " <> prettyP σ <> " have no attributes"
 
 subscriptType :: Cxt -> T.Type -> S.Expr -> CheckM (T.Type × E.Expr)
 subscriptType cxt σ e | T.baseType σ == str = (str × _) <$> check cxt e int
