@@ -151,7 +151,7 @@ literal =
 varDef :: Parser VarDef
 varDef = do
    p × ψ <- try do
-      p <- pattern
+      p <- patterns
       ψ <- optionMaybe (delim ':' *> typeExpr)
       reservedOperator "="
       pure (p × ψ)

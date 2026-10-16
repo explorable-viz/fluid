@@ -15,7 +15,7 @@ def merge(xs: list[int], ys: list[int]) -> list[int]:
 def mergesort(xs: list[int]) -> list[int]:
   if len(xs) < 2:
     return xs
-  (ys, zs) = split(xs)
+  ys, zs = split(xs)
   return merge(mergesort(ys), mergesort(zs))
 
 mergesort([3, 1, 2])

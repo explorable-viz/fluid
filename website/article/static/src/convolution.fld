@@ -4,19 +4,19 @@ from convolution.emboss import filter
 import fluid.view
 
 def lookup(m: int, n: int, image: Matrix[int]) -> int:
-  (m_size, n_size) = dims(image)
+  m_size, n_size = dims(image)
   if (m >= 0 and m < m_size) and (n >= 0 and n < n_size):
     return image[m, n]
   else:
     return 0 # pad with zeros
 
 def matrix_sum(matr: Matrix[int]) -> int:
-  (m, n) = dims(matr)
+  m, n = dims(matr)
   return sum([matr[i, j] for i in range(0, m) for j in range(0, n)])
 
 def convolve(image: Matrix[int], kernel: Matrix[int]) -> Matrix[int]:
-  (k_i, k_j) = dims(kernel)
-  (half_i, half_j) = k_i |quot| 2, k_j |quot| 2
+  k_i, k_j = dims(kernel)
+  half_i, half_j = k_i |quot| 2, k_j |quot| 2
 
   def inter_matrix(m: int, n: int) -> Matrix[int]:
     return @doc(f"""average these to compute element ({m}, {n})""")

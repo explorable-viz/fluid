@@ -52,6 +52,6 @@ def computeDTW[A](seq1: list[A], seq2: list[A], cost: Callable[[A, A], float], w
   initD: CostMatrix = costMatrixInit(n + 1, m + 1, window)
   initI: PathMatrix = [| (0, 0) for (i, j) in (n + 1, m + 1) |]
   indexing: list[Cell] = nextIndices(n, m, window)
-  (finished, indices) = foldl(localMinUpdate(seq1, seq2, cost), (initD, initI), indexing)
+  finished, indices = foldl(localMinUpdate(seq1, seq2, cost), (initD, initI), indexing)
 
   return finished, extractPath(indices, (n, m), [])
