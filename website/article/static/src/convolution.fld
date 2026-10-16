@@ -5,7 +5,7 @@ import fluid.view
 
 def lookup(m: int, n: int, image: Matrix[int]) -> int:
   (m_size, n_size) = dims(image)
-  if m >= 0 and m < m_size and n >= 0 and n < n_size:
+  if (m >= 0 and m < m_size) and (n >= 0 and n < n_size):
     return image[m, n]
   else:
     return 0 # pad with zeros

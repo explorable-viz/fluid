@@ -1,8 +1,6 @@
 test/module-level/exception/type-checker/top_level_assert_false.py (check: exit 0, expected [3]: )
 test/module-level/exception/undefined/round_infinite.py (check: exit 3, expected [0]: Unbound name: 'round')
 test/module-level/exception/undefined/round_nan.py (check: exit 3, expected [0]: Unbound name: 'round')
-test/module-level/no-exception/parser/chained_bool.py (check: exit 0, expected [1]: )
-test/module-level/no-exception/parser/chained_compare.py (check: exit 3, expected [1]: No overload of < at operand types bool and Literal[10])
 test/module-level/no-exception/parser/literal_float_annotation.py (check: exit 0, expected [1]: )
 test/module-level/no-exception/result/alias_later_class_args.py (check: exit 3, expected [0]: Unbound name: 'Box')
 test/module-level/no-exception/result/assert_false_module_branch.py (check: exit 3, expected [0]: Possibly uninitialised: 'x')

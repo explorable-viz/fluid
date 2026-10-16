@@ -28,7 +28,7 @@ levels =
    [ [ OrOp ]
    , [ AndOp ]
    , [ Unary Not ]
-   , [ Binary Eq, Binary Ne, Binary Lt, Binary Le, Binary Gt, Binary Ge, Binary In, Binary NotIn ]
+   , Binary <$> comparisons
    , [ InfixOp ]
    , [ Binary Add, Binary Sub ]
    , [ Binary Mul, Binary Div, Binary FloorDiv, Binary Mod ]
@@ -36,8 +36,15 @@ levels =
    , [ Binary Pow ]
    ]
 
+comparisons :: Array Binop
+comparisons = [ Eq, Ne, Lt, Le, Gt, Ge, In, NotIn ]
+
+-- Chained comparisons and boolean operators prohibited
 assoc :: Operator -> Assoc
 assoc (Binary Pow) = AssocRight
+assoc (Binary b) | elem b comparisons = AssocNone
+assoc AndOp = AssocNone
+assoc OrOp = AssocNone
 assoc _ = AssocLeft
 
 prec :: Operator -> Int

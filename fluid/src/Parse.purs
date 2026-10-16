@@ -31,7 +31,7 @@ import Parsing.Expr (Operator(..)) as P
 import Parsing.Expr (OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
-import Operator (Operator(..), assoc, binopSymbol, levels, unopSymbol)
+import Operator (Operator(..), assoc, binopSymbol, comparisons, levels, unopSymbol)
 import Expr (Binop(..), Pattern(..))
 import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), RecDefs, Stmt(..), TypeExpr(..), VarDef(..), VarDefs)
 import Types (Primitive(..), TypeCtr(..), primitiveName, primitives, typeCtrs) as T
@@ -279,8 +279,19 @@ expr = context "expr" $ cond <?> "expression"
          pure $ Cond e1 e e2
 
    opTree :: Parser Expr
-   opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
+   opTree = context "opTree" (buildExprParser opTable simpleChain <* unchained) <* consume -- otherwise always `consume: false`
       where
+
+      unchained :: Parser Unit
+      unchained =
+         (choice (symbol <$> comparisons) *> fail "chained comparison prohibited")
+            <|> ((reserved "and" <|> reserved "or") *> fail "chained boolean operator prohibited")
+            <|> pure unit
+
+      symbol :: Binop -> Parser Unit
+      symbol In = reserved "in"
+      symbol NotIn = try (reserved "not" *> reserved "in")
+      symbol b = reservedOperator (binopSymbol b)
 
       opTable :: OperatorTable (StateT Position Identity) String Expr
       opTable = reverse levels <#> map toOperator -- tightest first
@@ -291,11 +302,6 @@ expr = context "expr" $ cond <?> "expression"
          toOperator op@AndOp = P.Infix (reserved "and" $> And) (assoc op)
          toOperator op@OrOp = P.Infix (reserved "or" $> Or) (assoc op)
          toOperator op@InfixOp = P.Infix (try (delim '|' *> variable) <* delim '|' <#> \f e e' -> InfixApp e f e') (assoc op)
-
-         symbol :: Binop -> Parser Unit
-         symbol In = reserved "in"
-         symbol NotIn = try (reserved "not" *> reserved "in")
-         symbol b = reservedOperator (binopSymbol b)
 
          word :: String -> Parser Unit
          word "not" = reserved "not"

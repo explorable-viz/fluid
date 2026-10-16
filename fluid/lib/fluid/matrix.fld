@@ -3,7 +3,7 @@ import fluid.view
 
 def zero(m: int, n: int, image: Matrix[int]) -> int:
   (m_size, n_size) = dims(image)
-  return image[m, n] if m >= 0 and m < m_size and n >= 0 and n < n_size else 0
+  return image[m, n] if (m >= 0 and m < m_size) and (n >= 0 and n < n_size) else 0
 
 def wrap(m: int, n: int, image: Matrix[int]) -> int:
   (m_size, n_size) = dims(image)
