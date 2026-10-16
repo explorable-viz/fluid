@@ -73,7 +73,7 @@ within what = mapStateT (mapReaderT (lmap (_ <> "\nChecking " <> what)))
 checkProgram :: List S.Import -> S.Stmt -> CheckM E.Stmt
 checkProgram imports s = do
    cxt_imp × cxt_ιs <- checkImports mainModule imports
-   snd <$> (moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> wellFormedTop mainModule cxt_s s)
+   snd <$> (moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> checkTopStmt mainModule cxt_s s)
 
 -- Member context of module q, checked on first import; no cycle guard, as the dependency graph is acyclic.
 checkModule :: ModuleName -> CheckM Cxt
@@ -135,7 +135,7 @@ importedMembers q cxt xs = Map.fromFoldable <$> for xs \x -> (x × _) <$> member
 
 checkStatements :: Name -> Cxt -> Cxt -> S.Module -> CheckM (Cxt × E.Module)
 checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
-   r × s' <- moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> wellFormedTop q cxt_s s
+   r × s' <- moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> checkTopStmt q cxt_s s
    case r of
       -- Program may return, with the returned value as its result; spec treats __main__ as a module
       Returns -> throwError "Module body definitely returns or reaches 'assert False'"
@@ -282,9 +282,9 @@ matchCases cxt ζ τ ls ((p × s) : bs) = do
    r × s' <- checkStmt (cxt `override` cxt') ζ s
    lmap ((override (Assigns cxt') r × (p' × s')) : _) <$> matchCases cxt ζ (remaining classes τ p') ls' bs
 
-wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
+checkTopStmt :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 -- Aliases resolved against whole region, classes against earlier definitions only
-wellFormedTop q cxt (S.TypeRegion χs) = do
+checkTopStmt q cxt (S.TypeRegion χs) = do
    for_ classDefs \(x × αs) -> modify_ \st ->
       st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
    cxt_χs <- (cxt_cs `override` _) <$> typeAliases (cxt `override` cxt_cs) (Map.fromFoldable aliasDefs)
@@ -296,14 +296,14 @@ wellFormedTop q cxt (S.TypeRegion χs) = do
    classOrAlias (S.TypeAlias x αs ψ) = Right (x × (αs × ψ))
    { left: classDefs, right: aliasDefs } = partitionMap classOrAlias (toList χs)
    cxt_cs = Map.fromFoldable (classDefs <#> \(x × _) -> x × Type (snoc q x))
-wellFormedTop q cxt (S.Seq t1 t2) = do
-   r1 × t1' <- wellFormedTop q cxt t1
+checkTopStmt q cxt (S.Seq t1 t2) = do
+   r1 × t1' <- checkTopStmt q cxt t1
    case r1 of
       Returns -> throwError "Unreachable statement"
       Assigns cxt' -> do
-         r2 × t2' <- wellFormedTop q (cxt `override` cxt') t2
+         r2 × t2' <- checkTopStmt q (cxt `override` cxt') t2
          pure (override r1 r2 × E.Seq t1' t2')
-wellFormedTop _ cxt s = checkStmt cxt Nothing s
+checkTopStmt _ cxt s = checkStmt cxt Nothing s
 
 checkTypeDef :: Name -> Cxt -> S.TypeDef -> CheckM Unit
 checkTypeDef q cxt (S.Dataclass x αs b yψs) = do
