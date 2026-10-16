@@ -2,7 +2,7 @@ def f(t: tuple[()] | tuple[int] | tuple[int, int, int]) -> int:
   match t:
     case ():
       return 0
-    case (a,):
+    case a,:
       return a
     case a, b, c:
       return a + b + c
