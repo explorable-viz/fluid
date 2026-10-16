@@ -42,6 +42,12 @@ pattern = defer \_ -> do
    p <- simplePattern
    optionMaybe (reserved "as" *> variable) <#> maybe p (PAs p)
 
+-- Pattern, or tuple pattern without parentheses
+patterns :: Parser Pattern
+patterns = do
+   p <- pattern
+   option p (delim ',' *> (PTuple <<< (p : _) <$> trailingCommas pattern))
+
 simplePattern :: Parser Pattern
 simplePattern = pLit <|> pConstr <|> pVar <|> pRecord <|> pList <|> parensPattern
    where
@@ -149,14 +155,14 @@ varDef = do
       ψ <- optionMaybe (delim ':' *> typeExpr)
       reservedOperator "="
       pure (p × ψ)
-   e <- sameOrIndented *> withPos expr
+   e <- sameOrIndented *> exprs
    pure $ VarDef p ψ e
 
 varDefs :: Parser VarDefs
 varDefs = many1 varDef
 
 stmt :: Parser Stmt
-stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> declareStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (expr <#> ExprStmt)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> declareStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (exprs <#> ExprStmt)
 
 declareStmt :: Parser Stmt
 declareStmt = do
@@ -164,7 +170,7 @@ declareStmt = do
    Declare x <$> typeExpr
 
 returnStmt :: Parser Stmt
-returnStmt = reserved "return" *> (Return <$> optionMaybe (sameOrIndented *> expr))
+returnStmt = reserved "return" *> (Return <$> optionMaybe (sameOrIndented *> exprs))
 
 assertStmt :: Parser Stmt
 assertStmt = do
@@ -183,7 +189,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser Stmt
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeAliasStmt <|> defStmt <|> declareStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <<< Just <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeAliasStmt <|> defStmt <|> declareStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <<< Just <$> exprs)
 
 programStmts :: Parser Stmt
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
@@ -217,7 +223,7 @@ matchStmt = defer \_ -> do
    let
       branch = do
          reserved "case"
-         p <- pattern
+         p <- patterns
          b <- blockBody
          pure (p × b)
    reserved "match"
@@ -266,6 +272,12 @@ recDefs = many1 recDef
 
    param :: Parser Param
    param = Param <$> pattern <*> ((delim ':' *> typeExpr) <|> fail "Expected parameter type annotation")
+
+-- Expression, or tuple without parentheses
+exprs :: Parser Expr
+exprs = withPos do
+   e <- expr
+   option e (delim ',' *> (Tuple <<< (e : _) <$> trailingCommas (sameOrIndented *> expr)))
 
 expr :: Parser Expr
 expr = context "expr" $ cond <?> "expression"
