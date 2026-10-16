@@ -50,12 +50,12 @@ data Stmt
    | Match Expr (NonEmptyList Case)
    | Declare Var TypeExpr
    | Def VarDef
-   | DefRec RecDefs
+   | DefRegion RecDefs
    | Pass
    | ExprStmt Expr
    | Assert Expr (Maybe Expr)
    | Seq Stmt Stmt
-   | TypeDefs (NonEmptyList TypeDef) -- mutual type region
+   | TypeRegion (NonEmptyList TypeDef)
 
 data TypeDef
    = Dataclass Var (List Var) (Maybe TypeExpr) (List (Var × TypeExpr))
@@ -206,12 +206,12 @@ instance FV Stmt where
       fv scrut ∪ unions ((\(p × b) -> fv b \\ bv p) <$> branches)
    fv (Declare _ _) = empty
    fv (Def vd) = fv vd
-   fv (DefRec rs) = fvRecDefs rs
+   fv (DefRegion rs) = fvRecDefs rs
    fv Pass = empty
    fv (ExprStmt e) = fv e
    fv (Assert cond msg) = fv cond ∪ maybe empty fv msg
    fv (Seq s1 s2) = fv s1 ∪ fv s2
-   fv (TypeDefs _) = empty
+   fv (TypeRegion _) = empty
 
 instance FV VarDef where
    fv (VarDef _ _ e) = fv e
@@ -232,18 +232,18 @@ assigns (Assert _ _) = empty
 assigns (Return _) = empty
 assigns (If es s) = unions (assigns <$> (snd <$> es)) ∪ maybe empty assigns s
 assigns (Match _ ps) = unions ((\(p × s) -> bv p ∪ assigns s) <$> ps)
-assigns (DefRec ds) = unions (singleton <<< fst <$> ds)
+assigns (DefRegion ds) = unions (singleton <<< fst <$> ds)
 assigns (Seq s1 s2) = assigns s1 ∪ assigns s2
-assigns (TypeDefs χs) = Set.fromFoldable (typeDefName <$> χs)
+assigns (TypeRegion χs) = Set.fromFoldable (typeDefName <$> χs)
 
 declares :: Stmt -> List Var
 declares (Declare x _) = singleton x
 declares (Def (VarDef p (Just _) _)) = Set.toUnfoldable (bv p)
-declares (DefRec ds) = nub (NEL.toList (fst <$> ds))
+declares (DefRegion ds) = nub (NEL.toList (fst <$> ds))
 declares (If es s) = (NEL.toList es >>= declares <<< snd) <> maybe Nil declares s
 declares (Match _ ps) = NEL.toList ps >>= declares <<< snd
 declares (Seq s1 s2) = declares s1 <> declares s2
-declares (TypeDefs χs) = NEL.toList (typeDefName <$> χs)
+declares (TypeRegion χs) = NEL.toList (typeDefName <$> χs)
 declares _ = Nil
 
 binds :: Stmt -> Set Var

@@ -80,7 +80,7 @@ data Stmt
    | Match Expr (NonEmptyList Case)
    | Declare Var
    | Assign Pattern Expr -- assignment to a pattern; the spec has only variables
-   | DefRec RecDefs
+   | DefRegion RecDefs
    | Pass
    | ExprStmt Expr
    | Assert Expr (Maybe Expr)
@@ -139,7 +139,7 @@ instance FV Stmt where
    fv (Match e bs) = fv e ∪ unions ((\(p × s) -> fv s \\ bv p) <$> bs)
    fv (Declare _) = empty
    fv (Assign _ e) = fv e
-   fv (DefRec ds) = fv ds
+   fv (DefRegion ds) = fv ds
    fv Pass = empty
    fv (ExprStmt e) = fv e
    fv (Assert e e_opt) = fv e ∪ fv e_opt
@@ -187,7 +187,7 @@ assigns (If bs s_opt) = unions ((\(Branch _ s) -> assigns s) <$> bs) ∪ maybe e
 assigns (Match _ bs) = unions ((\(p × s) -> bv p ∪ assigns s) <$> bs)
 assigns (Declare x) = singleton x
 assigns (Assign p _) = bv p
-assigns (DefRec (RecDefs ds)) = S.fromFoldable (keys ds)
+assigns (DefRegion (RecDefs ds)) = S.fromFoldable (keys ds)
 assigns Pass = empty
 assigns (ExprStmt _) = empty
 assigns (Assert _ _) = empty

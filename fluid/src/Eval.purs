@@ -329,7 +329,7 @@ evalStmt inputs = case _ of
       classes <- askClasses
       ρ' × ctrl <- destructure classes p v inputs.ctrl
       pure (Assigns ρ' ctrl)
-   DefRec (RecDefs ds) -> pure (Assigns (closeDefs inputs ds) inputs.ctrl)
+   DefRegion (RecDefs ds) -> pure (Assigns (closeDefs inputs ds) inputs.ctrl)
    Pass -> pure (Assigns empty inputs.ctrl)
    ExprStmt e -> eval inputs e $> Assigns empty inputs.ctrl
    Assert e e_opt -> do

@@ -228,7 +228,7 @@ checkStmt cxt _ (S.Def (S.VarDef p ψ e)) = do
    τ × e' <- annotated cxt ψ e
    p' × cxt' <- checkPattern cxt p τ
    pure (Assigns cxt' × E.Assign p' e')
-checkStmt cxt _ (S.DefRec ds) = do
+checkStmt cxt _ (S.DefRegion ds) = do
    let defs = groupBy (eq `on` fst) ds
    checkDistinct (\f -> "Non-contiguous clauses for: " <> quoted f) (toList (fst <<< head <$> defs))
    fπs <- for defs \def -> (fst (head def) × _) <$> synth cxt (head def)
@@ -239,7 +239,7 @@ checkStmt cxt _ (S.DefRec ds) = do
       classes <- classTable
       cs <- evalStateT (traverse (\b -> StateT \ls -> check cxt' b (σ × ls)) def) (argShapes classes σ)
       pure (f ↦ clauses cs)
-   pure (Assigns cxt_fs × E.DefRec (E.RecDefs (D.fromFoldable defs')))
+   pure (Assigns cxt_fs × E.DefRegion (E.RecDefs (D.fromFoldable defs')))
 checkStmt cxt ζ (S.Seq s1 s2) = do
    r1 × s1' <- checkStmt cxt ζ s1
    case r1 of
@@ -262,7 +262,7 @@ checkStmt cxt ζ (S.Match e bs) = do
    rbs × τ <- matchCases cxt ζ σ (shapes classes σ Nil) (toList bs)
    let rNoMatch = if τ == never then Returns else Assigns empty
    pure (foldl merge rNoMatch (fst <$> rbs) × E.Match e' (nonEmpty (snd <$> rbs)))
-checkStmt _ _ (S.TypeDefs _) = error absurd
+checkStmt _ _ (S.TypeRegion _) = error absurd
 
 matchCases
    :: Cxt
@@ -282,7 +282,7 @@ matchCases cxt ζ τ ls ((p × s) : bs) = do
 
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 -- Aliases resolved against whole region, classes against earlier definitions only
-wellFormedTop q cxt (S.TypeDefs χs) = do
+wellFormedTop q cxt (S.TypeRegion χs) = do
    for_ χs case _ of
       S.Dataclass x αs _ _ -> modify_ \st -> st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
       S.TypeAlias _ _ _ -> pure unit

@@ -180,7 +180,7 @@ assertStmt = do
    pure $ Assert e msg
 
 topStmt :: Parser Stmt
-topStmt = defer \_ -> typesStmt <|> stmt
+topStmt = defer \_ -> typeRegionStmt <|> stmt
 
 stmts :: Parser Stmt
 stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
@@ -189,7 +189,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser Stmt
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> typesStmt <|> defStmt <|> declareStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <<< Just <$> exprs)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeRegionStmt <|> defStmt <|> declareStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <<< Just <$> exprs)
 
 programStmts :: Parser Stmt
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
@@ -200,9 +200,9 @@ foldr1Seq (NonEmptyList (s :| ss)) = case ss of
    s' : rest -> Seq s (foldr1Seq (NonEmptyList (s' :| rest)))
 
 defStmt :: Parser Stmt
-defStmt = defer \_ -> defRecStmt <|> defValStmt
+defStmt = defer \_ -> defRegionStmt <|> defValStmt
    where
-   defRecStmt = defer \_ -> DefRec <$> recDefs
+   defRegionStmt = defer \_ -> DefRegion <$> recDefs
    defValStmt = defer \_ -> Def <$> varDef
 
 ifStmt :: Parser Stmt
@@ -237,8 +237,8 @@ blockBody = defer \_ -> block stmts
 decorator :: String -> Parser Unit
 decorator name = try (delim '@' *> reserved name)
 
-typesStmt :: Parser Stmt
-typesStmt = TypeDefs <$> many1 (typeAliasDef <|> dataclassDef)
+typeRegionStmt :: Parser Stmt
+typeRegionStmt = TypeRegion <$> many1 (typeStmt <|> dataclassDef)
 
 dataclassDef :: Parser TypeDef
 dataclassDef = do
@@ -256,8 +256,8 @@ dataclassDef = do
    xs <- block ((reserved "pass" $> Nil) <|> (toList <$> many1 (align fieldDecl)))
    pure $ Dataclass c αs b xs
 
-typeAliasDef :: Parser TypeDef
-typeAliasDef = do
+typeStmt :: Parser TypeDef
+typeStmt = do
    x × αs <- try (reserved "type" *> ((×) <$> variable <*> typeParams) <* reservedOperator "=")
    TypeAlias x αs <$> typeExpr
 
