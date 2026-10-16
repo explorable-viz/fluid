@@ -260,7 +260,7 @@ def axis(orient: Orient, x: float, start: float, end: float) -> tuple[GraphicsEl
       Polymarkers(ps, map(compose(labelled_tick(orient, axis_colour, tick_length), num_to_str), ys))
     ])
 
-  return (ax, last_tick)
+  return ax, last_tick
 
 # x is position of this axis on the other axis.
 def cat_axis(orient: Orient, x: float, cat_values: list[Cat]) -> GraphicsElement:
@@ -294,8 +294,8 @@ def line_chart(with_axes: bool, colours: Colours, x_start: float, data: list[tup
   y_finish: float = maximum([maximum([v for (_, v) in kvs]) for (_, kvs) in data])
 
   if with_axes:
-    (x_axis, x_finish_) = axis(Horiz(), 0, x_start, x_finish)
-    (y_axis, y_finish_) = axis(Vert(), x_start, 0, y_finish)
+    x_axis, x_finish_ = axis(Horiz(), 0, x_start, x_finish)
+    y_axis, y_finish_ = axis(Vert(), x_start, 0, y_finish)
     return viewport(x_start, x_finish_, y_finish_, default_margin, [x_axis, y_axis] + lines)
   return viewport(x_start, x_finish, y_finish, 0, lines)
 
@@ -307,7 +307,7 @@ def categorical_chart[A](plot_value: Callable[[Colours, list[A]], list[GraphicsE
 
   if with_axes:
     x_axis: GraphicsElement = cat_axis(Horiz(), 0, [x for (x, _) in data])
-    (y_axis, h_) = axis(Vert(), 0, 0, h)
+    y_axis, h_ = axis(Vert(), 0, 0, h)
     return viewport(0, w, h_, default_margin, gs + [x_axis, y_axis])
   return viewport(0, w, h, 0, gs)
 

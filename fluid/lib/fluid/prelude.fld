@@ -76,13 +76,13 @@ def const[A, B](x: A, _: B) -> A:
   return x
 
 def first[A, B, C](f: Callable[[A], B], (a, c): tuple[A, C]) -> tuple[B, C]:
-  return (f(a), c)
+  return f(a), c
 
 def snd[A, B]((_, y): tuple[A, B]) -> B:
   return y
 
 def second[A, B, C](f: Callable[[A], B], (c, a): tuple[C, A]) -> tuple[C, B]:
-  return (c, f(a))
+  return c, f(a)
 
 def flip[A, B, C](f: Callable[[A, B], C], x: B, y: A) -> C:
   return f(y, x)
@@ -94,10 +94,10 @@ def identity[A](x: A) -> A:
   return x
 
 def prod[A, B, C](f: Callable[[A], B], g: Callable[[A], C], x: A) -> tuple[B, C]:
-  return (f(x), g(x))
+  return f(x), g(x)
 
 def swap[A, B]((a, b): tuple[A, B]) -> tuple[B, A]:
-  return (b, a)
+  return b, a
 
 def tail[A](xs: list[A]) -> list[A]:
   return [xs[i] for i in range(1, len(xs))]
@@ -170,8 +170,8 @@ def fsum(xs: list[float]) -> float:
   return foldr(lambda x, y: x + y, 0.0, xs)
 
 def mean(xs: list[float]) -> float:
-  start: tuple[float, int] = (0.0, 0)
-  (s, n) = foldl(lambda (s, n), x: (s + x, n + 1), start, xs)
+  start: tuple[float, int] = 0.0, 0
+  s, n = foldl(lambda (s, n), x: (s + x, n + 1), start, xs)
   return s / n
 
 def reversed[A](xs: list[A]) -> list[A]:
@@ -189,7 +189,7 @@ def lookup[V](k: int, kvs: list[tuple[int, V]]) -> V:
   match find(lambda (k_, _): k == k_, kvs):
     case None:
       assert False, "Key not found in map"
-    case (_, v):
+    case _, v:
       return v
 
 def max(n: int, m: int) -> int:
