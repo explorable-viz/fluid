@@ -26,12 +26,12 @@ import Literal (Literal(..))
 import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, context, delim, fields, lexeme, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
-import Parsing.Combinators (choice, lookAhead, many, many1, option, optionMaybe, sepBy1, try, (<?>))
+import Parsing.Combinators (choice, lookAhead, many, many1, notFollowedBy, option, optionMaybe, sepBy1, try, (<?>))
 import Parsing.Expr (Operator(..)) as P
 import Parsing.Expr (OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
-import Operator (Operator(..), assoc, binopSymbol, levels, unopSymbol)
+import Operator (Operator(..), assoc, binopSymbol, comparisons, levels, unopSymbol)
 import Expr (Binop(..), Pattern(..))
 import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), RecDefs, Stmt(..), TypeExpr(..), VarDef(..), VarDefs)
 import Types (Primitive(..), TypeCtr(..), primitiveName, primitives, typeCtrs) as T
@@ -41,6 +41,12 @@ pattern :: Parser Pattern
 pattern = defer \_ -> do
    p <- simplePattern
    optionMaybe (reserved "as" *> variable) <#> maybe p (PAs p)
+
+-- Pattern, or tuple pattern without parentheses
+patterns :: Parser Pattern
+patterns = do
+   p <- pattern
+   option p (delim ',' *> (PTuple <<< (p : _) <$> trailingCommas pattern))
 
 simplePattern :: Parser Pattern
 simplePattern = pLit <|> pConstr <|> pVar <|> pRecord <|> pList <|> parensPattern
@@ -120,7 +126,9 @@ typeExpr = defer \_ -> do
    ctrApp T.TupleCtr = TupleTy <$> brackets ((delim '(' *> delim ')' $> Nil) <|> commas typeExpr)
    ctrApp T.CallableCtr = brackets (CallableTy <$> brackets (commas typeExpr) <* delim ',' <*> typeExpr)
    ctrApp T.TypeTyCtr = TypeTy <$> brackets typeExpr
-   ctrApp T.LiteralCtr = LitTy <$> brackets literal
+   ctrApp T.LiteralCtr = brackets literal >>= case _ of
+      Float _ -> fail "float in literal type prohibited"
+      ℓ -> pure (LitTy ℓ)
 
    typeArgs :: Parser (List TypeExpr)
    typeArgs = defer \_ -> option Nil (brackets (commas typeExpr))
@@ -143,18 +151,18 @@ literal =
 varDef :: Parser VarDef
 varDef = do
    p × ψ <- try do
-      p <- pattern
+      p <- patterns
       ψ <- optionMaybe (delim ':' *> typeExpr)
       reservedOperator "="
       pure (p × ψ)
-   e <- sameOrIndented *> withPos expr
+   e <- sameOrIndented *> exprs
    pure $ VarDef p ψ e
 
 varDefs :: Parser VarDefs
 varDefs = many1 varDef
 
 stmt :: Parser Stmt
-stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> declareStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (expr <#> ExprStmt)
+stmt = defer \_ -> ifStmt <|> matchStmt <|> defStmt <|> declareStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (exprs <#> ExprStmt)
 
 declareStmt :: Parser Stmt
 declareStmt = do
@@ -162,7 +170,7 @@ declareStmt = do
    Declare x <$> typeExpr
 
 returnStmt :: Parser Stmt
-returnStmt = reserved "return" *> (Return <$> optionMaybe (sameOrIndented *> expr))
+returnStmt = reserved "return" *> (Return <$> optionMaybe (sameOrIndented *> exprs))
 
 assertStmt :: Parser Stmt
 assertStmt = do
@@ -181,7 +189,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser Stmt
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeAliasStmt <|> defStmt <|> declareStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <<< Just <$> expr)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeAliasStmt <|> defStmt <|> declareStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <<< Just <$> exprs)
 
 programStmts :: Parser Stmt
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
@@ -215,7 +223,7 @@ matchStmt = defer \_ -> do
    let
       branch = do
          reserved "case"
-         p <- pattern
+         p <- patterns
          b <- blockBody
          pure (p × b)
    reserved "match"
@@ -265,22 +273,40 @@ recDefs = many1 recDef
    param :: Parser Param
    param = Param <$> pattern <*> ((delim ':' *> typeExpr) <|> fail "Expected parameter type annotation")
 
+-- Expression, or tuple without parentheses
+exprs :: Parser Expr
+exprs = withPos do
+   e <- expr
+   option e (delim ',' *> (Tuple <<< (e : _) <$> trailingCommas (sameOrIndented *> expr)))
+
 expr :: Parser Expr
 expr = context "expr" $ cond <?> "expression"
    where
    cond :: Parser Expr
    cond = defer \_ -> do
       e1 <- opTree
-      option e1 $ try do
-         reserved "if"
+      option e1 do
+         sameOrIndented *> reserved "if"
          e <- opTree
          reserved "else"
          e2 <- expr
          pure $ Cond e1 e e2
 
    opTree :: Parser Expr
-   opTree = context "opTree" (buildExprParser opTable simpleChain) <* consume -- otherwise always `consume: false`
+   opTree = context "opTree" (buildExprParser opTable simpleChain <* unchained) <* consume -- otherwise always `consume: false`
       where
+
+      unchained :: Parser Unit
+      unchained =
+         (choice (symbol <$> comparisons) *> fail "chained comparison prohibited")
+            <|> ((reserved "and" <|> reserved "or") *> fail "chained boolean operator prohibited")
+            <|> pure unit
+
+      symbol :: Binop -> Parser Unit
+      symbol In = reserved "in"
+      symbol NotIn = try (reserved "not" *> reserved "in")
+      symbol BitOr = try (reservedOperator "|" <* notFollowedBy (delim ']')) -- not closing matrix
+      symbol b = reservedOperator (binopSymbol b)
 
       opTable :: OperatorTable (StateT Position Identity) String Expr
       opTable = reverse levels <#> map toOperator -- tightest first
@@ -290,12 +316,6 @@ expr = context "expr" $ cond <?> "expression"
          toOperator (Unary u) = P.Prefix (word (unopSymbol u) $> UnOp u)
          toOperator op@AndOp = P.Infix (reserved "and" $> And) (assoc op)
          toOperator op@OrOp = P.Infix (reserved "or" $> Or) (assoc op)
-         toOperator op@InfixOp = P.Infix (try (delim '|' *> variable) <* delim '|' <#> \f e e' -> InfixApp e f e') (assoc op)
-
-         symbol :: Binop -> Parser Unit
-         symbol In = reserved "in"
-         symbol NotIn = try (reserved "not" *> reserved "in")
-         symbol b = reservedOperator (binopSymbol b)
 
          word :: String -> Parser Unit
          word "not" = reserved "not"

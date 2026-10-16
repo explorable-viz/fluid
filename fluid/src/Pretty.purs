@@ -13,7 +13,7 @@ import Data.Traversable (class Foldable)
 import Data.Tuple (snd)
 import Classes (Ctr)
 import Dict (Dict)
-import Expr (Pattern(..))
+import Expr (Binop(BitOr), Pattern(..))
 import Expr as E
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Literal (Literal(..))
@@ -52,7 +52,6 @@ instance RootOp Expr where
    rootOp (UnOp op _) = Just (Unary op)
    rootOp (And _ _) = Just AndOp
    rootOp (Or _ _) = Just OrOp
-   rootOp (InfixApp _ _ _) = Just InfixOp
    rootOp _ = Nothing
 
 instance RootOp E.Expr where
@@ -72,7 +71,6 @@ instance IsSimple Expr where
    isSimple (UnOp _ _) = false
    isSimple (And _ _) = false
    isSimple (Or _ _) = false
-   isSimple (InfixApp _ _ _) = false
    isSimple (Lambda _) = false
    isSimple (Cond _ _ _) = false
    isSimple _ = true
@@ -99,10 +97,10 @@ prettyP :: forall a. Pretty a => a -> String
 prettyP x = render (pretty x)
 
 operatorApp :: Int -> Expr -> Doc
+operatorApp n (BinOp (BinOp s BitOr (Var f)) BitOr s') = infixApp n (Binary BitOr) s (text "|" <> text f <> text "|") s'
 operatorApp n (BinOp s op s') = infixApp n (Binary op) s (text (binopSymbol op)) s'
 operatorApp n (And s s') = infixApp n AndOp s (text "and") s'
 operatorApp n (Or s s') = infixApp n OrOp s (text "or") s'
-operatorApp n (InfixApp s f s') = infixApp n InfixOp s (text "|" <> text f <> text "|") s'
 operatorApp n (UnOp op s) =
    if n' <= n then parens (text (unopSymbol op) <+> operatorApp n' s)
    else text (unopSymbol op) <+> operatorApp n' s
@@ -140,7 +138,6 @@ instance Pretty Expr where
    pretty e@(UnOp _ _) = expr $ operatorApp 0 e
    pretty e@(And _ _) = expr $ operatorApp 0 e
    pretty e@(Or _ _) = expr $ operatorApp 0 e
-   pretty e@(InfixApp _ _ _) = expr $ operatorApp 0 e
    pretty (Cond e1 e e2) =
       expr $ pretty e1 <+> text "if" <+> pretty e <+> text "else" <+> pretty e2
 

@@ -2,4 +2,4 @@ from fluid.matrix import mat_mul
 from dependence.matrix.left_matrix import leftMatrix
 from dependence.matrix.right_matrix import rightMatrix
 
-(mat_mul(leftMatrix, rightMatrix), mat_mul(rightMatrix, leftMatrix))
+mat_mul(leftMatrix, rightMatrix), mat_mul(rightMatrix, leftMatrix)

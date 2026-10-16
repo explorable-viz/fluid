@@ -23,7 +23,7 @@ import Data.Map as M
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (wrap)
 import Data.Number (fromString)
-import Data.Number (cos, e, exp, log, pi, sin, sqrt, tan) as N
+import Data.Number (cos, e, exp, floor, log, pi, round, sin, sqrt, tan) as N
 import Data.Set as Set
 import Data.String (Pattern(..))
 import Data.String as String
@@ -34,8 +34,8 @@ import Data.Lazy (defer, force)
 import Data.Tuple (fst, snd)
 import Classes (ClassTable, askClasses, fields)
 import Types.Defs (cMatrix, cRange, callable, matrix, var)
-import Cxt (Entry(..)) as Entry
-import Cxt (Cxt, Entry(Assigned), generalise)
+import Cxt (CxtEntry(..)) as Cxt
+import Cxt (Cxt, CxtEntry(Assigned), generalise)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -45,7 +45,7 @@ import DepGraph (zeros)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, ctrlWeight)
 import Literal (Literal(..))
 import Primitive (int, intOrNumber, number, string, typeMismatch, unary, union1)
-import Util (MayFail, cons, type (+), type (×), definitely', orElse, orThrow, quoted, quotedList, singleton, throw, whenever, (×))
+import Util (MayFail, cons, type (+), type (×), definitely, definitely', orElse, orThrow, quoted, quotedList, singleton, throw, whenever, (×))
 import Module.Defs (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
@@ -74,6 +74,7 @@ predefined = M.fromFoldable
         [ cRange, cMatrix ]
         [ extern print_ × generalise (callable [ T.object ] T.none)
         , extern len × generalise (callable [ T.PrimitiveTy T.Sized ] T.int)
+        , unary "round" { i: intOrNumber, o: int, fwd: identity `union1` round } × generalise (callable [ T.float ] T.int)
         , extern dims × generalise (callable [ matrix (var "T") ] T.intPair)
         , extern loadJson × generalise (callable [ T.TypeTy (var "T"), T.str ] (var "T"))
         , unary "str_to_float" { i: string, o: number, fwd: definitely' <<< fromString } × generalise (callable [ T.str ] T.float)
@@ -113,13 +114,13 @@ predefined = M.fromFoldable
    , predefinedModule dataclasses [ "dataclass" ] [] []
    ]
    where
-   predefinedModule :: ModuleName -> Array Var -> Array Name -> Array (Bind (Val Unit) × Entry.Entry) -> ModuleName × (Cxt × Raw Env)
+   predefinedModule :: ModuleName -> Array Var -> Array Name -> Array (Bind (Val Unit) × Cxt.CxtEntry) -> ModuleName × (Cxt × Raw Env)
    predefinedModule q names classes members =
       q × (M.fromFoldable (lmap fst <$> bindings) × wrap (D.fromFoldable (fst <$> bindings)))
       where
       bindings = cons ((varName × Val bot (Lit (Str (dottedName q)))) × Assigned T.str) members
-         <> (classes <#> \c -> (last c × Val bot (Fun (Type (T.ClassTy c Nil)))) × Entry.Type c)
-         <> (names <#> \x -> (x × Val bot (Opaque (qual q x))) × Entry.PredefName)
+         <> (classes <#> \c -> (last c × Val bot (Fun (Type (T.ClassTy c Nil)))) × Cxt.Type c)
+         <> (names <#> \x -> (x × Val bot (Opaque (qual q x))) × Cxt.PredefName)
 
 len :: ForeignOp
 len =
@@ -361,6 +362,11 @@ intBinary id f =
    depRel :: forall a. Semiring a => List (Val a) -> MayFail (Val a)
    depRel (Val α (Lit (Int m)) : Val β (Lit (Int n)) : Nil) = pure (Val (α + β) (Lit (Int (f m n))))
    depRel _ = Left "Two integers expected"
+
+round :: Number -> Int
+round x = definitely "round of non-finite or out-of-range number" (Int.fromNumber r)
+   where
+   r = if x - N.floor x == 0.5 then 2.0 * N.round (x / 2.0) else N.round x
 
 numToStr :: Int + Number -> String
 numToStr = show `union1` show

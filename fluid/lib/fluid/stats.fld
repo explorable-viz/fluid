@@ -8,7 +8,10 @@ class Likelihood:
   msg: str
 
 def split[A](xs: list[A]) -> tuple[list[A], list[A]]:
-  return ([xs[i] for i in range(0, len(xs)) if i % 2 == 0], [xs[i] for i in range(0, len(xs)) if i % 2 == 1])
+  return (
+    [xs[i] for i in range(0, len(xs)) if i % 2 == 0],
+    [xs[i] for i in range(0, len(xs)) if i % 2 == 1]
+  )
 
 def merge(xs: list[float], ys: list[float]) -> list[float]:
   def go(i: int, j: int) -> list[float]:
@@ -25,7 +28,7 @@ def merge(xs: list[float], ys: list[float]) -> list[float]:
 def mergesort(xs: list[float]) -> list[float]:
   if len(xs) < 2:
     return xs
-  (ys, zs) = split(xs)
+  ys, zs = split(xs)
   return merge(mergesort(ys), mergesort(zs))
 
 def find_quantile(q: float, p: float, xs: list[float]) -> float:
@@ -53,7 +56,7 @@ def cut(xs: list[float], nbins: int) -> list[tuple[list[float], float]]:
   return accum_bins(xs, edges)
 
 def qcut(xs: list[float], qs: list[float]) -> list[tuple[list[float], float]]:
-  (low, high) = (minimum(xs), maximum(xs))
+  low, high = minimum(xs), maximum(xs)
   edges: list[float] = [low] + [find_percentile(x, xs) for x in qs] + [high]
 
   return accum_bins(xs, edges)

@@ -27,11 +27,11 @@ import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import WellFormed.Shapes (Shape, matchesShapes, shapes)
 import Classes (ClassTable, Instance(..), elemType, equiv, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
-import Types.Defs (bool, cMatrix, cParagraph, cRange, int, intPair, matrix, never, none, object, str)
-import Cxt (Entry(..), Cxt, WfResult(..), classOf, extend, merge, override, resolveName)
+import Types.Defs (bool, cMatrix, cParagraph, cRange, float, int, intPair, matrix, never, none, object, str)
+import Cxt (CxtEntry(..), Cxt, WfResult(..), classOf, extend, merge, override, resolveName)
 import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
-import Expr (Unop(..), bv, fv)
+import Expr (Binop(BitOr), Unop(..), bv, fv)
 import Expr (Pattern(..)) as S
 import Expr (Branch(..), Case, Def(..), Expr(..), Import(..), Module(..), Qualifier(..), RecDefs(..), Stmt(..)) as E
 import Literal (Literal(..))
@@ -113,7 +113,7 @@ importBindings enclosing (S.Import q (Just xs)) = do
    for_ (containing enclosing q) checkModule
    importedMembers q cxt xs
 
-submodules :: Entry -> List Var -> CheckM Entry
+submodules :: CxtEntry -> List Var -> CheckM CxtEntry
 submodules θ Nil = pure θ
 submodules (ModChecked q cxt) (x : xs) = do
    θ <- ModChecked (snoc q x) <$> checkModule (snoc q x)
@@ -136,7 +136,7 @@ checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
    r × s' <- moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> wellFormedTop q cxt_s s
    case r of
       -- Program may return, with the returned value as its result; spec treats __main__ as a module
-      Returns -> throwError "Module body cannot return"
+      Returns -> throwError "Module body definitely returns or reaches 'assert False'"
       Assigns cxt' -> pure (cxt' × E.Module imports' s')
    where
    imports' = imports <#> \(S.Import q' xs) -> E.Import q' xs
@@ -178,7 +178,6 @@ instance Captures S.Expr where
    captures (S.UnOp _ e) = captures e
    captures (S.And e e') = captures e ∪ captures e'
    captures (S.Or e e') = captures e ∪ captures e'
-   captures (S.InfixApp e _ e') = captures e ∪ captures e'
    captures (S.Cond e1 e e2) = captures e1 ∪ captures e ∪ captures e2
    captures (S.Paragraph es) = unions (capturesPe <$> es)
       where
@@ -205,7 +204,7 @@ checkStmt _ ζ (S.Return Nothing) = do
    for_ ζ \τ -> unless (equiv classes τ none) $ throwError $ "Bare return with result type " <> prettyP τ
    pure (Returns × E.Return (E.Lit None))
 checkStmt cxt _ (S.ExprStmt e) = (Assigns empty × _) <<< E.ExprStmt <$> exprStmt cxt e
-checkStmt cxt (Just _) (S.Assert (S.Lit (Bool false)) e') =
+checkStmt cxt _ (S.Assert (S.Lit (Bool false)) e') =
    (Returns × _) <$> (E.Assert (E.Lit (Bool false)) <$> traverse (\e'' -> check cxt e'' str) e')
 checkStmt cxt _ (S.Assert e e') =
    (Assigns empty × _) <$> (E.Assert <$> check cxt e bool <*> traverse (\e'' -> check cxt e'' str) e')
@@ -370,6 +369,7 @@ annotated cxt Nothing e = synth cxt e
 
 instance Synth S.Expr (T.Type × E.Expr) where
    synth cxt (S.Var x) = (_ × E.Var x) <$> varType cxt x
+   synth _ (S.Lit n@(Float _)) = pure (float × E.Lit n)
    synth _ (S.Lit ℓ) = pure (T.LitTy ℓ × E.Lit ℓ)
    synth cxt (S.Call e ψs es xes) = case className cxt e of
       Just (c × name) -> constr cxt c name ψs es xes
@@ -391,6 +391,9 @@ instance Synth S.Expr (T.Type × E.Expr) where
       where
       asIndex (S.NameTy q Nil) = pure (foldl S.Attribute (S.Var (head q)) (tail q))
       asIndex _ = throwError $ "Type arguments for non-class: " <> maybe "expression" (quoted <<< dottedName) (asName e)
+   -- Fluid-only infix application e |f| e'
+   synth cxt (S.BinOp (S.BinOp e BitOr f@(S.Var x)) BitOr e') | Just θ <- lookup x cxt, isFunction θ =
+      synth cxt (S.Call f Nil (e : e' : Nil) Nil)
    synth cxt (S.BinOp e op e') = do
       σ × e1 <- synth cxt e
       σ' × e2 <- synth cxt e'
@@ -400,7 +403,6 @@ instance Synth S.Expr (T.Type × E.Expr) where
          (resolveBinop classes op σ σ')
       pure (τ × E.BinOp e1 op e2)
    synth _ (S.UnOp Neg (S.Lit (Int n))) = pure (T.LitTy (Int (-n)) × E.UnOp Neg (E.Lit (Int n)))
-   synth _ (S.UnOp Neg (S.Lit (Float n))) = pure (T.LitTy (Float (-n)) × E.UnOp Neg (E.Lit (Float n)))
    synth cxt (S.UnOp op e) = do
       σ × e' <- synth cxt e
       classes <- classTable
@@ -409,7 +411,6 @@ instance Synth S.Expr (T.Type × E.Expr) where
       pure (τ × E.UnOp op e')
    synth cxt (S.And e e') = (bool × _) <$> (E.And <$> check cxt e bool <*> check cxt e' bool)
    synth cxt (S.Or e e') = (bool × _) <$> (E.Or <$> check cxt e bool <*> check cxt e' bool)
-   synth cxt (S.InfixApp e f e') = synth cxt (S.Call (S.Var f) Nil (e : e' : Nil) Nil)
    synth cxt (S.Cond e1 e e2) = do
       e' <- check cxt e bool
       τ × es' <- joinSynth cxt identity (e1 : e2 : Nil)
@@ -818,7 +819,12 @@ unbound cxt x = case lookup x cxt of
    Just Unbound -> pure unit
    _ -> throwError $ "Already declared: " <> quoted x
 
-kind :: Entry -> String
+isFunction :: CxtEntry -> Boolean
+isFunction (Assigned (T.CallableTy _ _)) = true
+isFunction (TypeScheme (Forall _ (T.CallableTy _ _))) = true
+isFunction _ = false
+
+kind :: CxtEntry -> String
 kind (Type _) = "class"
 kind (TypeAlias _ _) = "type alias"
 kind (Mod _) = "module"
@@ -927,6 +933,7 @@ matchedAs classes (T.UnionTy σ σ') p = join classes (matchedAs classes σ p) (
 matchedAs _ τ (S.PVar _) = τ
 matchedAs _ τ S.PWild = τ
 matchedAs classes τ (S.PAs p _) = matchedAs classes τ p
+matchedAs classes τ (S.PLit (Float _)) = meet classes float τ
 matchedAs classes τ (S.PLit ℓ) = meet classes (T.LitTy ℓ) τ
 matchedAs classes (T.TupleTy τs) (S.PTuple ps) | length τs == length ps = T.TupleTy (zipWith (matchedAs classes) τs ps)
 matchedAs _ τ@(T.ListTy _) (S.PList _) = τ

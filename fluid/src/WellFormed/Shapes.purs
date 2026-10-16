@@ -20,7 +20,7 @@ import Data.Unfoldable (replicate)
 import Expr (Pattern(..))
 import Literal (Literal(..))
 import Types (Primitive(Never), Type(..))
-import Types.Defs (bool, none)
+import Types.Defs (bool, float, none)
 import Util (type (×), absurd, error, (×))
 
 data Head
@@ -56,6 +56,7 @@ shapesSeq :: ClassTable -> List Type -> List (List Shape)
 shapesSeq classes τs = sequence (τs <#> \τ -> shapes classes τ Nil)
 
 headTyped :: ClassTable -> Head -> Type -> Boolean
+headTyped classes (HLit (Float _)) τ = subtype classes float τ
 headTyped classes (HLit ℓ) τ = subtype classes (LitTy ℓ) τ
 headTyped classes (HClass c) τ = isJust (instanceBelow classes c τ)
 headTyped _ (HList _) (ListTy _) = true
@@ -77,6 +78,8 @@ matches classes k p = matchesHead classes k p <|> matchesSplit classes k p
 -- Pattern at shape with head tested by pattern
 matchesHead :: ClassTable -> Shape -> Pattern -> Maybe (List Shape × List Shape)
 matchesHead _ k@(Rest (LitTy ℓ) _) (PLit ℓ') | ℓ == ℓ' = Just ((k : Nil) × Nil)
+matchesHead classes k@(Rest τ hs) (PLit n@(Float _))
+   | not (HLit n `elem` hs), subtype classes float τ = Just ((k : Nil) × (Rest τ (HLit n : hs) : Nil))
 matchesHead classes (Tuple ks) (PTuple ps) | length ks == length ps = forms Tuple <$> matchesSeq classes ks ps
 matchesHead classes (List τ ks) (PList ps) | length ks == length ps = forms (List τ) <$> matchesSeq classes ks ps
 matchesHead classes (Dict τ β hs) (PRecord wps) = do

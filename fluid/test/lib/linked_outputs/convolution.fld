@@ -16,4 +16,4 @@ filter2_: list[list[int]] = [
 filter2: Matrix[int] = [| filter2_[i][j] for (i, j) in (3, 3) |]
 image2: Matrix[int] = [| data[i][j] for (i, j) in (5, 5) |]
 
-(convolve(image1, filter1, wrap), convolve(image2, filter2, zero))
+convolve(image1, filter1, wrap), convolve(image2, filter2, zero)
