@@ -392,7 +392,7 @@ instance Synth S.Expr (T.Type × E.Expr) where
       asIndex (S.NameTy q Nil) = pure (foldl S.Attribute (S.Var (head q)) (tail q))
       asIndex _ = throwError $ "Type arguments for non-class: " <> maybe "expression" (quoted <<< dottedName) (asName e)
    -- Fluid-only infix application e |f| e'
-   synth cxt (S.BinOp (S.BinOp e BitOr f@(S.Var x)) BitOr e') | Just θ <- lookup x cxt, function θ =
+   synth cxt (S.BinOp (S.BinOp e BitOr f@(S.Var x)) BitOr e') | Just θ <- lookup x cxt, isFunction θ =
       synth cxt (S.Call f Nil (e : e' : Nil) Nil)
    synth cxt (S.BinOp e op e') = do
       σ × e1 <- synth cxt e
@@ -819,10 +819,10 @@ unbound cxt x = case lookup x cxt of
    Just Unbound -> pure unit
    _ -> throwError $ "Already declared: " <> quoted x
 
-function :: CxtEntry -> Boolean
-function (Assigned (T.CallableTy _ _)) = true
-function (TypeScheme _) = true
-function _ = false
+isFunction :: CxtEntry -> Boolean
+isFunction (Assigned (T.CallableTy _ _)) = true
+isFunction (TypeScheme (Forall _ (T.CallableTy _ _))) = true
+isFunction _ = false
 
 kind :: CxtEntry -> String
 kind (Type _) = "class"
