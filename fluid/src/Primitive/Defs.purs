@@ -74,7 +74,7 @@ predefined = M.fromFoldable
         [ cRange, cMatrix ]
         [ extern print_ × generalise (callable [ T.object ] T.none)
         , extern len × generalise (callable [ T.PrimitiveTy T.Sized ] T.int)
-        , unary "round" { i: intOrNumber, o: int, fwd: identity `union1` roundHalfEven } × generalise (callable [ T.float ] T.int)
+        , unary "round" { i: intOrNumber, o: int, fwd: identity `union1` round } × generalise (callable [ T.float ] T.int)
         , extern dims × generalise (callable [ matrix (var "T") ] T.intPair)
         , extern loadJson × generalise (callable [ T.TypeTy (var "T"), T.str ] (var "T"))
         , unary "str_to_float" { i: string, o: number, fwd: definitely' <<< fromString } × generalise (callable [ T.str ] T.float)
@@ -363,8 +363,8 @@ intBinary id f =
    depRel (Val α (Lit (Int m)) : Val β (Lit (Int n)) : Nil) = pure (Val (α + β) (Lit (Int (f m n))))
    depRel _ = Left "Two integers expected"
 
-roundHalfEven :: Number -> Int
-roundHalfEven x = definitely "round of non-finite or out-of-range number" (Int.fromNumber r)
+round :: Number -> Int
+round x = definitely "round of non-finite or out-of-range number" (Int.fromNumber r)
    where
    r = if x - N.floor x == 0.5 then 2.0 * N.round (x / 2.0) else N.round x
 
