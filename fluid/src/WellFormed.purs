@@ -289,8 +289,8 @@ wellFormedTop q cxt (S.TypeRegion χs) = do
       st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
    cxt_χs <- (cxt_cs `override` _) <$> typeAliases (cxt `override` cxt_cs) (Map.fromFoldable aliasDefs)
    let binding χ = S.typeDefName χ ↦ get (S.typeDefName χ) cxt_χs
-   forWithIndex_ χs \i χ -> typeDef q (cxt `override` Map.fromFoldable (binding <$> take i (toList χs))) χ
-   pure (Assigns cxt_χs × foldr1 E.Seq (uncurry typeDefStmt <<< binding <$> χs))
+   forWithIndex_ χs \i χ -> checkTypeDef q (cxt `override` Map.fromFoldable (binding <$> take i (toList χs))) χ
+   pure (Assigns cxt_χs × foldr1 E.Seq (uncurry typeDef <<< binding <$> χs))
    where
    classOrAlias (S.Dataclass x αs _ _) = Left (x × αs)
    classOrAlias (S.TypeAlias x αs ψ) = Right (x × (αs × ψ))
@@ -305,8 +305,8 @@ wellFormedTop q cxt (S.Seq t1 t2) = do
          pure (override r1 r2 × E.Seq t1' t2')
 wellFormedTop _ cxt s = checkStmt cxt Nothing s
 
-typeDef :: Name -> Cxt -> S.TypeDef -> CheckM Unit
-typeDef q cxt (S.Dataclass x αs b yψs) = do
+checkTypeDef :: Name -> Cxt -> S.TypeDef -> CheckM Unit
+checkTypeDef q cxt (S.Dataclass x αs b yψs) = do
    predefName cxt "dataclass"
    checkDistinct (\y -> "Duplicate field " <> quoted y <> " in class " <> quoted x) ys
    yτs <- for yψs \(y × ψ) -> (y × _) <$> synth cxt' ψ
@@ -315,7 +315,7 @@ typeDef q cxt (S.Dataclass x αs b yψs) = do
    where
    cxt' = cxt `override` typeParams αs
    ys = fst <$> yψs
-typeDef _ _ (S.TypeAlias _ _ _) = pure unit
+checkTypeDef _ _ (S.TypeAlias _ _ _) = pure unit
 
 -- Resolve alias bodies in dependency order
 typeAliases :: Cxt -> Map.Map Var (List Var × S.TypeExpr) -> CheckM Cxt
@@ -332,10 +332,10 @@ typeAliases cxt ψs = foldM (resolve Nil) Map.empty (Map.keys ψs)
            where
            αs × ψ = get x ψs
 
-typeDefStmt :: Var -> CxtEntry -> E.Stmt
-typeDefStmt _ (Type c) = E.Dataclass c
-typeDefStmt x (TypeAlias αs τ) = E.TypeAlias x αs τ
-typeDefStmt _ _ = error absurd
+typeDef :: Var -> CxtEntry -> E.Stmt
+typeDef _ (Type c) = E.Dataclass c
+typeDef x (TypeAlias αs τ) = E.TypeAlias x αs τ
+typeDef _ _ = error absurd
 
 baseClass :: Cxt -> Cxt -> Var -> List Var -> S.TypeExpr -> CheckM (Name × List T.Type)
 baseClass cxt cxt' x ys (S.NameTy q ψs) | Just (Type d) <- resolveName cxt q = do
