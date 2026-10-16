@@ -136,7 +136,7 @@ checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
    r × s' <- moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> wellFormedTop q cxt_s s
    case r of
       -- Program may return, with the returned value as its result; spec treats __main__ as a module
-      Returns -> throwError "Module body cannot return"
+      Returns -> throwError "Module body definitely returns or reaches 'assert False'"
       Assigns cxt' -> pure (cxt' × E.Module imports' s')
    where
    imports' = imports <#> \(S.Import q' xs) -> E.Import q' xs
@@ -205,7 +205,7 @@ checkStmt _ ζ (S.Return Nothing) = do
    for_ ζ \τ -> unless (equiv classes τ none) $ throwError $ "Bare return with result type " <> prettyP τ
    pure (Returns × E.Return (E.Lit None))
 checkStmt cxt _ (S.ExprStmt e) = (Assigns empty × _) <<< E.ExprStmt <$> exprStmt cxt e
-checkStmt cxt (Just _) (S.Assert (S.Lit (Bool false)) e') =
+checkStmt cxt _ (S.Assert (S.Lit (Bool false)) e') =
    (Returns × _) <$> (E.Assert (E.Lit (Bool false)) <$> traverse (\e'' -> check cxt e'' str) e')
 checkStmt cxt _ (S.Assert e e') =
    (Assigns empty × _) <$> (E.Assert <$> check cxt e bool <*> traverse (\e'' -> check cxt e'' str) e')
