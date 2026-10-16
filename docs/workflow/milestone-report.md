@@ -62,7 +62,7 @@ Stored at `docs/reports/<milestone-name>.md`.
 
 **Milestone reports** are built incrementally: each issue's entry is added when the issue is closed. The summary and metrics sections are updated at the same time. This keeps the report current throughout the milestone.
 
-**Release notes** are generated when the milestone branch is merged to develop, categorised by issue labels (`implementation` → Features, `testing`/`setup` → Other, etc.) and can be edited before publishing. A sync to a PurePy version goes under Other, as conformance to that version, whatever its label.
+**Release notes** are generated when the milestone branch is merged to develop, categorised by issue labels (`implementation` → Features, `testing`/`setup` → Other, etc.) and can be edited before publishing.
 
 Both draw from:
 - **Git history**: commits on the milestone branch since it diverged from develop. Claude-authored commits identified by author `rolyp-claude-bot`.

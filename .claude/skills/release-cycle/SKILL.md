@@ -16,6 +16,7 @@ issue branch → milestone branch → develop → staging → release
 - **Milestone branches**: named to match milestone (e.g. `fluid-1.0`).
 - **Issue branches**: named `<issue-number>-<short-description>`, branched from milestone branch; PRs target milestone branch.
 - **PRs to develop**: developer decides when to merge. [Milestone report](../../../docs/workflow/milestone-report.md) generated at this point.
+- **Release notes**: one line per closed issue of the milestone, giving its title; omit issues that only aggregate others (e.g. a sync to a PurePy version). Classify an issue only as its issue states; otherwise Other.
 
 ## Issue lifecycle
 

@@ -23,10 +23,6 @@
 - Detect package directories in browser (#1555)
 
 ## Other
-- Sync to PurePy 0.12 (#1530)
-- Sync to PurePy 0.16 (without full type system) (#1558)
-- Sync to PurePy 0.18 (#1589)
-- Sync to PurePy 0.22 (#1612)
 - Test compliance against pure-py-spec repo (#1556)
 - Align `Bool` with Python `bool` (#1546)
 - Align `Maybe` with `Optional` (#1547)
