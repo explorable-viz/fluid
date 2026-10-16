@@ -741,7 +741,8 @@ checkQuals cxt (g : gs) body = case g of
       map (E.Decl p' e' : _) <$> checkQuals (cxt `override` cxt') gs body
 
 notCaptured :: Set Var -> Set Var -> CheckM Unit
-notCaptured xs captured = for_ (xs ∩ captured) \x -> throwError $ "Comprehension variable captured by lambda: " <> quoted x
+notCaptured xs captured = for_ (xs ∩ captured) \x ->
+   throwError $ "Comprehension variable captured by lambda: " <> quoted x
 
 -- Keyword arguments in field order; must cover fields xs after first n exactly.
 positionaliseKw :: forall b. List Var -> Name -> Int -> List (Bind b) -> CheckM (List b)
@@ -909,13 +910,13 @@ instance Check S.Pattern T.Type Cxt where
       classTable <#> \classes -> insert x (Assigned (matchedAs classes τ p)) cxt'
    check cxt p@(S.PTuple ps) τ = do
       classes <- classTable
-      when (hasListValues classes τ) $ throwError $ "Tuple pattern at " <> prettyP τ <> ", which has list values"
+      when (hasValuesOf classes (T.ListTy object) τ) $ throwError $ "Tuple pattern at " <> prettyP τ <> ", which has list values"
       bindingsAt τ p case _ of
          T.TupleTy τs | length τs == length ps -> Just (check cxt ps τs)
          _ -> Nothing
    check cxt p@(S.PList ps) τ = do
       classes <- classTable
-      when (hasTupleValues classes τ) $ throwError $ "List pattern at " <> prettyP τ <> ", which has tuple values"
+      when (hasValuesOf classes (T.TupleTy Nil) τ) $ throwError $ "List pattern at " <> prettyP τ <> ", which has tuple values"
       bindingsAt τ p case _ of
          T.ListTy σ -> Just (check cxt ps (ps <#> const σ))
          _ -> Nothing
@@ -941,21 +942,14 @@ bindingsAt τ p atDisjunct = do
    joinAssigned classes (Assigned σ) (Assigned σ') = Assigned (join classes σ σ')
    joinAssigned _ _ _ = error absurd
 
--- Disjunct other than list type above every list type or none, so list[object] stands for all
-hasListValues :: ClassTable -> T.Type -> Boolean
-hasListValues classes τ = F.any listValues (T.disjuncts τ)
+-- Disjunct of τ with values of the form of σ, which is list[object] or tuple[()] and stands for every type of its form
+hasValuesOf :: ClassTable -> T.Type -> T.Type -> Boolean
+hasValuesOf classes σ τ = F.any values (T.disjuncts τ)
    where
-   listValues (T.ListTy _) = true
-   listValues (T.VarTy _) = true
-   listValues σ = subtype classes (T.ListTy object) σ
-
--- Disjunct other than tuple type above every tuple type or none, so tuple[()] stands for all
-hasTupleValues :: ClassTable -> T.Type -> Boolean
-hasTupleValues classes τ = F.any tupleValues (T.disjuncts τ)
-   where
-   tupleValues (T.TupleTy _) = true
-   tupleValues (T.VarTy _) = true
-   tupleValues σ = subtype classes (T.TupleTy Nil) σ
+   values (T.VarTy _) = true
+   values (T.ListTy _) | T.ListTy _ <- σ = true
+   values (T.TupleTy _) | T.TupleTy _ <- σ = true
+   values τ' = subtype classes σ τ'
 
 matchedAs :: ClassTable -> T.Type -> S.Pattern -> T.Type
 matchedAs classes (T.UnionTy σ σ') p = join classes (matchedAs classes σ p) (matchedAs classes σ' p)
