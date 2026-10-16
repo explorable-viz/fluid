@@ -9,6 +9,7 @@ import Control.Monad.State (StateT(..), evalStateT, gets, mapStateT, modify_, ru
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
+import Data.Filterable (partitionMap)
 import Control.MonadPlus (guard)
 import Data.Foldable (all, and, elem, find, foldM, foldl, for_, intercalate)
 import Data.Function (on)
@@ -283,25 +284,16 @@ matchCases cxt ζ τ ls ((p × s) : bs) = do
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 -- Aliases resolved against whole region, classes against earlier definitions only
 wellFormedTop q cxt (S.TypeRegion χs) = do
-   for_ χs case _ of
-      S.Dataclass x αs _ _ -> modify_ \st -> st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
-      S.TypeAlias _ _ _ -> pure unit
-   aliases <- typeAliases (cxt `override` classEntries) (Map.fromFoldable (toList χs >>= aliasDef))
-   let entry χ = S.typeDefName χ × typeEntry aliases χ
+   for_ classes \(x × αs) -> modify_ \st -> st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
+   cxt_χs <- (cxt_cs `override` _) <$> typeAliases (cxt `override` cxt_cs) (Map.fromFoldable aliases)
+   let entry χ = S.typeDefName χ × get (S.typeDefName χ) cxt_χs
    void $ foldM (\cxt' χ -> typeDef q cxt' χ $> (cxt' `override` uncurry maplet (entry χ))) cxt χs
-   pure (Assigns (Map.fromFoldable (entry <$> χs)) × foldr1 E.Seq (typeDefStmt aliases <$> χs))
+   pure (Assigns cxt_χs × foldr1 E.Seq (uncurry typeDefStmt <<< entry <$> χs))
    where
-   classEntries = Map.fromFoldable
-      ( toList χs >>= case _ of
-           S.Dataclass x _ _ _ -> pure (x × Type (snoc q x))
-           S.TypeAlias _ _ _ -> Nil
-      )
-   aliasDef (S.TypeAlias x αs ψ) = pure (x × (αs × ψ))
-   aliasDef _ = Nil
-   typeEntry _ (S.Dataclass x _ _ _) = Type (snoc q x)
-   typeEntry aliases (S.TypeAlias x _ _) = uncurry TypeAlias (get x aliases)
-   typeDefStmt _ (S.Dataclass x _ _ _) = E.Dataclass (snoc q x)
-   typeDefStmt aliases (S.TypeAlias x _ _) = uncurry (E.TypeAlias x) (get x aliases)
+   classOrAlias (S.Dataclass x αs _ _) = Left (x × αs)
+   classOrAlias (S.TypeAlias x αs ψ) = Right (x × (αs × ψ))
+   { left: classes, right: aliases } = partitionMap classOrAlias (toList χs)
+   cxt_cs = Map.fromFoldable (classes <#> \(x × _) -> x × Type (snoc q x))
 wellFormedTop q cxt (S.Seq t1 t2) = do
    r1 × t1' <- wellFormedTop q cxt t1
    case r1 of
@@ -324,19 +316,24 @@ typeDef q cxt (S.Dataclass x αs b yψs) = do
 typeDef _ _ (S.TypeAlias _ _ _) = pure unit
 
 -- Bodies of aliases, each resolved after the aliases of the region named in it
-typeAliases :: Cxt -> Map.Map Var (List Var × S.TypeExpr) -> CheckM (Map.Map Var (List Var × T.Type))
+typeAliases :: Cxt -> Map.Map Var (List Var × S.TypeExpr) -> CheckM Cxt
 typeAliases cxt ψs = foldM (resolve Nil) Map.empty (Map.keys ψs)
    where
-   resolve xs τs x
-      | Map.member x τs = pure τs
+   resolve xs cxt_as x
+      | Map.member x cxt_as = pure cxt_as
       | x `elem` xs = throwError $ "Type alias " <> quoted x <> " is cyclic"
       | otherwise =
            do
-              τs' <- foldM (resolve (x : xs)) τs (filter (\y -> Map.member y ψs && not (y `elem` αs)) (S.simpleNames ψ))
-              τ <- synth (cxt `override` map (uncurry TypeAlias) τs' `override` typeParams αs) ψ
-              pure (Map.insert x (αs × τ) τs')
+              cxt_as' <- foldM (resolve (x : xs)) cxt_as (filter (\y -> Map.member y ψs && not (y `elem` αs)) (S.simpleNames ψ))
+              τ <- synth (cxt `override` cxt_as' `override` typeParams αs) ψ
+              pure (Map.insert x (TypeAlias αs τ) cxt_as')
            where
            αs × ψ = get x ψs
+
+typeDefStmt :: Var -> CxtEntry -> E.Stmt
+typeDefStmt _ (Type c) = E.Dataclass c
+typeDefStmt x (TypeAlias αs τ) = E.TypeAlias x αs τ
+typeDefStmt _ _ = error absurd
 
 baseClass :: Cxt -> Cxt -> Var -> List Var -> S.TypeExpr -> CheckM (Name × List T.Type)
 baseClass cxt cxt' x ys (S.NameTy q ψs) | Just (Type d) <- resolveName cxt q = do
