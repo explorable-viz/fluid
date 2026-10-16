@@ -31,6 +31,7 @@ jobs:
       with:
         key: ${{ runner.os }}-output-${{ hashFiles('**/*.dhall') }}-${{ steps.sources.outputs.hash }}
         path: fluid/output
+    - uses: astral-sh/setup-uv@v10.2.0
     - name: spec-compliance
       run: |
         yarn install

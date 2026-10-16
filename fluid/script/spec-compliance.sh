@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run PurePy suite with Fluid as checker, at revision in purepy-version. Expected failures:
+# Run PurePy conformance suite with Fluid as checker, from purepy release in purepy-version. Expected failures:
 #   test/spec-gaps.txt        Fluid behind spec
 #   test/spec-extensions.txt  Fluid ahead of spec, by design
 # `--update` rewrites gaps list and badge (test/spec-compliance.json) from this run.
@@ -7,19 +7,13 @@ set -e
 cd "$(dirname "$0")/.."
 
 REF=$(cat purepy-version)
-SPEC=.spec/pure-py-spec
+WHEEL=https://github.com/pure-py/pure-py-spec/releases/download/$REF/purepy-${REF#v}-py3-none-any.whl
 GAPS=test/spec-gaps.txt
 EXTENSIONS=test/spec-extensions.txt
 KNOWN=$(mktemp)
 
-if [ "$(cat $SPEC.ref 2>/dev/null)" != "$REF" ]; then
-  rm -rf $SPEC
-  git clone --quiet --depth 1 --branch "$REF" https://github.com/pure-py/pure-py-spec.git $SPEC
-  echo "$REF" > $SPEC.ref
-fi
-
 cat $GAPS <(grep -v '^#' $EXTENSIONS) | sort > "$KNOWN"
-python3 $SPEC/test/run-all.py --checker "$PWD/script/spec-checker.sh" --no-run --no-mypy \
+uvx --from "$WHEEL" purepy-conformance --checker "$PWD/script/spec-checker.sh" --no-run \
   --known-failures "$KNOWN" "$@"
 
 if [[ " $* " == *" --update "* ]]; then

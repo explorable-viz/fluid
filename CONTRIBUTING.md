@@ -60,7 +60,7 @@ yarn workspace @fluid-org/fluid bundle-fluid
 yarn workspace @fluid-org/fluid spec-compliance
 ```
 
-Runs the PurePy conformance suite, at the revision in `fluid/purepy-version`, with Fluid as checker. Gaps, corpus programs Fluid gets wrong, are listed in `fluid/test/spec-gaps.txt`, and extensions, corpus programs Fluid accepts by design ahead of or beyond the spec, in `fluid/test/spec-extensions.txt` under comment lines naming the PurePy issue; `spec-compliance --update` rewrites the gaps list and the badge in `fluid/test/spec-compliance.json`.
+Runs the PurePy conformance suite, from the `purepy` release named in `fluid/purepy-version` and installed with [uv](https://docs.astral.sh/uv/), with Fluid as checker. Gaps, corpus programs Fluid gets wrong, are listed in `fluid/test/spec-gaps.txt`, and extensions, corpus programs Fluid accepts by design ahead of or beyond the spec, in `fluid/test/spec-extensions.txt` under comment lines naming the PurePy issue; `spec-compliance --update` rewrites the gaps list and the badge in `fluid/test/spec-compliance.json`.
 
 ### Website tests (Puppeteer)
 
