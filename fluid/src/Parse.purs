@@ -200,10 +200,7 @@ foldr1Seq (NonEmptyList (s :| ss)) = case ss of
    s' : rest -> Seq s (foldr1Seq (NonEmptyList (s' :| rest)))
 
 defStmt :: Parser Stmt
-defStmt = defer \_ -> defRegion <|> defValStmt
-   where
-   defRegion = defer \_ -> DefRegion <$> recDefs
-   defValStmt = defer \_ -> Def <$> varDef
+defStmt = defer \_ -> (DefRegion <$> recDefs) <|> (Def <$> varDef)
 
 ifStmt :: Parser Stmt
 ifStmt = defer \_ -> do
