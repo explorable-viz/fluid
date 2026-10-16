@@ -66,9 +66,7 @@ data Pattern
 data Def = Def (List Var) Stmt
 
 -- Mutually recursive function definitions.
-newtype RecDefs = RecDefs (Dict Def)
 
--- Case of a match statement.
 type Case = Pattern × Stmt
 
 -- Condition and body of an if or elif clause.
@@ -80,7 +78,7 @@ data Stmt
    | Match Expr (NonEmptyList Case)
    | Declare Var
    | Assign Pattern Expr -- assignment to a pattern; the spec has only variables
-   | DefRec RecDefs
+   | DefRegion (Dict Def)
    | Pass
    | ExprStmt Expr
    | Assert Expr (Maybe Expr)
@@ -127,9 +125,6 @@ fvQualifiers (Decl p e : gs) = fv e ∪ (fvQualifiers gs \\ bv p)
 instance FV Def where
    fv (Def xs s) = fv s \\ S.fromFoldable xs
 
-instance FV RecDefs where
-   fv (RecDefs ds) = fv ds
-
 instance FV Branch where
    fv (Branch e s) = fv e ∪ fv s
 
@@ -139,7 +134,7 @@ instance FV Stmt where
    fv (Match e bs) = fv e ∪ unions ((\(p × s) -> fv s \\ bv p) <$> bs)
    fv (Declare _) = empty
    fv (Assign _ e) = fv e
-   fv (DefRec ds) = fv ds
+   fv (DefRegion ds) = fv ds
    fv Pass = empty
    fv (ExprStmt e) = fv e
    fv (Assert e e_opt) = fv e ∪ fv e_opt
@@ -187,7 +182,7 @@ assigns (If bs s_opt) = unions ((\(Branch _ s) -> assigns s) <$> bs) ∪ maybe e
 assigns (Match _ bs) = unions ((\(p × s) -> bv p ∪ assigns s) <$> bs)
 assigns (Declare x) = singleton x
 assigns (Assign p _) = bv p
-assigns (DefRec (RecDefs ds)) = S.fromFoldable (keys ds)
+assigns (DefRegion ds) = S.fromFoldable (keys ds)
 assigns Pass = empty
 assigns (ExprStmt _) = empty
 assigns (Assert _ _) = empty
@@ -216,6 +211,5 @@ derive instance Generic Pattern _
 instance Show Pattern where
    show c = genericShow c
 
-derive instance Eq RecDefs
 derive instance Eq Branch
 derive instance Eq Stmt

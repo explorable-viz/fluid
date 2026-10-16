@@ -33,7 +33,7 @@ import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import Operator (Operator(..), assoc, binopSymbol, comparisons, levels, unopSymbol)
 import Expr (Binop(..), Pattern(..))
-import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), RecDefs, Stmt(..), TypeExpr(..), VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), VarDefs)
 import Types (Primitive(..), TypeCtr(..), primitiveName, primitives, typeCtrs) as T
 import Util (MayFail, type (+), type (×), nonEmpty, singleton, (×))
 
@@ -180,7 +180,7 @@ assertStmt = do
    pure $ Assert e msg
 
 topStmt :: Parser Stmt
-topStmt = defer \_ -> typeAliasStmt <|> dataclassStmt <|> stmt
+topStmt = defer \_ -> typeRegion <|> stmt
 
 stmts :: Parser Stmt
 stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
@@ -189,7 +189,7 @@ stmts = defer \_ -> many1 (align stmt) <#> foldr1Seq
 -- the program its value. Inside functions and other block bodies, 'return'
 -- is required.
 programStmt :: Parser Stmt
-programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeAliasStmt <|> defStmt <|> declareStmt <|> dataclassStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <<< Just <$> exprs)
+programStmt = defer \_ -> ifStmt <|> matchStmt <|> typeRegion <|> defStmt <|> declareStmt <|> returnStmt <|> (reserved "pass" *> pure Pass) <|> assertStmt <|> misplacedImport <|> (Return <<< Just <$> exprs)
 
 programStmts :: Parser Stmt
 programStmts = defer \_ -> many1 (align programStmt) <#> foldr1Seq
@@ -200,10 +200,7 @@ foldr1Seq (NonEmptyList (s :| ss)) = case ss of
    s' : rest -> Seq s (foldr1Seq (NonEmptyList (s' :| rest)))
 
 defStmt :: Parser Stmt
-defStmt = defer \_ -> defRecStmt <|> defValStmt
-   where
-   defRecStmt = defer \_ -> DefRec <$> recDefs
-   defValStmt = defer \_ -> Def <$> varDef
+defStmt = defer \_ -> (DefRegion <$> defs) <|> (Def <$> varDef)
 
 ifStmt :: Parser Stmt
 ifStmt = defer \_ -> do
@@ -237,8 +234,11 @@ blockBody = defer \_ -> block stmts
 decorator :: String -> Parser Unit
 decorator name = try (delim '@' *> reserved name)
 
-dataclassStmt :: Parser Stmt
-dataclassStmt = do
+typeRegion :: Parser Stmt
+typeRegion = TypeRegion <$> many1 (typeStmt <|> classDef)
+
+classDef :: Parser TypeDef
+classDef = do
    decorator "dataclass"
    reserved "class"
    c <- variable
@@ -253,16 +253,16 @@ dataclassStmt = do
    xs <- block ((reserved "pass" $> Nil) <|> (toList <$> many1 (align fieldDecl)))
    pure $ Dataclass c αs b xs
 
-typeAliasStmt :: Parser Stmt
-typeAliasStmt = do
+typeStmt :: Parser TypeDef
+typeStmt = do
    x × αs <- try (reserved "type" *> ((×) <$> variable <*> typeParams) <* reservedOperator "=")
    TypeAlias x αs <$> typeExpr
 
-recDefs :: Parser RecDefs
-recDefs = many1 recDef
+defs :: Parser (NonEmptyList Branch)
+defs = many1 defClause
    where
-   recDef :: Parser Branch
-   recDef = do
+   defClause :: Parser Branch
+   defClause = do
       f × αs <- try (reserved "def" *> ((×) <$> variable <*> typeParams) <* delim '(')
       ps <- commas param
       delim ')'

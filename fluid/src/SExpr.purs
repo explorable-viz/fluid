@@ -50,17 +50,34 @@ data Stmt
    | Match Expr (NonEmptyList Case)
    | Declare Var TypeExpr
    | Def VarDef
-   | DefRec RecDefs
+   | DefRegion (NonEmptyList Branch)
    | Pass
    | ExprStmt Expr
    | Assert Expr (Maybe Expr)
    | Seq Stmt Stmt
-   | Dataclass Var (List Var) (Maybe TypeExpr) (List (Var × TypeExpr))
+   | TypeRegion (NonEmptyList TypeDef)
+
+data TypeDef
+   = Dataclass Var (List Var) (Maybe TypeExpr) (List (Var × TypeExpr))
    | TypeAlias Var (List Var) TypeExpr
+
+typeDefName :: TypeDef -> Var
+typeDefName (Dataclass x _ _ _) = x
+typeDefName (TypeAlias x _ _) = x
+
+simpleNames :: TypeExpr -> List Var
+simpleNames (NameTy q ψs) = (if NEL.length q == 1 then NEL.head q : Nil else Nil) <> (ψs >>= simpleNames)
+simpleNames (ListTy ψ) = simpleNames ψ
+simpleNames (TupleTy ψs) = ψs >>= simpleNames
+simpleNames (DictTy ψ) = simpleNames ψ
+simpleNames (CallableTy ψs ψ) = (ψs >>= simpleNames) <> simpleNames ψ
+simpleNames (TypeTy ψ) = simpleNames ψ
+simpleNames (UnionTy ψ ψ') = simpleNames ψ <> simpleNames ψ'
+simpleNames (PrimitiveTy _) = Nil
+simpleNames (LitTy _) = Nil
 
 data Import = Import Name (Maybe (List Var))
 
--- Case of a match statement.
 type Case = Pattern × Stmt
 
 data Param = Param Pattern TypeExpr
@@ -72,8 +89,6 @@ type Branch = Var × Clause
 
 -- Lambdas accept exactly one clause whose body is an expression (no defs / return-keyword).
 newtype LambdaClause = LambdaClause (List Pattern × Expr)
-
-type RecDefs = NonEmptyList Branch
 
 data VarDef = VarDef Pattern (Maybe TypeExpr) Expr
 type VarDefs = NonEmptyList VarDef
@@ -107,6 +122,11 @@ instance Show Expr where
 derive instance Eq Stmt
 derive instance Generic Stmt _
 instance Show Stmt where
+   show c = genericShow c
+
+derive instance Eq TypeDef
+derive instance Generic TypeDef _
+instance Show TypeDef where
    show c = genericShow c
 
 derive instance Eq Import
@@ -182,13 +202,12 @@ instance FV Stmt where
       fv scrut ∪ unions ((\(p × b) -> fv b \\ bv p) <$> branches)
    fv (Declare _ _) = empty
    fv (Def vd) = fv vd
-   fv (DefRec rs) = fvRecDefs rs
+   fv (DefRegion rs) = unions (fv <<< snd <$> rs) \\ Set.fromFoldable (fst <$> rs)
    fv Pass = empty
    fv (ExprStmt e) = fv e
    fv (Assert cond msg) = fv cond ∪ maybe empty fv msg
    fv (Seq s1 s2) = fv s1 ∪ fv s2
-   fv (Dataclass _ _ _ _) = empty
-   fv (TypeAlias _ _ _) = empty
+   fv (TypeRegion _) = empty
 
 instance FV VarDef where
    fv (VarDef _ _ e) = fv e
@@ -209,20 +228,18 @@ assigns (Assert _ _) = empty
 assigns (Return _) = empty
 assigns (If es s) = unions (assigns <$> (snd <$> es)) ∪ maybe empty assigns s
 assigns (Match _ ps) = unions ((\(p × s) -> bv p ∪ assigns s) <$> ps)
-assigns (DefRec ds) = unions (singleton <<< fst <$> ds)
+assigns (DefRegion ds) = unions (singleton <<< fst <$> ds)
 assigns (Seq s1 s2) = assigns s1 ∪ assigns s2
-assigns (Dataclass c _ _ _) = singleton c
-assigns (TypeAlias x _ _) = singleton x
+assigns (TypeRegion χs) = Set.fromFoldable (typeDefName <$> χs)
 
 declares :: Stmt -> List Var
 declares (Declare x _) = singleton x
 declares (Def (VarDef p (Just _) _)) = Set.toUnfoldable (bv p)
-declares (DefRec ds) = nub (NEL.toList (fst <$> ds))
+declares (DefRegion ds) = nub (NEL.toList (fst <$> ds))
 declares (If es s) = (NEL.toList es >>= declares <<< snd) <> maybe Nil declares s
 declares (Match _ ps) = NEL.toList ps >>= declares <<< snd
 declares (Seq s1 s2) = declares s1 <> declares s2
-declares (Dataclass c _ _ _) = singleton c
-declares (TypeAlias x _ _) = singleton x
+declares (TypeRegion χs) = NEL.toList (typeDefName <$> χs)
 declares _ = Nil
 
 binds :: Stmt -> Set Var
@@ -237,10 +254,6 @@ instance BV Param where
 instance FV ParagraphElem where
    fv (Token _) = empty
    fv (Unquote e) = fv e
-
-fvRecDefs :: RecDefs -> Set Var
-fvRecDefs rs =
-   unions (fv <$> (snd <$> rs)) \\ unions (singleton <<< fst <$> rs)
 
 fvQualifiers :: List Qualifier -> Set Var
 fvQualifiers Nil = empty

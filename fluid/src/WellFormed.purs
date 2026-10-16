@@ -9,22 +9,24 @@ import Control.Monad.State (StateT(..), evalStateT, gets, mapStateT, modify_, ru
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
+import Data.Filterable (partitionMap)
 import Control.MonadPlus (guard)
 import Data.Foldable (all, and, elem, find, foldM, foldl, for_, intercalate)
 import Data.Function (on)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.FoldableWithIndex (forWithIndex_)
 import Data.List (List(..), drop, filter, index, take, intersect, length, mapMaybe, null, sort, transpose, updateAt, (:))
 import Data.Foldable (any, lookup) as F
 import Module.Defs (ModuleName, containing, implicitFor, submods)
 import Data.List.NonEmpty (NonEmptyList(..), cons, fromList, groupBy, head, last, snoc, toList, uncons)
 import Data.NonEmpty ((:|))
-import Data.Semigroup.Foldable (foldl1)
+import Data.Semigroup.Foldable (foldl1, foldr1)
 import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst, snd, uncurry)
 import WellFormed.Shapes (Shape, matchesShapes, shapes)
 import Classes (ClassTable, Instance(..), elemType, equiv, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
 import Types.Defs (bool, cMatrix, cParagraph, cRange, float, int, intPair, matrix, never, none, object, str)
@@ -33,11 +35,11 @@ import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
 import Expr (Binop(BitOr), Unop(..), bv, fv)
 import Expr (Pattern(..)) as S
-import Expr (Branch(..), Case, Def(..), Expr(..), Import(..), Module(..), Qualifier(..), RecDefs(..), Stmt(..)) as E
+import Expr (Branch(..), Case, Def(..), Expr(..), Import(..), Module(..), Qualifier(..), Stmt(..)) as E
 import Literal (Literal(..))
 import Operator (binopSymbol, resolveBinop, resolveUnop, unopSymbol)
 import Pretty (prettyP)
-import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeExpr(..), VarDef(..), assigns, binds, declares) as S
+import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), assigns, binds, declares, typeDefName, simpleNames) as S
 import Types (Scheme(..))
 import Types as T
 import Util (MayFail, type (+), type (×), absurd, checkDistinct, definitely', error, nonEmpty, quoted, quotedList, singleton, tail, unzip, zip, zipWith, (×), (∩))
@@ -71,7 +73,7 @@ within what = mapStateT (mapReaderT (lmap (_ <> "\nChecking " <> what)))
 checkProgram :: List S.Import -> S.Stmt -> CheckM E.Stmt
 checkProgram imports s = do
    cxt_imp × cxt_ιs <- checkImports mainModule imports
-   snd <$> (moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> wellFormedTop mainModule cxt_s s)
+   snd <$> (moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> checkTopStmt mainModule cxt_s s)
 
 -- Member context of module q, checked on first import; no cycle guard, as the dependency graph is acyclic.
 checkModule :: ModuleName -> CheckM Cxt
@@ -133,7 +135,7 @@ importedMembers q cxt xs = Map.fromFoldable <$> for xs \x -> (x × _) <$> member
 
 checkStatements :: Name -> Cxt -> Cxt -> S.Module -> CheckM (Cxt × E.Module)
 checkStatements q cxt_imp cxt_ιs (S.Module imports s) = do
-   r × s' <- moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> wellFormedTop q cxt_s s
+   r × s' <- moduleScope cxt_imp cxt_ιs s >>= \cxt_s -> checkTopStmt q cxt_s s
    case r of
       -- Program may return, with the returned value as its result; spec treats __main__ as a module
       Returns -> throwError "Module body definitely returns or reaches 'assert False'"
@@ -228,7 +230,7 @@ checkStmt cxt _ (S.Def (S.VarDef p ψ e)) = do
    τ × e' <- annotated cxt ψ e
    p' × cxt' <- checkPattern cxt p τ
    pure (Assigns cxt' × E.Assign p' e')
-checkStmt cxt _ (S.DefRec ds) = do
+checkStmt cxt _ (S.DefRegion ds) = do
    let defs = groupBy (eq `on` fst) ds
    checkDistinct (\f -> "Non-contiguous clauses for: " <> quoted f) (toList (fst <<< head <$> defs))
    fπs <- for defs \def -> (fst (head def) × _) <$> synth cxt (head def)
@@ -239,7 +241,7 @@ checkStmt cxt _ (S.DefRec ds) = do
       classes <- classTable
       cs <- evalStateT (traverse (\b -> StateT \ls -> check cxt' b (σ × ls)) def) (argShapes classes σ)
       pure (f ↦ clauses cs)
-   pure (Assigns cxt_fs × E.DefRec (E.RecDefs (D.fromFoldable defs')))
+   pure (Assigns cxt_fs × E.DefRegion (D.fromFoldable defs'))
 checkStmt cxt ζ (S.Seq s1 s2) = do
    r1 × s1' <- checkStmt cxt ζ s1
    case r1 of
@@ -262,8 +264,7 @@ checkStmt cxt ζ (S.Match e bs) = do
    rbs × τ <- matchCases cxt ζ σ (shapes classes σ Nil) (toList bs)
    let rNoMatch = if τ == never then Returns else Assigns empty
    pure (foldl merge rNoMatch (fst <$> rbs) × E.Match e' (nonEmpty (snd <$> rbs)))
-checkStmt _ _ (S.Dataclass _ _ _ _) = error absurd
-checkStmt _ _ (S.TypeAlias _ _ _) = error absurd
+checkStmt _ _ (S.TypeRegion _) = error absurd
 
 matchCases
    :: Cxt
@@ -281,29 +282,60 @@ matchCases cxt ζ τ ls ((p × s) : bs) = do
    r × s' <- checkStmt (cxt `override` cxt') ζ s
    lmap ((override (Assigns cxt') r × (p' × s')) : _) <$> matchCases cxt ζ (remaining classes τ p') ls' bs
 
-wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
-wellFormedTop q cxt (S.Dataclass x αs b yψs) = do
+checkTopStmt :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
+-- Aliases resolved against whole region, classes against earlier definitions only
+checkTopStmt q cxt (S.TypeRegion χs) = do
+   for_ classDefs \(x × αs) -> modify_ \st ->
+      st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
+   cxt_χs <- (cxt_cs `override` _) <$> typeAliases (cxt `override` cxt_cs) (Map.fromFoldable aliasDefs)
+   let binding χ = S.typeDefName χ ↦ get (S.typeDefName χ) cxt_χs
+   forWithIndex_ χs \i χ -> checkTypeDef q (cxt `override` Map.fromFoldable (binding <$> take i (toList χs))) χ
+   pure (Assigns cxt_χs × foldr1 E.Seq (uncurry typeDef <<< binding <$> χs))
+   where
+   classOrAlias (S.Dataclass x αs _ _) = Left (x × αs)
+   classOrAlias (S.TypeAlias x αs ψ) = Right (x × (αs × ψ))
+   { left: classDefs, right: aliasDefs } = partitionMap classOrAlias (toList χs)
+   cxt_cs = Map.fromFoldable (classDefs <#> \(x × _) -> x × Type (snoc q x))
+checkTopStmt q cxt (S.Seq t1 t2) = do
+   r1 × t1' <- checkTopStmt q cxt t1
+   case r1 of
+      Returns -> throwError "Unreachable statement"
+      Assigns cxt' -> do
+         r2 × t2' <- checkTopStmt q (cxt `override` cxt') t2
+         pure (override r1 r2 × E.Seq t1' t2')
+checkTopStmt _ cxt s = checkStmt cxt Nothing s
+
+checkTypeDef :: Name -> Cxt -> S.TypeDef -> CheckM Unit
+checkTypeDef q cxt (S.Dataclass x αs b yψs) = do
    predefName cxt "dataclass"
    checkDistinct (\y -> "Duplicate field " <> quoted y <> " in class " <> quoted x) ys
    yτs <- for yψs \(y × ψ) -> (y × _) <$> synth cxt' ψ
    base <- for b (baseClass cxt cxt' x ys)
-   modify_ \st -> st { classes = insert c { typeParams: αs, fields: yτs, base } st.classes }
-   pure (Assigns (maplet x (Type c)) × E.Dataclass c)
+   modify_ \st -> st { classes = insert (snoc q x) { typeParams: αs, fields: yτs, base } st.classes }
    where
    cxt' = cxt `override` typeParams αs
    ys = fst <$> yψs
-   c = snoc q x
-wellFormedTop _ cxt (S.TypeAlias x αs ψ) = do
-   τ <- synth (cxt `override` typeParams αs) ψ
-   pure (Assigns (maplet x (TypeAlias αs τ)) × E.TypeAlias x αs τ)
-wellFormedTop q cxt (S.Seq t1 t2) = do
-   r1 × t1' <- wellFormedTop q cxt t1
-   case r1 of
-      Returns -> throwError "Unreachable statement"
-      Assigns cxt' -> do
-         r2 × t2' <- wellFormedTop q (cxt `override` cxt') t2
-         pure (override r1 r2 × E.Seq t1' t2')
-wellFormedTop _ cxt s = checkStmt cxt Nothing s
+checkTypeDef _ _ (S.TypeAlias _ _ _) = pure unit
+
+-- Resolve alias bodies in dependency order
+typeAliases :: Cxt -> Map.Map Var (List Var × S.TypeExpr) -> CheckM Cxt
+typeAliases cxt ψs = foldM (resolve Nil) Map.empty (Map.keys ψs)
+   where
+   resolve xs cxt_as x
+      | Map.member x cxt_as = pure cxt_as
+      | x `elem` xs = throwError $ "Type alias " <> quoted x <> " is cyclic"
+      | otherwise =
+           do
+              cxt_as' <- foldM (resolve (x : xs)) cxt_as (filter (\y -> Map.member y ψs && not (y `elem` αs)) (S.simpleNames ψ))
+              τ <- synth (cxt `override` cxt_as' `override` typeParams αs) ψ
+              pure (Map.insert x (TypeAlias αs τ) cxt_as')
+           where
+           αs × ψ = get x ψs
+
+typeDef :: Var -> CxtEntry -> E.Stmt
+typeDef _ (Type c) = E.Dataclass c
+typeDef x (TypeAlias αs τ) = E.TypeAlias x αs τ
+typeDef _ _ = error absurd
 
 baseClass :: Cxt -> Cxt -> Var -> List Var -> S.TypeExpr -> CheckM (Name × List T.Type)
 baseClass cxt cxt' x ys (S.NameTy q ψs) | Just (Type d) <- resolveName cxt q = do
@@ -612,13 +644,10 @@ resultType cxt (T.CallableTy σs τ) es = do
 resultType _ σ _ = throwError $ "Values of type " <> prettyP σ <> " cannot be called"
 
 exprStmt :: Cxt -> S.Expr -> CheckM E.Expr
-exprStmt cxt (S.Call e Nil es Nil) | not (isLambda e) && className cxt e == Nothing = callStmt cxt e es
-exprStmt cxt e = snd <$> synth cxt e
-
-callStmt :: Cxt -> S.Expr -> List S.Expr -> CheckM E.Expr
-callStmt cxt e es = callee cxt e es >>= case _ of
+exprStmt cxt (S.Call e Nil es Nil) | not (isLambda e) && className cxt e == Nothing = callee cxt e es >>= case _ of
    T.CallableTy σs τ × e' | τ == none && length σs == length es -> E.App e' <$> check cxt es σs
    σ × e' -> E.App e' <<< snd <$> resultType cxt σ es
+exprStmt cxt e = snd <$> synth cxt e
 
 lambdaArgs :: Cxt -> List S.Pattern -> List S.Expr -> CheckM (Cxt × List S.Pattern × List E.Expr)
 lambdaArgs cxt ps es = do
@@ -712,7 +741,8 @@ checkQuals cxt (g : gs) body = case g of
       map (E.Decl p' e' : _) <$> checkQuals (cxt `override` cxt') gs body
 
 notCaptured :: Set Var -> Set Var -> CheckM Unit
-notCaptured xs captured = for_ (xs ∩ captured) \x -> throwError $ "Comprehension variable captured by lambda: " <> quoted x
+notCaptured xs captured = for_ (xs ∩ captured) \x ->
+   throwError $ "Comprehension variable captured by lambda: " <> quoted x
 
 -- Keyword arguments in field order; must cover fields xs after first n exactly.
 positionaliseKw :: forall b. List Var -> Name -> Int -> List (Bind b) -> CheckM (List b)
@@ -880,13 +910,13 @@ instance Check S.Pattern T.Type Cxt where
       classTable <#> \classes -> insert x (Assigned (matchedAs classes τ p)) cxt'
    check cxt p@(S.PTuple ps) τ = do
       classes <- classTable
-      when (hasListValues classes τ) $ throwError $ "Tuple pattern at " <> prettyP τ <> ", which has list values"
+      when (hasValuesOf classes (T.ListTy object) τ) $ throwError $ "Tuple pattern at " <> prettyP τ <> ", which has list values"
       bindingsAt τ p case _ of
          T.TupleTy τs | length τs == length ps -> Just (check cxt ps τs)
          _ -> Nothing
    check cxt p@(S.PList ps) τ = do
       classes <- classTable
-      when (hasTupleValues classes τ) $ throwError $ "List pattern at " <> prettyP τ <> ", which has tuple values"
+      when (hasValuesOf classes (T.TupleTy Nil) τ) $ throwError $ "List pattern at " <> prettyP τ <> ", which has tuple values"
       bindingsAt τ p case _ of
          T.ListTy σ -> Just (check cxt ps (ps <#> const σ))
          _ -> Nothing
@@ -912,21 +942,14 @@ bindingsAt τ p atDisjunct = do
    joinAssigned classes (Assigned σ) (Assigned σ') = Assigned (join classes σ σ')
    joinAssigned _ _ _ = error absurd
 
--- Disjunct other than list type above every list type or none, so list[object] stands for all
-hasListValues :: ClassTable -> T.Type -> Boolean
-hasListValues classes τ = F.any listValues (T.disjuncts τ)
+-- Disjunct of τ with values of the form of σ, which is list[object] or tuple[()] and stands for every type of its form
+hasValuesOf :: ClassTable -> T.Type -> T.Type -> Boolean
+hasValuesOf classes σ τ = F.any values (T.disjuncts τ)
    where
-   listValues (T.ListTy _) = true
-   listValues (T.VarTy _) = true
-   listValues σ = subtype classes (T.ListTy object) σ
-
--- Disjunct other than tuple type above every tuple type or none, so tuple[()] stands for all
-hasTupleValues :: ClassTable -> T.Type -> Boolean
-hasTupleValues classes τ = F.any tupleValues (T.disjuncts τ)
-   where
-   tupleValues (T.TupleTy _) = true
-   tupleValues (T.VarTy _) = true
-   tupleValues σ = subtype classes (T.TupleTy Nil) σ
+   values (T.VarTy _) = true
+   values (T.ListTy _) | T.ListTy _ <- σ = true
+   values (T.TupleTy _) | T.TupleTy _ <- σ = true
+   values τ' = subtype classes σ τ'
 
 matchedAs :: ClassTable -> T.Type -> S.Pattern -> T.Type
 matchedAs classes (T.UnionTy σ σ') p = join classes (matchedAs classes σ p) (matchedAs classes σ' p)

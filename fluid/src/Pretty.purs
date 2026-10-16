@@ -20,7 +20,7 @@ import Literal (Literal(..))
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (assignment, block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Operator (Operator(..), binopSymbol, prec, unopSymbol)
-import SExpr (Branch, Case, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), RecDefs, Stmt(..), TypeExpr(..), VarDef(..), VarDefs)
+import SExpr (Branch, Case, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), VarDefs)
 import Types as T
 import Util (type (×), isEmpty, singleton, (×))
 import Util.Map (toUnfoldable)
@@ -207,12 +207,15 @@ instance Pretty Stmt where
    pretty (Match s cs) = text "match" <+> pretty s <> block (pretty cs)
    pretty (Declare x ψ) = text x <> annot (Just ψ)
    pretty (Def vd) = pretty vd
-   pretty (DefRec xcs) = pretty xcs
+   pretty (DefRegion xcs) = pretty xcs
    pretty Pass = text "pass"
    pretty (ExprStmt e) = pretty e
    pretty (Assert cond Nothing) = text "assert" <+> pretty cond
    pretty (Assert cond (Just msg)) = text "assert" <+> pretty cond <> text "," <+> pretty msg
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
+   pretty (TypeRegion χs) = vsep (toList (pretty <$> χs))
+
+instance Pretty TypeDef where
    pretty (Dataclass c αs b xs) =
       text "@dataclass" <> line
          <> text "class" <+> text c
@@ -284,7 +287,7 @@ returnAnnot ψ = text " ->" <+> pretty ψ
 instance Pretty LambdaClause where
    pretty (LambdaClause (ps × e)) = text "lambda" <+> prettyList ps <> text ":" <+> pretty e
 
-instance Pretty RecDefs where
+instance Pretty (NonEmptyList Branch) where
    pretty bs = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> bs))
 
 instance Pretty Branch where
@@ -370,7 +373,7 @@ instance Pretty E.Stmt where
       prettyCase (p × s) = text "case" <+> pretty p <> block (pretty s)
    pretty (E.Declare x) = text x <> text ":"
    pretty (E.Assign p e) = pretty p <+> text "=" <+> pretty e
-   pretty (E.DefRec (E.RecDefs ds)) = text "def" <+> pretty ds
+   pretty (E.DefRegion ds) = text "def" <+> pretty ds
    pretty E.Pass = text "pass"
    pretty (E.ExprStmt e) = pretty e
    pretty (E.Assert e Nothing) = text "assert" <+> pretty e

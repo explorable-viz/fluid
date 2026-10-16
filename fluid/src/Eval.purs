@@ -27,7 +27,7 @@ import Classes (class HasClasses, ClassTable, ancestors, arity, askClasses, chec
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Exception (Error)
-import Expr (Branch(..), Def(..), Expr(..), Import(..), Module(..), Pattern(..), Qualifier(..), RecDefs(..), Stmt(..), assigns, fv)
+import Expr (Branch(..), Def(..), Expr(..), Import(..), Module(..), Pattern(..), Qualifier(..), Stmt(..), assigns, fv)
 import File (class MonadLoad, withClasses)
 import DepGraph (DepGraph, Rel, Deriv, Pos, attachDoc, deriv, zeros)
 import Lattice (class DepSemiring, DepKind, Lineage, Raw, ctrlWeight)
@@ -329,7 +329,7 @@ evalStmt inputs = case _ of
       classes <- askClasses
       ρ' × ctrl <- destructure classes p v inputs.ctrl
       pure (Assigns ρ' ctrl)
-   DefRec (RecDefs ds) -> pure (Assigns (closeDefs inputs ds) inputs.ctrl)
+   DefRegion ds -> pure (Assigns (closeDefs inputs ds) inputs.ctrl)
    Pass -> pure (Assigns empty inputs.ctrl)
    ExprStmt e -> eval inputs e $> Assigns empty inputs.ctrl
    Assert e e_opt -> do
