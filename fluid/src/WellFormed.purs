@@ -317,7 +317,7 @@ typeDef q cxt (S.Dataclass x αs b yψs) = do
    ys = fst <$> yψs
 typeDef _ _ (S.TypeAlias _ _ _) = pure unit
 
--- Bodies of aliases, each resolved after the aliases of the region named in it
+-- Resolve alias bodies in dependency order
 typeAliases :: Cxt -> Map.Map Var (List Var × S.TypeExpr) -> CheckM Cxt
 typeAliases cxt ψs = foldM (resolve Nil) Map.empty (Map.keys ψs)
    where
