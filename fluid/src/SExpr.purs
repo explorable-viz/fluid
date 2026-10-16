@@ -65,17 +65,17 @@ typeDefName :: TypeDef -> Var
 typeDefName (Dataclass x _ _ _) = x
 typeDefName (TypeAlias x _ _) = x
 
--- Unqualified names in a type expression
-typeNames :: TypeExpr -> List Var
-typeNames (NameTy q ψs) = (if NEL.length q == 1 then NEL.head q : Nil else Nil) <> (ψs >>= typeNames)
-typeNames (ListTy ψ) = typeNames ψ
-typeNames (TupleTy ψs) = ψs >>= typeNames
-typeNames (DictTy ψ) = typeNames ψ
-typeNames (CallableTy ψs ψ) = (ψs >>= typeNames) <> typeNames ψ
-typeNames (TypeTy ψ) = typeNames ψ
-typeNames (UnionTy ψ ψ') = typeNames ψ <> typeNames ψ'
-typeNames (PrimitiveTy _) = Nil
-typeNames (LitTy _) = Nil
+-- Simple names in a type expression
+simpleNames :: TypeExpr -> List Var
+simpleNames (NameTy q ψs) = (if NEL.length q == 1 then NEL.head q : Nil else Nil) <> (ψs >>= simpleNames)
+simpleNames (ListTy ψ) = simpleNames ψ
+simpleNames (TupleTy ψs) = ψs >>= simpleNames
+simpleNames (DictTy ψ) = simpleNames ψ
+simpleNames (CallableTy ψs ψ) = (ψs >>= simpleNames) <> simpleNames ψ
+simpleNames (TypeTy ψ) = simpleNames ψ
+simpleNames (UnionTy ψ ψ') = simpleNames ψ <> simpleNames ψ'
+simpleNames (PrimitiveTy _) = Nil
+simpleNames (LitTy _) = Nil
 
 data Import = Import Name (Maybe (List Var))
 

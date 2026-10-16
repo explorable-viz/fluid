@@ -42,7 +42,7 @@ implicit = builtins : prelude : Nil
 implicitFor :: ModuleName -> List ModuleName
 implicitFor q = takeWhile (_ /= q) implicit
 
--- Immediate submodules of q in the module table, by unqualified name.
+-- Immediate submodules of q in the module table, by simple name.
 submods :: Set ModuleName -> ModuleName -> List (Var × ModuleName)
 submods modules q = mapMaybe sub (Set.toUnfoldable modules)
    where

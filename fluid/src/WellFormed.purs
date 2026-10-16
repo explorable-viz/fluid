@@ -37,7 +37,7 @@ import Expr (Branch(..), Case, Def(..), Expr(..), Import(..), Module(..), Qualif
 import Literal (Literal(..))
 import Operator (binopSymbol, resolveBinop, resolveUnop, unopSymbol)
 import Pretty (prettyP)
-import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), assigns, binds, declares, typeDefName, typeNames) as S
+import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), assigns, binds, declares, typeDefName, simpleNames) as S
 import Types (Scheme(..))
 import Types as T
 import Util (MayFail, type (+), type (×), absurd, checkDistinct, definitely', error, nonEmpty, quoted, quotedList, singleton, tail, unzip, zip, zipWith, (×), (∩))
@@ -332,7 +332,7 @@ typeAliases cxt ψs = foldM (resolve Nil) Map.empty (Map.keys ψs)
       | x `elem` xs = throwError $ "Type alias " <> quoted x <> " is cyclic"
       | otherwise =
            do
-              τs' <- foldM (resolve (x : xs)) τs (filter (\y -> Map.member y ψs && not (y `elem` αs)) (S.typeNames ψ))
+              τs' <- foldM (resolve (x : xs)) τs (filter (\y -> Map.member y ψs && not (y `elem` αs)) (S.simpleNames ψ))
               τ <- synth (cxt `override` map (uncurry TypeAlias) τs' `override` typeParams αs) ψ
               pure (Map.insert x (αs × τ) τs')
            where
