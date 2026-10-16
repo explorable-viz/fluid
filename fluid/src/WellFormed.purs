@@ -391,7 +391,7 @@ instance Synth S.Expr (T.Type × E.Expr) where
       where
       asIndex (S.NameTy q Nil) = pure (foldl S.Attribute (S.Var (head q)) (tail q))
       asIndex _ = throwError $ "Type arguments for non-class: " <> maybe "expression" (quoted <<< dottedName) (asName e)
-   -- Fluid-only infix application e |f| e' of function f
+   -- Fluid-only infix application e |f| e'
    synth cxt (S.BinOp (S.BinOp e BitOr f@(S.Var x)) BitOr e') | Just θ <- lookup x cxt, function θ =
       synth cxt (S.Call f Nil (e : e' : Nil) Nil)
    synth cxt (S.BinOp e op e') = do
