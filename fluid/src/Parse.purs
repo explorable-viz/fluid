@@ -273,8 +273,8 @@ expr = context "expr" $ cond <?> "expression"
    cond :: Parser Expr
    cond = defer \_ -> do
       e1 <- opTree
-      option e1 $ try do
-         reserved "if"
+      option e1 do
+         sameOrIndented *> reserved "if"
          e <- opTree
          reserved "else"
          e2 <- expr
