@@ -31,7 +31,7 @@ import Types.Defs (bool, cMatrix, cParagraph, cRange, float, int, intPair, matri
 import Cxt (Entry(..), Cxt, WfResult(..), classOf, extend, merge, override, resolveName)
 import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
-import Expr (Unop(..), bv, fv)
+import Expr (Binop(BitOr), Unop(..), bv, fv)
 import Expr (Pattern(..)) as S
 import Expr (Branch(..), Case, Def(..), Expr(..), Import(..), Module(..), Qualifier(..), RecDefs(..), Stmt(..)) as E
 import Literal (Literal(..))
@@ -178,7 +178,6 @@ instance Captures S.Expr where
    captures (S.UnOp _ e) = captures e
    captures (S.And e e') = captures e ∪ captures e'
    captures (S.Or e e') = captures e ∪ captures e'
-   captures (S.InfixApp e _ e') = captures e ∪ captures e'
    captures (S.Cond e1 e e2) = captures e1 ∪ captures e ∪ captures e2
    captures (S.Paragraph es) = unions (capturesPe <$> es)
       where
@@ -392,6 +391,9 @@ instance Synth S.Expr (T.Type × E.Expr) where
       where
       asIndex (S.NameTy q Nil) = pure (foldl S.Attribute (S.Var (head q)) (tail q))
       asIndex _ = throwError $ "Type arguments for non-class: " <> maybe "expression" (quoted <<< dottedName) (asName e)
+   -- Infix application e |f| e' of function f, Fluid only
+   synth cxt (S.BinOp (S.BinOp e BitOr f@(S.Var x)) BitOr e') | Just θ <- lookup x cxt, function θ =
+      synth cxt (S.Call f Nil (e : e' : Nil) Nil)
    synth cxt (S.BinOp e op e') = do
       σ × e1 <- synth cxt e
       σ' × e2 <- synth cxt e'
@@ -409,7 +411,6 @@ instance Synth S.Expr (T.Type × E.Expr) where
       pure (τ × E.UnOp op e')
    synth cxt (S.And e e') = (bool × _) <$> (E.And <$> check cxt e bool <*> check cxt e' bool)
    synth cxt (S.Or e e') = (bool × _) <$> (E.Or <$> check cxt e bool <*> check cxt e' bool)
-   synth cxt (S.InfixApp e f e') = synth cxt (S.Call (S.Var f) Nil (e : e' : Nil) Nil)
    synth cxt (S.Cond e1 e e2) = do
       e' <- check cxt e bool
       τ × es' <- joinSynth cxt identity (e1 : e2 : Nil)
@@ -817,6 +818,11 @@ unbound :: Cxt -> Var -> CheckM Unit
 unbound cxt x = case lookup x cxt of
    Just Unbound -> pure unit
    _ -> throwError $ "Already declared: " <> quoted x
+
+function :: Entry -> Boolean
+function (Assigned (T.CallableTy _ _)) = true
+function (TypeScheme _) = true
+function _ = false
 
 kind :: Entry -> String
 kind (Type _) = "class"

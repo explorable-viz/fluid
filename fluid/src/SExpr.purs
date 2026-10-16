@@ -33,7 +33,6 @@ data Expr
    | UnOp Unop Expr
    | And Expr Expr
    | Or Expr Expr
-   | InfixApp Expr Var Expr -- e |f| e', sugar for f(e, e')
    | Cond Expr Expr Expr -- e1 if e else e2
    | Paragraph Paragraph
    | List (List Expr)
@@ -167,7 +166,6 @@ instance FV Expr where
    fv (UnOp _ e) = fv e
    fv (And e e') = fv e ∪ fv e'
    fv (Or e e') = fv e ∪ fv e'
-   fv (InfixApp e f e') = fv e ∪ singleton f ∪ fv e'
    fv (Cond e1 e e2) = fv e1 ∪ fv e ∪ fv e2
    fv (Paragraph elems) = unions (fv <$> elems)
    fv (List es) = unions (fv <$> es)

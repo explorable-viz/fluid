@@ -19,7 +19,7 @@ import Util.Map (keys)
 import Util.Pair (Pair(..))
 import Util.Set ((\\), (∪))
 
-data Binop = Eq | Ne | Lt | Le | Gt | Ge | In | NotIn | Add | Sub | Mul | Div | FloorDiv | Mod | Pow
+data Binop = Eq | Ne | Lt | Le | Gt | Ge | In | NotIn | BitOr | Add | Sub | Mul | Div | FloorDiv | Mod | Pow
 
 data Unop = Not | Pos | Neg
 

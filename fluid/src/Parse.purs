@@ -26,7 +26,7 @@ import Literal (Literal(..))
 import Parse.Number (float, integer)
 import Parse.Parser (Parser, align, block, braces, brackets, close, commas, context, delim, fields, lexeme, parens, reserved, reservedOperator, stringLiteral, trailingCommas, variable, whitespace)
 import Parsing (ParseError(..), Position(..), consume, fail, runParserT)
-import Parsing.Combinators (choice, lookAhead, many, many1, option, optionMaybe, sepBy1, try, (<?>))
+import Parsing.Combinators (choice, lookAhead, many, many1, notFollowedBy, option, optionMaybe, sepBy1, try, (<?>))
 import Parsing.Expr (Operator(..)) as P
 import Parsing.Expr (OperatorTable, buildExprParser)
 import Parsing.Indent (runIndent, sameOrIndented, withPos)
@@ -293,6 +293,7 @@ expr = context "expr" $ cond <?> "expression"
       symbol :: Binop -> Parser Unit
       symbol In = reserved "in"
       symbol NotIn = try (reserved "not" *> reserved "in")
+      symbol BitOr = try (reservedOperator "|" <* notFollowedBy (delim ']')) -- not closing matrix
       symbol b = reservedOperator (binopSymbol b)
 
       opTable :: OperatorTable (StateT Position Identity) String Expr
@@ -303,7 +304,6 @@ expr = context "expr" $ cond <?> "expression"
          toOperator (Unary u) = P.Prefix (word (unopSymbol u) $> UnOp u)
          toOperator op@AndOp = P.Infix (reserved "and" $> And) (assoc op)
          toOperator op@OrOp = P.Infix (reserved "or" $> Or) (assoc op)
-         toOperator op@InfixOp = P.Infix (try (delim '|' *> variable) <* delim '|' <#> \f e e' -> InfixApp e f e') (assoc op)
 
          word :: String -> Parser Unit
          word "not" = reserved "not"

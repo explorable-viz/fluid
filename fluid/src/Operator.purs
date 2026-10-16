@@ -18,18 +18,18 @@ import Types (Type(..), baseType)
 import Types.Defs (bool, float, int, str)
 import Util (type (×), definitely', whenever, (×))
 
-data Operator = Binary Binop | Unary Unop | AndOp | OrOp | InfixOp
+data Operator = Binary Binop | Unary Unop | AndOp | OrOp
 
 derive instance Eq Operator
 
--- Precedence levels, loosest first; infix application of a named function is Fluid-only
+-- Precedence levels, loosest first
 levels :: Array (Array Operator)
 levels =
    [ [ OrOp ]
    , [ AndOp ]
    , [ Unary Not ]
    , Binary <$> comparisons
-   , [ InfixOp ]
+   , [ Binary BitOr ]
    , [ Binary Add, Binary Sub ]
    , [ Binary Mul, Binary Div, Binary FloorDiv, Binary Mod ]
    , [ Unary Pos, Unary Neg ]
@@ -58,6 +58,7 @@ binopSymbol Le = "<="
 binopSymbol Gt = ">"
 binopSymbol Ge = ">="
 binopSymbol In = "in"
+binopSymbol BitOr = "|"
 binopSymbol NotIn = "not in"
 binopSymbol Add = "+"
 binopSymbol Sub = "-"
@@ -96,6 +97,7 @@ binopOverloads classes op = case op of
    Ne -> equality classes : Nil
    In -> membership
    NotIn -> membership
+   BitOr -> Nil
    Lt -> ordering
    Le -> ordering
    Gt -> ordering
