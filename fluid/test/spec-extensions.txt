@@ -1,2 +1,2 @@
 # Automatic currying (PurePy extension)
-test/module-level/python-error/static/call_too_few_args.py (check: exit 0, expected [3]: )
+test/module-level/exception/type-checker/call_too_few_args.py (check: exit 0, expected [3]: )
