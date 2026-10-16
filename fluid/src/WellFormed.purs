@@ -288,9 +288,9 @@ wellFormedTop q cxt (S.TypeRegion χs) = do
    for_ classes \(x × αs) -> modify_ \st ->
       st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
    cxt_χs <- (cxt_cs `override` _) <$> typeAliases (cxt `override` cxt_cs) (Map.fromFoldable aliases)
-   let entry χ = S.typeDefName χ × get (S.typeDefName χ) cxt_χs
-   forWithIndex_ χs \i χ -> typeDef q (cxt `override` Map.fromFoldable (entry <$> take i (toList χs))) χ
-   pure (Assigns cxt_χs × foldr1 E.Seq (uncurry typeDefStmt <<< entry <$> χs))
+   let binding χ = S.typeDefName χ ↦ get (S.typeDefName χ) cxt_χs
+   forWithIndex_ χs \i χ -> typeDef q (cxt `override` Map.fromFoldable (binding <$> take i (toList χs))) χ
+   pure (Assigns cxt_χs × foldr1 E.Seq (uncurry typeDefStmt <<< binding <$> χs))
    where
    classOrAlias (S.Dataclass x αs _ _) = Left (x × αs)
    classOrAlias (S.TypeAlias x αs ψ) = Right (x × (αs × ψ))
