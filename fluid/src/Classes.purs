@@ -28,13 +28,13 @@ import Util.Map (get, lookup)
 
 type Ctr = String -- newtype would require more general Dict keys
 
-type ClassDef =
+type ClassEntry =
    { typeParams :: List Var
    , fields :: List (Var × Type) -- declared fields, distinct
    , base :: Maybe (Name × List Type)
    }
 
-type ClassTable = Map Name ClassDef
+type ClassTable = Map Name ClassEntry
 
 fields :: ClassTable -> Name -> List (Var × Type)
 fields classes c = case def.base of

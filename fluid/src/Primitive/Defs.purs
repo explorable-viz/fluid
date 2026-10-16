@@ -34,8 +34,8 @@ import Data.Lazy (defer, force)
 import Data.Tuple (fst, snd)
 import Classes (ClassTable, askClasses, fields)
 import Types.Defs (cMatrix, cRange, callable, matrix, var)
-import Cxt (Entry(..)) as Entry
-import Cxt (Cxt, Entry(Assigned), generalise)
+import Cxt (CxtEntry(..)) as Cxt
+import Cxt (Cxt, CxtEntry(Assigned), generalise)
 import Dict (fromFoldable) as D
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -114,13 +114,13 @@ predefined = M.fromFoldable
    , predefinedModule dataclasses [ "dataclass" ] [] []
    ]
    where
-   predefinedModule :: ModuleName -> Array Var -> Array Name -> Array (Bind (Val Unit) × Entry.Entry) -> ModuleName × (Cxt × Raw Env)
+   predefinedModule :: ModuleName -> Array Var -> Array Name -> Array (Bind (Val Unit) × Cxt.CxtEntry) -> ModuleName × (Cxt × Raw Env)
    predefinedModule q names classes members =
       q × (M.fromFoldable (lmap fst <$> bindings) × wrap (D.fromFoldable (fst <$> bindings)))
       where
       bindings = cons ((varName × Val bot (Lit (Str (dottedName q)))) × Assigned T.str) members
-         <> (classes <#> \c -> (last c × Val bot (Fun (Type (T.ClassTy c Nil)))) × Entry.Type c)
-         <> (names <#> \x -> (x × Val bot (Opaque (qual q x))) × Entry.PredefName)
+         <> (classes <#> \c -> (last c × Val bot (Fun (Type (T.ClassTy c Nil)))) × Cxt.Type c)
+         <> (names <#> \x -> (x × Val bot (Opaque (qual q x))) × Cxt.PredefName)
 
 len :: ForeignOp
 len =

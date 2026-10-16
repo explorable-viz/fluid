@@ -28,7 +28,7 @@ import Data.Tuple (fst, snd)
 import WellFormed.Shapes (Shape, matchesShapes, shapes)
 import Classes (ClassTable, Instance(..), elemType, equiv, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
 import Types.Defs (bool, cMatrix, cParagraph, cRange, float, int, intPair, matrix, never, none, object, str)
-import Cxt (Entry(..), Cxt, WfResult(..), classOf, extend, merge, override, resolveName)
+import Cxt (CxtEntry(..), Cxt, WfResult(..), classOf, extend, merge, override, resolveName)
 import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
 import Expr (Binop(BitOr), Unop(..), bv, fv)
@@ -113,7 +113,7 @@ importBindings enclosing (S.Import q (Just xs)) = do
    for_ (containing enclosing q) checkModule
    importedMembers q cxt xs
 
-submodules :: Entry -> List Var -> CheckM Entry
+submodules :: CxtEntry -> List Var -> CheckM CxtEntry
 submodules θ Nil = pure θ
 submodules (ModChecked q cxt) (x : xs) = do
    θ <- ModChecked (snoc q x) <$> checkModule (snoc q x)
@@ -819,12 +819,12 @@ unbound cxt x = case lookup x cxt of
    Just Unbound -> pure unit
    _ -> throwError $ "Already declared: " <> quoted x
 
-function :: Entry -> Boolean
+function :: CxtEntry -> Boolean
 function (Assigned (T.CallableTy _ _)) = true
 function (TypeScheme _) = true
 function _ = false
 
-kind :: Entry -> String
+kind :: CxtEntry -> String
 kind (Type _) = "class"
 kind (TypeAlias _ _) = "type alias"
 kind (Mod _) = "module"
