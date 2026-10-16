@@ -65,7 +65,6 @@ typeDefName :: TypeDef -> Var
 typeDefName (Dataclass x _ _ _) = x
 typeDefName (TypeAlias x _ _) = x
 
--- Simple names in a type expression
 simpleNames :: TypeExpr -> List Var
 simpleNames (NameTy q ψs) = (if NEL.length q == 1 then NEL.head q : Nil else Nil) <> (ψs >>= simpleNames)
 simpleNames (ListTy ψ) = simpleNames ψ
