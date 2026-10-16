@@ -78,7 +78,6 @@ simpleNames (LitTy _) = Nil
 
 data Import = Import Name (Maybe (List Var))
 
--- Case of a match statement.
 type Case = Pattern × Stmt
 
 data Param = Param Pattern TypeExpr

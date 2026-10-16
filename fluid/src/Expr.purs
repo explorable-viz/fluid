@@ -67,7 +67,6 @@ data Def = Def (List Var) Stmt
 
 -- Mutually recursive function definitions.
 
--- Case of a match statement.
 type Case = Pattern × Stmt
 
 -- Condition and body of an if or elif clause.
