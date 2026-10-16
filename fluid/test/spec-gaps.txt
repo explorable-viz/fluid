@@ -1,4 +1,3 @@
-test/module-level/no-exception/parser/literal_float_annotation.py (check: exit 0, expected [1]: )
 test/module-level/no-exception/result/alias_later_class_args.py (check: exit 3, expected [0]: Unbound name: 'Box')
 test/module-level/no-exception/result/match_singleton_no_parentheses.py (check: exit 1, expected [0]: ParseError on line 3, column 11: Expected ':')
 test/module-level/no-exception/result/match_tuple_no_parentheses.py (check: exit 1, expected [0]: ParseError on line 3, column 11: Expected ':')
@@ -12,5 +11,4 @@ test/module-level/no-exception/result/tuple_singleton_no_parentheses.py (check: 
 test/module-level/no-exception/result/type_alias_names_later_alias.py (check: exit 3, expected [0]: Unbound name: 'Elem')
 test/module-level/no-exception/result/type_alias_names_later_class.py (check: exit 3, expected [0]: Unbound name: 'Point')
 test/module-level/no-exception/type-checker/bitwise_or.py (check: exit 1, expected [3]: ParseError on line 2, column 12: Expected EOF)
-test/module-level/no-exception/type-checker/match_float_literal_scrutinee.py (check: exit 0, expected [3]: )
 test/module-level/no-exception/type-checker/unsupported_builtin.py (check: exit 0, expected [3]: )

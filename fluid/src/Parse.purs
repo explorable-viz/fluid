@@ -120,7 +120,9 @@ typeExpr = defer \_ -> do
    ctrApp T.TupleCtr = TupleTy <$> brackets ((delim '(' *> delim ')' $> Nil) <|> commas typeExpr)
    ctrApp T.CallableCtr = brackets (CallableTy <$> brackets (commas typeExpr) <* delim ',' <*> typeExpr)
    ctrApp T.TypeTyCtr = TypeTy <$> brackets typeExpr
-   ctrApp T.LiteralCtr = LitTy <$> brackets literal
+   ctrApp T.LiteralCtr = brackets literal >>= case _ of
+      Float _ -> fail "float literal in literal type prohibited"
+      ℓ -> pure (LitTy ℓ)
 
    typeArgs :: Parser (List TypeExpr)
    typeArgs = defer \_ -> option Nil (brackets (commas typeExpr))

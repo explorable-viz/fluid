@@ -27,7 +27,7 @@ import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import WellFormed.Shapes (Shape, matchesShapes, shapes)
 import Classes (ClassTable, Instance(..), elemType, equiv, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
-import Types.Defs (bool, cMatrix, cParagraph, cRange, int, intPair, matrix, never, none, object, str)
+import Types.Defs (bool, cMatrix, cParagraph, cRange, float, int, intPair, matrix, never, none, object, str)
 import Cxt (Entry(..), Cxt, WfResult(..), classOf, extend, merge, override, resolveName)
 import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
@@ -370,6 +370,7 @@ annotated cxt Nothing e = synth cxt e
 
 instance Synth S.Expr (T.Type × E.Expr) where
    synth cxt (S.Var x) = (_ × E.Var x) <$> varType cxt x
+   synth _ (S.Lit n@(Float _)) = pure (float × E.Lit n)
    synth _ (S.Lit ℓ) = pure (T.LitTy ℓ × E.Lit ℓ)
    synth cxt (S.Call e ψs es xes) = case className cxt e of
       Just (c × name) -> constr cxt c name ψs es xes
@@ -400,7 +401,6 @@ instance Synth S.Expr (T.Type × E.Expr) where
          (resolveBinop classes op σ σ')
       pure (τ × E.BinOp e1 op e2)
    synth _ (S.UnOp Neg (S.Lit (Int n))) = pure (T.LitTy (Int (-n)) × E.UnOp Neg (E.Lit (Int n)))
-   synth _ (S.UnOp Neg (S.Lit (Float n))) = pure (T.LitTy (Float (-n)) × E.UnOp Neg (E.Lit (Float n)))
    synth cxt (S.UnOp op e) = do
       σ × e' <- synth cxt e
       classes <- classTable
@@ -927,6 +927,7 @@ matchedAs classes (T.UnionTy σ σ') p = join classes (matchedAs classes σ p) (
 matchedAs _ τ (S.PVar _) = τ
 matchedAs _ τ S.PWild = τ
 matchedAs classes τ (S.PAs p _) = matchedAs classes τ p
+matchedAs classes τ (S.PLit (Float _)) = meet classes float τ
 matchedAs classes τ (S.PLit ℓ) = meet classes (T.LitTy ℓ) τ
 matchedAs classes (T.TupleTy τs) (S.PTuple ps) | length τs == length ps = T.TupleTy (zipWith (matchedAs classes) τs ps)
 matchedAs _ τ@(T.ListTy _) (S.PList _) = τ
