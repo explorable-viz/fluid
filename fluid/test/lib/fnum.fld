@@ -1,4 +1,5 @@
 from typing import Callable
+from fluid.prelude import compare, EQ, FNum, foldl1, GT, InfNum, Infty, LT, Ordering
 
 def comp(Infty(): InfNum, Infty(): InfNum) -> Ordering:
   return EQ()

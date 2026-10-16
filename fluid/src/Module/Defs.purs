@@ -37,7 +37,7 @@ view = NonEmptyList ("fluid" :| "view" : Nil)
 
 -- Modules in scope without import, each under members of those before it
 implicit :: List ModuleName
-implicit = builtins : prelude : Nil
+implicit = builtins : Nil
 
 implicitFor :: ModuleName -> List ModuleName
 implicitFor q = takeWhile (_ /= q) implicit

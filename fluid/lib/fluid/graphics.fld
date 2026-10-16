@@ -1,6 +1,7 @@
 from typing import Callable
 from dataclasses import dataclass
 from math import floor
+from fluid.prelude import ceil_to_nearest, compose, curry, fmax, foldl, log_base, map, maximum, prod, scanl, snd, tail, zip
 
 type Colour = str
 type Colours = list[Colour]

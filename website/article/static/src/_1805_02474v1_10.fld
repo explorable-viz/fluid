@@ -3,6 +3,7 @@ from util import insertionSort, findIndex, findWhere, model
 from dataset.scigen._1805_02474v1_10 import Model, tableData
 
 import fluid.view
+from fluid.prelude import minimum
 
 model_BiLSTM: Model = model("BiLSTM", tableData)
 model_LSTM: Model = model("LSTM", tableData)

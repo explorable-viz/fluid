@@ -1,6 +1,7 @@
 from typing import Callable
 from math import floor
 from dependence.section_5_example_inputs import data, types
+from fluid.prelude import fsum
 
 def map[A, B](f: Callable[[A], B], xs: list[A]) -> list[B]:
   return [f(x) for x in xs]

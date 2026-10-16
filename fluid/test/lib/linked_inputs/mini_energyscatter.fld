@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from dataset.energy_data import renewables, nonRenewables, Renewable, NonRenewable
 
 from fluid.view import AxisLabels, Point, ScatterPlot
+from fluid.prelude import fsum, map
 
 @dataclass
 class Energy:

@@ -1,4 +1,5 @@
 from fluid.view import Dimensions, LineChart, LinePlot, Point, TickLabels, Default
+from fluid.prelude import zip
 
 def series(type: str, country: str) -> list[Point]:
   return [Point(x=row.year, y=row.output) for year in range(2013, 2019) for row in renewables if row.year == year if row.energyType == type if row.country == country]

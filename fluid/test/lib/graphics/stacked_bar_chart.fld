@@ -1,5 +1,6 @@
 from fluid.graphics import colours1, stacked_bar_chart, caption
 from dataset.renewables_restricted import data
+from fluid.prelude import lookup
 
 year: int = 2015
 

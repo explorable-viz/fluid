@@ -1,3 +1,5 @@
+from fluid.prelude import compare, Empty, EQ, LT, NonEmpty, SearchTree
+
 k: int = @doc("k") 6
 empty: SearchTree[int, str] = Empty[tuple[int, str]]()
 tree: SearchTree[int, str] = @doc("tree") NonEmpty(

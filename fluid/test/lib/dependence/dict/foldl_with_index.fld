@@ -1,3 +1,5 @@
+from fluid.prelude import foldl
+
 d: dict[str, list[int]] = @doc("d") { "a": [5, 6], "b": [0, 10], "c": [3, 4] }
 
 empty: list[int] = []

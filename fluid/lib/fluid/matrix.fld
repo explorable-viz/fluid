@@ -1,5 +1,6 @@
 from typing import Callable
 import fluid.view
+from fluid.prelude import lookup, max, min, sum
 
 def zero(m: int, n: int, image: Matrix[int]) -> int:
   m_size, n_size = dims(image)

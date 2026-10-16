@@ -1,5 +1,6 @@
 from fluid.graphics import Group, Rect, Viewport, Scale, Translate, width, height
 import dataset.renewables_restricted
+from fluid.prelude import fmax
 
 rect: Rect = Rect(x=0, y=0, width=1, height=3, fill="red")
 g: Group = Group([

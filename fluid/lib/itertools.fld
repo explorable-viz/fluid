@@ -1,4 +1,5 @@
 from typing import Callable
+from fluid.prelude import drop, slice, zip
 
 def groupby[A](key: Callable[[A], str], xs: list[A]) -> list[tuple[str, list[A]]]:
   starts: list[int] = [i for i in range(0, len(xs)) if i == 0 or key(xs[i]) != key(xs[i - 1])]

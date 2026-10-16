@@ -4,6 +4,7 @@ from fluid.stats import likelihood_map
 from table1_data import tableData, likelihoods
 
 from fluid.view import MultiView
+from fluid.prelude import fsum, max, min
 
 @dataclass
 class Scenario:

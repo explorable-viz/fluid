@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from fluid.prelude import mean
 
 @dataclass
 class Ensemble:

@@ -1,5 +1,6 @@
 from typing import Callable
 from dataset.scigen._1805_02474v1_10 import Model
+from fluid.prelude import drop, foldl, tail, take
 
 def insert[A](lt: Callable[[A, A], bool], x: A, ys: list[A]) -> list[A]:
   def go(i: int) -> list[A]:
