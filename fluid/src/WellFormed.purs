@@ -285,7 +285,8 @@ matchCases cxt ζ τ ls ((p × s) : bs) = do
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 -- Aliases resolved against whole region, classes against earlier definitions only
 wellFormedTop q cxt (S.TypeRegion χs) = do
-   for_ classes \(x × αs) -> modify_ \st -> st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
+   for_ classes \(x × αs) -> modify_ \st ->
+      st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
    cxt_χs <- (cxt_cs `override` _) <$> typeAliases (cxt `override` cxt_cs) (Map.fromFoldable aliases)
    let entry χ = S.typeDefName χ × get (S.typeDefName χ) cxt_χs
    forWithIndex_ χs \i χ -> typeDef q (cxt `override` Map.fromFoldable (entry <$> take i (toList χs))) χ
