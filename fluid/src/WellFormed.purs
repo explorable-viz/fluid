@@ -35,7 +35,7 @@ import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
 import Expr (Binop(BitOr), Unop(..), bv, fv)
 import Expr (Pattern(..)) as S
-import Expr (Branch(..), Case, Def(..), Expr(..), Import(..), Module(..), Qualifier(..), RecDefs(..), Stmt(..)) as E
+import Expr (Branch(..), Case, Def(..), Defs(..), Expr(..), Import(..), Module(..), Qualifier(..), Stmt(..)) as E
 import Literal (Literal(..))
 import Operator (binopSymbol, resolveBinop, resolveUnop, unopSymbol)
 import Pretty (prettyP)
@@ -241,7 +241,7 @@ checkStmt cxt _ (S.DefRegion ds) = do
       classes <- classTable
       cs <- evalStateT (traverse (\b -> StateT \ls -> check cxt' b (σ × ls)) def) (argShapes classes σ)
       pure (f ↦ clauses cs)
-   pure (Assigns cxt_fs × E.DefRegion (E.RecDefs (D.fromFoldable defs')))
+   pure (Assigns cxt_fs × E.DefRegion (E.Defs (D.fromFoldable defs')))
 checkStmt cxt ζ (S.Seq s1 s2) = do
    r1 × s1' <- checkStmt cxt ζ s1
    case r1 of
@@ -285,17 +285,17 @@ matchCases cxt ζ τ ls ((p × s) : bs) = do
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
 -- Aliases resolved against whole region, classes against earlier definitions only
 wellFormedTop q cxt (S.TypeRegion χs) = do
-   for_ classes \(x × αs) -> modify_ \st ->
+   for_ classDefs \(x × αs) -> modify_ \st ->
       st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
-   cxt_χs <- (cxt_cs `override` _) <$> typeAliases (cxt `override` cxt_cs) (Map.fromFoldable aliases)
+   cxt_χs <- (cxt_cs `override` _) <$> typeAliases (cxt `override` cxt_cs) (Map.fromFoldable aliasDefs)
    let binding χ = S.typeDefName χ ↦ get (S.typeDefName χ) cxt_χs
    forWithIndex_ χs \i χ -> typeDef q (cxt `override` Map.fromFoldable (binding <$> take i (toList χs))) χ
    pure (Assigns cxt_χs × foldr1 E.Seq (uncurry typeDefStmt <<< binding <$> χs))
    where
    classOrAlias (S.Dataclass x αs _ _) = Left (x × αs)
    classOrAlias (S.TypeAlias x αs ψ) = Right (x × (αs × ψ))
-   { left: classes, right: aliases } = partitionMap classOrAlias (toList χs)
-   cxt_cs = Map.fromFoldable (classes <#> \(x × _) -> x × Type (snoc q x))
+   { left: classDefs, right: aliasDefs } = partitionMap classOrAlias (toList χs)
+   cxt_cs = Map.fromFoldable (classDefs <#> \(x × _) -> x × Type (snoc q x))
 wellFormedTop q cxt (S.Seq t1 t2) = do
    r1 × t1' <- wellFormedTop q cxt t1
    case r1 of

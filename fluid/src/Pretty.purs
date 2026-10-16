@@ -20,7 +20,7 @@ import Literal (Literal(..))
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (assignment, block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Operator (Operator(..), binopSymbol, prec, unopSymbol)
-import SExpr (Branch, Case, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), RecDefs, Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), VarDefs)
+import SExpr (Branch, Case, Clause(..), Defs, Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), VarDefs)
 import Types as T
 import Util (type (×), isEmpty, singleton, (×))
 import Util.Map (toUnfoldable)
@@ -287,7 +287,7 @@ returnAnnot ψ = text " ->" <+> pretty ψ
 instance Pretty LambdaClause where
    pretty (LambdaClause (ps × e)) = text "lambda" <+> prettyList ps <> text ":" <+> pretty e
 
-instance Pretty RecDefs where
+instance Pretty Defs where
    pretty bs = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> bs))
 
 instance Pretty Branch where
@@ -373,7 +373,7 @@ instance Pretty E.Stmt where
       prettyCase (p × s) = text "case" <+> pretty p <> block (pretty s)
    pretty (E.Declare x) = text x <> text ":"
    pretty (E.Assign p e) = pretty p <+> text "=" <+> pretty e
-   pretty (E.DefRegion (E.RecDefs ds)) = text "def" <+> pretty ds
+   pretty (E.DefRegion (E.Defs ds)) = text "def" <+> pretty ds
    pretty E.Pass = text "pass"
    pretty (E.ExprStmt e) = pretty e
    pretty (E.Assert e Nothing) = text "assert" <+> pretty e

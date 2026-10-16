@@ -66,7 +66,7 @@ data Pattern
 data Def = Def (List Var) Stmt
 
 -- Mutually recursive function definitions.
-newtype RecDefs = RecDefs (Dict Def)
+newtype Defs = Defs (Dict Def)
 
 -- Case of a match statement.
 type Case = Pattern × Stmt
@@ -80,7 +80,7 @@ data Stmt
    | Match Expr (NonEmptyList Case)
    | Declare Var
    | Assign Pattern Expr -- assignment to a pattern; the spec has only variables
-   | DefRegion RecDefs
+   | DefRegion Defs
    | Pass
    | ExprStmt Expr
    | Assert Expr (Maybe Expr)
@@ -127,8 +127,8 @@ fvQualifiers (Decl p e : gs) = fv e ∪ (fvQualifiers gs \\ bv p)
 instance FV Def where
    fv (Def xs s) = fv s \\ S.fromFoldable xs
 
-instance FV RecDefs where
-   fv (RecDefs ds) = fv ds
+instance FV Defs where
+   fv (Defs ds) = fv ds
 
 instance FV Branch where
    fv (Branch e s) = fv e ∪ fv s
@@ -187,7 +187,7 @@ assigns (If bs s_opt) = unions ((\(Branch _ s) -> assigns s) <$> bs) ∪ maybe e
 assigns (Match _ bs) = unions ((\(p × s) -> bv p ∪ assigns s) <$> bs)
 assigns (Declare x) = singleton x
 assigns (Assign p _) = bv p
-assigns (DefRegion (RecDefs ds)) = S.fromFoldable (keys ds)
+assigns (DefRegion (Defs ds)) = S.fromFoldable (keys ds)
 assigns Pass = empty
 assigns (ExprStmt _) = empty
 assigns (Assert _ _) = empty
@@ -216,6 +216,6 @@ derive instance Generic Pattern _
 instance Show Pattern where
    show c = genericShow c
 
-derive instance Eq RecDefs
+derive instance Eq Defs
 derive instance Eq Branch
 derive instance Eq Stmt

@@ -33,7 +33,7 @@ import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import Operator (Operator(..), assoc, binopSymbol, comparisons, levels, unopSymbol)
 import Expr (Binop(..), Pattern(..))
-import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), RecDefs, Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Defs, Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), VarDefs)
 import Types (Primitive(..), TypeCtr(..), primitiveName, primitives, typeCtrs) as T
 import Util (MayFail, type (+), type (×), nonEmpty, singleton, (×))
 
@@ -200,7 +200,7 @@ foldr1Seq (NonEmptyList (s :| ss)) = case ss of
    s' : rest -> Seq s (foldr1Seq (NonEmptyList (s' :| rest)))
 
 defStmt :: Parser Stmt
-defStmt = defer \_ -> (DefRegion <$> recDefs) <|> (Def <$> varDef)
+defStmt = defer \_ -> (DefRegion <$> defs) <|> (Def <$> varDef)
 
 ifStmt :: Parser Stmt
 ifStmt = defer \_ -> do
@@ -235,10 +235,10 @@ decorator :: String -> Parser Unit
 decorator name = try (delim '@' *> reserved name)
 
 typeRegion :: Parser Stmt
-typeRegion = TypeRegion <$> many1 (typeStmt <|> dataclassDef)
+typeRegion = TypeRegion <$> many1 (typeStmt <|> classDef)
 
-dataclassDef :: Parser TypeDef
-dataclassDef = do
+classDef :: Parser TypeDef
+classDef = do
    decorator "dataclass"
    reserved "class"
    c <- variable
@@ -258,11 +258,11 @@ typeStmt = do
    x × αs <- try (reserved "type" *> ((×) <$> variable <*> typeParams) <* reservedOperator "=")
    TypeAlias x αs <$> typeExpr
 
-recDefs :: Parser RecDefs
-recDefs = many1 recDef
+defs :: Parser Defs
+defs = many1 defClause
    where
-   recDef :: Parser Branch
-   recDef = do
+   defClause :: Parser Branch
+   defClause = do
       f × αs <- try (reserved "def" *> ((×) <$> variable <*> typeParams) <* delim '(')
       ps <- commas param
       delim ')'
