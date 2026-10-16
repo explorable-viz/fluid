@@ -33,7 +33,7 @@ import Parsing.Indent (runIndent, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import Operator (Operator(..), assoc, binopSymbol, comparisons, levels, unopSymbol)
 import Expr (Binop(..), Pattern(..))
-import SExpr (Branch, Clause(..), Defs, Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), VarDefs)
 import Types (Primitive(..), TypeCtr(..), primitiveName, primitives, typeCtrs) as T
 import Util (MayFail, type (+), type (×), nonEmpty, singleton, (×))
 
@@ -258,7 +258,7 @@ typeStmt = do
    x × αs <- try (reserved "type" *> ((×) <$> variable <*> typeParams) <* reservedOperator "=")
    TypeAlias x αs <$> typeExpr
 
-defs :: Parser Defs
+defs :: Parser (NonEmptyList Branch)
 defs = many1 defClause
    where
    defClause :: Parser Branch

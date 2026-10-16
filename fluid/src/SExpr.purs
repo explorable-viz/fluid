@@ -50,7 +50,7 @@ data Stmt
    | Match Expr (NonEmptyList Case)
    | Declare Var TypeExpr
    | Def VarDef
-   | DefRegion Defs
+   | DefRegion (NonEmptyList Branch)
    | Pass
    | ExprStmt Expr
    | Assert Expr (Maybe Expr)
@@ -90,8 +90,6 @@ type Branch = Var × Clause
 
 -- Lambdas accept exactly one clause whose body is an expression (no defs / return-keyword).
 newtype LambdaClause = LambdaClause (List Pattern × Expr)
-
-type Defs = NonEmptyList Branch
 
 data VarDef = VarDef Pattern (Maybe TypeExpr) Expr
 type VarDefs = NonEmptyList VarDef
@@ -258,7 +256,7 @@ instance FV ParagraphElem where
    fv (Token _) = empty
    fv (Unquote e) = fv e
 
-fvDefs :: Defs -> Set Var
+fvDefs :: NonEmptyList Branch -> Set Var
 fvDefs rs =
    unions (fv <$> (snd <$> rs)) \\ unions (singleton <<< fst <$> rs)
 

@@ -35,7 +35,7 @@ import Dict as D
 import Util.Map (constMap, get, insert, keys, lookup, maplet)
 import Expr (Binop(BitOr), Unop(..), bv, fv)
 import Expr (Pattern(..)) as S
-import Expr (Branch(..), Case, Def(..), Defs(..), Expr(..), Import(..), Module(..), Qualifier(..), Stmt(..)) as E
+import Expr (Branch(..), Case, Def(..), Expr(..), Import(..), Module(..), Qualifier(..), Stmt(..)) as E
 import Literal (Literal(..))
 import Operator (binopSymbol, resolveBinop, resolveUnop, unopSymbol)
 import Pretty (prettyP)
@@ -241,7 +241,7 @@ checkStmt cxt _ (S.DefRegion ds) = do
       classes <- classTable
       cs <- evalStateT (traverse (\b -> StateT \ls -> check cxt' b (σ × ls)) def) (argShapes classes σ)
       pure (f ↦ clauses cs)
-   pure (Assigns cxt_fs × E.DefRegion (E.Defs (D.fromFoldable defs')))
+   pure (Assigns cxt_fs × E.DefRegion (D.fromFoldable defs'))
 checkStmt cxt ζ (S.Seq s1 s2) = do
    r1 × s1' <- checkStmt cxt ζ s1
    case r1 of
