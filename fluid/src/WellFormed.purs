@@ -644,13 +644,10 @@ resultType cxt (T.CallableTy σs τ) es = do
 resultType _ σ _ = throwError $ "Values of type " <> prettyP σ <> " cannot be called"
 
 exprStmt :: Cxt -> S.Expr -> CheckM E.Expr
-exprStmt cxt (S.Call e Nil es Nil) | not (isLambda e) && className cxt e == Nothing = callStmt cxt e es
-exprStmt cxt e = snd <$> synth cxt e
-
-callStmt :: Cxt -> S.Expr -> List S.Expr -> CheckM E.Expr
-callStmt cxt e es = callee cxt e es >>= case _ of
+exprStmt cxt (S.Call e Nil es Nil) | not (isLambda e) && className cxt e == Nothing = callee cxt e es >>= case _ of
    T.CallableTy σs τ × e' | τ == none && length σs == length es -> E.App e' <$> check cxt es σs
    σ × e' -> E.App e' <<< snd <$> resultType cxt σ es
+exprStmt cxt e = snd <$> synth cxt e
 
 lambdaArgs :: Cxt -> List S.Pattern -> List S.Expr -> CheckM (Cxt × List S.Pattern × List E.Expr)
 lambdaArgs cxt ps es = do
