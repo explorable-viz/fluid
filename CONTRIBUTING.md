@@ -51,7 +51,7 @@ Before pushing, `yarn workspace @fluid-org/fluid build-strict` (fails on unused 
 yarn workspace @fluid-org/fluid build-test
 ```
 
-Runs `tests` in `fluid/test/Test.purs`, by default `allTests`. For a subset, set `tests = scratchpad` and select cases in `scratchpad` (`filterSuite [ "lambda.fld" ] misc_cases suite`; `illFormedSuite` for ill-formed cases); revert to `allTests` afterwards. Do not run `.fld` files through `fluid.mjs` by hand: the harness sets up paths and reports errors in the form the tests assert against.
+Runs `tests` in `fluid/test/Test.purs`, by default `allTests`, then the PurePy conformance suite. For a subset, set `tests = scratchpad` and select cases in `scratchpad` (`filterSuite [ "lambda.fld" ] misc_cases suite`; `illFormedSuite` for ill-formed cases); revert to `allTests` afterwards. Do not run `.fld` files through `fluid.mjs` by hand: the harness sets up paths and reports errors in the form the tests assert against.
 
 ### PurePy compliance
 

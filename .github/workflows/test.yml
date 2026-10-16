@@ -35,6 +35,7 @@ jobs:
     - name: configure NPM authentication
       run: |
         echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+    - uses: astral-sh/setup-uv@v10.2.0
     - name: test
       run: |
         yarn install
