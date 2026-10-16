@@ -106,6 +106,7 @@ misc_cases =
    , { file: "record_lookup.fld", fwd_expect: "True" }
    , { file: "records.fld", fwd_expect: "{\"a\": [2], \"b\": [6, 7], \"c\": 7, \"d\": [[5]], \"e\": 7}" }
    , { file: "reverse.fld", fwd_expect: "[2, 1]" }
+   , { file: "round.fld", fwd_expect: "(2, 4, -2, 3, -7)" }
    , { file: "ternary/basic_false.fld", fwd_expect: "6" }
    , { file: "ternary/basic_true.fld", fwd_expect: "5" }
    , { file: "ternary/condition_parenthesised.fld", fwd_expect: "10" }
