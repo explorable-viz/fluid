@@ -1,7 +1,6 @@
 # fluid 1.0
 
 ## Features
-- Sync to PurePy 0.12, 0.16, 0.18 and 0.22; checker passes the PurePy 0.22 conformance suite, apart from two extensions (#1530, #1558, #1589, #1612)
 - Pythonic ternary conditional (#1415)
 - `NoneType` (#1534)
 - Modules as objects (#1436)
@@ -31,6 +30,7 @@
 - Prelude imported explicitly; `builtins` the only implicit module (#1608)
 
 ## Other
+- Conformance to PurePy 0.22, apart from two extensions (#1530, #1558, #1589, #1612)
 - Backwards desugaring removed (#1245)
 - `GaloisConnection` replaced by `ConjugatePair` (#1038)
 - Dependence graph redesign (#1554)
