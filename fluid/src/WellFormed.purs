@@ -16,6 +16,7 @@ import Data.Function (on)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.FoldableWithIndex (forWithIndex_)
 import Data.List (List(..), drop, filter, index, take, intersect, length, mapMaybe, null, sort, transpose, updateAt, (:))
 import Data.Foldable (any, lookup) as F
 import Module.Defs (ModuleName, containing, implicitFor, submods)
@@ -287,7 +288,7 @@ wellFormedTop q cxt (S.TypeRegion χs) = do
    for_ classes \(x × αs) -> modify_ \st -> st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
    cxt_χs <- (cxt_cs `override` _) <$> typeAliases (cxt `override` cxt_cs) (Map.fromFoldable aliases)
    let entry χ = S.typeDefName χ × get (S.typeDefName χ) cxt_χs
-   void $ foldM (\cxt' χ -> typeDef q cxt' χ $> (cxt' `override` uncurry maplet (entry χ))) cxt χs
+   forWithIndex_ χs \i χ -> typeDef q (cxt `override` Map.fromFoldable (entry <$> take i (toList χs))) χ
    pure (Assigns cxt_χs × foldr1 E.Seq (uncurry typeDefStmt <<< entry <$> χs))
    where
    classOrAlias (S.Dataclass x αs _ _) = Left (x × αs)
