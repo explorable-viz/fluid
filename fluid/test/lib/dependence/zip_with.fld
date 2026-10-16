@@ -1,4 +1,5 @@
 from typing import Callable
+from fluid.prelude import min
 
 xs: list[int] = @doc("xs") [2, 3, 4]
 ys: list[int] = @doc("ys") [3, 4, 5, 6]

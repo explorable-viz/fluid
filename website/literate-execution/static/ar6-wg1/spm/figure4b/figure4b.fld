@@ -2,6 +2,7 @@ from fluid.stats import find_percentile, cut
 from figure4b_data import Emission, ssp126Source, ssp126preds, ssp245Source, ssp245preds
 
 from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, TickLabels, Default, Link
+from fluid.prelude import fsum, map, maximum, minimum
 
 def stackedBarHeight(stackedBar: StackedBar) -> float:
   return fsum([segment.z for segment in stackedBar.segments])

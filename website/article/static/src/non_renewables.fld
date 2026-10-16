@@ -1,6 +1,7 @@
 from energy_data import NonRenewable, nonRenewables, renewables
 
 from fluid.view import AxisLabels, BarChart, Dimensions, MultiView, Point, ScatterPlot, Segment, StackedBar, TickLabels, Default
+from fluid.prelude import fsum
 
 countries: list[str] = ["BRA", "EGY", "IND", "JPN"]
 

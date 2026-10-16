@@ -1,6 +1,7 @@
 from dataset.energy_data import renewables, nonRenewables, Renewable, NonRenewable
 
 from fluid.view import AxisLabels, Point, ScatterPlot
+from fluid.prelude import fsum, map
 
 def isCountry(name: str, x: Renewable | NonRenewable) -> bool:
   return name == x.country

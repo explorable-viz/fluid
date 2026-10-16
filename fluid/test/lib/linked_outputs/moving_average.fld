@@ -1,6 +1,7 @@
 from dataset.methane_emissions import methane
 
 from fluid.view import Dimensions, LineChart, LinePlot, Point, TickLabels, Default, Rotated
+from fluid.prelude import fsum, max, min, zip
 
 def nthPad[A](n: int, xs: list[A]) -> A:
   return xs[min(max(n, 0), len(xs) - 1)]

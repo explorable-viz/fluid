@@ -1,4 +1,5 @@
 from typing import Callable
+from fluid.prelude import compose
 
 incr: Callable[[int], int] = lambda x: 1 + x
 compose(incr, incr, 3)

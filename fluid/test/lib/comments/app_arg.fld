@@ -1,5 +1,6 @@
 from typing import Callable
 import fluid.view
+from fluid.prelude import map
 
 para: fluid.view.Paragraph = f"""Comments on arguments don't surface on the outermost application"""
 

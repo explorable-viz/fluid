@@ -1,3 +1,5 @@
+from fluid.prelude import Empty, NonEmpty, SearchTree
+
 def flatten[K, V](Empty(): SearchTree[K, V]) -> list[tuple[K, V]]:
   return []
 def flatten[K, V](NonEmpty(t1, (key, val), t2): SearchTree[K, V]) -> list[tuple[K, V]]:

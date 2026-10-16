@@ -1,5 +1,6 @@
 from fluid.graphics import colours1, line_chart, caption
 from dataset.renewables_restricted import data
+from fluid.prelude import fst, fsum
 
 year1: tuple[int, list[tuple[str, list[tuple[str, float]]]]] = data[0]
 

@@ -1,4 +1,5 @@
 from typing import Callable
+from fluid.prelude import flip
 
 sub: Callable[[int, int], int] = lambda a, b: a - b
 decr: Callable[[int], int] = (lambda x: flip(sub, x))(2)

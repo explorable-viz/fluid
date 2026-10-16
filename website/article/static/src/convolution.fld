@@ -2,6 +2,7 @@ from convolution.test_image import inputImage
 from convolution.emboss import filter
 
 import fluid.view
+from fluid.prelude import sum
 
 def lookup(m: int, n: int, image: Matrix[int]) -> int:
   m_size, n_size = dims(image)
