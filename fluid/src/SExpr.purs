@@ -202,7 +202,7 @@ instance FV Stmt where
       fv scrut ∪ unions ((\(p × b) -> fv b \\ bv p) <$> branches)
    fv (Declare _ _) = empty
    fv (Def vd) = fv vd
-   fv (DefRegion rs) = fvDefs rs
+   fv (DefRegion rs) = unions (fv <<< snd <$> rs) \\ Set.fromFoldable (fst <$> rs)
    fv Pass = empty
    fv (ExprStmt e) = fv e
    fv (Assert cond msg) = fv cond ∪ maybe empty fv msg
@@ -254,10 +254,6 @@ instance BV Param where
 instance FV ParagraphElem where
    fv (Token _) = empty
    fv (Unquote e) = fv e
-
-fvDefs :: NonEmptyList Branch -> Set Var
-fvDefs rs =
-   unions (fv <$> (snd <$> rs)) \\ unions (singleton <<< fst <$> rs)
 
 fvQualifiers :: List Qualifier -> Set Var
 fvQualifiers Nil = empty
