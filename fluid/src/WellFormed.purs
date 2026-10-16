@@ -20,11 +20,11 @@ import Data.Foldable (any, lookup) as F
 import Module.Defs (ModuleName, containing, implicitFor, submods)
 import Data.List.NonEmpty (NonEmptyList(..), cons, fromList, groupBy, head, last, snoc, toList, uncons)
 import Data.NonEmpty ((:|))
-import Data.Semigroup.Foldable (foldl1)
+import Data.Semigroup.Foldable (foldl1, foldr1)
 import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst, snd, uncurry)
 import WellFormed.Shapes (Shape, matchesShapes, shapes)
 import Classes (ClassTable, Instance(..), elemType, equiv, fieldNames, fields, fieldsAt, instanceAt, join, joins, meet, subtype, typeArgs)
 import Types.Defs (bool, cMatrix, cParagraph, cRange, float, int, intPair, matrix, never, none, object, str)
@@ -37,7 +37,7 @@ import Expr (Branch(..), Case, Def(..), Expr(..), Import(..), Module(..), Qualif
 import Literal (Literal(..))
 import Operator (binopSymbol, resolveBinop, resolveUnop, unopSymbol)
 import Pretty (prettyP)
-import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeExpr(..), VarDef(..), assigns, binds, declares) as S
+import SExpr (Branch, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), assigns, binds, declares, typeDefName, typeNames) as S
 import Types (Scheme(..))
 import Types as T
 import Util (MayFail, type (+), type (×), absurd, checkDistinct, definitely', error, nonEmpty, quoted, quotedList, singleton, tail, unzip, zip, zipWith, (×), (∩))
@@ -262,8 +262,7 @@ checkStmt cxt ζ (S.Match e bs) = do
    rbs × τ <- matchCases cxt ζ σ (shapes classes σ Nil) (toList bs)
    let rNoMatch = if τ == never then Returns else Assigns empty
    pure (foldl merge rNoMatch (fst <$> rbs) × E.Match e' (nonEmpty (snd <$> rbs)))
-checkStmt _ _ (S.Dataclass _ _ _ _) = error absurd
-checkStmt _ _ (S.TypeAlias _ _ _) = error absurd
+checkStmt _ _ (S.TypeDefs _) = error absurd
 
 matchCases
    :: Cxt
@@ -282,20 +281,27 @@ matchCases cxt ζ τ ls ((p × s) : bs) = do
    lmap ((override (Assigns cxt') r × (p' × s')) : _) <$> matchCases cxt ζ (remaining classes τ p') ls' bs
 
 wellFormedTop :: Name -> Cxt -> S.Stmt -> CheckM (WfResult Cxt × E.Stmt)
-wellFormedTop q cxt (S.Dataclass x αs b yψs) = do
-   predefName cxt "dataclass"
-   checkDistinct (\y -> "Duplicate field " <> quoted y <> " in class " <> quoted x) ys
-   yτs <- for yψs \(y × ψ) -> (y × _) <$> synth cxt' ψ
-   base <- for b (baseClass cxt cxt' x ys)
-   modify_ \st -> st { classes = insert c { typeParams: αs, fields: yτs, base } st.classes }
-   pure (Assigns (maplet x (Type c)) × E.Dataclass c)
+-- Aliases resolved against whole region, classes against earlier definitions only
+wellFormedTop q cxt (S.TypeDefs χs) = do
+   for_ χs case _ of
+      S.Dataclass x αs _ _ -> modify_ \st -> st { classes = insert (snoc q x) { typeParams: αs, fields: Nil, base: Nothing } st.classes }
+      S.TypeAlias _ _ _ -> pure unit
+   aliases <- typeAliases (cxt `override` classEntries) (Map.fromFoldable (toList χs >>= aliasDef))
+   let entry χ = S.typeDefName χ × typeEntry aliases χ
+   void $ foldM (\cxt' χ -> typeDef q cxt' χ $> (cxt' `override` uncurry maplet (entry χ))) cxt χs
+   pure (Assigns (Map.fromFoldable (entry <$> χs)) × foldr1 E.Seq (typeDefStmt aliases <$> χs))
    where
-   cxt' = cxt `override` typeParams αs
-   ys = fst <$> yψs
-   c = snoc q x
-wellFormedTop _ cxt (S.TypeAlias x αs ψ) = do
-   τ <- synth (cxt `override` typeParams αs) ψ
-   pure (Assigns (maplet x (TypeAlias αs τ)) × E.TypeAlias x αs τ)
+   classEntries = Map.fromFoldable
+      ( toList χs >>= case _ of
+           S.Dataclass x _ _ _ -> pure (x × Type (snoc q x))
+           S.TypeAlias _ _ _ -> Nil
+      )
+   aliasDef (S.TypeAlias x αs ψ) = pure (x × (αs × ψ))
+   aliasDef _ = Nil
+   typeEntry _ (S.Dataclass x _ _ _) = Type (snoc q x)
+   typeEntry aliases (S.TypeAlias x _ _) = uncurry TypeAlias (get x aliases)
+   typeDefStmt _ (S.Dataclass x _ _ _) = E.Dataclass (snoc q x)
+   typeDefStmt aliases (S.TypeAlias x _ _) = uncurry (E.TypeAlias x) (get x aliases)
 wellFormedTop q cxt (S.Seq t1 t2) = do
    r1 × t1' <- wellFormedTop q cxt t1
    case r1 of
@@ -304,6 +310,33 @@ wellFormedTop q cxt (S.Seq t1 t2) = do
          r2 × t2' <- wellFormedTop q (cxt `override` cxt') t2
          pure (override r1 r2 × E.Seq t1' t2')
 wellFormedTop _ cxt s = checkStmt cxt Nothing s
+
+typeDef :: Name -> Cxt -> S.TypeDef -> CheckM Unit
+typeDef q cxt (S.Dataclass x αs b yψs) = do
+   predefName cxt "dataclass"
+   checkDistinct (\y -> "Duplicate field " <> quoted y <> " in class " <> quoted x) ys
+   yτs <- for yψs \(y × ψ) -> (y × _) <$> synth cxt' ψ
+   base <- for b (baseClass cxt cxt' x ys)
+   modify_ \st -> st { classes = insert (snoc q x) { typeParams: αs, fields: yτs, base } st.classes }
+   where
+   cxt' = cxt `override` typeParams αs
+   ys = fst <$> yψs
+typeDef _ _ (S.TypeAlias _ _ _) = pure unit
+
+-- Bodies of aliases, each resolved after the aliases of the region named in it
+typeAliases :: Cxt -> Map.Map Var (List Var × S.TypeExpr) -> CheckM (Map.Map Var (List Var × T.Type))
+typeAliases cxt ψs = foldM (resolve Nil) Map.empty (Map.keys ψs)
+   where
+   resolve xs τs x
+      | Map.member x τs = pure τs
+      | x `elem` xs = throwError $ "Type alias " <> quoted x <> " is cyclic"
+      | otherwise =
+           do
+              τs' <- foldM (resolve (x : xs)) τs (filter (\y -> Map.member y ψs && not (y `elem` αs)) (S.typeNames ψ))
+              τ <- synth (cxt `override` map (uncurry TypeAlias) τs' `override` typeParams αs) ψ
+              pure (Map.insert x (αs × τ) τs')
+           where
+           αs × ψ = get x ψs
 
 baseClass :: Cxt -> Cxt -> Var -> List Var -> S.TypeExpr -> CheckM (Name × List T.Type)
 baseClass cxt cxt' x ys (S.NameTy q ψs) | Just (Type d) <- resolveName cxt q = do

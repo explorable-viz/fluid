@@ -20,7 +20,7 @@ import Literal (Literal(..))
 import Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Pretty.Util (assignment, block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Operator (Operator(..), binopSymbol, prec, unopSymbol)
-import SExpr (Branch, Case, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), RecDefs, Stmt(..), TypeExpr(..), VarDef(..), VarDefs)
+import SExpr (Branch, Case, Clause(..), Expr(..), Import(..), LambdaClause(..), Module(..), Param(..), ParagraphElem(..), Qualifier(..), RecDefs, Stmt(..), TypeDef(..), TypeExpr(..), VarDef(..), VarDefs)
 import Types as T
 import Util (type (×), isEmpty, singleton, (×))
 import Util.Map (toUnfoldable)
@@ -213,6 +213,9 @@ instance Pretty Stmt where
    pretty (Assert cond Nothing) = text "assert" <+> pretty cond
    pretty (Assert cond (Just msg)) = text "assert" <+> pretty cond <> text "," <+> pretty msg
    pretty (Seq s1 s2) = pretty s1 <> line <> pretty s2
+   pretty (TypeDefs χs) = vsep (toList (pretty <$> χs))
+
+instance Pretty TypeDef where
    pretty (Dataclass c αs b xs) =
       text "@dataclass" <> line
          <> text "class" <+> text c

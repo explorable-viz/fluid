@@ -55,8 +55,27 @@ data Stmt
    | ExprStmt Expr
    | Assert Expr (Maybe Expr)
    | Seq Stmt Stmt
-   | Dataclass Var (List Var) (Maybe TypeExpr) (List (Var × TypeExpr))
+   | TypeDefs (NonEmptyList TypeDef) -- mutual type region
+
+data TypeDef
+   = Dataclass Var (List Var) (Maybe TypeExpr) (List (Var × TypeExpr))
    | TypeAlias Var (List Var) TypeExpr
+
+typeDefName :: TypeDef -> Var
+typeDefName (Dataclass x _ _ _) = x
+typeDefName (TypeAlias x _ _) = x
+
+-- Unqualified names in a type expression
+typeNames :: TypeExpr -> List Var
+typeNames (NameTy q ψs) = (if NEL.length q == 1 then NEL.head q : Nil else Nil) <> (ψs >>= typeNames)
+typeNames (ListTy ψ) = typeNames ψ
+typeNames (TupleTy ψs) = ψs >>= typeNames
+typeNames (DictTy ψ) = typeNames ψ
+typeNames (CallableTy ψs ψ) = (ψs >>= typeNames) <> typeNames ψ
+typeNames (TypeTy ψ) = typeNames ψ
+typeNames (UnionTy ψ ψ') = typeNames ψ <> typeNames ψ'
+typeNames (PrimitiveTy _) = Nil
+typeNames (LitTy _) = Nil
 
 data Import = Import Name (Maybe (List Var))
 
@@ -107,6 +126,11 @@ instance Show Expr where
 derive instance Eq Stmt
 derive instance Generic Stmt _
 instance Show Stmt where
+   show c = genericShow c
+
+derive instance Eq TypeDef
+derive instance Generic TypeDef _
+instance Show TypeDef where
    show c = genericShow c
 
 derive instance Eq Import
@@ -187,8 +211,7 @@ instance FV Stmt where
    fv (ExprStmt e) = fv e
    fv (Assert cond msg) = fv cond ∪ maybe empty fv msg
    fv (Seq s1 s2) = fv s1 ∪ fv s2
-   fv (Dataclass _ _ _ _) = empty
-   fv (TypeAlias _ _ _) = empty
+   fv (TypeDefs _) = empty
 
 instance FV VarDef where
    fv (VarDef _ _ e) = fv e
@@ -211,8 +234,7 @@ assigns (If es s) = unions (assigns <$> (snd <$> es)) ∪ maybe empty assigns s
 assigns (Match _ ps) = unions ((\(p × s) -> bv p ∪ assigns s) <$> ps)
 assigns (DefRec ds) = unions (singleton <<< fst <$> ds)
 assigns (Seq s1 s2) = assigns s1 ∪ assigns s2
-assigns (Dataclass c _ _ _) = singleton c
-assigns (TypeAlias x _ _) = singleton x
+assigns (TypeDefs χs) = Set.fromFoldable (typeDefName <$> χs)
 
 declares :: Stmt -> List Var
 declares (Declare x _) = singleton x
@@ -221,8 +243,7 @@ declares (DefRec ds) = nub (NEL.toList (fst <$> ds))
 declares (If es s) = (NEL.toList es >>= declares <<< snd) <> maybe Nil declares s
 declares (Match _ ps) = NEL.toList ps >>= declares <<< snd
 declares (Seq s1 s2) = declares s1 <> declares s2
-declares (Dataclass c _ _ _) = singleton c
-declares (TypeAlias x _ _) = singleton x
+declares (TypeDefs χs) = NEL.toList (typeDefName <$> χs)
 declares _ = Nil
 
 binds :: Stmt -> Set Var

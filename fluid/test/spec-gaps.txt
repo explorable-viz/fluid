@@ -1,8 +1,1 @@
-test/module-level/no-exception/result/alias_later_class_args.py (check: exit 3, expected [0]: Unbound name: 'Box')
-test/module-level/no-exception/result/recursive_datatype.py (check: exit 3, expected [0]: Unbound name: 'Num')
-test/module-level/no-exception/result/recursive_datatype_generic.py (check: exit 3, expected [0]: Unbound name: 'Leaf')
-test/module-level/no-exception/result/recursive_datatype_uninhabited.py (check: exit 3, expected [0]: Unbound name: 'Cons')
-test/module-level/no-exception/result/recursive_datatypes_mutual.py (check: exit 3, expected [0]: Unbound name: 'Lit')
-test/module-level/no-exception/result/type_alias_names_later_alias.py (check: exit 3, expected [0]: Unbound name: 'Elem')
-test/module-level/no-exception/result/type_alias_names_later_class.py (check: exit 3, expected [0]: Unbound name: 'Point')
 test/module-level/no-exception/type-checker/unsupported_builtin.py (check: exit 0, expected [3]: )
