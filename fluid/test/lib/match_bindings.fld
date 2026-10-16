@@ -1,6 +1,6 @@
 def f(v: tuple[int, int] | int) -> int:
    match v:
-      case (x, y):
+      case x, y:
          return x + y
       case w:
          return w

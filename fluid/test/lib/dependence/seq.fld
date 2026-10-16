@@ -10,4 +10,4 @@ else:
    x = b
 y: int = d
 
-(x, y)
+x, y

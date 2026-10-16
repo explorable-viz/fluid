@@ -16,7 +16,7 @@ def matrix_sum(matr: Matrix[int]) -> int:
 
 def convolve(image: Matrix[int], kernel: Matrix[int]) -> Matrix[int]:
   (k_i, k_j) = dims(kernel)
-  (half_i, half_j) = (k_i |quot| 2, k_j |quot| 2)
+  (half_i, half_j) = k_i |quot| 2, k_j |quot| 2
 
   def inter_matrix(m: int, n: int) -> Matrix[int]:
     return @doc(f"""average these to compute element ({m}, {n})""")

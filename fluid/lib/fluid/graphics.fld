@@ -260,7 +260,7 @@ def axis(orient: Orient, x: float, start: float, end: float) -> tuple[GraphicsEl
       Polymarkers(ps, map(compose(labelled_tick(orient, axis_colour, tick_length), num_to_str), ys))
     ])
 
-  return (ax, last_tick)
+  return ax, last_tick
 
 # x is position of this axis on the other axis.
 def cat_axis(orient: Orient, x: float, cat_values: list[Cat]) -> GraphicsElement:
