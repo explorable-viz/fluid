@@ -1,0 +1,10 @@
+from fluid.prelude import find
+
+def first_big(xs: list[int]) -> int | str:
+  match find(lambda x: x > 2, xs):
+    case None:
+      return "none"
+    case x:
+      return x
+
+[first_big([1, 2, 3]), first_big([1, 2]), find(lambda x: x > 3, [1, 2, 3])]

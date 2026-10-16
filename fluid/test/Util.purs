@@ -2,114 +2,156 @@ module Test.Util where
 
 import Prelude hiding (absurd, compare)
 
-import App.Util (Selector, getPersistent, unselected)
-import App.Util.Selector (ConstrArg, constrArg, sel𝔹)
-import DataType (class HasClasses, fieldIndex)
-import Data.Array (null) as Array
-import Data.Set as Set
-import Control.Monad.Error.Class (class MonadError, class MonadThrow)
-import Control.Monad.Reader (class MonadReader)
+import App.Util (SelStates, SelectionType(..), Selector, SetSel, getPersistent, unselected)
+import App.Util.Selector (ObjArg, objArg)
+import Classes (class HasClasses)
+import Data.Array as A
+import Data.Foldable (any, minimum)
+import Data.Map as Map
+import Data.Set (Set)
+import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
-import Data.Maybe (Maybe(..))
-import Data.String (null, trim)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String (joinWith, trim)
+import Data.String (Pattern(..), codePointFromChar, drop, length, null, split) as S
+import Data.String.CodePoints (takeWhile) as S
 import Data.Tuple (fst)
-import Effect.Class (class MonadEffect)
-import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import Eval (GraphConfig, graphEval, depsOf)
-import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
-import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, botOf, erase, 𝔹, (≽))
-import Module (prepConfig)
+import Eval (Eval, evalProgram, visible)
+import DepGraph (DepGraph, Deriv, Labelling, Pos, bwd, fwd, materialise, selected, valAt)
+import File (class MonadLoad, File, Folder(..), loadFile)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, DepKind(..), botOf, 𝔹)
+import Module (Config, prepConfig, throwParseFailure)
 import Parse (parseProgram)
 import Pretty (class Pretty, compare, prettyP)
-import Expr (Stmt) as Expr
 import SExpr (Stmt) as SE
-import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
-import Test.Util.Debug (tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, log', spyWhen, throw, throwLeft, withMsg, (×))
-import Util.Map (keys, restrict)
-import Val (class HasModuleStore, class Ann, Env, EnvStmt(..), Val)
+import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordDepGraphSize)
+import Util (type (×), AffError, EffectError, assertWith, check, error, log', throw, throwLeft, withMsg, (!), (×))
+import Util.Map (get, maplet)
+import Literal (Literal(..))
+import Val (class HasModuleStore, BaseVal(..), Val(..), moduleStore, val, withDoc)
 
 type TestSuite m = Array (String × m Unit)
 
-type SelectionSpec =
-   { δv :: ConstrArg -> Selector Val
-   , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
-   , bwd_expect :: Maybe (ConstrArg -> Selector Env) -- Nothing for tests that don't perturb output
-   , inputs :: Array String -- data inputs to slice forward through; [] = all (no restriction)
-   }
-
 fluidSrcPaths :: Array Folder
-fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
+fluidSrcPaths = [ Folder "lib", Folder "test/lib" ]
 
-test ∷ forall m. HasClasses m => HasModuleStore m => MonadReader FileCxt m => LoadFile m => File -> Raw Env -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
-test file primitives spec (n × _) = do
+test ∷ forall m. HasClasses m => HasModuleStore m => MonadLoad m => File -> String -> Int × Boolean -> m BenchRow
+test file expect (n × _) = do
    fluidSrc <- loadFile fluidSrcPaths file
    log' ("**** prepConfig")
-   { s, e, gconfig } <- prepConfig primitives fluidSrc
-   testPretty s
-   _ × res <- runWriterT (replicateM n (testProperties s e gconfig spec))
+   config <- throwParseFailure (prepConfig fluidSrc)
+   testPretty config.s
+   _ × res <- runWriterT (replicateM n (testProperties config expect))
    pure $ res `divRow` n
 
-graphBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
-graphBenchmark name = benchmark ("G" <> "-" <> name)
-
-benchNames
-   :: { eval :: String
-      , bwd :: String
-      , fwd :: String
-      }
-
-benchNames =
-   { eval: "Eval"
-   , bwd: "Demands"
-   , fwd: "DemBy"
-   }
-
+-- Printed output of the program, with the doc of its root vertex, if any.
 testProperties
    :: forall m
     . HasClasses m
    => HasModuleStore m
-   => MonadReader FileCxt m
-   => LoadFile m
+   => MonadLoad m
    => MonadWriter BenchRow m
-   => Raw SE.Stmt
-   -> Raw Expr.Stmt
-   -> GraphConfig
-   -> SelectionSpec
-   -> AffError m Unit
-testProperties _ s' gconfig { δv, bwd_expect, fwd_expect, inputs } = do
+   => Config
+   -> String
+   -> m Unit
+testProperties { e, inputs, classes } expect = do
+   eval@{ g, root } <- benchmark "Dep" \_ ->
+      evalProgram inputs classes e
+   withMsg "fwd_expect" $ checkPretty expect (prettyP (val g.vals (withDoc g root)))
+   recordDepGraphSize eval.g
 
-   graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
-      graphEval gconfig s'
-   let evalG_bwd = fst <<< (depsOf graphed).bwd
-   let evalG_op_bwd = fst <<< (depsOf graphed).fwd
-   let EnvStmt γ_raw s_raw = erase graphed.inα
-   let inputs' = if Array.null inputs then keys γ_raw else Set.fromFoldable inputs
+-- Visible vertex carrying the selection.
+data VertexSpec
+   = Output
+   | Input String -- vertex documented with the name
+   | Intermediate Int -- index among documented vertices of the program, in evaluation order
+   | Doc VertexSpec
 
-   let arg = constrArg (fieldIndex gconfig.classes)
-   let v = map (const top) outα :: Val 𝔹
-   let out0 = fst (δv arg (const unselected <$> v)) <#> getPersistent
+-- Selection and expected dependence, as given by showDeps: data ⸨ ⸩, control ⟪ ⟫.
+data Query
+   = Bwd VertexSpec (ObjArg -> Selector Val) String
+   | Fwd VertexSpec (ObjArg -> Selector Val) String
 
-   EnvStmt in_γ _ <- do
-      let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
-      graphBenchmark benchNames.bwd \_ -> pure (evalG_bwd (report out0))
+type DepSpec = { file :: String, queries :: Array Query }
 
-   out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG_op_bwd (EnvStmt (restrict inputs' in_γ) (botOf s_raw)))
+depName :: String -> Query -> String
+depName file = case _ of
+   Bwd vertex _ _ -> file <> ", bwd from " <> name vertex
+   Fwd vertex _ _ -> file <> ", fwd from " <> name vertex
+   where
+   name = case _ of
+      Output -> "output"
+      Input x -> x
+      Intermediate n -> "intermediate " <> show n
+      Doc vertex -> "doc of " <> name vertex
 
-   case bwd_expect of
-      Nothing -> pure unit
-      Just sel -> do
-         let expected = sel𝔹 (sel arg) in_γ
-         unless (in_γ ≽ expected) $
-            throw ("bwd_expect mismatch:\nactual in_γ\n" <> prettyP in_γ <> "\nexpected (sel𝔹)\n" <> prettyP expected)
-   unless (null fwd_expect) do
-      let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
-      withMsg "fwd_expect" $ checkPretty fwd_expect (report out1)
+-- depGraph holds the vertices created by loading the modules, before the program ran.
+deriv :: forall s. DepGraph Val s -> Eval -> VertexSpec -> Deriv
+deriv depGraph eval@{ g: g@{ docs }, root } = case _ of
+   Output -> root
+   Input x -> case A.filter (\(_ × d) -> valAt g d == Val unit (Lit (Str x))) (Map.toUnfoldable docs) of
+      [ p × _ ] -> p
+      _ -> error ("no vertex documented " <> show x)
+   Intermediate n -> intermediates ! n
+   Doc vertex -> get (deriv depGraph eval vertex) docs
+   where
+   intermediates = A.filter (not <<< (_ `Map.member` depGraph.vals)) (A.fromFoldable (Map.keys docs))
 
-   recordGraphSize g
+-- Documented vertices in evaluation order, each with its doc if the doc has dependence, then the output.
+showDeps :: Eval -> Labelling (Val DepKind) -> String
+showDeps { g: { docs }, root } deps = joinWith "\n" (documented <> output)
+   where
+   dep p = get p deps
+   documented = Map.toUnfoldable docs <#> \(p × d) ->
+      prettyP (val deps (p × if any (_ /= Zero) (dep d) then Just d else Nothing))
+   output = if Map.member root docs then [] else [ prettyP (dep root) ]
+
+selection
+   :: forall s
+    . DepGraph Val s
+   -> Eval
+   -> VertexSpec
+   -> (ObjArg -> Selector Val)
+   -> Labelling (Set Pos)
+selection depGraph eval vertex δv =
+   maplet p (selected (selectOn δv objArg (valAt eval.g p)))
+   where
+   p = deriv depGraph eval vertex
+
+testDep :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => File -> Query -> m Unit
+testDep file query = do
+   fluidSrc <- loadFile fluidSrcPaths file
+   { e, inputs, classes } <- throwParseFailure (prepConfig fluidSrc)
+   { depGraph } <- moduleStore
+   eval <- evalProgram inputs classes e
+   let
+      visibleGraph = materialise eval.g (visible eval)
+      deps × expect = case query of
+         Bwd vertex δv expect' -> bwd visibleGraph (selection depGraph eval vertex δv) × expect'
+         Fwd vertex δv expect' -> fwd visibleGraph (selection depGraph eval vertex δv) × expect'
+   withMsg "expect" $ checkPretty expect (showDeps eval deps)
+
+-- Persistent selection made by δv on the output.
+selectOn :: forall a. (ObjArg -> Selector Val) -> ObjArg -> Val a -> Val 𝔹
+selectOn δv arg v = fst (δv arg (const unselected <$> (map (const top) v :: Val 𝔹))) <#> getPersistent
+
+-- Result at this position, printed with its persistent selections, must match; leave it unselected.
+at :: forall f. Functor f => Pretty (f 𝔹) => String -> SetSel (f (SelStates 𝔹))
+at expected v =
+   assertWith ("at:\nExpected\n" <> expected' <> "\nReceived\n" <> actual) (expected' == actual) (botOf <$> v) × Persistent
+   where
+   expected' = dedent expected
+   actual = prettyP (getPersistent <$> v)
+
+-- Expectation applied to the selection must cancel it.
+checkSelection :: forall m f. MonadError Error m => Functor f => Eq (f (SelStates 𝔹)) => Pretty (f (SelStates 𝔹)) => Selector f -> f (SelStates 𝔹) -> m Unit
+checkSelection expect v =
+   check (residual == (botOf <$> v)) ("selection differs from expectation at:\n" <> prettyP residual)
+   where
+   residual = fst (expect v)
 
 checkEq
    :: forall m a
@@ -129,26 +171,25 @@ checkEq op1 op2 x y = do
    check (left == "") left
    check (right == "") right
 
-testPretty :: forall m a. Ann a => Show a => SE.Stmt a -> AffError m Unit
+testPretty :: forall m. SE.Stmt -> AffError m Unit
 testPretty s = do
    log' ("**** prettyP")
    log' (prettyP s)
    s' × _ <- throwLeft <#> withMsg "testPretty" $ parseProgram (prettyP s)
-   unless (eq (erase s) (erase s')) $
-      throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
+   unless (s == s') $
+      throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP s <> "\nNew\n" <> prettyP s')
 
-checkPretty :: forall a m. Pretty a => String -> a -> EffectError m Unit
-checkPretty expect x = do
-   unless (trim expect `eq` prettyP x) $
-      throw ("checkPretty:\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
-
-testOutcome :: Boolean -> Endo String
-testOutcome b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s
-
-testCondition :: forall m. MonadThrow Error m => MonadEffect m => String -> Boolean -> String -> m Unit
-testCondition testName b msg = do
-   log (testOutcome b msg')
-   when (not b) $
-      throw "Test failed" -- could improve this to accumulate test failures rather than "failing fast"
+-- Drop surrounding blank lines and common indentation, so that an expectation can be indented with the code.
+dedent :: String -> String
+dedent s = joinWith "\n" (S.drop indent <$> lines)
    where
-   msg' = testName <> ": " <> msg
+   lines = A.dropWhile blank (A.reverse (A.dropWhile blank (A.reverse (S.split (S.Pattern "\n") s))))
+   blank = trim >>> S.null
+   indent = fromMaybe 0 (minimum (S.length <<< S.takeWhile (_ == S.codePointFromChar ' ') <$> A.filter (not <<< blank) lines))
+
+checkPretty :: forall m. String -> String -> EffectError m Unit
+checkPretty expect actual = do
+   unless (expect' `eq` actual) $
+      throw ("checkPretty:\nExpected\n" <> expect' <> "\nReceived\n" <> actual)
+   where
+   expect' = dedent expect

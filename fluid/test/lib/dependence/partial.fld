@@ -1,0 +1,10 @@
+from typing import Callable
+
+a: int = @doc("a") 1
+b: int = @doc("b") 2
+
+def add(x: int, y: int) -> int:
+   return x + y
+
+g: Callable[[int], int] = add(a)
+g(b)

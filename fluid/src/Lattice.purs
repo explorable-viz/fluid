@@ -6,15 +6,13 @@ import Data.Array (zipWith) as A
 import Data.Bifunctor (bimap)
 import Data.Foldable (length)
 import Data.List (List, zipWith)
+import Data.Map (Map, empty, isEmpty, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
-import Data.Set (subset)
 import Dict (Dict)
-import Util (type (×), Endo, assert, shapeMismatch, (×))
-import Util.Map (intersectionWith, keys, unionWith)
-import Util.Map as Map
+import Util (type (×), Endo, shapeMismatch, (×))
+import Util.Map (unionWith)
 import Util.Pair (Pair(..))
-import Util.Set ((∪))
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
@@ -35,6 +33,58 @@ class Neg a where
    neg :: Endo a
 
 class (BoundedLattice a, Neg a) <= BooleanLattice a
+
+-- Addition idempotent; ctrlWeight idempotent for multiplication and bounding its own multiples; no zero divisors.
+class (Semiring s, Ord s) <= DepSemiring s where
+   ctrlWeight :: s
+
+instance DepSemiring Unit where
+   ctrlWeight = unit
+
+data DepKind = Zero | Ctrl | Data
+
+derive instance Eq DepKind
+derive instance Ord DepKind
+
+instance Show DepKind where
+   show Zero = "0"
+   show Ctrl = "○"
+   show Data = "●"
+
+instance Semiring DepKind where
+   zero = Zero
+   one = Data
+   add = max
+   mul = min
+
+instance DepSemiring DepKind where
+   ctrlWeight = Ctrl
+
+-- Trivial extension of s by weighted combinations of positions k: the product of two combinations is zero.
+newtype Lineage k s = Lineage (s × M.Map k s)
+
+instance (Ord k, DepSemiring s) => Semiring (Lineage k s) where
+   zero = Lineage (zero × M.empty)
+   one = Lineage (one × M.empty)
+   add (Lineage (a × m)) (Lineage (b × n)) = Lineage ((a + b) × union m n)
+   mul (Lineage (a × m)) (Lineage (b × n)) = Lineage ((a * b) × union (scale a n) (scale b m))
+      where
+      scale c
+         | c == zero = const M.empty
+         | c == one = identity
+         | otherwise = map (mul c)
+
+union :: forall k s. Ord k => Semiring s => M.Map k s -> M.Map k s -> M.Map k s
+union m n
+   | M.isEmpty m = n
+   | M.isEmpty n = m
+   | otherwise = M.unionWith add m n
+
+instance (Ord k, DepSemiring s) => DepSemiring (Lineage k s) where
+   ctrlWeight = Lineage (ctrlWeight × M.empty)
+
+derive instance (Eq k, Eq s) => Eq (Lineage k s)
+derive instance (Ord k, Ord s) => Ord (Lineage k s)
 
 class BotOf t u | t -> u where
    botOf :: t -> u
@@ -164,29 +214,3 @@ instance JoinSemilattice a => JoinSemilattice (Maybe a) where
    join _ _ = shapeMismatch unit
 
 instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
-
--- Expandable (t :: Type -> Type) requires functor composition.
-class Expandable t u | t -> u where
-   expand :: t -> u -> t
-
-instance Expandable (t a) (Raw t) => Expandable (a × t a) (Unit × Raw t) where
-   expand (α × a) (_ × a') = α × expand a a'
-
-instance Expandable t u => Expandable (Pair t) (Pair u) where
-   expand (Pair x x') (Pair y y') = Pair (expand x y) (expand x' y')
-
-instance (BotOf u t, Expandable t u) => Expandable (Dict t) (Dict u) where
-   expand kvs kvs' =
-      assert (keys kvs `subset` keys kvs') $
-         (kvs `intersectionWith expand` kvs') ∪ ((kvs' Map.\\ kvs) <#> botOf)
-
-instance Expandable t u => Expandable (List t) (List u) where
-   expand xs = zipWith expand xs
-
-instance Expandable t u => Expandable (Array t) (Array u) where
-   expand xs = A.zipWith expand xs
-
-instance Expandable t u => Expandable (Maybe t) (Maybe u) where
-   expand Nothing Nothing = Nothing
-   expand (Just x) (Just y) = Just (expand x y)
-   expand _ _ = shapeMismatch unit

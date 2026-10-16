@@ -1,0 +1,9 @@
+from typing import Callable
+
+a: int = @doc("a") 1
+b: int = @doc("b") 2
+
+def add(x: int) -> Callable[[int], int]:
+   return lambda y: x + y
+
+add(a)(b)

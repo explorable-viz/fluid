@@ -1,0 +1,5 @@
+b: bool = @doc("b") True
+y: int = @doc("y") 1
+z: int = @doc("z") 2
+
+y if b else z

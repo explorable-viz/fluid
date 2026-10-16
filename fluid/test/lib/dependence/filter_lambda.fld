@@ -1,0 +1,9 @@
+from typing import Callable
+
+n: int = @doc("n") 5
+xs: list[int] = @doc("xs") [8, 4, 7, 3]
+
+def filter[A](p: Callable[[A], bool], xs: list[A]) -> list[A]:
+  return [x for x in xs if p(x)]
+
+filter(lambda x: n < x, xs)

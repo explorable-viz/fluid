@@ -1,1 +1,0 @@
-renewables = load_json("../dataset/renewable_new.json")

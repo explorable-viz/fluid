@@ -1,0 +1,26 @@
+from dataset.methane_emissions import methane
+
+from fluid.view import Dimensions, LineChart, LinePlot, Point, TickLabels, Default, Rotated
+from fluid.prelude import fsum, max, min, zip
+
+def nthPad[A](n: int, xs: list[A]) -> A:
+  return xs[min(max(n, 0), len(xs) - 1)]
+def movingAvg(ys: list[float], window: int) -> list[float]:
+  return [fsum([nthPad(n, ys) for n in range(i - window, i + window + 1)]) / (1 + 2 * window) for i in range(0, len(ys))]
+def movingAvg_(rs: list[Point], window: int) -> list[Point]:
+  return [Point(x, y) for (x, y) in zip([p.x for p in rs], movingAvg([p.y for p in rs], window))]
+
+points: list[Point] = [Point(x=r.year, y=r.emissions) for r in methane if r.type == "Agriculture"]
+
+LineChart(
+  tickLabels=TickLabels(x=Rotated(), y=Default()),
+  size=Dimensions(width=330, height=285),
+  caption="SSP5-8.5 projected methane emissions (Agriculture)",
+  plots=[
+    LinePlot(
+      name="Moving average",
+      points=movingAvg_(points, 1)
+    ),
+    LinePlot(name="Original curve", points=points)
+  ]
+)

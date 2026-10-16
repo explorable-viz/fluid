@@ -1,0 +1,16 @@
+from dataclasses import dataclass
+
+@dataclass
+class Row:
+  energyType: str
+  output: float
+
+data: list[Row] = @doc("data") [
+  Row("Bio", 6.2),
+  Row("Hydro", 260),
+  Row("Solar", 19.9),
+  Row("Wind", 91),
+  Row("Geo", 14.4)
+]
+
+types: list[str] = @doc("types") ["Hydro", "Solar", "Geo"]

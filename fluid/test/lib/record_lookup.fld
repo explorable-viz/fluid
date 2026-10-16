@@ -1,0 +1,3 @@
+city: dict[str, str] = { "name": "Germany" }
+country: dict[str, list[str]] = { "cities": ["Germany"] }
+city["name"] in country["cities"]

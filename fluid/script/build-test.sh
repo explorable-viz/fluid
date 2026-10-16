@@ -3,3 +3,4 @@ set -xe
 
 yarn build-prod
 yarn test
+yarn spec-compliance

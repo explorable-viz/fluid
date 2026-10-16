@@ -1,72 +1,77 @@
+from math import ceil
 from nap3_ccra3_data import nap3_actions, ccra3_risks
 
-from lib.view import BarChart, MultiView, Default, Link
+from fluid.view import BarChart, Dimensions, MultiView, Segment, StackedBar, TickLabels, Default, Link
+from fluid.prelude import fsum, nub
 
-eval_scores = [ "Significantly addressed", "Recognised but not addressed",
+eval_scores: list[str] = [ "Significantly addressed", "Recognised but not addressed",
     "Not addressed", "Minimally addressed", "Fully addressed" ]
 
-def actions_by(key, keys):
-  return [ { x: key_,
-      segments: [
-        { y: eval_score,
-          z: count_if(
-            lambda action:
-              action[ key ] == key_ and action[ "Evaluation score" ] == eval_score,
-            nap3_actions
-          ) } for eval_score in eval_scores
-      ] } for key_ in keys
+risks_: dict[str, dict[str, str]] = { r[ "ID#" ]: r for r in ccra3_risks }
+
+actions: list[dict[str, str]] = [
+    { "Action Owner": action[ "Action Owner" ], "Typology": action[ "Typology" ],
+      "Evaluation score": action[ "Evaluation score" ], "Chapter": risks_[ action[ "Risk ID#" ] ][ "Chapter" ],
+      "Descriptor": risks_[ action[ "Risk ID#" ] ][ "Risk or Opportunity Descriptor" ] }
+    for action in nap3_actions
   ]
 
-risks_ = dict([ (risk[ "ID#" ], risk) for risk in ccra3_risks ])
+def actions_by(key: str, keys: list[str]) -> list[StackedBar]:
+  def bar(key_: str) -> StackedBar:
+    actions_: list[dict[str, str]] = [ action for action in actions if action[ key ] == key_ ]
+    return StackedBar(x=key_,
+      segments=[ Segment(y=eval_score,
+          z=len([ action for action in actions_ if action[ "Evaluation score" ] == eval_score ]))
+        for eval_score in eval_scores
+      ])
+  return [ bar(key_) for key_ in keys ]
 
-def percent(x, y):
+def percent(x: float, y: float) -> float:
   return 0 if y == 0 else x / y * 100
 
-def actions_by_chapter(owner):
-  return [ { x: chapter,
-      segments: [
-        { y: eval_score,
-          z: def segment_risks: [
-               risks_[ action["Risk ID#"] ]["Risk or Opportunity Descriptor"]
-               for action in chapter_actions if action["Evaluation score"] == eval_score
-             ]
-             percent(
-                @doc(f"""risk descriptors contribute to this segment: { join(intersperse(nub(segment_risks), ", ")) }.""")
-                length(segment_risks),
-                length(chapter_actions)
-             )
-        } for eval_score in eval_scores  ] }
-    for chapter in ["3", "4", "5", "6", "7"]
-    chapter_actions = [ action for action in nap3_actions
-        if risks_[ action["Risk ID#" ] ][ "Chapter" ] == chapter and find_str(owner, action["Action Owner"]) /= -1
+def actions_by_chapter(owner: str) -> list[StackedBar]:
+  def bar(chapter: str) -> StackedBar:
+    chapter_actions: list[dict[str, str]] = [ action for action in actions
+        if action[ "Chapter" ] == chapter and find_str(owner, action[ "Action Owner" ]) != -1
       ]
-  ]
+    def segment(eval_score: str) -> Segment:
+      segment_risks: list[str] = [ action[ "Descriptor" ]
+          for action in chapter_actions if action[ "Evaluation score" ] == eval_score
+        ]
+      return Segment(y=eval_score,
+        z=percent(
+          @doc(f"""risk descriptors contribute to this segment: { join(intersperse(nub(segment_risks), ", ")) }.""")
+          len(segment_risks),
+          len(chapter_actions)
+        ))
+    return StackedBar(x=chapter, segments=[ segment(eval_score) for eval_score in eval_scores ])
+  return [ bar(chapter) for chapter in ["3", "4", "5", "6", "7"] ]
 
-departments = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+departments: list[str] = [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
-nat_env_and_infra_depts = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
+nat_env_and_infra_depts: list[str] = [ "Defra", "DESNZ", "DfT", "DLUHC" ]
 
-# action_counts in the [ { y, z } ] format produced by actions_by
-def total_actions(action_counts):
-  return sum([ r["z"] for r in action_counts ])
+# action_counts: segments of a bar produced by actions_by
+def total_actions(action_counts: list[Segment]) -> float:
+  return fsum([ segment.z for segment in action_counts ])
 
-def actions_with_score(action_counts, eval_score):
-  return sum([ r["z"] for r in action_counts if r["y"] == eval_score ])
+def actions_with_score(action_counts: list[Segment], eval_score: str) -> float:
+  return fsum([ segment.z for segment in action_counts if segment.y == eval_score ])
 
-by_nat_env_and_infra = actions_by("Action Owner", nat_env_and_infra_depts)
+by_nat_env_and_infra: list[StackedBar] = actions_by("Action Owner", nat_env_and_infra_depts)
 
 MultiView([
   f"""
   Climate Change Risk Assessment (CCRA3) identified {
-    length(nub([ risk[ "Risk or Opportunity Descriptor" ] for risk in ccra3_risks ]))
+    len(nub([ risk[ "Risk or Opportunity Descriptor" ] for risk in ccra3_risks ]))
   } risks/opportunities for the UK;
   this report evaluates extent to which NAP3 commitments actually address them.
   """,
 
   BarChart(
     caption="NAP3 actions assigned to DEFRA, by chapter",
-    size={ width: 275, height: 185 },
-    tickLabels={ x: Default, y: Default },
+    size=Dimensions(width=275, height=185),
+    tickLabels=TickLabels(x=Default(), y=Default()),
     stackedBars=actions_by_chapter("Defra"),
     legend=False
   ),
@@ -75,14 +80,14 @@ MultiView([
   Disaggregating by department revealed marked disparities in government response. {
     Link(nat_env_and_infra_depts, "Natural environment and infrastructure sectors")
   } performed relatively well, with {
-    ceiling(
+    ceil(
       percent(
-        sum([
+        fsum([
           actions_with_score(action_counts, eval_score)
           for eval_score in [ "Fully addressed", "Minimally addressed" ]
-          for { segments: action_counts } in by_nat_env_and_infra
+          for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra
         ]),
-        sum([ total_actions(action_counts) for { segments: action_counts } in by_nat_env_and_infra])
+        fsum([ total_actions(action_counts) for StackedBar(x=_, segments=action_counts) in by_nat_env_and_infra])
       )
     )
   }% of actions at least “minimally addressed.”

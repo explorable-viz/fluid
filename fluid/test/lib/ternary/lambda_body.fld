@@ -1,0 +1,5 @@
+from typing import Callable
+from fluid.prelude import map
+
+f: Callable[[int], int] = lambda x: x if x > 0 else 0
+map(f, [0, 1, 2, -5])

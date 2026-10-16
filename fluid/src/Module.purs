@@ -2,63 +2,65 @@ module Module where
 
 import Prelude
 
-import Control.Monad.Except (class MonadError)
-import Control.Monad.Reader (class MonadReader, ask)
-import Bind (dottedName, pathName, prefixOf)
-import Data.List.NonEmpty (snoc, unsnoc, fromList) as NEL
-import Data.Either (Either(..))
+import Control.Monad.Except (class MonadError, ExceptT, except, runExceptT)
+import Control.Monad.Reader (ask)
+import Control.Monad.State (runStateT)
+import Control.Monad.Trans.Class (lift)
+import Data.Bifunctor (lmap)
+import Bind (dottedName, pathName, varName)
+import Data.List.NonEmpty (snoc)
+import Data.Either (Either(..), either)
 import Data.Foldable (foldM, for_, intercalate)
 import Data.List (List(..), catMaybes, elem, filter, mapMaybe, reverse, takeWhile, (:))
+import Data.List as List
+import Data.List.NonEmpty as NEL
+import Data.String (Pattern(..), split)
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
-import DataType (class HasClasses, ClassTable, cNoArgs)
-import Desugarable (desug)
-import Effect.Aff.Class (class MonadAff)
+import Data.Tuple (fst)
+import Classes (class HasClasses, ClassTable)
+import Dict (Dict)
 import Effect.Exception (Error)
-import Eval (GraphConfig, evalImport, loadPredefined)
+import Eval (evalImport, implicitMembers, load) as Dep
 import Expr (Import(..)) as E
-import Expr (Module, Stmt, fv)
-import File (class LoadFile, File(..), FileCxt(..), fluidExtension, hasDirectory, loadFile, loadFileMaybe, withClasses)
-import Graph (Vertex, vertices)
-import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
-import Lattice (Raw)
-import ModuleGraph (DependencyGraph, ModuleName, predefined, predefinedDeps)
+import Literal (Literal(..))
+import Expr (Module, Pattern(..), Stmt, fv)
+import File (class MonadLoad, File(..), FileCxt(..), hasDirectory, loadModuleSource, manifest, modulePath, withClasses)
+import DepGraph (Deriv, deriv, emptyGraph)
+import Module.Defs (ModuleName, containing, implicit, implicitFor, parents)
 import Parse (parseModule, parseProgram)
-import SExpr (desugarModuleFwd)
-import DefiniteAssignment (ClassEntry, Cxt, Entry(..), WfResult(..), erase)
-import WellFormed (LoadedModule, checkProgram, mainModule)
+import Primitive.Defs (predefined, predefinedClasses)
+import WellFormed (CheckM, checkProgram, checkModule, mainModule, runCheckM)
 import SExpr as S
-import Util (type (×), check, orThrow, throwLeft, whenever, withMsg, (×))
-import Util.Map (constMap, keys, findWithDefault, maplet, restrict, (<+>))
-import Util.Set (empty, (∪))
-import Val (class HasModuleStore, moduleStore, modifyModuleStore, val, Env)
-import Val (BaseVal(..)) as V
+import Types (Primitive(..)) as T
+import Util (MayFail, type (×), orThrow, quoted, throw, whenever, (×))
+import Util.Map (constMap, findWithDefault, mapWithKey, restrict)
+import Val (class HasModuleStore, ModuleState(..), modifyModuleStore, Env(..))
 
-type Config = { s :: Raw S.Stmt, e :: Raw Stmt, gconfig :: GraphConfig }
+type DependencyGraph = Map ModuleName (List ModuleName)
 
-isModule :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => ModuleName -> m Boolean
+type Config = { s :: S.Stmt, e :: Stmt, inputs :: Dict Deriv, classes :: ClassTable }
+
+-- Message for source of program or module that fails to parse
+newtype ParseFailure = ParseFailure String
+
+throwParseFailure :: forall m a. MonadError Error m => ExceptT ParseFailure m a -> m a
+throwParseFailure m = runExceptT m >>= either (\(ParseFailure msg) -> throw msg) pure
+
+isModule :: forall m. MonadLoad m => ModuleName -> m Boolean
 isModule q = do
    FileCxt { fluidSrcPaths } <- ask
-   loadFileMaybe fluidSrcPaths (File (pathName q <> fluidExtension)) >>= case _ of
+   loadModuleSource fluidSrcPaths (pathName q) >>= case _ of
       Just _ -> pure true
       Nothing -> hasDirectory fluidSrcPaths (File (pathName q))
 
-parents :: ModuleName -> List ModuleName
-parents q = case NEL.fromList (NEL.unsnoc q).init of
-   Nothing -> Nil
-   Just q' -> parents q' <> (q' : Nil)
-
 importDeps
    :: forall m
-    . MonadAff m
-   => MonadError Error m
-   => MonadReader FileCxt m
-   => LoadFile m
+    . MonadLoad m
    => ModuleName
    -> S.Import
    -> m { edges :: List ModuleName, load :: List ModuleName }
@@ -66,148 +68,133 @@ importDeps enclosing (S.Import q f) = do
    ps <- keepModules (parents q)
    subs <- case f of
       Nothing -> pure Nil
-      Just xs -> keepModules ((NEL.snoc q) <$> xs)
+      Just xs -> keepModules ((snoc q) <$> xs)
    let
       prefixEdges = case f of
          Nothing -> filter (_ /= enclosing) (parents q)
-         Just _ -> filter (\p -> not (p `prefixOf` enclosing)) (parents q)
+         Just _ -> containing enclosing q
    pure { edges: (q : subs) <> prefixEdges, load: ps <> (q : subs) }
    where
    keepModules = map catMaybes <<< traverse (\m' -> isModule m' <#> \b -> whenever b m')
 
-checkAcyclic :: DependencyGraph -> List ModuleName -> Either String Unit
+checkAcyclic :: DependencyGraph -> List ModuleName -> MayFail Unit
 checkAcyclic edges roots = void (foldM (go Nil) Set.empty roots)
    where
-   go :: List ModuleName -> Set ModuleName -> ModuleName -> Either String (Set ModuleName)
+   go :: List ModuleName -> Set ModuleName -> ModuleName -> MayFail (Set ModuleName)
    go path done q
       | Set.member q done = pure done
       | q `elem` path = Left
-           ("import cycle: " <> intercalate " -> " (dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
+           ("import cycle: " <> intercalate " -> " (quoted <<< dottedName <$> (q : reverse (takeWhile (_ /= q) path)) <> (q : Nil)))
       | otherwise = Set.insert q <$> foldM (go (q : path)) done (findWithDefault Nil q edges)
 
-noArgsClass :: ClassEntry
-noArgsClass = { cxt: Map.empty, name: cNoArgs, base: Nothing, fields: Nil }
-
-classTable :: Map ModuleName Cxt -> ClassTable
-classTable modCxt =
-   Map.fromFoldable (map (\cls -> dottedName cls.name × cls) (Map.values modCxt >>= classValues))
-   where
-   classValues cxt = mapMaybe classOf (Map.values cxt)
-   classOf = case _ of
-      Class cls -> Just cls
-      _ -> Nothing
-
-allocTopLevel
+-- Load modules into new dependence graph, kept in module store; return top-level environment as vertex per variable
+loadTopLevel
    :: forall m
     . HasClasses m
    => HasModuleStore m
-   => MonadAff m
-   => MonadError Error m
-   => MonadReader FileCxt m
-   => LoadFile m
-   => Raw Env
-   -> Map ModuleName (Raw Module)
+   => MonadLoad m
+   => Map ModuleName Module
    -> List S.Import
-   -> m (Int × Env Vertex)
-allocTopLevel primitives mods imports = do
-   n × _ × γ <- flip runAllocT 0 do
-      primitives' <- alloc primitives
-      mods' <- traverse alloc mods
-      let mαs = Set.unions (vertices <$> Map.values mods')
-      _ × γ <-
-         runWithGraphT_spy
-            ( do
-                 modifyModuleStore (_ { moduleBody = mods' })
-                 γ0 <- foldM (loadPredefined primitives') empty predefined
-                 modifyModuleStore (_ { γ0 = γ0 })
-                 γ1 <- foldM (\γ (S.Import q f) -> evalImport mainModule γ (E.Import q f)) γ0 imports
-                 vName <- val Nothing Set.empty (V.Str "__main__")
-                 pure (γ1 <+> maplet "__name__" vName)
-            )
-            (vertices primitives' ∪ mαs) :: AllocT m (GraphImpl × _)
-      pure γ
-   pure (n × γ)
+   -> m (Dict Deriv)
+loadTopLevel modules imports = do
+   inputs × depGraph <- flip runStateT emptyGraph do
+      predefined' <- traverse (\(_ × Env ρ) -> Loaded <$> traverse deriv ρ) predefined
+      modifyModuleStore (_ { modules = Map.union predefined' (Parsed <$> modules) })
+      for_ implicit Dep.load
+      ρ0 <- Dep.implicitMembers
+      foldM (\ρ (S.Import q f) -> Dep.evalImport mainModule ρ (E.Import q f)) ρ0 imports
+   modifyModuleStore (_ { depGraph = depGraph })
+   pure inputs
 
 prepConfig
    :: forall m
     . HasClasses m
    => HasModuleStore m
-   => MonadAff m
-   => MonadError Error m
-   => MonadReader FileCxt m
-   => LoadFile m
-   => Raw Env
-   -> String
-   -> m Config
-prepConfig primitives fluidSrc = do
-   s × imports <- throwLeft $ parseProgram fluidSrc
-   let nativeBuiltins = constMap (VarStatus true) (keys primitives) `Map.union` Map.singleton "__NoArgs" (Class noArgsClass)
-   mods <- parseModules imports
-   { cxt: cxt_wf, s: s_wf, loaded } <- orThrow (checkProgram mods nativeBuiltins imports s)
-   let classes = classTable (_.cxt <$> loaded)
-   withClasses classes do
-      desugaredMods <- traverse (\m -> (unit <$ _) <$> desugarModuleFwd (Returns <$ m)) (Map.mapMaybe _.mod loaded)
-      n × γ <- allocTopLevel primitives desugaredMods imports
-      check (Map.keys cxt_wf == Set.fromFoldable (keys γ)) "reduced context matches top-level environment"
-      { moduleEnv } <- moduleStore
-      for_ (Map.toUnfoldable loaded :: List (ModuleName × LoadedModule)) \(q × { cxt, mod }) ->
-         when (isJust mod) $ for_ (Map.lookup q moduleEnv) \γ_q ->
-            check (Map.keys (erase cxt) == Set.fromFoldable (keys γ_q))
-               ("module " <> dottedName q <> ": members match its environment")
-      e_wf <- desug s_wf
-      let e = (unit <$ e_wf) :: Raw Stmt
-      let gconfig = { n, γ: restrict (fv e) γ, classes }
-      pure { s, e, gconfig }
+   => MonadLoad m
+   => String
+   -> ExceptT ParseFailure m Config
+prepConfig fluidSrc = do
+   s × imports <- except (lmap ParseFailure (parseProgram fluidSrc))
+   { result: e, modules: mods, classes } <- prepModules imports (checkProgram imports (named mainModule s))
+   lift $ withClasses classes do
+      inputs <- loadTopLevel mods imports
+      pure { s, e, inputs: restrict (fv e) inputs, classes }
 
-parseModules
-   :: forall m
-    . MonadAff m
-   => MonadError Error m
-   => MonadReader FileCxt m
-   => LoadFile m
+-- Statement preceded by declaration of module name
+named :: ModuleName -> S.Stmt -> S.Stmt
+named q = S.Seq (S.Def (S.VarDef (PVar varName) (Just (S.PrimitiveTy T.Str)) (S.Lit (Str (dottedName q)))))
+
+-- Parse modules reachable through imports and run checking action over them, yielding its result, modules
+-- checked, and class table.
+prepModules
+   :: forall m a
+    . MonadLoad m
    => List S.Import
-   -> m (Map ModuleName (Raw S.Module))
+   -> CheckM a
+   -> ExceptT ParseFailure m { result :: a, modules :: Map ModuleName Module, classes :: ClassTable }
+prepModules imports action = do
+   mods <- parseModules imports
+   names <- moduleNames <$> ask
+   result × { modules: checked, classes } <-
+      lift (orThrow (runCheckM action mods names (fst <$> predefined) predefinedClasses))
+   pure { result, modules: Map.mapMaybe _.mod checked, classes }
+
+-- Names of modules with source under source roots, and of their containing modules
+moduleNames :: FileCxt -> Set ModuleName
+moduleNames (FileCxt { fluidSrcPaths, manifests }) = Set.fromFoldable (qs >>= \q -> q : parents q)
+   where
+   qs = List.fromFoldable (fluidSrcPaths >>= \root -> Set.toUnfoldable (manifest root manifests))
+      # mapMaybe (modulePath >=> split (Pattern "/") >>> NEL.fromFoldable)
+
+-- Module q checked as module, not program, with modules it imports.
+prepModule
+   :: forall m
+    . MonadLoad m
+   => ModuleName
+   -> ExceptT ParseFailure m { modules :: Map ModuleName Module, classes :: ClassTable }
+prepModule q = prepModules (S.Import q Nothing : Nil) (checkModule q) <#> \{ modules, classes } -> { modules, classes }
+
+parseModules :: forall m. MonadLoad m => List S.Import -> ExceptT ParseFailure m (Map ModuleName S.Module)
 parseModules imports = do
-   deps <- traverse (importDeps mainModule) imports
-   let roots = predefined <> (deps >>= _.load)
-   depGraph × mods <- collectModules Set.empty Map.empty Map.empty roots
-   orThrow (checkAcyclic depGraph (deps >>= _.edges))
-   -- prefix-closed: a package with no source file of its own is an empty module
+   deps <- lift (traverse (importDeps mainModule) imports)
+   let roots = implicit <> (deps >>= _.load)
+   moduleDeps × mods <- collectModules Set.empty Map.empty Map.empty roots
+   lift (orThrow (checkAcyclic moduleDeps (deps >>= _.edges)))
+   -- every containing module of loaded module present, and empty if without source file
    let ancestors = Set.fromFoldable ((Set.toUnfoldable (Map.keys mods) :: List ModuleName) >>= parents)
-   pure (mods `Map.union` constMap (S.Module Nil Nil) ancestors)
+   pure (mapWithKey (\q (S.Module ιs s) -> S.Module ιs (named q s)) (mods `Map.union` constMap (S.Module Nil S.Pass) ancestors))
 
    where
-
    collectModules
       :: Set ModuleName
       -> DependencyGraph
-      -> Map ModuleName (Raw S.Module)
+      -> Map ModuleName S.Module
       -> List ModuleName
-      -> m (DependencyGraph × Map ModuleName (Raw S.Module))
-   collectModules visited depGraph mods pending = case pending of
-      Nil -> pure $ (depGraph × mods)
-      mod : rest ->
-         if Set.member mod visited then
-            collectModules visited depGraph mods rest
-         else do
-            mod' × edges × toLoad <- parseAndCollect mod
-            collectModules
-               (Set.insert mod visited)
-               (Map.insert mod edges depGraph)
-               (Map.insert mod mod' mods)
-               (toLoad <> rest)
+      -> ExceptT ParseFailure m (DependencyGraph × Map ModuleName S.Module)
+   collectModules visited moduleDeps mods pending = case pending of
+      Nil -> pure $ (moduleDeps × mods)
+      mod : rest
+         | Set.member mod visited -> collectModules visited moduleDeps mods rest
+         | Map.member mod predefined -> do
+              shadowed <- lift (isModule mod)
+              when shadowed $ lift $ throw $ "Predefined module cannot have a source file: " <> quoted (dottedName mod)
+              collectModules (Set.insert mod visited) moduleDeps mods rest
+         | otherwise -> do
+              mod' × edges × toLoad <- parseAndCollect mod
+              collectModules
+                 (Set.insert mod visited)
+                 (Map.insert mod edges moduleDeps)
+                 (Map.insert mod mod' mods)
+                 (toLoad <> rest)
 
-   parseAndCollect :: ModuleName -> m (Raw S.Module × List ModuleName × List ModuleName)
+   parseAndCollect :: ModuleName -> ExceptT ParseFailure m (S.Module × List ModuleName × List ModuleName)
    parseAndCollect path = do
       FileCxt { fluidSrcPaths } <- ask
-      let file = File (pathName path <> fluidExtension)
-      loadFileMaybe fluidSrcPaths file >>= case _ of
+      lift (loadModuleSource fluidSrcPaths (pathName path)) >>= case _ of
          Just src -> do
-            mod × _ <- throwLeft <#> withMsg ("Loading module " <> dottedName path) $ parseModule src
-            deps <- case mod of S.Module is _ -> traverse (importDeps path) is
-            let edges = deps >>= _.edges
-            let toLoad = predefinedDeps path <> (deps >>= _.load)
-            pure $ mod × edges × toLoad
-         Nothing -> hasDirectory fluidSrcPaths (File (pathName path)) >>= case _ of
-            true -> pure (S.Module Nil Nil × Nil × Nil)
-            false -> loadFile fluidSrcPaths file *> pure (S.Module Nil Nil × Nil × Nil)
+            mod × _ <- except (lmap (\msg -> ParseFailure (msg <> "\nLoading module " <> quoted (dottedName path))) (parseModule src))
+            deps <- lift case mod of S.Module ιs _ -> traverse (importDeps path) ιs
+            pure (mod × (deps >>= _.edges) × (implicitFor path <> (deps >>= _.load)))
+         Nothing -> lift (hasDirectory fluidSrcPaths (File (pathName path))) >>= case _ of
+            true -> pure (S.Module Nil S.Pass × Nil × Nil)
+            false -> lift (throw ("No module named " <> quoted (dottedName path)))

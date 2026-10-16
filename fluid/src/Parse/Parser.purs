@@ -19,9 +19,9 @@ import Parsing.Combinators (between, sepBy, sepBy1, sepEndBy, skipMany, try, (<?
 import Parsing.Combinators.Array (many)
 import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy, string)
-import Parsing.String.Basic (alphaNum, letter, lower, upper)
+import Parsing.String.Basic (alphaNum, letter)
 import Parsing.Token (oneOf)
-import Util (type (×), (×))
+import Util (type (×), quoted, (×))
 
 opChars :: Array Char
 opChars =
@@ -58,7 +58,45 @@ instance Parseable Char where
    parse = char
 
 keywords :: Array String
-keywords = [ "assert", "case", "class", "def", "else", "for", "from", "if", "import", "in", "lambda", "match", "pass", "return" ]
+keywords =
+   [ "False"
+   , "None"
+   , "True"
+   , "and"
+   , "as"
+   , "assert"
+   , "async"
+   , "await"
+   , "break"
+   , "case"
+   , "class"
+   , "continue"
+   , "def"
+   , "del"
+   , "elif"
+   , "else"
+   , "except"
+   , "finally"
+   , "for"
+   , "from"
+   , "global"
+   , "if"
+   , "import"
+   , "in"
+   , "is"
+   , "lambda"
+   , "match"
+   , "nonlocal"
+   , "not"
+   , "or"
+   , "pass"
+   , "raise"
+   , "return"
+   , "try"
+   , "while"
+   , "with"
+   , "yield"
+   ]
 
 context :: forall a. String -> Parser a -> Parser a
 context s p = do
@@ -96,14 +134,11 @@ identifier start letter = lexeme $ do
 unreserved :: Parser String -> Parser String
 unreserved p = do
    name <- p
-   if name `elem` keywords then fail $ "Reserved identifier: " <> name
+   if name `elem` keywords then fail $ "Reserved identifier: " <> quoted name
    else pure name
 
 variable :: Parser String
-variable = unreserved $ identifier (lower <|> char '_') (alphaNum <|> char '_')
-
-constructor :: Parser String
-constructor = unreserved $ identifier upper (alphaNum <|> char '_')
+variable = unreserved $ identifier (letter <|> char '_') (alphaNum <|> char '_')
 
 reserved :: String -> Parser Unit
 reserved expected = try do

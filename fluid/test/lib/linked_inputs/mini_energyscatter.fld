@@ -1,0 +1,49 @@
+from dataclasses import dataclass
+from dataset.energy_data import renewables, nonRenewables, Renewable, NonRenewable
+
+from fluid.view import AxisLabels, Point, ScatterPlot
+from fluid.prelude import fsum, map
+
+@dataclass
+class Energy:
+  name: str
+  totalCap: float
+  nonRenewables: float
+  renCapFactor: float
+
+def sumNonRenewables(x: NonRenewable) -> float:
+  return ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
+
+def country_check(name: str, x: Renewable | NonRenewable) -> bool:
+  return name == x.country
+
+def year_check(year: int, x: Renewable | NonRenewable) -> bool:
+  return year == x.year
+
+def energy(year: int, c_names: list[str]) -> list[Energy]:
+  rens2018: list[Renewable] = [r for r in renewables if year_check(year, r)]
+  nonrens2018: list[NonRenewable] = [r for r in nonRenewables if year_check(year, r)]
+
+  def energy_per_country(c_name: str) -> Energy:
+    filteredRen: list[Renewable] = [r for r in rens2018 if country_check(c_name, r)]
+    non_ren_x: NonRenewable = [r for r in nonrens2018 if country_check(c_name, r)][0]
+    rensOut: float = fsum([x.output for x in filteredRen])
+    rensCap: float = fsum([x.capacity for x in filteredRen])
+    nonRensCap: float = sumNonRenewables(non_ren_x)
+    return Energy(
+      name=c_name,
+      totalCap=rensCap + nonRensCap,
+      nonRenewables=nonRensCap,
+      renCapFactor=(rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
+    )
+
+  return map(energy_per_country, c_names)
+
+ScatterPlot(
+  caption="Clean energy efficiency against proportion of renewable energy cap",
+  points=[Point(
+    x=country.nonRenewables / country.totalCap,
+    y=country.renCapFactor
+  ) for country in energy(2018, ["USA"])],
+  labels=AxisLabels(x="Renewables/TotalEnergyCap", y="Clean Capacity Factor")
+)

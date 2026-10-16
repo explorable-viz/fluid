@@ -1,0 +1,38 @@
+from dataset.renewables import renewables, Renewable
+
+from fluid.view import BarChart, Dimensions, LineChart, MultiView, LinePlot, Point, Segment, StackedBar, TickLabels, Default
+from fluid.prelude import fsum, zip
+
+def totalFor(c: str, rows: list[Renewable]) -> float:
+  return fsum([row.output for row in rows if row.country == c])
+
+data2015: list[Renewable] = [row for row in renewables if row.year == 2015]
+countryData: list[StackedBar] = [ StackedBar(x=c, segments=[Segment(y="output", z=totalFor(c, data2015))])
+    for c in [ "China", "USA", "Germany" ]
+  ]
+
+def series(type_: str, country: str) -> list[Point]:
+  return [ Point(x=row.year, y=row.output)
+    for year in range(2013, 2019) for row in renewables
+    if row.year == year if row.energyType == type_ if row.country == country
+  ]
+
+MultiView([
+  BarChart(
+    caption="Total output by country",
+    size=Dimensions(width=275, height=185),
+    tickLabels=TickLabels(x=Default(), y=Default()),
+    stackedBars=countryData,
+    legend=True
+  ),
+  LineChart(
+    tickLabels=TickLabels(x=Default(), y=Default()),
+    size=Dimensions(width=330, height=285),
+    caption="Output of USA relative to China",
+    plots=
+      [ LinePlot(name=type_, points=plot)
+        for type_ in [ "Bio", "Hydro", "Solar", "Wind" ]
+        for plot in [[Point(x=p1.x, y=p1.y / p2.y) for (p1, p2) in zip(series(type_, "USA"), series(type_, "China"))]]
+      ]
+  )
+])

@@ -1,0 +1,19 @@
+from fluid.matrix import zero, wrap, convolve
+from linked_outputs.convolution_data import data
+
+filter1_: list[list[int]] = [
+    [0, 0, 0],
+    [3, 7, 1],
+    [0, 0, 0]
+  ]
+filter1: Matrix[int] = [| filter1_[i][j] for (i, j) in (3, 3) |]
+image1: Matrix[int] = [| data[i][j] for (i, j) in (5, 5) |]
+filter2_: list[list[int]] = [
+    [0, 2, 0],
+    [0, 7, 0],
+    [0, 5, 0]
+  ]
+filter2: Matrix[int] = [| filter2_[i][j] for (i, j) in (3, 3) |]
+image2: Matrix[int] = [| data[i][j] for (i, j) in (5, 5) |]
+
+convolve(image1, filter1, wrap), convolve(image2, filter2, zero)

@@ -1,0 +1,2 @@
+import attr_lib
+x1: int = attr_lib.x

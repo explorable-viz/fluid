@@ -1,0 +1,3 @@
+from fluid.prelude import filter
+
+filter(lambda x: 5 < x, [8, 4, 7, 3])

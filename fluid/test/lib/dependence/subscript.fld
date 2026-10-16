@@ -1,0 +1,4 @@
+i: int = @doc("i") 1
+xs: list[int] = @doc("xs") [3, 4, 5]
+
+xs[i]

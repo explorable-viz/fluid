@@ -1,0 +1,32 @@
+from energy_data import NonRenewable, Renewable, nonRenewables, renewables
+
+from fluid.view import AxisLabels, Point, ScatterPlot
+from fluid.prelude import fsum, map
+
+def isCountry(name: str, x: Renewable | NonRenewable) -> bool:
+  return name == x.country
+def isYear(year: int, x: Renewable | NonRenewable) -> bool:
+  return year == x.year
+
+def plot(year: int, countries: list[str]) -> list[Point]:
+  rens: list[Renewable] = [r for r in renewables if isYear(year, r)]
+  nonRens: list[NonRenewable] = [r for r in nonRenewables if isYear(year, r)]
+
+  def plotCountry(country: str) -> Point:
+    rens_: list[Renewable] = [r for r in rens if isCountry(country, r)]
+    rensOut: float = fsum([x.output for x in rens_])
+    rensCap: float = fsum([x.capacity for x in rens_])
+    x: NonRenewable = [r for r in nonRens if isCountry(country, r)][0]
+    nonRensCap: float = (x.nuclearCap + x.petrolCap + x.gasCap) + x.coalCap
+    return Point(
+      x=rensCap / (rensCap + nonRensCap),
+      y=(rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
+    )
+
+  return map(plotCountry, countries)
+
+ScatterPlot(
+  caption="Clean energy efficiency vs. proportion of renewable energy capacity",
+  points=plot(2018, [ "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA" ]),
+  labels=AxisLabels(x="Renewables/TotalEnergyCap", y="Clean Capacity Factor")
+)

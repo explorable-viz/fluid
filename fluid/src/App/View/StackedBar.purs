@@ -3,7 +3,7 @@ module App.View.StackedBar where
 import Prelude
 
 import App.Util (Dimensions, Selectable, classes, contents)
-import App.Util.Selector (ConstrArg, dictVal)
+import App.Util.Selector (ObjArg)
 import App.View.Segment (Scales, Segment(..), SegmentContext)
 import App.View.Util (class Viewable, Select, createElement, setSelection)
 import App.View.Util.D3 (ElementType(..), create, selectAll)
@@ -13,7 +13,8 @@ import Data.Array.NonEmpty (NonEmptyArray, cons', init, toArray)
 import Data.Foldable (sum)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Newtype (class Newtype)
-import DataType (f_segments)
+
+import Types.Defs (cStackedBar, f_segments)
 import Effect (Effect)
 import Util ((!))
 
@@ -41,14 +42,14 @@ instance Viewable StackedBar StackedBarContext where
          createElement (segmentContext context stackedBar y_index) segment g
       pure g
 
-   setSelection :: ConstrArg -> StackedBarContext -> StackedBar -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ObjArg -> StackedBarContext -> StackedBar -> Select -> D3.Selection -> Effect Unit
    setSelection arg context (stackedBar@(StackedBar { segments })) select root = do
       -- Might be more robust and more consistent with createRootElement to iterate over segments instead
       segments' <- root # selectAll ".bar" -- TODO: .bar -> .segment
       forWithIndex_ segments' \y_index segment ->
          setSelection arg (segmentContext context stackedBar y_index)
             (segments ! y_index)
-            (select <<< dictVal f_segments)
+            (select <<< arg cStackedBar f_segments)
             segment
 
 segmentContext :: StackedBarContext -> StackedBar -> Int -> SegmentContext

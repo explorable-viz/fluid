@@ -1,0 +1,10 @@
+a: int = @doc("a") 1
+b: int = @doc("b") 2
+c: bool = @doc("c") False
+
+def f(c: bool, a: int, b: int) -> int:
+   if c:
+      return a
+   return b
+
+f(c, a, b)

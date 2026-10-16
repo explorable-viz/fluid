@@ -1,0 +1,7 @@
+xs: list[int] = @doc("xs") [1, 2, 3]
+sep: int = @doc("sep") 0
+
+def intersperse[A](xs: list[A], sep: A) -> list[A]:
+  return [y for i in range(0, len(xs)) for y in ([xs[i]] if i == 0 else [sep, xs[i]])]
+
+intersperse(xs, sep)

@@ -1,85 +1,90 @@
 module Fluid where
 
-import Prelude hiding (between)
+import Prelude
 
-import Bind (Bind, (↦))
-import Data.Array (filter)
+import Control.Monad.Except (runExceptT)
+import Control.Monad.Trans.Class (lift)
+import Data.Argonaut.Core (stringifyWithIndent)
+import Data.Argonaut.Encode (encodeJson)
+import Data.Array as Array
+import Data.Foldable (for_)
+import Data.List.Types (NonEmptyList)
+import Data.Set as Set
 import Data.Either (Either(..))
-import Data.Map as Map
-import Data.Maybe (Maybe(..))
-import Data.String (Pattern(..), split, stripPrefix, stripSuffix, trim)
-import Data.String as String
+import Data.List (List(..), (:))
+import Data.List.NonEmpty as NEL
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.String (Pattern(..), joinWith, split, stripPrefix)
 import Data.Tuple (fst)
 import Effect (Effect)
-import Effect.Aff (Aff, Error, runAff_)
+import Effect.Aff (Aff, Error, message, runAff_, try)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
-import Eval (graphEval)
-import File (File(..), FileCxt(..), Folder(..), loadFile)
-import Lattice (erase)
-import Module (prepConfig)
-import Module.Node (runNodeT)
-import Options.Applicative (Parser, command, execParser, fullDesc, header, help, helper, long, progDesc, short, strOption, subparser, switch, (<**>))
+import Eval (evalProgram)
+import File (File(..), Folder(..), emptyFileCxt, loadFile, loadManifest, modulePath, withClasses, withRoots)
+import Classes (ClassTable)
+import Data.Map (Map)
+import Module (Config, ParseFailure(..), loadTopLevel, prepConfig, prepModule)
+import Module.Defs (ModuleName)
+import Module.Node (NodeT, runNodeT)
+import Node.Encoding (Encoding(..))
+import Node.FS.Aff (writeTextFile)
+import Node.Process (exit')
+import Options.Applicative (Parser, command, execParser, fullDesc, header, help, helper, long, metavar, progDesc, short, some, strArgument, strOption, subparser, switch, (<**>))
 import Options.Applicative.Builder (info)
-import Parse (parseProgram)
+import Parse (parseModule, parseProgram)
 import Pretty (prettyP)
-import Primitive.Defs (primitives)
-import Util (Endo)
-import Val (Val)
+import Expr (Module) as E
+import SExpr (Import(..)) as S
+import Util (type (×), orElse, (×))
+import DepGraph (valAt)
 
-data EvalArgs = EvalArgs
+type FileArgs =
    { local :: Boolean
    , fileName :: String
-   , fluidSrcPath :: Folder
+   , fluidSrcPaths :: Array Folder
+   , asModule :: Boolean -- as module rather than program
    }
 
-data Command = Evaluate EvalArgs | Parse_ EvalArgs
+data Command = Parse_ FileArgs | Check FileArgs | Evaluate FileArgs | Manifest (NonEmptyList String)
 
-between :: forall a. Pattern -> Pattern -> Endo (String -> Either String a)
-between p1 p2 f s =
-   case (stripPrefix p1) s >>= stripSuffix p2 of
-      Just rest -> f rest
-      Nothing -> Left ("Expected " <> show p1 <> "..." <> show p2 <> " but got ...")
+parseFileArgs :: Parser FileArgs
+parseFileArgs = ado
+   local <- switch (long "local" <> short 'l' <> help "Are you running Fluid as a library?")
+   fileName <- strOption (long "file" <> short 'f' <> help "The file")
+   fluidSrcPaths <- Array.fromFoldable <$> some (Folder <$> strOption (long "fluid-src-path" <> short 'p' <> help "A path containing program or library files"))
+   asModule <- switch (long "module" <> short 'm' <> help "Treat the file as a module rather than a program")
+   in { local, fileName, fluidSrcPaths, asModule }
 
-parsePair :: String -> Either String (Bind String)
-parsePair = between (Pattern "(") (Pattern ")") $ \s ->
-   case split (Pattern ",") s of
-      [ k, v ] -> Right (trim k ↦ trim v)
-      _ -> Left $ "Expected a pair but got " <> s
-
-parseImports' :: Pattern -> Pattern -> (String -> Either String (Array String))
-parseImports' open close = between open close $ \s -> do
-   Right (map trim $ filter (not <<< String.null) $ split (Pattern ",") s)
-
-parseLocal :: Parser Boolean
-parseLocal = switch (long "local" <> short 'l' <> help "Are you running fluid as a library?")
-
-parseEvaluate :: Parser EvalArgs
-parseEvaluate = ado
-   local <- parseLocal
-   fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
-   fluidSrcPath <- Folder <$> strOption (long "fluid-src-path" <> short 'p' <> help "The path containing the program files")
-   in EvalArgs { local, fileName, fluidSrcPath }
-
-commands :: { evaluate :: Parser Command, parse :: Parser Command }
-commands =
-   { evaluate: Evaluate <$> parseEvaluate
-   , parse: Parse_ <$> parseEvaluate
-   }
+parseManifest :: Parser (NonEmptyList String)
+parseManifest = some (strArgument (metavar "DIR" <> help "Directory to write manifests under"))
 
 commandParser :: Parser Command
 commandParser = subparser
-   ( command "evaluate" (info commands.evaluate (progDesc "Evaluate a file"))
-        <> command "parse" (info commands.parse (progDesc "Parse a file"))
+   ( command "parse" (info (Parse_ <$> parseFileArgs) (progDesc "Parse a file and print it back"))
+        <> command "check" (info (Check <$> parseFileArgs) (progDesc "Check a file statically, with the exit codes of a PurePy checker"))
+        <> command "evaluate" (info (Evaluate <$> parseFileArgs) (progDesc "Check and evaluate a file, printing its value; exit 1 on failure"))
+        <> command "manifest" (info (Manifest <$> parseManifest) (progDesc "Write manifest.json into each directory with .fld files beneath it"))
    )
 
 dispatchCommand ∷ Command → Aff Unit
-dispatchCommand (Evaluate p) = do
-   v <- evaluate p
-   log (prettyP v)
-dispatchCommand (Parse_ p) = do
-   r <- parse p
-   log r
+dispatchCommand (Parse_ args) = report args do
+   fluidSrc <- loadFile (srcPaths args.local args.fluidSrcPaths) (File args.fileName)
+   pure case (if args.asModule then prettyP <<< fst <$> parseModule fluidSrc else prettyP <<< fst <$> parseProgram fluidSrc) of
+      Left err -> exitCode.prohibited × Just err
+      Right src -> exitCode.accepted × Just src
+dispatchCommand (Check args) = report args (stages args (const (pure Nothing)))
+dispatchCommand (Evaluate args) = report args $ stages args case _ of
+   AsProgram { e, inputs, classes } -> evalProgram inputs classes e <#> \{ g, root } -> Just (prettyP (valAt g root))
+   AsModule q { modules, classes } -> withClasses classes (loadTopLevel modules (S.Import q Nothing : Nil)) $> Nothing
+dispatchCommand (Manifest dirs) = for_ dirs (writeManifests <<< Folder)
+
+-- Print message, if any, and exit with code.
+report :: FileArgs -> NodeT Aff (Int × Maybe String) -> Aff Unit
+report { local, fluidSrcPaths } action = do
+   code × msg <- runNodeT emptyFileCxt $ withRoots (srcPaths local fluidSrcPaths) action
+   for_ msg log
+   liftEffect (exit' code)
 
 main :: Effect Unit
 main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
@@ -88,26 +93,55 @@ main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
 
 callback :: Either Error Unit -> Effect Unit
 callback = case _ of
-   Left err -> logShow err
+   Left err -> logShow err *> exit' 1
    Right _ -> pure unit
 
-fluidLibraryPath :: String
-fluidLibraryPath = "node_modules/@fluid-org/fluid"
+-- Add installed library when running as library.
+srcPaths :: Boolean -> Array Folder -> Array Folder
+srcPaths local fluidSrcPaths = fluidSrcPaths <> if local then [ Folder "node_modules/@fluid-org/fluid/dist/fluid/lib" ] else []
 
-evaluate :: EvalArgs -> Aff (Val Unit)
-evaluate (EvalArgs { local, fileName, fluidSrcPath }) = do
-   let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
-   runNodeT (FileCxt { fluidSrcPaths, classes: Map.empty }) $ do
-      fluidSrc <- loadFile fluidSrcPaths (File fileName)
-      { e, gconfig } <- prepConfig primitives fluidSrc
-      { outα } <- graphEval gconfig e
-      pure (erase outα)
+-- Manifest for dir and for each subdirectory with .fld files beneath it
+writeManifests :: Folder -> Aff Unit
+writeManifests root@(Folder dir) = do
+   files <- runNodeT emptyFileCxt (loadManifest root)
+   for_ (Set.insert Nothing (Set.fromFoldable (Set.toUnfoldable files >>= directories))) \sub -> do
+      let
+         strip (File path) = maybe (Just path) (\sub' -> stripPrefix (Pattern (sub' <> "/")) path) sub
+         paths = Array.mapMaybe strip (Set.toUnfoldable files)
+      writeTextFile UTF8 (dir <> maybe "" ("/" <> _) sub <> "/manifest.json") (stringifyWithIndent 2 (encodeJson paths) <> "\n")
+   where
+   -- proper prefixes of a path
+   directories :: File -> Array (Maybe String)
+   directories (File path) = Array.range 1 (Array.length segments) # Array.dropEnd 1 <#> \n -> Just (joinWith "/" (Array.take n segments))
+      where
+      segments = split (Pattern "/") path
 
-parse :: EvalArgs -> Aff String
-parse (EvalArgs { local, fileName, fluidSrcPath }) = do
-   let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
-   runNodeT (FileCxt { fluidSrcPaths, classes: Map.empty }) $ do
-      fluidSrc <- loadFile fluidSrcPaths (File fileName)
-      case (parseProgram fluidSrc) of
-         Left err -> pure err
-         Right expr -> pure $ prettyP (fst expr)
+-- Exit codes required of checker by PurePy test runner.
+exitCode :: { accepted :: Int, prohibited :: Int, illFormed :: Int }
+exitCode = { accepted: 0, prohibited: 1, illFormed: 3 }
+
+-- File parsed and checked as program or module.
+data Prepared = AsProgram Config | AsModule ModuleName { modules :: Map ModuleName E.Module, classes :: ClassTable }
+
+-- Parse and check, then run; stop at first failure with its code and first line of its message, or finish with
+-- the run's message. A run failure exits 1.
+stages :: FileArgs -> (Prepared -> NodeT Aff (Maybe String)) -> NodeT Aff (Int × Maybe String)
+stages { local, fileName, fluidSrcPaths, asModule } run = do
+   fluidSrc <- loadFile (srcPaths local fluidSrcPaths) (File fileName)
+   try (runExceptT (prepare fluidSrc)) >>= case _ of
+      Left err -> rejected exitCode.illFormed (message err)
+      Right (Left (ParseFailure msg)) -> rejected exitCode.prohibited msg
+      Right (Right prepared) -> try (run prepared) >>= case _ of
+         Left err -> rejected 1 (message err)
+         Right msg -> pure (exitCode.accepted × msg)
+   where
+   prepare fluidSrc
+      | asModule = lift moduleName >>= \q -> AsModule q <$> prepModule q
+      | otherwise = AsProgram <$> prepConfig fluidSrc
+
+   -- module name of file, relative to its root
+   moduleName = do
+      path <- modulePath (File fileName) # orElse ("Not a source file: " <> fileName)
+      NEL.fromFoldable (split (Pattern "/") path) # orElse "Empty module name"
+
+   rejected code msg = pure (code × Just (fromMaybe msg (Array.head (split (Pattern "\n") msg))))

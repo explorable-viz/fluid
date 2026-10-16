@@ -1,0 +1,2 @@
+import cyc_a
+b: int = 1

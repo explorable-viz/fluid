@@ -7,11 +7,12 @@ import App.View.Util.D3 (ElementType(..), create, rotate, selectAll, setAttrs, s
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.List (List(..))
-import DataType (cDefault, cRotated)
+import Types.Defs (cDefault, cRotated)
 import Effect (Effect)
-import Primitive (ToFrom, typeError)
+import Primitive (ToFrom, typeMismatch)
 import Val (BaseVal(..))
 
 data Orientation
@@ -28,13 +29,13 @@ derive instance Eq Orientation
 orientation :: forall a. ToFrom Orientation a
 orientation =
    { pack: case _ of
-        Default -> Constr cDefault Nil
-        Rotated -> Constr cRotated Nil
+        Default -> Obj cDefault Nil
+        Rotated -> Obj cRotated Nil
    , unpack: case _ of
-        Constr c Nil
-           | c == cDefault -> Default
-           | c == cRotated -> Rotated
-        v -> typeError v "Orientation"
+        Obj c Nil
+           | c == cDefault -> Right Default
+           | c == cRotated -> Right Rotated
+        v -> Left (typeMismatch v "Orientation")
    }
 
 create_xAxis :: forall a r. D3.Selection -> { x :: a -> Number | r } -> NonEmptyArray a -> Int -> Orientation -> Effect D3.Selection

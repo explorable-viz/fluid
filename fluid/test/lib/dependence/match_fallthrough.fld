@@ -1,0 +1,21 @@
+from dataclasses import dataclass
+
+@dataclass
+class Foo:
+   pass
+
+@dataclass
+class Bar:
+   pass
+
+v: Foo | Bar = @doc("v") Bar()
+w: int = @doc("w") 5
+
+x: int
+match v:
+   case Foo():
+      x = 1
+   case _:
+      x = w
+
+x

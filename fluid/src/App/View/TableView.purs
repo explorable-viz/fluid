@@ -3,21 +3,22 @@ module App.View.TableView where
 import Prelude hiding (absurd)
 
 import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor, selectionEventData')
-import App.Util.Selector (ConstrArg, ViewSelSetter, dictVal, listElement)
+import App.Util.Selector (ObjArg, ViewSelSetter, dictVal, listElement)
 import App.View.Util (class Viewable, Filter(..), Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
-import Bind ((↦))
+import Bind (Name, (↦))
 import Data.Array (any, elem, filter, partition, sort, transpose, (..))
 import Data.Array.NonEmpty (head)
 import Data.FoldableWithIndex (forWithIndex_)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
 import Data.Traversable (for)
 import Data.Tuple (snd, uncurry)
 import Dict (Dict)
 import Effect (Effect, foreachE)
+import Literal (Literal(Int, Float, Str))
 import Util (type (×), absurd, error, length, nonEmpty, (!), (×))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
@@ -28,6 +29,7 @@ type Record' = Array (Val (SelStates 𝕊)) -- somewhat anomalous, as elsewhere 
 newtype TableView = TableView
    { title :: String
    , rowFilter :: Filter
+   , className :: Maybe Name -- rows are instances of this class, or dictionaries
    , colNames :: Array String
    , rows :: Array Record' -- non-empty?
    }
@@ -48,7 +50,7 @@ cell_selClassesFor colName s
    | otherwise = selClassesFor s
 
 visible :: Filter -> Val (SelStates 𝕊) -> Boolean
-visible filter (Val α _ _) = visible' filter α
+visible filter (Val α _) = visible' filter α
    where
    visible' Everything = const true
    visible' Interactive = not isInert
@@ -58,10 +60,10 @@ visible filter (Val α _ _) = visible' filter α
    isNone a = getPersistent a == None && getTransient a == None
 
 prim :: Val (SelStates 𝕊) -> String
-prim (Val _ _ v) = v # case _ of
-   Int n -> show n
-   Float n -> toStringWith (fixed 2) n
-   Str s -> s
+prim (Val _ v) = v # case _ of
+   Lit (Int n) -> show n
+   Lit (Float n) -> toStringWith (fixed 2) n
+   Lit (Str s) -> s
    _ -> error $ "TableView only supports primitive values."
 
 data BorderVis = Transparent | Faint
@@ -76,15 +78,15 @@ highlightedBorder _ = "1px solid blue"
 instance Viewable TableView Unit where
    isLeaf = const false
 
-   setSelection :: ConstrArg -> Unit -> TableView -> Select -> D3.Selection -> Effect Unit
-   setSelection _ _ (TableView { title, colNames, rows, rowFilter }) redraw rootElement = do
+   setSelection :: ObjArg -> Unit -> TableView -> Select -> D3.Selection -> Effect Unit
+   setSelection arg _ (TableView { title, className, colNames, rows, rowFilter }) redraw rootElement = do
       cells <- rootElement # selectAll ".table-cell"
       foreachE cells \cell -> do
          { i, j, colName } :: CellIndex <- datum cell
          if i == -1 || j == -1 then pure unit
          else do
             cell # classed selClasses false
-               >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
+               >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α)) true
                >>= registerMouseListeners (redraw <<< uncurry tableViewSelSetter <<< selectionEventData')
          void $ cell # setStyles
             [ "border-right" ↦ border Faint (hasRightBorder i j) (isNothing $ column_visibleSucc j)
@@ -184,10 +186,10 @@ instance Viewable TableView Unit where
       isCellTransient :: Int -> Int -> Boolean
       isCellTransient i j
          | i == -1 || j == -1 = false
-         | otherwise = isTransient <<< (\(Val α _ _) -> α) $ rows ! i ! j
+         | otherwise = isTransient <<< (\(Val α _) -> α) $ rows ! i ! j
 
       tableViewSelSetter :: ViewSelSetter CellIndex
-      tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
+      tableViewSelSetter { i, colName } = listElement i <<< maybe (dictVal colName) (\c -> arg c colName) className
 
    createElement :: Unit -> TableView -> D3.Selection -> Effect D3.Selection
    createElement _ (TableView { colNames, rowFilter, rows }) parent = do

@@ -2,9 +2,9 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, dict, get_intOrNumber)
+import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, dict, unpackIntOrNumber)
 import App.View.BarChart (BarChart(..))
-import App.View.DocView (DocView(..))
+import App.View.ViewWithDoc (ViewWithDoc)
 import App.View.LineChart (LineChart(..), LinePlot(..))
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
@@ -14,182 +14,201 @@ import App.View.Segment (Segment(..))
 import App.View.StackedBar (StackedBar(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, headers)
 import App.View.Text (Text(..))
-import App.View.Util (Filter(..), View, Options, pack)
+import App.View.Util (Filter(..), View, pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Data.Array as A
-import Data.Array.NonEmpty (NonEmptyArray, cons')
-import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Tuple (snd)
-import DataType (FieldIndex, cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_fragments, f_height, f_label, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_text, f_tickLabels, f_value, f_views, f_width, f_x, f_y, f_z)
+import Data.Array.NonEmpty (NonEmptyArray)
+import Bind (Name, Var)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.List (List)
+import Data.Tuple (fst, snd)
+
+import Types.Defs (cAxisLabels, cBarChart, cDimensions, cLineChart, cLinePlot, cLink, cMultiView, cParagraph, cPoint, cScatterPlot, cSegment, cStackedBar, cText, cTickLabels, f_caption, f_fragments, f_height, f_label, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_text, f_tickLabels, f_value, f_views, f_width, f_x, f_y, f_z)
 import Dict (Dict)
 import Link (Link(..))
+import Literal (Literal(..))
+import Pretty (prettyP)
 import Primitive (boolean, int, string, typeError)
-import Primitive (unpack) as P
-import Util (type (×), error, (!), (×))
-import Util.Map (get, mapWithKey)
-import Val (BaseVal(..), DictRep(..), Val(..))
+import Primitive (unpack') as P
+import Util (type (×), absurd, error, head, nonEmpty, (×))
+import Util.Map (mapWithKey)
+import Val (BaseVal(..), DictRep(..), Val(..), ValWithDoc(..), attr)
+
+type ViewOptions = { rowFilter :: Maybe Filter }
 
 -- TODO: merge with 'view' below.
-view' :: Partial => FieldIndex -> Options -> String -> Val (SelStates 𝕊) -> View
-view' fieldIndex options title v@(Val _ v_opt _) =
-   pack $ DocView { doc: viewParagraph <$> v_opt, view: view fieldIndex options title v }
-   where
-   viewParagraph v'@(Val _ _ (Constr c _)) | c == cParagraph =
-      reflectParagraph fieldIndex options v'
+viewWithDoc :: ViewOptions -> String -> ValWithDoc (SelStates 𝕊) -> ViewWithDoc
+viewWithDoc options title (ValWithDoc { val: v, doc }) =
+   { doc: reflect options <$> doc :: Maybe Paragraph, view: view options title v }
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
--- TODO: given the typeError clause, Partial no longer needed
-view :: Partial => FieldIndex -> Options -> String -> Val (SelStates 𝕊) -> View
-view fieldIndex options title v@(Val α _ u') = case u' of
-   Int n -> pack (Text (show n × α))
-   Float n -> pack (Text (show n × α))
-   Str str -> pack (Text (str × α))
-   Constr c _
-      | c == cText -> pack (reflectText fieldIndex v)
-      | c == cMultiView -> pack (reflectMultiView fieldIndex options v)
-      | c == cParagraph -> pack (reflectParagraph fieldIndex options v)
-      | c == cLink -> pack (reflectLink fieldIndex v)
-      | c == cBarChart -> pack (reflectBarChart fieldIndex v)
-      | c == cScatterPlot -> pack (reflectScatterPlot fieldIndex v)
-      | c == cLineChart -> pack (reflectLineChart fieldIndex v)
-      | c == cNil || c == cCons ->
-           if tableView then
-              let
-                 rowFilter = fromMaybe Interactive options.rowFilter
-                 records = dict identity <$> vs
-                 colNames = headers records
-                 rows = arrayDictToArray2 colNames records <#> map snd
-              in
-                 pack (TableView { title, rowFilter, colNames, rows })
-           else pack (MultiView $ view fieldIndex options "" <$> vs)
-           where
-           tableView = case A.uncons vs of
-              Just { head: Val _ _ (Dictionary _) } -> true
-              Just { head: Val _ _ _ } -> false
-              Nothing -> true
-           vs = from v :: Array (Val (SelStates 𝕊))
-   Matrix r ->
-      pack (MatrixView { title, matrix: matrixRep r })
-   Dictionary (DictRep d) ->
-      pack (viewDict d)
+view :: ViewOptions -> String -> Val (SelStates 𝕊) -> View
+view options title v@(Val α u') = case u' of
+   Lit (Str str) -> pack (Text (str × α))
+   Lit ℓ -> pack (Text (prettyP ℓ × α))
+   Obj _ _ -> case classView options v of
+      Just view' -> view'
+      Nothing -> typeError u' "Viewable"
+   List vs -> case head vs of
+      Just v'@(Val _ (Obj c xvs)) | isNothing (classView options v') -> instanceTable c (fst <$> xvs) vs
+      Just (Val _ (Obj _ _)) -> pack (MultiView (view options "" <$> vs))
+      _ -> dictTable vs
+   Matrix r -> pack (MatrixView { title, matrix: matrixRep r })
+   Dictionary (DictRep d) -> pack (viewDict d)
    _ -> typeError u' "Viewable"
    where
-   viewDict :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View × View)
-   viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view fieldIndex options k v'
+   table :: Maybe Name -> Array String -> Array (Array (Val (SelStates 𝕊))) -> View
+   table className colNames rows =
+      pack (TableView { title, rowFilter: fromMaybe Interactive options.rowFilter, className, colNames, rows })
 
-reflectBarChart :: Partial => FieldIndex -> Val (SelStates 𝕊) -> BarChart
-reflectBarChart fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cBarChart -> BarChart
-      { caption: P.unpack string (us ! fieldIndex cBarChart f_caption)
-      , size: dict from (us ! fieldIndex cBarChart f_size)
-      , tickLabels: dict from (us ! fieldIndex cBarChart f_tickLabels)
-      , stackedBars: dict from <$> from (us ! fieldIndex cBarChart f_stackedBars)
-      , legend: P.unpack boolean (us ! fieldIndex cBarChart f_legend)
-      }
-   _ -> typeError u "BarChart"
+   instanceTable :: Name -> List Var -> Array (Val (SelStates 𝕊)) -> View
+   instanceTable c xs vs = table (Just c) (A.fromFoldable xs) (vs <#> fieldValues)
+      where
+      fieldValues (Val _ (Obj _ xus)) = A.fromFoldable (snd <$> xus)
+      fieldValues _ = error absurd
 
-reflectLineChart :: Partial => FieldIndex -> Val (SelStates 𝕊) -> LineChart
-reflectLineChart fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cLineChart -> LineChart
-      { size: dict from (us ! fieldIndex cLineChart f_size)
-      , tickLabels: dict from (us ! fieldIndex cLineChart f_tickLabels)
-      , caption: P.unpack string (us ! fieldIndex cLineChart f_caption)
-      , plots: reflectLinePlot fieldIndex <$> (from (us ! fieldIndex cLineChart f_plots) :: Array (Val (SelStates 𝕊)))
-      }
-   _ -> typeError u "LineChart"
+   dictTable :: Array (Val (SelStates 𝕊)) -> View
+   dictTable vs = table Nothing colNames (arrayDictToArray2 colNames records <#> map snd)
+      where
+      records = dict identity <$> vs
+      colNames = headers records
 
-reflectLinePlot :: Partial => FieldIndex -> Val (SelStates 𝕊) -> LinePlot
-reflectLinePlot fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cLinePlot -> LinePlot
-      { name: P.unpack string (us ! fieldIndex cLinePlot f_name)
-      , points: dict from <$> from (us ! fieldIndex cLinePlot f_points)
-      }
-   _ -> typeError u "LinePlot"
+   viewDict :: Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View × View)
+   viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view options k v'
 
-reflectScatterPlot :: Partial => FieldIndex -> Val (SelStates 𝕊) -> ScatterPlot
-reflectScatterPlot fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cScatterPlot -> ScatterPlot
-      { caption: P.unpack string (us ! fieldIndex cScatterPlot f_caption)
-      , points: dict from <$> from (us ! fieldIndex cScatterPlot f_points)
-      , labels: dict from (us ! fieldIndex cScatterPlot f_labels)
-      }
-   _ -> typeError u "ScatterPlot"
+classView :: ViewOptions -> Val (SelStates 𝕊) -> Maybe View
+classView options v@(Val _ (Obj c _))
+   | c == cText = Just (pack (reflect options v :: Text))
+   | c == cMultiView = Just (pack (reflect options v :: MultiView))
+   | c == cParagraph = Just (pack (reflect options v :: Paragraph))
+   | c == cLink = Just (pack (reflect options v :: Link))
+   | c == cBarChart = Just (pack (reflect options v :: BarChart))
+   | c == cScatterPlot = Just (pack (reflect options v :: ScatterPlot))
+   | c == cLineChart = Just (pack (reflect options v :: LineChart))
+classView _ _ = Nothing
 
-reflectText :: Partial => FieldIndex -> Val (SelStates 𝕊) -> Text
-reflectText fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cText -> case us ! fieldIndex cText f_text of
-      Val α _ (Str s) -> Text (s × α)
-      _ -> typeError u "Text expects string"
-   _ -> typeError u "Text"
+class Reflect b where
+   reflect :: ViewOptions -> Val (SelStates 𝕊) -> b
 
-reflectLink :: Partial => FieldIndex -> Val (SelStates 𝕊) -> Link
-reflectLink fieldIndex (Val _ _ u) = case u of
-   Constr c us | c == cLink -> case us ! fieldIndex cLink f_label of
-      Val α' _ (Str s) -> Link (us ! fieldIndex cLink f_value) (s × α')
-      _ -> typeError u "Link expects string label"
-   _ -> typeError u "Link"
+instance Reflect (Val (SelStates 𝕊)) where
+   reflect _ = identity
 
-reflectMultiView :: Partial => FieldIndex -> Options -> Val (SelStates 𝕊) -> MultiView
-reflectMultiView fieldIndex options (Val _ _ u) = case u of
-   Constr c us | c == cMultiView ->
-      MultiView (view fieldIndex options "" <$> from (us ! fieldIndex cMultiView f_views))
-   _ -> typeError u "MultiView"
+instance Reflect b => Reflect (Array b) where
+   reflect options (Val _ (List vs)) = reflect options <$> vs
+   reflect _ (Val _ u) = typeError u "list"
 
-reflectParagraph :: Partial => FieldIndex -> Options -> Val (SelStates 𝕊) -> Paragraph
-reflectParagraph fieldIndex options (Val _ _ u) = case u of
-   Constr c us | c == cParagraph ->
-      Paragraph (view fieldIndex options "" <$> from (us ! fieldIndex cParagraph f_fragments))
-   _ -> typeError u "Paragraph"
+instance Reflect b => Reflect (NonEmptyArray b) where
+   reflect options v = nonEmpty (reflect options v)
 
-class Reflect a b where
-   from :: Partial => a -> b
+instance Reflect BarChart where
+   reflect options v@(Val _ u) = case u of
+      Obj c _ | c == cBarChart -> BarChart
+         { caption: P.unpack' string (attr f_caption v)
+         , size: reflect options (attr f_size v)
+         , tickLabels: reflect options (attr f_tickLabels v)
+         , stackedBars: reflect options (attr f_stackedBars v)
+         , legend: P.unpack' boolean (attr f_legend v)
+         }
+      _ -> typeError u "BarChart"
 
-instance Reflect (Val a) (Dict (a × Val a)) where
-   from (Val _ _ (Dictionary (DictRep d))) = d
+instance Reflect LineChart where
+   reflect options v@(Val _ u) = case u of
+      Obj c _ | c == cLineChart -> LineChart
+         { size: reflect options (attr f_size v)
+         , tickLabels: reflect options (attr f_tickLabels v)
+         , caption: P.unpack' string (attr f_caption v)
+         , plots: reflect options (attr f_plots v)
+         }
+      _ -> typeError u "LineChart"
 
-instance Reflect (Val a) (Array (Val a)) where
-   from (Val _ _ (Constr c Nil)) | c == cNil = []
-   from (Val _ _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
+instance Reflect LinePlot where
+   reflect options v@(Val _ u) = case u of
+      Obj c _ | c == cLinePlot -> LinePlot
+         { name: P.unpack' string (attr f_name v)
+         , points: reflect options (attr f_points v)
+         }
+      _ -> typeError u "LinePlot"
 
-instance Reflect (Val a) (NonEmptyArray (Val a)) where
-   from (Val _ _ (Constr c Nil)) | c == cNil = error "expected non-empty list"
-   from (Val _ _ (Constr c (u1 : u2 : Nil))) | c == cCons = cons' u1 (from u2)
+instance Reflect ScatterPlot where
+   reflect options v@(Val _ u) = case u of
+      Obj c _ | c == cScatterPlot -> ScatterPlot
+         { caption: P.unpack' string (attr f_caption v)
+         , points: reflect options (attr f_points v)
+         , labels: reflect options (attr f_labels v)
+         }
+      _ -> typeError u "ScatterPlot"
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Selectable Int)) where
-   from r = Dimensions
-      { width: P.unpack int (snd (get f_width r))
-      , height: P.unpack int (snd (get f_height r))
-      }
+instance Reflect (Dimensions (Selectable Int)) where
+   reflect _ v@(Val _ u) = case u of
+      Obj c _ | c == cDimensions -> Dimensions
+         { width: P.unpack' int (attr f_width v)
+         , height: P.unpack' int (attr f_height v)
+         }
+      _ -> typeError u "Dimensions"
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
-   from r = StackedBar
-      { x: P.unpack string (snd (get f_x r))
-      , segments: dict from <$> from (snd (get f_segments r))
-      }
+instance Reflect (Point Number) where
+   reflect _ v@(Val _ u) = case u of
+      Obj c _ | c == cPoint -> Point
+         { x: unpackIntOrNumber (attr f_x v)
+         , y: unpackIntOrNumber (attr f_y v)
+         }
+      _ -> typeError u "Point"
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) Segment where
-   from :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Segment
-   from r = Segment
-      { y: P.unpack string (snd (get f_y r))
-      , z: get_intOrNumber f_z r
-      }
+instance Reflect (Point String) where
+   reflect _ v@(Val _ u) = case u of
+      Obj c _ | c == cAxisLabels -> Point
+         { x: P.unpack' string (attr f_x v)
+         , y: P.unpack' string (attr f_y v)
+         }
+      _ -> typeError u "AxisLabels"
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Number) where
-   from r = Point
-      { x: get_intOrNumber f_x r
-      , y: get_intOrNumber f_y r
-      }
+instance Reflect (Point Orientation) where
+   reflect _ v@(Val _ u) = case u of
+      Obj c _ | c == cTickLabels -> Point
+         { x: P.unpack' orientation (attr f_x v)
+         , y: P.unpack' orientation (attr f_y v)
+         }
+      _ -> typeError u "TickLabels"
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point String) where
-   from r = Point
-      { x: P.unpack string (snd (get f_x r))
-      , y: P.unpack string (snd (get f_y r))
-      }
+instance Reflect Segment where
+   reflect _ v@(Val _ u) = case u of
+      Obj c _ | c == cSegment -> Segment
+         { y: P.unpack' string (attr f_y v)
+         , z: unpackIntOrNumber (attr f_z v)
+         }
+      _ -> typeError u "Segment"
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Orientation) where
-   from r = Point
-      { x: P.unpack orientation (snd (get f_x r))
-      , y: P.unpack orientation (snd (get f_y r))
-      }
+instance Reflect StackedBar where
+   reflect options v@(Val _ u) = case u of
+      Obj c _ | c == cStackedBar -> StackedBar
+         { x: P.unpack' string (attr f_x v)
+         , segments: reflect options (attr f_segments v)
+         }
+      _ -> typeError u "StackedBar"
+
+instance Reflect Text where
+   reflect _ v@(Val _ u) = case u of
+      Obj c _ | c == cText -> case attr f_text v of
+         Val α (Lit (Str s)) -> Text (s × α)
+         _ -> typeError u "Text expects string"
+      _ -> typeError u "Text"
+
+instance Reflect Link where
+   reflect _ v@(Val _ u) = case u of
+      Obj c _ | c == cLink -> case attr f_label v of
+         Val α' (Lit (Str s)) -> Link (attr f_value v) (s × α')
+         _ -> typeError u "Link expects string label"
+      _ -> typeError u "Link"
+
+instance Reflect MultiView where
+   reflect options v@(Val _ u) = case u of
+      Obj c _ | c == cMultiView ->
+         MultiView (view options "" <$> reflect options (attr f_views v))
+      _ -> typeError u "MultiView"
+
+instance Reflect Paragraph where
+   reflect options v@(Val _ u) = case u of
+      Obj c _ | c == cParagraph ->
+         Paragraph (view options "" <$> reflect options (attr f_fragments v))
+      _ -> typeError u "Paragraph"

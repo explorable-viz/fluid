@@ -1,0 +1,15 @@
+from fluid.prelude import compare, Empty, EQ, LT, NonEmpty, SearchTree
+
+def lookup[V](k: int, Empty(): SearchTree[int, V]) -> V | None:
+  return None
+def lookup[V](k: int, NonEmpty(t1, (key, val), t2): SearchTree[int, V]) -> V | None:
+  match compare(k, key):
+    case LT():
+      return lookup(k, t1)
+    case EQ():
+      return val
+    case _:
+      return lookup(k, t2)
+
+empty: SearchTree[int, str] = Empty[tuple[int, str]]()
+lookup(6, NonEmpty(NonEmpty(empty, (3, "simon"), empty), (4, "john"), NonEmpty(NonEmpty(empty, (6, "sarah"), empty), (7, "claire"), empty)))

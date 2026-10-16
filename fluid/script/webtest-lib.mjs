@@ -26,7 +26,9 @@ async function launchBrowser(browserName) {
    })
 }
 
-// Relaunching a browser fails intermittently.
+const BROWSERS = (process.env.BROWSERS || "firefox,chrome").split(",")
+
+// Relaunching Firefox fails intermittently, so browsers are reused across pages.
 const browsers = {}
 
 async function getBrowser(browserName) {
@@ -43,10 +45,10 @@ export async function closeBrowsers() {
    }
 }
 
-export async function waitFor(page, selector, { visible = true } = {}) {
+export async function waitFor(page, selector, { visible = true, timeout = TIMEOUT } = {}) {
    log(`Waiting for ${selector}${visible ? "" : " (any)"}`)
    try {
-      await page.waitForSelector(selector, { timeout: TIMEOUT, visible })
+      await page.waitForSelector(selector, { timeout, visible })
       log("-> found")
       testOutcome(true, `${selector}: exists`)
    } catch (e) {
@@ -134,8 +136,15 @@ export async function checkWidthApprox(page, selector, expected, tolerance = 5) 
    testOutcome(pass, `${selector}: width ≈ ${expected}${pass ? "" : ` (got ${Math.round(box.width)})`}`)
 }
 
+// No figure still loading; loadFigure removes the placeholder after hydration
+const READY = "body:not(:has(.fig-loading))"
+
+export async function waitForReady(page, timeout = TIMEOUT) {
+   await waitFor(page, READY, { timeout })
+}
+
 export async function clickToggle(page) {
-   await waitFor(page, "body.app-ready")
+   await waitForReady(page)
    await waitFor(page, "#grid.data-pane-hidden")
    const toggle = "button[title='Show data pane']"
    await waitFor(page, toggle)
@@ -143,7 +152,7 @@ export async function clickToggle(page) {
    await waitFor(page, "#grid:not(.data-pane-hidden)")
 }
 
-async function browserTests(url, browserName, viewport, tests) {
+async function browserTests(url, browserName, viewport, tests, loadTimeout = TIMEOUT) {
    const label = viewport === MOBILE ? "mobile" : "desktop"
    log(`browserTests: ${browserName} (${label})`)
    const browser = await getBrowser(browserName)
@@ -157,7 +166,9 @@ async function browserTests(url, browserName, viewport, tests) {
    await page.setViewport(viewport)
    for (const test of tests) {
       await page.goto(url)
+      await waitForReady(page, loadTimeout)
       await test(page)
+      await waitForReady(page, loadTimeout)
    }
    await page.close()
    if (browserErrors.length) testOutcome(false, `browser error(s): ${browserErrors.join("; ")}`)
@@ -165,14 +176,12 @@ async function browserTests(url, browserName, viewport, tests) {
 
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:8080"
 
-export async function testURL(suffix, tests) {
+export async function testURL(suffix, tests, { loadTimeout = TIMEOUT } = {}) {
    const url = `${BASE_URL}/${suffix}`
-   await browserTests(url, "chrome", VIEWPORT, tests)
-   await browserTests(url, "firefox", VIEWPORT, tests)
+   for (const browser of BROWSERS) await browserTests(url, browser, VIEWPORT, tests, loadTimeout)
 }
 
 export async function testMobile(suffix, tests) {
    const url = `${BASE_URL}/${suffix}`
-   await browserTests(url, "chrome", MOBILE, tests)
-   await browserTests(url, "firefox", MOBILE, tests)
+   for (const browser of BROWSERS) await browserTests(url, browser, MOBILE, tests)
 }

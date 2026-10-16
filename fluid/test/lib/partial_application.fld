@@ -1,0 +1,16 @@
+from typing import Callable
+
+def add(x: int, y: int) -> int:
+   return x + y
+
+def twice[A](f: Callable[[A], A], x: A) -> A:
+   return f(f(x))
+
+def adder(x: int) -> Callable[[int], int]:
+   return lambda y: x + y
+
+def seven() -> int:
+   return 7
+
+inc: Callable[[int], int] = add(1)
+[inc(5), twice(add(2), 3), add(1)(2), add(1, 2), adder(1, 2), seven(), (3 + 4)]

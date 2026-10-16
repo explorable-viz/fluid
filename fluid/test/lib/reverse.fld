@@ -1,0 +1,3 @@
+from fluid.prelude import reversed
+
+reversed([1, 2])

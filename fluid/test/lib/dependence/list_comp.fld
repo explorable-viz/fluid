@@ -1,0 +1,21 @@
+from dataclasses import dataclass
+
+@dataclass
+class Row:
+  year: int
+  country: str
+  energyType: str
+  output: float
+
+data: list[Row] = @doc("data") [
+  Row(2013, "China", "Bio", 6.2),
+  Row(2013, "China", "Hydro", 260),
+  Row(2013, "China", "Solar", 19.9),
+  Row(2013, "China", "Wind", 91)
+]
+
+types: list[str] = @doc("types") ["Bio", "Hydro", "Solar", "Wind"]
+
+[ row.output for type in types
+  for row in data if row.energyType == type
+]

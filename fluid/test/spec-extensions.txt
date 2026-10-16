@@ -1,0 +1,4 @@
+# Automatic currying (PurePy extension)
+module-level/exception/type-checker/call_too_few_args.py (check: exit 0, expected [3]: )
+# Destructuring assignment (pure-py/pure-py-spec#54)
+module-level/no-exception/parser/destructuring_assign.py (check: exit 3, expected [1]: Already declared: 'a')

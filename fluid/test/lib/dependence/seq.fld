@@ -1,0 +1,13 @@
+a: int = @doc("a") 1
+b: int = @doc("b") 2
+c: bool = @doc("c") True
+d: int = @doc("d") 4
+
+x: int
+if c:
+   x = a
+else:
+   x = b
+y: int = d
+
+x, y

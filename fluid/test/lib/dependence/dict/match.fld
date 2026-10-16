@@ -1,0 +1,8 @@
+n: int = @doc("n") 2
+
+def f({ "fst": [x], "snd": [] }: dict[str, list[int]]) -> int:
+  return x
+def f({ "fst": _, "snd": ys }: dict[str, list[int]]) -> int:
+  return ys[0]
+
+{ "a": f({ "snd": [], "fst": [n] }) }

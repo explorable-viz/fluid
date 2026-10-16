@@ -1,0 +1,5 @@
+a_1: str = @doc("a_1") "a"
+a_2: str = @doc("a_2") "a"
+b: str = @doc("b") "b"
+
+{ a_1: 5, a_2 + b: 6 }

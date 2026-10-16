@@ -2,7 +2,7 @@ module App.Util where
 
 import Prelude hiding (absurd, join)
 
-import Bind (Bind, Var, (↦))
+import Bind (Bind, (↦))
 import Control.Apply (lift2)
 import Data.Array (concat)
 import Data.Either (Either(..))
@@ -24,13 +24,12 @@ import Effect.Class.Console (log)
 import Foreign.Object (Object, empty, fromFoldable, union)
 import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∧), (∨))
 import Pretty (prettyP)
-import Primitive (as, intOrNumber, unpack)
+import Primitive (as, intOrNumber, unpack', unpackVal)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), Endo, definitely', error, shapeMismatch, spyWhen, (×))
-import Util.Map (get)
-import Val (class Highlightable, Val(..), highlightIf)
+import Val (class Highlightable, Val, highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
@@ -92,10 +91,16 @@ isInert :: forall a. SelStates a -> 𝔹
 isInert (SelStates Inert) = true
 isInert (SelStates (Reactive _)) = false
 
-getSel :: forall a. SelectionType -> SelStates a -> SelState a
-getSel selType s = unwrap s <#> case selType of
+projSel :: forall a. SelectionType -> SelStates a -> SelState a
+projSel selType s = unwrap s <#> case selType of
    Persistent -> _.persistent
    Transient -> _.transient
+
+-- Persistent and transient states into one; inert if either is.
+pairSel :: forall a. SelState a -> SelState a -> SelStates a
+pairSel Inert _ = SelStates Inert
+pairSel _ Inert = SelStates Inert
+pairSel (Reactive persistent) (Reactive transient) = SelStates (Reactive { persistent, transient })
 
 getPersistent :: forall a. BoundedJoinSemilattice a => SelStates a -> a
 getPersistent (SelStates Inert) = bot
@@ -154,17 +159,17 @@ primary :: forall f. Apply f => f (SelState 𝔹) -> f (SelState 𝕊)
 primary x = (to𝕊 <$> _) <$> x
 
 primaryOrSecondary :: forall f. Apply f => SelectionType -> f (SelStates 𝔹) -> f (SelState 𝔹) -> f (SelState 𝕊)
-primaryOrSecondary selType x x' = lift2 as𝕊 <$> (getSel selType <$> x) <*> x'
+primaryOrSecondary selType x x' = lift2 as𝕊 <$> (projSel selType <$> x) <*> x'
 
 unselected :: SelStates 𝔹
 unselected = SelStates $ Reactive { persistent: false, transient: false }
 
-get_intOrNumber :: Var -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Selectable Number
-get_intOrNumber x r = first as (unpack intOrNumber (snd (get x r)))
+unpackIntOrNumber :: Val (SelStates 𝕊) -> Selectable Number
+unpackIntOrNumber v = first as (unpack' intOrNumber v)
 
 -- Assumes fields are all of primitive type.
 dict :: forall a. (Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> a) -> Val (SelStates 𝕊) -> a
-dict toDict (Val _ _ v) = toDict (P.dict.unpack v)
+dict toDict v = toDict (unpackVal P.dict v)
 
 runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
 runAffs_ f as = flip runAff_ (sequence as) case _ of

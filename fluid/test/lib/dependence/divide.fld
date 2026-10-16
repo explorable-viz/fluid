@@ -1,0 +1,4 @@
+a: int = @doc("a") 362
+b: int = @doc("b") 9
+
+a / b

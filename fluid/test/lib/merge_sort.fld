@@ -1,0 +1,26 @@
+from fluid.prelude import drop
+
+def split[A](xs: list[A]) -> tuple[list[A], list[A]]:
+  return (
+    [xs[i] for i in range(0, len(xs)) if i % 2 == 0],
+    [xs[i] for i in range(0, len(xs)) if i % 2 == 1]
+  )
+
+def merge(xs: list[int], ys: list[int]) -> list[int]:
+  def go(i: int, j: int) -> list[int]:
+    if i == len(xs):
+      return drop(j, ys)
+    if j == len(ys):
+      return drop(i, xs)
+    if xs[i] < ys[j]:
+      return [xs[i]] + go(i + 1, j)
+    return [ys[j]] + go(i, j + 1)
+  return go(0, 0)
+
+def mergesort(xs: list[int]) -> list[int]:
+  if len(xs) < 2:
+    return xs
+  ys, zs = split(xs)
+  return merge(mergesort(ys), mergesort(zs))
+
+mergesort([3, 1, 2])

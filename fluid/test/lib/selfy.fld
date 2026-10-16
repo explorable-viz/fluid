@@ -1,0 +1,2 @@
+import selfy
+s: int = 1

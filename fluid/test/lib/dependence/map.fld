@@ -1,0 +1,8 @@
+from fluid.prelude import map
+
+xs: list[int] = @doc("xs") [3, 4]
+
+def add2(x: int) -> int:
+  return 2 + x
+
+map(add2, xs)

@@ -1,1 +1,0 @@
-methane = load_json("../dataset/methane_emissions.json")

@@ -1,0 +1,223 @@
+from typing import Callable
+from dataclasses import dataclass
+from math import ceil, log
+
+@dataclass
+class Tree[T]:
+  pass
+
+@dataclass
+class Empty[T](Tree[T]):
+  pass
+
+@dataclass
+class NonEmpty[T](Tree[T]):
+  left: Tree[T]
+  value: T
+  right: Tree[T]
+
+type SearchTree[K, V] = Tree[tuple[K, V]]
+
+@dataclass
+class Ordering:
+  pass
+
+@dataclass
+class LT(Ordering):
+  pass
+
+@dataclass
+class EQ(Ordering):
+  pass
+
+@dataclass
+class GT(Ordering):
+  pass
+
+@dataclass
+class InfNum:
+  pass
+
+@dataclass
+class FNum(InfNum):
+  value: float
+
+@dataclass
+class Infty(InfNum):
+  pass
+
+def compare(x: float, y: float) -> Ordering:
+  if x > y:
+    return GT()
+  if x < y:
+    return LT()
+  return EQ()
+
+def on[A, B, C](bin_op: Callable[[B, B], C], prop: Callable[[A], B], x: A, y: A) -> C:
+  return bin_op(prop(x), prop(y))
+
+# Log of y in base x.
+def log_base(x: float, y: float) -> float:
+  return log(y) / log(x)
+
+def ceil_to_nearest(n: float, m: float) -> float:
+  return ceil(n / m) * m
+
+def compose[A, B, C](f: Callable[[B], C], g: Callable[[A], B], x: A) -> C:
+  return f(g(x))
+
+def curry[A, B, C](f: Callable[[tuple[A, B]], C], x: A, y: B) -> C:
+  return f((x, y))
+
+def uncurry[A, B, C](f: Callable[[A, B], C], (x, y): tuple[A, B]) -> C:
+  return f(x, y)
+
+def const[A, B](x: A, _: B) -> A:
+  return x
+
+def first[A, B, C](f: Callable[[A], B], (a, c): tuple[A, C]) -> tuple[B, C]:
+  return f(a), c
+
+def snd[A, B]((_, y): tuple[A, B]) -> B:
+  return y
+
+def second[A, B, C](f: Callable[[A], B], (c, a): tuple[C, A]) -> tuple[C, B]:
+  return c, f(a)
+
+def flip[A, B, C](f: Callable[[A, B], C], x: B, y: A) -> C:
+  return f(y, x)
+
+def fst[A, B]((x, _): tuple[A, B]) -> A:
+  return x
+
+def identity[A](x: A) -> A:
+  return x
+
+def prod[A, B, C](f: Callable[[A], B], g: Callable[[A], C], x: A) -> tuple[B, C]:
+  return f(x), g(x)
+
+def swap[A, B]((a, b): tuple[A, B]) -> tuple[B, A]:
+  return b, a
+
+def tail[A](xs: list[A]) -> list[A]:
+  return [xs[i] for i in range(1, len(xs))]
+
+def find[A](p: Callable[[A], bool], xs: list[A]) -> A | None:
+  def go(i: int) -> A | None:
+    if i == len(xs):
+      return None
+    if p(xs[i]):
+      return xs[i]
+    return go(i + 1)
+  return go(0)
+
+def filter[A](p: Callable[[A], bool], xs: list[A]) -> list[A]:
+  return [x for x in xs if p(x)]
+
+# Split list into longest initial segment whose elements satisfy a predicate, and the rest.
+def span[A](p: Callable[[A], bool], xs: list[A]) -> dict[str, list[A]]:
+  def go(i: int) -> int:
+    if i < len(xs) and p(xs[i]):
+      return go(i + 1)
+    return i
+  n: int = go(0)
+  return { "init": take(n, xs), "rest": drop(n, xs) }
+
+# Each returned list is non-empty.
+def foldl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> A:
+  def go(acc: A, i: int) -> A:
+    if i == len(xs):
+      return acc
+    return go(op(acc, xs[i]), i + 1)
+  return go(z, 0)
+
+def foldl1[A](op: Callable[[A, A], A], xs: list[A]) -> A:
+  return foldl(op, xs[0], tail(xs))
+
+def foldr[A, B](op: Callable[[A, B], B], z: B, xs: list[A]) -> B:
+  def go(i: int) -> B:
+    if i == len(xs):
+      return z
+    return op(xs[i], go(i + 1))
+  return go(0)
+
+def foldr1[A](op: Callable[[A, A], A], xs: list[A]) -> A:
+  return foldr(op, xs[-1], take(len(xs) - 1, xs))
+
+# Quadratic, as each concatenation copies the list; retire with itertools.accumulate
+def scanl[A, B](op: Callable[[A, B], A], z: A, xs: list[B]) -> list[A]:
+  def go(x: B, rest: Callable[[A], list[A]]) -> Callable[[A], list[A]]:
+    def step(acc: A) -> list[A]:
+      return [acc] + rest(op(acc, x))
+    return step
+  return foldr(go, lambda acc: [acc], xs)(z)
+
+def map[A, B](f: Callable[[A], B], xs: list[A]) -> list[B]:
+  return [f(x) for x in xs]
+
+def join(xs: list[str]) -> str:
+  return foldr(lambda x, y: x + y, "", xs)
+
+def intersperse[A](xs: list[A], sep: A) -> list[A]:
+  return [y for i in range(0, len(xs)) for y in ([xs[i]] if i == 0 else [sep, xs[i]])]
+
+# sum, fsum, max, min, fmax, fmin, maximum, minimum, abs: one type each, pending protocols
+# (pure-py/pure-py-spec#233); retire with Python's builtins.
+def sum(xs: list[int]) -> int:
+  return foldr(lambda x, y: x + y, 0, xs)
+
+def fsum(xs: list[float]) -> float:
+  return foldr(lambda x, y: x + y, 0.0, xs)
+
+def mean(xs: list[float]) -> float:
+  start: tuple[float, int] = 0.0, 0
+  s, n = foldl(lambda (s, n), x: (s + x, n + 1), start, xs)
+  return s / n
+
+def reversed[A](xs: list[A]) -> list[A]:
+  return [xs[len(xs) - 1 - i] for i in range(0, len(xs))]
+
+def take[A](n: int, xs: list[A]) -> list[A]:
+  return [xs[i] for i in range(0, min(n, len(xs)))]
+
+def drop[A](n: int, xs: list[A]) -> list[A]:
+  return [xs[i] for i in range(max(n, 0), len(xs))]
+
+# Partial; requires k to be in the map. Keyed at int, as equality is undefined at a type variable;
+# retire with pure-py/pure-py-spec#233.
+def lookup[V](k: int, kvs: list[tuple[int, V]]) -> V:
+  match find(lambda (k_, _): k == k_, kvs):
+    case None:
+      assert False, "Key not found in map"
+    case _, v:
+      return v
+
+def max(n: int, m: int) -> int:
+  return n if n > m else m
+
+def min(n: int, m: int) -> int:
+  return n if n < m else m
+
+def fmax(n: float, m: float) -> float:
+  return n if n > m else m
+
+def fmin(n: float, m: float) -> float:
+  return n if n < m else m
+
+def maximum(xs: list[float]) -> float:
+  return foldr1(fmax, xs)
+
+def minimum(xs: list[float]) -> float:
+  return foldr1(fmin, xs)
+
+def zip[A, B](xs: list[A], ys: list[B]) -> list[tuple[A, B]]:
+  return [(xs[i], ys[i]) for i in range(0, min(len(xs), len(ys)))]
+
+def abs(x: int) -> int:
+  return -x if x < 0 else x
+
+def nub[A](xs: list[A]) -> list[A]:
+  return [xs[i] for i in range(0, len(xs)) if xs[i] not in take(i, xs)]
+
+def slice[A](begin: int, end: int, xs: list[A]) -> list[A]:
+  return take(end - begin, drop(begin, xs))

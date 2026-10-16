@@ -1,0 +1,7 @@
+from typing import Callable
+
+d1: dict[str, int] = @doc("d1") { "a": 5, "b": 6, "c": 3 }
+d2: dict[str, int] = @doc("d2") { "b": -6, "c": 7 }
+
+f: Callable[[int, int], int] = lambda n, m: (n + m) * 2
+dict_intersectionWith(f, d1, d2)

@@ -1,0 +1,5 @@
+x: int = @doc("x") 3
+y: int = @doc("y") 3
+
+yss: Matrix[int] = [| 0 for (i, j) in (x, y) |]
+dims(yss)

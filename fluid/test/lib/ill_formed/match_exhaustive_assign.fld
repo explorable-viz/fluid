@@ -1,0 +1,10 @@
+def foo(xs: list[int]) -> int:
+   result: int
+   match xs:
+      case []:
+         result = 0
+      case [_, _]:
+         result = 99
+   return result
+
+foo([1, 2, 3])

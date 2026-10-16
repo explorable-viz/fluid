@@ -7,13 +7,15 @@ import Data.List.NonEmpty (NonEmptyList, snoc, toList, uncons)
 import Data.Maybe (Maybe(..), isJust)
 import Data.Set (Set, empty)
 import Data.Tuple (Tuple(..), fst, snd)
-import Util (type (×), definitely, singleton, whenever)
+import Util (type (×), definitely', singleton, whenever)
 import Util.Set ((∪))
 
 -- Not easy as a newtype as there is no Coercible instance for Set.
 type Var = String
 
 type Name = NonEmptyList Var
+
+type FieldName = String
 
 dottedName :: Name -> String
 dottedName = intercalate "."
@@ -36,10 +38,12 @@ simple n = case uncons n of
    _ -> Nothing
 
 varAnon = "_" :: Var
+varName = "__name__" :: Var
+varThis = "this" :: Var -- bound to the documented value within a doc
 
 -- Discrete partial order for variables.
 mustGeq :: Var -> Var -> Var
-mustGeq x y = definitely "greater" (whenever (x == y) x)
+mustGeq x y = definitely' (whenever (x == y) x)
 
 type Bind a = Var × a
 
@@ -51,7 +55,7 @@ val = snd
 
 keys :: forall a. List (Bind a) -> Set Var
 keys Nil = empty
-keys ((x ↦ _) : ρ) = singleton x ∪ keys ρ
+keys ((x ↦ _) : xvs) = singleton x ∪ keys xvs
 
 showBind :: forall a. Show a => Var -> a -> Bind String
 showBind x = show >>> (x ↦ _)

@@ -1,0 +1,8 @@
+def f([]: list[int]) -> int:
+   return 0
+def g() -> int:
+   return 1
+def f([x]: list[int]) -> int:
+   return x
+
+f([])

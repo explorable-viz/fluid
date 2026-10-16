@@ -1,0 +1,22 @@
+from fluid.prelude import compare, Empty, EQ, LT, NonEmpty, SearchTree
+
+k: int = @doc("k") 6
+empty: SearchTree[int, str] = Empty[tuple[int, str]]()
+tree: SearchTree[int, str] = @doc("tree") NonEmpty(
+    NonEmpty(empty, (3, "USA"), empty),
+    (4, "China"),
+    NonEmpty(NonEmpty(empty, (6, "Germany"), empty), (7, "UK"), empty)
+  )
+
+def lookup[V](k: int, Empty(): SearchTree[int, V]) -> V | None:
+  return None
+def lookup[V](k: int, NonEmpty(t1, (key, val), t2): SearchTree[int, V]) -> V | None:
+  match compare(k, key):
+    case LT():
+      return lookup(k, t1)
+    case EQ():
+      return val
+    case _:
+      return lookup(k, t2)
+
+lookup(k, tree)

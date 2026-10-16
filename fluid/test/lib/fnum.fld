@@ -1,0 +1,38 @@
+from typing import Callable
+from fluid.prelude import compare, EQ, FNum, foldl1, GT, InfNum, Infty, LT, Ordering
+
+def comp(Infty(): InfNum, Infty(): InfNum) -> Ordering:
+  return EQ()
+def comp(Infty(): InfNum, FNum(y): InfNum) -> Ordering:
+  return GT()
+def comp(FNum(x): InfNum, Infty(): InfNum) -> Ordering:
+  return LT()
+def comp(FNum(x): InfNum, FNum(y): InfNum) -> Ordering:
+  return compare(x, y)
+
+def fmin(x: InfNum, y: InfNum) -> InfNum:
+  match comp(x, y):
+    case LT():
+      return x
+    case EQ():
+      return x
+    case _:
+      return y
+
+minimal: Callable[[list[InfNum]], InfNum] = foldl1(fmin)
+
+def add(Infty(): InfNum, _: InfNum) -> InfNum:
+  return Infty()
+def add(FNum(x): InfNum, Infty(): InfNum) -> InfNum:
+  return Infty()
+def add(FNum(x): InfNum, FNum(y): InfNum) -> InfNum:
+  return FNum(x + y)
+
+def eq(Infty(): InfNum, Infty(): InfNum) -> bool:
+  return True
+def eq(Infty(): InfNum, FNum(x): InfNum) -> bool:
+  return False
+def eq(FNum(x): InfNum, Infty(): InfNum) -> bool:
+  return False
+def eq(FNum(x): InfNum, FNum(y): InfNum) -> bool:
+  return x == y

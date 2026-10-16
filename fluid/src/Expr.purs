@@ -2,120 +2,148 @@ module Expr where
 
 import Prelude hiding (absurd, top)
 
-import Bind (Name, Var)
-import Control.Apply (lift2)
-import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
-import Data.List (List, zipWith)
-import Data.Maybe (Maybe(..))
+import Bind (Bind, Name, Var, varThis)
+import Data.Generic.Rep (class Generic)
+import Data.List (List(..), (:))
+import Data.List.NonEmpty (NonEmptyList, last)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set, empty, unions)
 import Data.Set (fromFoldable) as S
-import Data.Traversable (class Traversable, sequenceDefault, traverse)
+import Data.Show.Generic (genericShow)
 import Data.Tuple (snd)
 import Dict (Dict)
-import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
-import Util (type (×), error, shapeMismatch, singleton, (×), (≜))
-import Util.Map (keys, asMaplet)
+import Literal (Literal)
+import Types as T
+import Util (type (×), singleton, (×))
+import Util.Map (keys)
 import Util.Pair (Pair(..))
 import Util.Set ((\\), (∪))
 
--- Deviate from POPL paper by having closures depend on originating lambda or letrec
-data Expr a
+data Binop = Eq | Ne | Lt | Le | Gt | Ge | In | NotIn | BitOr | Add | Sub | Mul | Div | FloorDiv | Mod | Pow
+
+data Unop = Not | Pos | Neg
+
+data Expr
    = Var Var
-   | Op Var
-   | Int a Int
-   | Float a Number
-   | Str a String
-   | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
-   | Constr a Name (List (Expr a))
-   | Matrix a (Expr a) (Var × Var) (Expr a)
-   | Lambda a (Elim a)
-   | Attribute (Expr a) Var -- attribute x of a dataclass instance
-   | Subscript (Expr a) (Expr a)
+   | Lit Literal
+   | Dictionary (List (Pair Expr)) -- constructor name Dict borks (import of same name)
+   | Constr Name (List Expr)
+   | List (List Expr)
+   | Tuple (List Expr)
+   | Matrix Expr (Var × Var) Expr
+   | Lambda Def
+   | Type T.Type
+   | Attribute Expr Var -- attribute x of a dataclass instance
+   | Subscript Expr Expr
    | ModMember Name Var -- member x of module q; only arises during desugaring
-   | App (Expr a) (Expr a)
-   | DocExpr (Expr a) (Expr a)
+   | App Expr (List Expr)
+   | BinOp Expr Binop Expr
+   | UnOp Unop Expr
+   | And Expr Expr
+   | Or Expr Expr
+   | Cond Expr Expr Expr -- e1 if e else e2
+   | ListComp Expr (List Qualifier)
+   | DictComp Expr Expr (List Qualifier)
+   | DocExpr Expr Expr
 
--- eliminator here is a singleton with null terminal continuation
-data VarDef a = VarDef (Elim a) (Expr a)
-data RecDefs a = RecDefs a (Dict (Elim a))
+-- Comprehension qualifiers; the spec has only guards and generators over variables.
+data Qualifier
+   = Guard Expr
+   | Generator Pattern Expr
+   | Decl Pattern Expr
 
-data Elim a
-   = ElimVar Var (Cont a)
-   | ElimConstr (Dict (Cont a))
-   | ElimDict (Set Var) (Cont a)
+data Pattern
+   = PLit Literal
+   | PVar Var
+   | PWild
+   | PConstr Name (List Pattern) (List (Bind Pattern))
+   | PRecord (List (Bind Pattern))
+   | PList (List Pattern)
+   | PTuple (List Pattern)
+   | PAs Pattern Var
 
--- Continuation of an eliminator branch.
-data Cont a
-   = ContElim (Elim a)
-   | ContStmt (Stmt a)
+-- Parameters and body of a function.
+data Def = Def (List Var) Stmt
 
-asElim :: forall a. Cont a -> Elim a
-asElim (ContElim σ) = σ
-asElim _ = error "Eliminator expected"
+-- Mutually recursive function definitions.
 
-asStmt :: forall a. Cont a -> Stmt a
-asStmt (ContStmt s) = s
-asStmt _ = error "Statement expected"
+type Case = Pattern × Stmt
 
-data Stmt a
-   = Return (Expr a)
-   | Match (Expr a) (Elim a)
-   | Def (VarDef a)
-   | DefRec (RecDefs a)
+-- Condition and body of an if or elif clause.
+data Branch = Branch Expr Stmt
+
+data Stmt
+   = Return Expr
+   | If (NonEmptyList Branch) (Maybe Stmt)
+   | Match Expr (NonEmptyList Case)
+   | Declare Var
+   | Assign Pattern Expr -- assignment to a pattern; the spec has only variables
+   | DefRegion (Dict Def)
    | Pass
-   | ExprStmt (Expr a)
-   | Seq (Stmt a) (Stmt a)
+   | ExprStmt Expr
+   | Assert Expr (Maybe Expr)
+   | Dataclass Name -- class declaration, by fully-qualified name
+   | TypeAlias Var (List Var) T.Type
+   | Seq Stmt Stmt
 
 data Import = Import Name (Maybe (List Var))
 
-data Module a = Module (List Import) (List (Stmt a))
+data Module = Module (List Import) Stmt
 
 class FV a where
    fv :: a -> Set Var
 
-instance FV (Expr a) where
+instance FV Expr where
    fv (Var x) = singleton x
-   fv (Op op) = singleton op
-   fv (Int _ _) = empty
-   fv (Float _ _) = empty
-   fv (Str _ _) = empty
-   fv (Dictionary _ ees) = unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
-   fv (Constr _ _ es) = unions (fv <$> es)
-   fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
-   fv (Lambda _ σ) = fv σ
+   fv (Lit _) = empty
+   fv (Dictionary ees) = unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
+   fv (Constr _ es) = unions (fv <$> es)
+   fv (List es) = unions (fv <$> es)
+   fv (Tuple es) = unions (fv <$> es)
+   fv (Matrix e1 _ e2) = fv e1 ∪ fv e2
+   fv (Lambda d) = fv d
+   fv (Type _) = empty
    fv (Attribute e _) = fv e
    fv (Subscript e x) = fv e ∪ fv x
    fv (ModMember _ _) = empty
-   fv (App e1 e2) = fv e1 ∪ fv e2
-   fv (DocExpr doc e) = fv doc ∪ fv e
+   fv (App e es) = fv e ∪ unions (fv <$> es)
+   fv (BinOp e _ e') = fv e ∪ fv e'
+   fv (UnOp _ e) = fv e
+   fv (And e e') = fv e ∪ fv e'
+   fv (Or e e') = fv e ∪ fv e'
+   fv (Cond e1 e e2) = fv e1 ∪ fv e ∪ fv e2
+   fv (ListComp e gs) = fvQualifiers gs ∪ (fv e \\ bv gs)
+   fv (DictComp e e' gs) = fvQualifiers gs ∪ ((fv e ∪ fv e') \\ bv gs)
+   fv (DocExpr doc e) = (fv doc \\ singleton varThis) ∪ fv e
 
-instance FV (Elim a) where
-   fv (ElimVar x κ) = fv κ \\ singleton x
-   fv (ElimConstr m) = unions (fv <$> m)
-   fv (ElimDict _ κ) = fv κ
+fvQualifiers :: List Qualifier -> Set Var
+fvQualifiers Nil = empty
+fvQualifiers (Guard e : gs) = fv e ∪ fvQualifiers gs
+fvQualifiers (Generator p e : gs) = fv e ∪ (fvQualifiers gs \\ bv p)
+fvQualifiers (Decl p e : gs) = fv e ∪ (fvQualifiers gs \\ bv p)
 
-instance FV (Cont a) where
-   fv (ContElim σ) = fv σ
-   fv (ContStmt s) = fv s
+instance FV Def where
+   fv (Def xs s) = fv s \\ S.fromFoldable xs
 
-instance FV (VarDef a) where
-   fv (VarDef _ e) = fv e
+instance FV Branch where
+   fv (Branch e s) = fv e ∪ fv s
 
-instance FV (RecDefs a) where
-   fv (RecDefs _ ρ) = fv ρ
-
-instance FV (Stmt a) where
+instance FV Stmt where
    fv (Return e) = fv e
-   fv (Match e σ) = fv e ∪ fv σ
-   fv (Def vd) = fv vd
-   fv (DefRec ρ) = fv ρ
+   fv (If bs s_opt) = unions (fv <$> bs) ∪ fv s_opt
+   fv (Match e bs) = fv e ∪ unions ((\(p × s) -> fv s \\ bv p) <$> bs)
+   fv (Declare _) = empty
+   fv (Assign _ e) = fv e
+   fv (DefRegion ds) = fv ds
    fv Pass = empty
    fv (ExprStmt e) = fv e
+   fv (Assert e e_opt) = fv e ∪ fv e_opt
+   fv (Dataclass _) = empty
+   fv (TypeAlias _ _ _) = empty
    fv (Seq s s') = fv s ∪ fv s'
 
 instance FV a => FV (Dict a) where
-   fv ρ = unions (fv <$> ρ) \\ S.fromFoldable (keys ρ)
+   fv ds = unions (fv <$> ds) \\ S.fromFoldable (keys ds)
 
 instance (FV a, FV b) => FV (a × b) where
    fv (x × y) = fv x ∪ fv y
@@ -130,247 +158,58 @@ instance (FV a) => FV (List a) where
 class BV a where
    bv :: a -> Set Var
 
--- Bound variables, defined only for singleton eliminators.
-instance BV (Elim a) where
-   bv (ElimVar x κ) = singleton x ∪ bv κ
-   bv (ElimConstr m) = bv (snd (asMaplet m))
-   bv (ElimDict _ κ) = bv κ
+instance BV Pattern where
+   bv (PLit _) = empty
+   bv (PVar x) = singleton x
+   bv PWild = empty
+   bv (PConstr _ ps xps) = unions (bv <$> ps) ∪ unions ((bv <<< snd) <$> xps)
+   bv (PRecord xps) = unions ((bv <<< snd) <$> xps)
+   bv (PList ps) = unions (bv <$> ps)
+   bv (PTuple ps) = unions (bv <$> ps)
+   bv (PAs p x) = bv p ∪ singleton x
 
-instance BV (VarDef a) where
-   bv (VarDef σ _) = bv σ
+instance BV Qualifier where
+   bv (Guard _) = empty
+   bv (Generator p _) = bv p
+   bv (Decl p _) = bv p
 
-instance BV (Cont a) where
-   bv (ContElim σ) = bv σ
-   bv (ContStmt _) = empty
+instance BV a => BV (List a) where
+   bv xs = unions (bv <$> xs)
 
-instance JoinSemilattice a => JoinSemilattice (Elim a) where
-   join (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (κ ∨ κ')
-   join (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (cκs ∨ cκs')
-   join (ElimDict xs κ) (ElimDict ys κ') = ElimDict (xs ≜ ys) (κ ∨ κ')
-   join _ _ = shapeMismatch unit
-
-instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
-   expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
-   expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
-   expand (ElimDict xs κ) (ElimDict ys κ') = ElimDict (xs ≜ ys) (expand κ κ')
-   expand _ _ = shapeMismatch unit
-
-instance JoinSemilattice a => JoinSemilattice (Cont a) where
-   join (ContElim σ) (ContElim σ') = ContElim (σ ∨ σ')
-   join (ContStmt s) (ContStmt s') = ContStmt (s ∨ s')
-   join _ _ = shapeMismatch unit
-
-instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
-   expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
-   expand (ContStmt s) (ContStmt s') = ContStmt (expand s s')
-   expand _ _ = shapeMismatch unit
-
-instance JoinSemilattice a => JoinSemilattice (VarDef a) where
-   join (VarDef σ e) (VarDef σ' e') = VarDef (σ ∨ σ') (e ∨ e')
-
-instance BoundedJoinSemilattice a => Expandable (VarDef a) (Raw VarDef) where
-   expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
-
-instance JoinSemilattice a => JoinSemilattice (RecDefs a) where
-   join (RecDefs α ρ) (RecDefs α' ρ') = RecDefs (α ∨ α') (ρ ∨ ρ')
-
-instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
-   expand (RecDefs α ρ) (RecDefs _ ρ') = RecDefs α (expand ρ ρ')
-
-instance JoinSemilattice a => JoinSemilattice (Stmt a) where
-   join (Return e) (Return e') = Return (e ∨ e')
-   join (Match e σ) (Match e' σ') = Match (e ∨ e') (σ ∨ σ')
-   join (Def vd) (Def vd') = Def (vd ∨ vd')
-   join (DefRec ρ) (DefRec ρ') = DefRec (ρ ∨ ρ')
-   join Pass Pass = Pass
-   join (ExprStmt e) (ExprStmt e') = ExprStmt (e ∨ e')
-   join (Seq s1 s2) (Seq s1' s2') = Seq (s1 ∨ s1') (s2 ∨ s2')
-   join _ _ = shapeMismatch unit
-
-instance BoundedJoinSemilattice a => Expandable (Stmt a) (Raw Stmt) where
-   expand (Return e) (Return e') = Return (expand e e')
-   expand (Match e σ) (Match e' σ') = Match (expand e e') (expand σ σ')
-   expand (Def vd) (Def vd') = Def (expand vd vd')
-   expand (DefRec ρ) (DefRec ρ') = DefRec (expand ρ ρ')
-   expand Pass Pass = Pass
-   expand (ExprStmt e) (ExprStmt e') = ExprStmt (expand e e')
-   expand (Seq s1 s2) (Seq s1' s2') = Seq (expand s1 s1') (expand s2 s2')
-   expand _ _ = shapeMismatch unit
-
-instance JoinSemilattice a => JoinSemilattice (Expr a) where
-   join (Var x) (Var x') = Var (x ≜ x')
-   join (Op op) (Op op') = Op (op ≜ op')
-   join (Int α n) (Int α' n') = Int (α ∨ α') (n ≜ n')
-   join (Str α str) (Str α' str') = Str (α ∨ α') (str ≜ str')
-   join (Float α n) (Float α' n') = Float (α ∨ α') (n ≜ n')
-   join (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') (ees ∨ ees')
-   join (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') (c ≜ c') (es ∨ es')
-   join (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
-      Matrix (α ∨ α') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
-   join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
-   join (Attribute e x) (Attribute e' x') = Attribute (e ∨ e') (x ≜ x')
-   join (Subscript e1 e2) (Subscript e1' e2') = Subscript (e1 ∨ e1') (e2 ∨ e2')
-   join (ModMember q x) (ModMember q' x') = ModMember (q ≜ q') (x ≜ x')
-   join (App e1 e2) (App e1' e2') = App (e1 ∨ e1') (e2 ∨ e2')
-   join (DocExpr doc e) (DocExpr doc' e') = DocExpr (doc ∨ doc') (e ∨ e')
-   join _ _ = shapeMismatch unit
-
-instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
-   expand (Var x) (Var x') = Var (x ≜ x')
-   expand (Op op) (Op op') = Op (op ≜ op')
-   expand (Int α n) (Int _ n') = Int α (n ≜ n')
-   expand (Str α str) (Str _ str') = Str α (str ≜ str')
-   expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Dictionary α ees) (Dictionary _ ees') = Dictionary α (expand ees ees')
-   expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
-   expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
-      Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
-   expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
-   expand (Attribute e x) (Attribute e' x') = Attribute (expand e e') (x ≜ x')
-   expand (Subscript e1 e2) (Subscript e1' e2') = Subscript (expand e1 e1') (expand e2 e2')
-   expand (ModMember q x) (ModMember q' x') = ModMember (q ≜ q') (x ≜ x')
-   expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
-   expand (DocExpr doc e) (DocExpr doc' e') = DocExpr (expand doc doc') (expand e e')
-   expand _ _ = shapeMismatch unit
-
-instance MeetSemilattice a => MeetSemilattice (Expr a) where
-   meet = lift2 (∧)
-
-instance Vertices (Expr Vertex) where
-   vertices (Var _) = empty
-   vertices (Op _) = empty
-   vertices e@(Int α _) = singleton (DVertex (α × pack e))
-   vertices e@(Float α _) = singleton (DVertex (α × pack e))
-   vertices e@(Str α _) = singleton (DVertex (α × pack e))
-   vertices d@(Dictionary α ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees)
-      where
-      go (Pair e e') = vertices e ∪ vertices e'
-   vertices e@(Constr α _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es)
-   vertices e@(Matrix α e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2
-   vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
-   vertices (Attribute e _) = vertices e
-   vertices (Subscript e e') = vertices e ∪ vertices e'
-   vertices (ModMember _ _) = empty
-   vertices (App e1 e2) = vertices e1 ∪ vertices e2
-   vertices (DocExpr e e') = vertices e ∪ vertices e'
-
-instance Vertices (Elim Vertex) where
-   vertices (ElimVar _ κ) = vertices κ
-   vertices (ElimConstr m) = vertices m
-   vertices (ElimDict _ κ) = vertices κ
-
-instance Vertices (VarDef Vertex) where
-   vertices (VarDef σ e) = vertices σ ∪ vertices e
-
-instance Vertices (Cont Vertex) where
-   vertices (ContElim σ) = vertices σ
-   vertices (ContStmt s) = vertices s
-
-instance Vertices (RecDefs Vertex) where
-   vertices defs@(RecDefs α ρ) = singleton (DVertex (α × pack defs)) ∪ vertices ρ
-
-instance Vertices (Stmt Vertex) where
-   vertices (Return e) = vertices e
-   vertices (Match e σ) = vertices e ∪ vertices σ
-   vertices (Def vd) = vertices vd
-   vertices (DefRec ρ) = vertices ρ
-   vertices Pass = empty
-   vertices (ExprStmt e) = vertices e
-   vertices (Seq s1 s2) = vertices s1 ∪ vertices s2
-
-instance Vertices (Module Vertex) where
-   vertices (Module _ ss) = unions (vertices <$> ss)
+assigns :: Stmt -> Set Var
+assigns (Return _) = empty
+assigns (If bs s_opt) = unions ((\(Branch _ s) -> assigns s) <$> bs) ∪ maybe empty assigns s_opt
+assigns (Match _ bs) = unions ((\(p × s) -> bv p ∪ assigns s) <$> bs)
+assigns (Declare x) = singleton x
+assigns (Assign p _) = bv p
+assigns (DefRegion ds) = S.fromFoldable (keys ds)
+assigns Pass = empty
+assigns (ExprStmt _) = empty
+assigns (Assert _ _) = empty
+assigns (Dataclass c) = singleton (last c)
+assigns (TypeAlias x _ _) = singleton x
+assigns (Seq s s') = assigns s ∪ assigns s'
 
 -- ======================
 -- boilerplate
 -- ======================
-derive instance Functor VarDef
-derive instance Foldable VarDef
-derive instance Traversable VarDef
-derive instance Functor Cont
-derive instance Foldable Cont
-derive instance Traversable Cont
-derive instance Functor Elim
-derive instance Foldable Elim
-derive instance Traversable Elim
-derive instance Functor Expr
-derive instance Foldable Expr
-derive instance Traversable Expr
-derive instance Functor RecDefs
-derive instance Foldable RecDefs
-derive instance Traversable RecDefs
-derive instance Functor Stmt
-derive instance Foldable Stmt
-derive instance Traversable Stmt
-derive instance Functor Module
+derive instance Eq Expr
+derive instance Eq Qualifier
+derive instance Eq Binop
+derive instance Generic Binop _
+instance Show Binop where
+   show = genericShow
 
--- For terms of a fixed shape.
-instance Apply Expr where
-   apply (Var x) (Var x') = Var (x ≜ x')
-   apply (Op op) (Op _) = Op op
-   apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
-   apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
-   apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
-   apply (Dictionary fα fxes) (Dictionary α xes) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxes xes)
-   apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
-   apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
-      Matrix (fα α) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
-   apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
-   apply (Attribute fe x) (Attribute e x') = Attribute (fe <*> e) (x ≜ x')
-   apply (Subscript fd fk) (Subscript d k) = Subscript (fd <*> d) (fk <*> k)
-   apply (ModMember q x) (ModMember q' x') = ModMember (q ≜ q') (x ≜ x')
-   apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
-   apply (DocExpr fe fe') (DocExpr e e') = DocExpr (fe <*> e) (fe' <*> e')
-   apply _ _ = shapeMismatch unit
+derive instance Eq Unop
+derive instance Generic Unop _
+instance Show Unop where
+   show = genericShow
 
-instance Apply Elim where
-   apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
-   apply (ElimConstr fk) (ElimConstr k) = ElimConstr (((<*>) <$> fk) <*> k)
-   apply (ElimDict xs fk) (ElimDict _ k) = ElimDict xs (fk <*> k)
-   apply _ _ = shapeMismatch unit
+derive instance Eq Def
+derive instance Eq Pattern
+derive instance Generic Pattern _
+instance Show Pattern where
+   show c = genericShow c
 
-instance Apply Cont where
-   apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
-   apply (ContStmt fs) (ContStmt s) = ContStmt (fs <*> s)
-   apply _ _ = shapeMismatch unit
-
-instance Apply VarDef where
-   apply (VarDef fσ fe) (VarDef σ e) = VarDef (fσ <*> σ) (fe <*> e)
-
-instance Apply RecDefs where
-   apply (RecDefs fα fρ) (RecDefs α ρ) = RecDefs (fα α) (((<*>) <$> fρ) <*> ρ)
-
-instance Apply Stmt where
-   apply (Return fe) (Return e) = Return (fe <*> e)
-   apply (Match fe fσ) (Match e σ) = Match (fe <*> e) (fσ <*> σ)
-   apply (Def fvd) (Def vd) = Def (fvd <*> vd)
-   apply (DefRec fρ) (DefRec ρ) = DefRec (fρ <*> ρ)
-   apply Pass Pass = Pass
-   apply (ExprStmt fe) (ExprStmt e) = ExprStmt (fe <*> e)
-   apply (Seq fs1 fs2) (Seq s1 s2) = Seq (fs1 <*> s1) (fs2 <*> s2)
-   apply _ _ = shapeMismatch unit
-
-instance Apply Module where
-   apply (Module fis fss) (Module _ ss) = Module fis (zipWith (<*>) fss ss)
-
-instance Foldable Module where
-   foldl f acc (Module _ ss) = foldl (foldl f) acc ss
-   foldr f = foldrDefault f
-   foldMap f = foldMapDefaultL f
-
-instance Traversable Module where
-   traverse f (Module is ss) = Module is <$> traverse (traverse f) ss
-   sequence = sequenceDefault
-
-derive instance Eq a => Eq (Expr a)
-derive instance Eq a => Eq (Elim a)
-derive instance Eq a => Eq (Cont a)
-derive instance Eq a => Eq (VarDef a)
-derive instance Eq a => Eq (RecDefs a)
-derive instance Eq a => Eq (Stmt a)
-
-instance TypeName (RecDefs a) where
-   typeName _ = "RecDefs"
-
-instance TypeName (Expr a) where
-   typeName _ = "Expr"
+derive instance Eq Branch
+derive instance Eq Stmt

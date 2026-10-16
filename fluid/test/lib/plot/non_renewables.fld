@@ -1,0 +1,35 @@
+from dataset.energy_data import NonRenewable
+
+from fluid.view import AxisLabels, BarChart, Dimensions, MultiView, Point, ScatterPlot, Segment, StackedBar, TickLabels, Default
+from fluid.prelude import fsum
+
+countries: list[str] = ["BRA", "EGY", "IND", "JPN"]
+
+def totalFor(year: int, country: str) -> float:
+  [row] = [row for row in nonRenewables if row.year == year if row.country == country]
+
+  return ((row.nuclearOut + row.gasOut) + row.coalOut) + row.petrolOut
+
+def stack(year: int) -> list[Segment]:
+  return [Segment(y=country, z=totalFor(year, country)) for country in countries]
+
+def yearData(year: int) -> list[NonRenewable]:
+  return [row for row in nonRenewables if row.year == year if row.country in countries]
+
+MultiView([
+  BarChart(
+    caption="Non-renewables output",
+    size=Dimensions(width=275, height=185),
+    tickLabels=TickLabels(x=Default(), y=Default()),
+    stackedBars=[StackedBar(x=num_to_str(year), segments=stack(year)) for year in range(2014, 2019)],
+    legend=True
+  ),
+  ScatterPlot(
+    caption="",
+    points=[Point(
+      x=fsum([row.nuclearOut for row in yearData(year)]),
+      y=fsum([row.nuclearCap for row in yearData(year)])
+    ) for year in range(2014, 2019)],
+    labels=AxisLabels(x="Nuclear capacity", y="Nuclear output")
+  )
+])

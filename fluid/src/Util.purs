@@ -5,15 +5,14 @@ import Prelude hiding (absurd)
 import Control.Alt ((<|>))
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, liftEither, throwError)
-import Control.Monad.Except (Except, ExceptT, runExcept)
 import Control.MonadPlus (class Alt, class Alternative, guard)
 import Data.Array ((!!), updateAt)
 import Data.Array as A
 import Data.Array.NonEmpty (NonEmptyArray, fromArray)
 import Data.Array.NonEmpty as NEA
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
-import Data.Foldable (class Foldable, foldr)
+import Data.Either (Either(..), either)
+import Data.Foldable (class Foldable, foldr, for_)
 import Data.Functor.Compose (Compose)
 import Data.Functor.Product (Product)
 import Data.Identity (Identity(..))
@@ -130,6 +129,15 @@ traceWhen _ _ = pure unit
 log' :: forall m. MonadEffect m => String -> m Unit
 log' msg = when debug.logging (log msg)
 
+quoted :: String -> String
+quoted x = "'" <> x <> "'"
+
+quotedList :: forall f. Functor f => Foldable f => f String -> String
+quotedList xs = intercalate ", " (quoted <$> xs)
+
+checkDistinct :: forall m e a. MonadThrow e m => Ord a => (a -> e) -> List a -> m Unit
+checkDistinct err xs = for_ (L.head (xs L.\\ L.nub xs)) (throwError <<< err)
+
 absurd :: String
 absurd = "absurd"
 
@@ -142,18 +150,20 @@ whenever true = Just
 
 definitely :: forall a. String -> Maybe a -> a
 definitely _ (Just a) = a
-definitely msg Nothing = error ("definitely " <> msg)
+definitely msg Nothing = error msg
 
 definitely' :: forall a. Maybe a -> a
 definitely' = definitely absurd
+
+definitelyRight :: forall a b. Either a b -> b
+definitelyRight = either (\_ -> error absurd) identity
 
 onlyIf :: forall m a. Bind m => Alternative m => Boolean -> a -> m a
 onlyIf b a = do
    guard b
    pure a
 
-type MayFail a = Except Error a
-type MayFailT m = ExceptT Error m
+type MayFail a = Either String a
 
 orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
 orElse s Nothing = throw s
@@ -162,17 +172,9 @@ orElse _ (Just x) = pure x
 throwLeft :: forall a e m. MonadError Error m => Show e => Either e a -> m a
 throwLeft = liftEither <<< lmap (E.error <<< show)
 
-orThrow :: forall a m. MonadThrow Error m => Either String a -> m a
+orThrow :: forall a m. MonadThrow Error m => MayFail a -> m a
 orThrow (Left s) = throw s
 orThrow (Right x) = pure x
-
-defined :: forall a. MayFail a -> a
-defined = runExcept >>> case _ of
-   Right x -> x
-   Left e -> error $ show e
-
-definedWith :: String -> forall a. MayFail a -> a
-definedWith msg = defined <<< withMsg msg
 
 withMsg :: forall a m. MonadError Error m => String -> Endo (m a)
 withMsg msg m = catchError m \e ->
@@ -225,7 +227,7 @@ class UnsafeArray (f :: Type -> Type) where
    unsafeUpdateAt :: forall a. Int -> a -> Endo (f a)
 
 withinBounds :: forall a. Maybe a -> a
-withinBounds = definitely "index within bounds"
+withinBounds = definitely "Index out of bounds"
 
 instance UnsafeArray Array where
    unsafeIndex xs i = withinBounds (xs !! i)
@@ -321,18 +323,18 @@ instance Singleton Set where
 instance Singleton NonEmptySet where
    singleton = NonEmptySet.singleton
 
-class NonEmpty (f :: Type -> Type) (g :: Type -> Type) | f -> g where
+class NonEmpty (f :: Type -> Type) (g :: Type -> Type) | f -> g, g -> f where
    nonEmpty :: forall a. f a -> g a
    init :: forall a. g a -> f a
    tail :: forall a. g a -> f a
 
 instance NonEmpty List NonEmptyList where
-   nonEmpty = definitely "non-empty" <<< fromList
+   nonEmpty = definitely "Empty" <<< fromList
    init = NEL.init
    tail = NEL.tail
 
 instance NonEmpty Array NonEmptyArray where
-   nonEmpty = definitely "non-empty" <<< fromArray
+   nonEmpty = definitely "Empty" <<< fromArray
    init = NEA.init
    tail = NEA.tail
 
@@ -345,6 +347,9 @@ instance IsEmpty (Set a) where
 instance IsEmpty (Object a) where
    isEmpty = Object.isEmpty
 
+instance IsEmpty (Map k v) where
+   isEmpty = M.isEmpty
+
 -- Foldable.length returns an arbitrary semiring which is a bit too general
 class Length (f :: Type -> Type) where
    length :: forall a. f a -> Int
@@ -354,6 +359,27 @@ instance Length List where
 
 instance Length Array where
    length = A.length
+
+class Head (f :: Type -> Type) where
+   head :: forall a. f a -> Maybe a
+
+instance Head List where
+   head = L.head
+
+instance Head Array where
+   head = A.head
+
+class Cons (f :: Type -> Type) where
+   cons :: forall a. a -> f a -> f a
+
+instance Cons Array where
+   cons = A.cons
+
+instance Cons List where
+   cons = L.Cons
+
+instance Cons NonEmptyList where
+   cons = NEL.cons
 
 class Zip (f :: Type -> Type) where
    zip :: forall a b. f a -> f b -> f (a × b)
@@ -366,3 +392,7 @@ instance Zip Array where
 instance Zip List where
    zip = L.zip
    zipWith = L.zipWith
+
+instance Zip NonEmptyList where
+   zip = NEL.zip
+   zipWith = NEL.zipWith

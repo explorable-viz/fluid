@@ -1,0 +1,3 @@
+x: list[int] = @doc("x") [1, 2]
+
+x

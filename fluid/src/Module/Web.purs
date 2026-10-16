@@ -6,16 +6,16 @@ import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (class MonadError, class MonadTrans, lift)
 import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, ask, runReaderT)
 import Control.Monad.State (StateT, evalStateT, get, modify_)
-import DataType (class HasClasses)
+import Classes (class HasClasses)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
-import File (class LoadFile, FileCxt(..), isDirectoryPath, loadFileFromPath)
+import File (class LoadFile, FileCxt(..), loadFileFromPath, loadManifest)
 import Val (class HasModuleStore, ModuleStore, emptyModuleStore)
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (WebT m) where
    loadFileFromPath = lift <<< loadFileFromPath
-   isDirectoryPath = lift <<< isDirectoryPath
+   loadManifest = lift <<< loadManifest
 
 newtype WebT m a = WebT (ReaderT FileCxt (StateT ModuleStore m) a)
 

@@ -1,0 +1,57 @@
+from dataset.energy_data import renewables, nonRenewables, Renewable, NonRenewable
+
+from fluid.view import AxisLabels, BarChart, Dimensions, MultiView, Point, ScatterPlot, Segment, StackedBar, TickLabels, Default
+from fluid.prelude import fsum, map
+
+def totalFor(year: int, country: str, rows: list[NonRenewable]) -> float:
+  [row] = [row for row in rows if row.year == year if row.country == country]
+
+  return ((row.nuclearOut + row.gasOut) + row.coalOut) + row.petrolOut
+
+def stack(year: int) -> list[Segment]:
+  return [Segment(y=country, z=totalFor(year, country, nonRenewables)) for country in [
+    "BRA",
+    "EGY",
+    "IND",
+    "JPN"
+  ]]
+
+def isCountry(name: str, x: Renewable | NonRenewable) -> bool:
+  return name == x.country
+def isYear(year: int, x: Renewable | NonRenewable) -> bool:
+  return year == x.year
+
+def plot(year: int, countries: list[str]) -> list[Point]:
+  rens: list[Renewable] = [r for r in renewables if isYear(year, r)]
+  nonRens: list[NonRenewable] = [r for r in nonRenewables if isYear(year, r)]
+
+  def plotCountry(country: str) -> Point:
+    rens_: list[Renewable] = [r for r in rens if isCountry(country, r)]
+    rensOut: float = fsum([x.output for x in rens_])
+    rensCap: float = fsum([x.capacity for x in rens_])
+    x: NonRenewable = [r for r in nonRens if isCountry(country, r)][0]
+    nonRensCap: float = ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
+    return Point(
+      x=rensCap / (rensCap + nonRensCap),
+      y=(rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
+    )
+
+  return map(plotCountry, countries)
+
+MultiView([
+  BarChart(
+    caption="Non-renewables by country",
+    size=Dimensions(width=275, height=185),
+    tickLabels=TickLabels(x=Default(), y=Default()),
+    stackedBars=
+      [StackedBar(x=num_to_str(year), segments=stack(year)) for year in range(2014, 2019)],
+    legend=True
+  ),
+  ScatterPlot(
+    caption=
+      "Clean energy efficiency vs proportion of renewable energy capacity",
+    points=
+      plot(2018, [ "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA" ]),
+    labels=AxisLabels(x="Renewables/TotalEnergyCap", y="Clean Capacity Factor")
+  )
+])

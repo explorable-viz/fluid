@@ -1,0 +1,4 @@
+d: dict[str, dict[str, int]] = @doc("d") { "a": { "fst": 5 }, "a" + "b": { "fst": 6, "snd": 0 } }
+a: str = @doc("a") "a"
+
+d["a"]["fst"] * d[a + "b"]["snd"]

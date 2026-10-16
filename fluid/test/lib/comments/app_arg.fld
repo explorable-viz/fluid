@@ -1,0 +1,9 @@
+from typing import Callable
+import fluid.view
+from fluid.prelude import map
+
+para: fluid.view.Paragraph = f"""Comments on arguments don't surface on the outermost application"""
+
+inc: Callable[[int], int] = lambda x: 1 + x
+
+@doc(para) map(inc, [4, 6, 12, 14, 3, 2, -4])

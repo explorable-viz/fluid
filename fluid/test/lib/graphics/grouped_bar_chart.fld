@@ -1,0 +1,10 @@
+from fluid.graphics import colours1, grouped_bar_chart, caption
+from dataset.renewables_restricted import data
+from fluid.prelude import lookup
+
+year: int = 2015
+
+def exclude(countries: list[str], yearData: list[tuple[str, list[tuple[str, float]]]]) -> list[tuple[str, list[tuple[str, float]]]]:
+  return [(k, [(c, x) for (c, x) in kvs if c not in countries]) for (k, kvs) in yearData]
+
+caption("Renewables (GW) by country and energy type, " + num_to_str(year), grouped_bar_chart(True, colours1, 0.2, exclude([], lookup(year, data))))

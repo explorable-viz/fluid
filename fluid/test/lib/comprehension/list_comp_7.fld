@@ -1,0 +1,2 @@
+xss: list[list[int]] = [[] for [] in [[5], [4], [3], []]]
+xss

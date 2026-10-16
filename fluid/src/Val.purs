@@ -3,44 +3,48 @@ module Val where
 import Prelude hiding (absurd, append)
 
 import Bind (Name, Var)
-import DataType (class HasClasses)
+import Classes (class HasClasses)
+import Types.Defs (cRange)
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Except (ExceptT)
-import Control.Monad.Reader (class MonadReader, ReaderT)
-import Control.Monad.State (StateT)
+import Control.Monad.Reader (ReaderT)
+import Control.Monad.State (class MonadState, StateT, gets)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Writer (WriterT)
-import Data.Array (concat, (!!))
+import Data.Array (cons, fromFoldable, length, zipWith, (!!)) as A
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
-import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
+import Data.Foldable (class Foldable, fold, foldMapDefaultL, foldl, foldrDefault, for_)
+import Data.Functor.Compose (Compose(..))
+import Data.Lazy (defer, force)
 import Data.List (List(..), (:), zipWith)
+import Data.List ((!!), range, take) as L
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, unwrap)
-import Data.Set (Set, unions)
+import Data.Newtype (class Newtype)
+import Data.Set (Set)
+import Data.String.CodePoints (codePointAt, length, singleton) as S
 import Data.Set as Set
-import Data.Traversable (class Traversable, sequenceDefault, traverse)
+import Data.Profunctor.Strong (second)
+import Data.Tuple (snd)
+import Data.Traversable (class Traversable, mapAccumL, sequenceDefault, traverse)
 import Dict (Dict)
 import Dict as D
-import Effect.Aff.Class (class MonadAff)
-import Effect.Exception (Error)
-import Expr (Elim, Module, Stmt, fv)
-import File (class LoadFile, FileCxt)
-import ModuleGraph (ModuleName)
-import Foreign.Object (foldMap)
-import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
-import Graph.WithGraph (class MonadWithGraphAlloc, new)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
+import Expr (Def, Module, fv)
+import File (class MonadLoad)
+import Module.Defs (ModuleName)
+import DepGraph (DepGraph, Labelling, Rel, addEdge, deriv, emptyGraph, scale, valAt, zeros)
+import DepGraph (Deriv, Pos) as Dep
+import Lattice (class BoundedLattice, class DepSemiring, DepKind(..), class JoinSemilattice, class MeetSemilattice, Lineage, Raw, ctrlWeight, (∧), (∨))
+import Literal (Literal(..))
+import Types as T
 import Pretty.Doc (Doc, text)
-import Unsafe.Coerce (unsafeCoerce)
-import Util (class IsEmpty, type (×), Endo, definitely, error, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜))
+import Util (MayFail, class IsEmpty, type (×), Endo, absurd, definitely', definitelyRight, error, isEmpty, orThrow, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜))
+import Util.Pair (Pair(..))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
 import Util.Set (class Set, difference, empty, filter, size, union, (∈), (∪))
 
-data Val a = Val a (Maybe (Val a)) (BaseVal a)
+data Val a = Val a (BaseVal a)
 
 data Result a = Returns (Val a) | Assigns (Env a) (Set.Set a)
 
@@ -49,28 +53,59 @@ asReturns (Returns v) = v
 asReturns (Assigns _ _) = error "Returns expected"
 
 asAssigns :: forall a. Result a -> Env a × Set.Set a
-asAssigns (Assigns γ αs) = γ × αs
+asAssigns (Assigns ρ αs) = ρ × αs
 asAssigns (Returns _) = error "Assigns expected"
 
 data BaseVal a
-   = Int Int
-   | Float Number
-   | Str String
-   | Constr Name (List (Val a)) -- always saturated
+   = Lit Literal
+   | Obj Name (List (Var × Val a))
+   | List (Array (Val a))
+   | Tuple (Array (Val a))
    | Dictionary (DictRep a)
    | Matrix (MatrixRep a)
    | Fun (Fun a)
+   | Opaque Name -- predefined name, fully qualified
+   | Module ModuleName
+   | Unbound
+   | TypeAlias (List Var) T.Type
 
-val :: forall m. MonadWithGraphAlloc m => Maybe (Val Vertex) -> Set Vertex -> BaseVal Vertex -> m (Val Vertex)
-val doc_opt = new (flip Val doc_opt)
+root :: forall a. Val a -> a
+root (Val α _) = α
 
-asVal :: VertexData -> Maybe (Val Vertex)
-asVal e = if unpack typeName e == "Val" then Just (unpack unsafeCoerce e) else Nothing
+overChildren :: forall a. Endo (Val a) -> Endo (BaseVal a)
+overChildren _ (Lit ℓ) = Lit ℓ
+overChildren _ (Opaque q) = Opaque q
+overChildren _ (Module q) = Module q
+overChildren _ Unbound = Unbound
+overChildren _ (TypeAlias αs τ) = TypeAlias αs τ
+overChildren f (Obj c xvs) = Obj c (map f <$> xvs)
+overChildren f (List vs) = List (f <$> vs)
+overChildren f (Tuple vs) = Tuple (f <$> vs)
+overChildren f (Dictionary (DictRep d)) = Dictionary (DictRep (map f <$> d))
+overChildren f (Matrix (MatrixRep (vss × i × j))) = Matrix (MatrixRep (map (map f) vss × i × j))
+overChildren f (Fun φ) = Fun (overFun φ)
+   where
+   overFun (Closure (Env ρ) ds d) = Closure (Env (f <$> ρ)) ds d
+   overFun (Partial φ' vs) = Partial (overFun φ') (f <$> vs)
+   overFun φ' = φ'
+
+-- False at shape positions.
+dataPositions :: forall a. Val a -> Val Boolean
+dataPositions (Val _ u) = Val (not container) (overChildren dataPositions (false <$ u))
+   where
+   container = case u of
+      Obj _ _ -> true
+      List _ -> true
+      Tuple _ -> true
+      Dictionary _ -> true
+      Matrix _ -> true
+      _ -> false
 
 data Fun a
-   = Closure (Env a) (Dict (Elim a)) (Elim a)
-   | Foreign ForeignOp (List (Val a)) -- never saturated
-   | PartialConstr Name (List (Val a)) -- never saturated
+   = Closure (Env a) (Dict Def) Def
+   | Prim ForeignOp
+   | Type T.Type
+   | Partial (Fun a) (List (Val a)) -- fewer arguments than the arity of the function, which is not itself partial
 
 class (Highlightable a, BoundedLattice a) <= Ann a
 
@@ -82,14 +117,20 @@ instance Highlightable a => Highlightable (a × b) where
 
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
+-- Module parsed but not yet loaded, or loaded with its members as vertices in depGraph.
+data ModuleState = Parsed Module | Loaded (Dict Dep.Deriv)
+
+loadedEnv :: ModuleState -> Maybe (Dict Dep.Deriv)
+loadedEnv (Parsed _) = Nothing
+loadedEnv (Loaded ρ) = Just ρ
+
 type ModuleStore =
-   { γ0 :: Env Vertex -- the members of the predefined modules (lib.builtins, which owns the primitives, and lib.prelude)
-   , moduleBody :: Map ModuleName (Module Vertex)
-   , moduleEnv :: Map ModuleName (Env Vertex)
+   { modules :: Map ModuleName ModuleState
+   , depGraph :: DepGraph Val (Lineage (Dep.Deriv × Dep.Pos) DepKind)
    }
 
 emptyModuleStore :: ModuleStore
-emptyModuleStore = { γ0: empty, moduleBody: Map.empty, moduleEnv: Map.empty }
+emptyModuleStore = { modules: Map.empty, depGraph: emptyGraph }
 
 class Monad m <= HasModuleStore m where
    moduleStore :: m ModuleStore
@@ -111,22 +152,156 @@ instance (Monad m, HasModuleStore m, Monoid w) => HasModuleStore (WriterT w m) w
    moduleStore = lift moduleStore
    modifyModuleStore = lift <<< modifyModuleStore
 
-type Op =
-   forall m
-    . HasClasses m
-   => HasModuleStore m
-   => MonadWithGraphAlloc m
-   => MonadError Error m
-   => MonadAff m
-   => MonadReader FileCxt m
-   => LoadFile m
-   => Maybe (Val Vertex) -- optional doc context
-   -> List (Val Vertex)
-   -> m (Val Vertex)
+type InEdges s = List (Dep.Deriv × Rel (Val s) (Val s))
+-- Value together with its dependence on values already in the graph.
+type GVal s = { val :: Raw Val, inEdges :: InEdges s }
+-- Dependence of the control input on values already in the graph.
+type Ctrl s = List (Dep.Deriv × Rel (Val s) s)
+
+-- Weight 1 at every position except beneath the root of a closure.
+unitSection :: forall s. Semiring s => Raw Val -> Val s
+unitSection (Val _ u) = Val one case u of
+   Lit ℓ -> Lit ℓ
+   Obj c xvs -> Obj c (map unitSection <$> xvs)
+   List vs -> List (unitSection <$> vs)
+   Tuple vs -> Tuple (unitSection <$> vs)
+   Dictionary (DictRep d) -> Dictionary (DictRep ((\(_ × v) -> one × unitSection v) <$> d))
+   Matrix (MatrixRep (vss × i × j)) -> Matrix (MatrixRep (map (map unitSection) vss × unitSection i × unitSection j))
+   Fun φ -> Fun (zeros φ)
+   Opaque q -> Opaque q
+   Module q -> Module q
+   Unbound -> Unbound
+   TypeAlias αs τ -> TypeAlias αs τ
+
+gval :: forall s. Dep.Deriv × Raw Val -> GVal s
+gval (p × v) = { val: v, inEdges: singleton (p × identity) }
+
+-- Vertex with the vertex of its doc, if any.
+type DerivWithDoc = Dep.Deriv × Maybe Dep.Deriv
+
+withDoc :: forall f s. DepGraph f s -> Dep.Deriv -> DerivWithDoc
+withDoc g p = p × Map.lookup p g.docs
+
+-- Value with its doc, as shown in a figure.
+newtype ValWithDoc a = ValWithDoc { val :: Val a, doc :: Maybe (Val a) }
+newtype EnvWithDocs a = EnvWithDocs (Dict (ValWithDoc a))
+
+-- Value at a vertex, with the value of its doc.
+val :: forall a. Labelling (Val a) -> DerivWithDoc -> ValWithDoc a
+val m (p × d) = ValWithDoc { val: get p m, doc: flip get m <$> d }
+
+unval :: forall a. DerivWithDoc -> ValWithDoc a -> Labelling (Val a)
+unval (p × d) (ValWithDoc { val: v, doc }) = Map.fromFoldable (A.cons (p × v) (A.fromFoldable ((×) <$> d <*> doc)))
+
+unvals :: forall a. Dict DerivWithDoc -> EnvWithDocs a -> Labelling (Val a)
+unvals ps (EnvWithDocs vs) = Map.unions (values (intersectionWith unval ps vs))
+
+-- Value of a derivation already in the graph.
+gvalAt :: forall m s. MonadState (DepGraph Val s) m => Dep.Deriv -> m (GVal s)
+gvalAt p = gets \g -> gval (p × valAt g p)
+
+-- Dependence on values already in the graph of a value that depends on v by r.
+via :: forall s b. Rel (Val s) b -> GVal s -> List (Dep.Deriv × Rel (Val s) b)
+via r v = second (r <<< _) <$> v.inEdges
+
+-- Dependence on values already in the graph of a value that depends on vs by r.
+viaAll :: forall t s. Traversable t => Semiring s => Rel (t (Val s)) (Val s) -> t (GVal s) -> InEdges s
+viaAll r vs = fold (ivs <#> \(i × v) -> via (\x -> r (force zs <#> \(j × z) -> if i == j then x else z)) v)
+   where
+   ivs = (mapAccumL (\i v -> { accum: i + 1, value: i × v }) 0 vs).value
+   zs = defer \_ -> map (zeros <<< _.val) <$> ivs
+
+-- Adds dependence on control at weight c to the positions of v in the section of its value.
+withCtrl :: forall s. DepSemiring s => Ctrl s -> (Raw Val -> Val s) -> GVal s -> GVal s
+withCtrl ctrl section v =
+   v { inEdges = v.inEdges <> (ctrl <#> second \r x -> scale (ctrlWeight * r x) (force section')) }
+   where
+   section' = defer \_ -> section v.val
+
+-- Constructed value: root depends on control at weight c.
+constructed :: forall s. DepSemiring s => Ctrl s -> GVal s -> GVal s
+constructed ctrl = withCtrl ctrl \(Val _ u) -> Val one (zeros u)
+
+record :: forall m s. MonadState (DepGraph Val s) m => Semiring s => GVal s -> m (Dep.Deriv × Raw Val)
+record { val: v, inEdges } = do
+   p <- deriv v
+   for_ inEdges \(q × r) -> addEdge q p r
+   pure (p × v)
+
+-- Value delivered rather than constructed: every position depends on control at weight c.
+deliver :: forall m s. MonadState (DepGraph Val s) m => DepSemiring s => Ctrl s -> GVal s -> m (Dep.Deriv × Raw Val)
+deliver ctrl v = record (withCtrl ctrl unitSection v)
+
+construct :: forall m s. MonadState (DepGraph Val s) m => DepSemiring s => Ctrl s -> GVal s -> m (Dep.Deriv × Raw Val)
+construct ctrl v = record (constructed ctrl v)
+
+constructWith
+   :: forall t m s
+    . Traversable t
+   => MonadState (DepGraph Val s) m
+   => DepSemiring s
+   => Ctrl s
+   -> (forall a. t (Val a) -> BaseVal a)
+   -> t (GVal s)
+   -> m (Dep.Deriv × Raw Val)
+constructWith ctrl mk vs =
+   construct ctrl { val: Val unit (mk (_.val <$> vs)), inEdges: viaAll (mk >>> Val zero) vs }
+
+-- Dictionary from keys and values; later entries overwrite earlier ones.
+dictionary
+   :: forall m s
+    . MonadState (DepGraph Val s) m
+   => DepSemiring s
+   => Ctrl s
+   -> List (String × GVal s × GVal s)
+   -> m (Dep.Deriv × Raw Val)
+dictionary ctrl kvs =
+   constructWith ctrl mk (Compose (D.fromFoldable (kvs <#> \(k × key × v) -> k × Pair key v)))
+   where
+   mk :: forall a. Compose Dict Pair (Val a) -> BaseVal a
+   mk (Compose d) = Dictionary (DictRep (d <#> \(Pair key v) -> root key × v))
+
+-- Monad for evaluating program into dependence graph with weights in s
+class
+   ( HasClasses m
+   , HasModuleStore m
+   , MonadLoad m
+   , MonadState (DepGraph Val s) m
+   , DepSemiring s
+   ) <=
+   MonadEval s m
+   | m -> s
+
+instance
+   ( HasClasses m
+   , HasModuleStore m
+   , MonadLoad m
+   , MonadState (DepGraph Val s) m
+   , DepSemiring s
+   ) =>
+   MonadEval s m
+
+type DepOp =
+   forall m s
+    . MonadEval s m
+   => Ctrl s
+   -> List (GVal s)
+   -> m (Dep.Deriv × Raw Val)
+
+-- Primitive given by its dependence relation, a linear map from argument weight vectors to the result weight
+-- vector; at Unit, the value itself.
+fromRel :: (forall a. DepSemiring a => List (Val a) -> Val a) -> DepOp
+fromRel g ctrl vs = deliver ctrl { val: g (_.val <$> vs), inEdges: viaAll g vs }
+
+-- Dependence relation of a primitive without effects, checked at the argument values.
+pureRel :: (forall a. DepSemiring a => List (Val a) -> MayFail (Val a)) -> DepOp
+pureRel f ctrl vs = do
+   _ <- orThrow (f (_.val <$> vs))
+   fromRel (f >>> definitelyRight) ctrl vs
 
 data ForeignOp' = ForeignOp'
    { arity :: Int
-   , op :: Op
+   , depOp :: DepOp
    }
 
 newtype ForeignOp = ForeignOp (String × ForeignOp') -- string is unique identifier for Eq
@@ -140,56 +315,114 @@ instance Ord ForeignOp where
 newtype Env a = Env (Dict (Val a))
 
 instance IsEmpty (Env a) where
-   isEmpty (Env γ) = isEmpty γ
+   isEmpty (Env ρ) = isEmpty ρ
 
 instance Set (Env a) String where
    empty = Env empty
-   filter p (Env γ) = Env (filter p γ)
-   size (Env γ) = size γ
-   member x (Env γ) = x ∈ γ
-   difference (Env γ) (Env γ') = Env (difference γ γ')
-   union (Env γ) (Env γ') = Env (union γ γ')
+   filter p (Env ρ) = Env (filter p ρ)
+   size (Env ρ) = size ρ
+   member x (Env ρ) = x ∈ ρ
+   difference (Env ρ) (Env ρ') = Env (difference ρ ρ')
+   union (Env ρ) (Env ρ') = Env (union ρ ρ')
 
 instance Map (Env a) String (Val a) where
    maplet k v = Env (maplet k v)
-   keys (Env γ) = keys γ
-   values (Env γ) = values γ
-   filterKeys p (Env γ) = Env (filterKeys p γ)
-   unionWith f (Env γ) (Env γ') = Env (unionWith f γ γ')
-   lookup k (Env γ) = lookup k γ
-   delete k (Env γ) = Env (delete k γ)
-   insert k v (Env γ) = Env (insert k v γ)
-   toUnfoldable (Env γ) = toUnfoldable γ
+   keys (Env ρ) = keys ρ
+   values (Env ρ) = values ρ
+   filterKeys p (Env ρ) = Env (filterKeys p ρ)
+   unionWith f (Env ρ) (Env ρ') = Env (unionWith f ρ ρ')
+   lookup k (Env ρ) = lookup k ρ
+   delete k (Env ρ) = Env (delete k ρ)
+   insert k v (Env ρ) = Env (insert k v ρ)
+   toUnfoldable (Env ρ) = toUnfoldable ρ
 
-data EnvStmt a = EnvStmt (Env a) (Stmt a)
-
-reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
-reaches ρ xs = go (Set.toUnfoldable xs) empty
+reaches :: Dict Def -> Endo (Set Var)
+reaches ds xs = go (Set.toUnfoldable xs) empty
    where
-   dom_ρ = keys ρ
+   dom_ds = keys ds
 
    go :: List Var -> Endo (Set Var)
    go Nil acc = acc
    go (x : xs') acc | x ∈ acc = go xs' acc
    go (x : xs') acc | otherwise =
-      go (Set.toUnfoldable (fv σ ∩ dom_ρ) <> xs') (singleton x ∪ acc)
+      go (Set.toUnfoldable (fv d ∩ dom_ds) <> xs') (singleton x ∪ acc)
       where
-      σ = get x ρ
+      d = get x ds
 
-forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
-forDefs ρ σ = restrict (reaches ρ (fv σ ∩ Set.fromFoldable (keys ρ))) ρ
+forDefs :: Dict Def -> Def -> Dict Def
+forDefs ds d = restrict (reaches ds (fv d ∩ Set.fromFoldable (keys ds))) ds
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))
-newtype DictKey a = DictKey (String × a)
-newtype MatrixDim a = MatrixDim (Int × a)
-newtype MatrixRep a = MatrixRep (Array2 (Val a) × MatrixDim a × MatrixDim a)
+-- Elements with row and column counts, as int values.
+newtype MatrixRep a = MatrixRep (Array2 (Val a) × Val a × Val a)
 type Array2 a = Array (Array a)
 
 matrixGet :: forall a. Int -> Int -> MatrixRep a -> Val a
-matrixGet i j (MatrixRep (vss × _ × _)) = definitely "matrix indices within bounds" $ do
-   us <- vss !! i
-   us !! j
+matrixGet i j (MatrixRep (vss × _ × _)) = definitely' ((_ A.!! j) =<< vss A.!! i)
+
+matrixElement :: forall a. Int -> Int -> Val a -> Val a
+matrixElement i j (Val _ (Matrix r)) = matrixGet i j r
+matrixElement _ _ _ = error absurd
+
+field :: forall a. Int -> Val a -> Val a
+field i (Val _ (Obj _ xvs)) = snd (xvs ! i)
+field _ _ = error absurd
+
+attr :: forall a. Var -> Val a -> Val a
+attr x (Val _ (Obj _ xvs)) = get x (D.fromFoldable xvs)
+attr _ _ = error absurd
+
+-- i-th element of a sequence: element of a list or tuple, character of a string, key of a dictionary, integer of a range.
+element :: forall a. Int -> Val a -> Val a
+element i (Val _ (List vs)) = definitely' (vs A.!! i)
+element i (Val _ (Tuple vs)) = definitely' (vs A.!! i)
+element i (Val α (Lit (Str s))) = Val α (Lit (Str (definitely' (S.singleton <$> S.codePointAt i s))))
+element i (Val _ (Dictionary (DictRep d))) = let k × (β × _) = definitely' (toUnfoldable d L.!! i) in Val β (Lit (Str k))
+element i (Val _ (Obj c ((_ × Val β (Lit (Int m))) : _ : Nil))) | c == cRange = Val β (Lit (Int (m + i)))
+element _ _ = error absurd
+
+elements :: forall a. Val a -> List (Val a)
+elements v = (\i -> element i v) <$> L.take n (L.range 0 n)
+   where
+   n = definitely' (elementCount v)
+
+-- Dependence of the length of a sequence: the root, plus start and stop of a range.
+lengthDep :: forall a. Semiring a => Val a -> a
+lengthDep (Val α (Obj c xvs)) | c == cRange = foldl (+) α (root <<< snd <$> xvs)
+lengthDep (Val α _) = α
+
+elementCount :: forall a. Val a -> Maybe Int
+elementCount (Val _ (List vs)) = Just (A.length vs)
+elementCount (Val _ (Tuple vs)) = Just (A.length vs)
+elementCount (Val _ (Obj c ((_ × Val _ (Lit (Int m))) : (_ × Val _ (Lit (Int n))) : Nil))) | c == cRange =
+   Just (max 0 (n - m))
+elementCount (Val _ (Lit (Str s))) = Just (S.length s)
+elementCount (Val _ (Dictionary (DictRep d))) = Just (size d)
+elementCount _ = Nothing
+
+dictEntries :: forall a. Val a -> Dict (a × Val a)
+dictEntries (Val _ (Dictionary (DictRep d))) = d
+dictEntries _ = error absurd
+
+dictEntry :: forall a. String -> Val a -> a × Val a
+dictEntry k = dictEntries >>> get k
+
+fun :: forall a. Val a -> Fun a
+fun (Val _ (Fun φ)) = φ
+fun _ = error absurd
+
+closureEnv :: forall a. Val a -> Env a
+closureEnv (Val _ (Fun (Closure ρ _ _))) = ρ
+closureEnv _ = error absurd
+
+partialFun :: forall a. Val a -> Val a
+partialFun (Val α (Fun (Partial φ _))) = Val α (Fun φ)
+partialFun _ = error absurd
+
+partialArg :: forall a. Int -> Val a -> Val a
+partialArg i (Val _ (Fun (Partial _ vs))) = definitely' (vs L.!! i)
+partialArg _ _ = error absurd
 
 matrixPut :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
 matrixPut i j δv (MatrixRep (vss × h × w)) =
@@ -209,52 +442,63 @@ instance Highlightable Boolean where
    highlightIf false = identity
    highlightIf true = \doc -> text "⸨" <> doc <> text "⸩"
 
-instance Highlightable Vertex where
-   highlightIf (Vertex α) = \doc -> doc <> text "_" <> text ("⟨" <> α <> "⟩")
+instance Highlightable DepKind where
+   highlightIf Zero = identity
+   highlightIf Ctrl = \doc -> text "⟪" <> doc <> text "⟫"
+   highlightIf Data = \doc -> text "⸨" <> doc <> text "⸩"
 
 -- ======================
 -- boilerplate
 -- ======================
 derive instance Functor DictRep
 derive instance Functor MatrixRep
-derive instance Functor MatrixDim
 derive instance Functor Val
 derive instance Functor Env
+derive instance Functor ValWithDoc
+derive instance Functor EnvWithDocs
 derive instance Functor Fun
 derive instance Functor BaseVal
-derive instance Functor EnvStmt
-derive instance Traversable MatrixDim
 derive instance Traversable Val
 derive instance Traversable BaseVal
 derive instance Traversable Fun
 derive instance Traversable Env
-derive instance Traversable EnvStmt
-derive instance Foldable MatrixDim
+derive instance Traversable ValWithDoc
+derive instance Traversable EnvWithDocs
 derive instance Foldable Val
 derive instance Foldable BaseVal
 derive instance Foldable Fun
 derive instance Foldable Env
-derive instance Foldable EnvStmt
+derive instance Foldable ValWithDoc
+derive instance Foldable EnvWithDocs
 
 instance Apply Val where
-   apply (Val fα Nothing fv) (Val α Nothing v) = Val (fα α) Nothing (fv <*> v)
-   apply (Val fα (Just fdoc) fv) (Val α (Just doc) v) = Val (fα α) (Just (fdoc <*> doc)) (fv <*> v)
-   apply _ _ = shapeMismatch unit
+   apply (Val fα fv) (Val α v) = Val (fα α) (fv <*> v)
+
+instance Apply ValWithDoc where
+   apply (ValWithDoc f) (ValWithDoc v) = ValWithDoc { val: f.val <*> v.val, doc: lift2 (<*>) f.doc v.doc }
+
+instance Apply EnvWithDocs where
+   apply (EnvWithDocs fρ) (EnvWithDocs ρ) = EnvWithDocs (((<*>) <$> fρ) <*> ρ)
 
 instance Apply BaseVal where
-   apply (Int n) (Int n') = Int (n ≜ n')
-   apply (Float n) (Float n') = Float (n ≜ n')
-   apply (Str s) (Str s') = Str (s ≜ s')
-   apply (Constr c fes) (Constr c' es) = Constr (c ≜ c') (zipWith (<*>) fes es)
+   apply (Lit ℓ) (Lit ℓ') = Lit (ℓ ≜ ℓ')
+   apply (Obj c fxes) (Obj c' xes) = Obj (c ≜ c') (zipWith (\(x × f) (x' × e) -> (x ≜ x') × (f <*> e)) fxes xes)
+   apply (List fvs) (List vs) = List (A.zipWith (<*>) fvs vs)
+   apply (Tuple fvs) (Tuple vs) = Tuple (A.zipWith (<*>) fvs vs)
    apply (Dictionary fxvs) (Dictionary xvs) = Dictionary (fxvs <*> xvs)
    apply (Matrix fm) (Matrix m) = Matrix (fm <*> m)
    apply (Fun ff) (Fun f) = Fun (ff <*> f)
+   apply (Opaque q) (Opaque q') = Opaque (q ≜ q')
+   apply (Module q) (Module q') = Module (q ≜ q')
+   apply Unbound Unbound = Unbound
+   apply (TypeAlias αs τ) (TypeAlias αs' τ') = TypeAlias (αs ≜ αs') (τ ≜ τ')
    apply _ _ = shapeMismatch unit
 
 instance Apply Fun where
-   apply (Closure fγ fρ fσ) (Closure γ ρ σ) = Closure (fγ <*> γ) (((<*>) <$> fρ) <*> ρ) (fσ <*> σ)
-   apply (Foreign op fvs) (Foreign _ vs) = Foreign op (zipWith (<*>) fvs vs)
-   apply (PartialConstr c fvs) (PartialConstr c' vs) = PartialConstr (c ≜ c') (zipWith (<*>) fvs vs)
+   apply (Closure fρ ds d) (Closure ρ _ _) = Closure (fρ <*> ρ) ds d
+   apply (Prim op) (Prim _) = Prim op
+   apply (Type τ) (Type τ') = Type (τ ≜ τ')
+   apply (Partial fφ fvs) (Partial φ vs) = Partial (fφ <*> φ) (zipWith (<*>) fvs vs)
    apply _ _ = shapeMismatch unit
 
 -- Should require equal domains?
@@ -266,14 +510,8 @@ instance Apply MatrixRep where
    apply (MatrixRep (fvss × fn × fm)) (MatrixRep (vss × n × m)) =
       MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × (fn <*> n) × (fm <*> m)
 
-instance Apply MatrixDim where
-   apply (MatrixDim (n × fnα)) (MatrixDim (n' × nα)) = MatrixDim ((n ≜ n') × (fnα nα))
-
 instance Apply Env where
-   apply (Env fγ) (Env γ) = Env (((<*>) <$> fγ) <*> γ)
-
-instance Apply EnvStmt where
-   apply (EnvStmt fγ fs) (EnvStmt γ s) = EnvStmt (fγ <*> γ) (fs <*> s)
+   apply (Env fρ) (Env ρ) = Env (((<*>) <$> fρ) <*> ρ)
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d
@@ -285,7 +523,7 @@ instance Traversable DictRep where
    sequence = sequenceDefault
 
 instance Foldable MatrixRep where
-   foldl f acc (MatrixRep (vss × MatrixDim (_ × βi) × MatrixDim (_ × βj))) = foldl (foldl (foldl f)) (acc `f` βi `f` βj) vss
+   foldl f acc (MatrixRep (vss × i × j)) = foldl (foldl (foldl f)) (foldl f (foldl f acc i) j) vss
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
@@ -303,129 +541,49 @@ instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
    join (MatrixRep (vss × i × j)) (MatrixRep (vss' × i' × j')) =
       MatrixRep ((vss ∨ vss') × ((i ∨ i') × (j ∨ j')))
 
-instance JoinSemilattice a => JoinSemilattice (MatrixDim a) where
-   join (MatrixDim (i × α)) (MatrixDim (i' × α')) = MatrixDim ((i ≜ i') × (α ∨ α'))
-
 instance JoinSemilattice a => JoinSemilattice (Val a) where
-   join (Val α doc u) (Val α' doc' v) = Val (α ∨ α') (doc ∨ doc') (u ∨ v)
+   join (Val α u) (Val α' v) = Val (α ∨ α') (u ∨ v)
 
 -- Not equivalent to sequence (join <$> x <*> y) because Dict.join only requires compatibility
 -- whereas Dict.apply requires domains to be equal.
 instance JoinSemilattice a => JoinSemilattice (BaseVal a) where
-   join (Int n) (Int n') = Int (n ≜ n')
-   join (Float n) (Float n') = Float (n ≜ n')
-   join (Str s) (Str s') = Str (s ≜ s')
+   join (Lit ℓ) (Lit ℓ') = Lit (ℓ ≜ ℓ')
    join (Dictionary d) (Dictionary d') = Dictionary (d ∨ d')
-   join (Constr c vs) (Constr c' us) = Constr (c ≜ c') (vs ∨ us)
+   join (Obj c xvs) (Obj c' xus) = Obj (c ≜ c') (zipWith (\(x × v) (x' × u) -> (x ≜ x') × (v ∨ u)) xvs xus)
+   join (List vs) (List us) = List (vs ∨ us)
+   join (Tuple vs) (Tuple us) = Tuple (vs ∨ us)
    join (Matrix m) (Matrix m') = Matrix (m ∨ m')
    join (Fun φ) (Fun φ') = Fun (φ ∨ φ')
    join x y = (∨) <$> x <*> y
 
 instance JoinSemilattice a => JoinSemilattice (Fun a) where
-   join (Closure γ ρ σ) (Closure γ' ρ' σ') =
-      Closure (γ ∨ γ') (ρ ∨ ρ') (σ ∨ σ')
-   join (Foreign φ vs) (Foreign _ vs') =
-      Foreign φ (vs ∨ vs') -- TODO: require φ == φ'
-   join (PartialConstr c vs) (PartialConstr c' us) =
-      PartialConstr (c ≜ c') (vs ∨ us)
+   join (Closure ρ ds d) (Closure ρ' _ _) = Closure (ρ ∨ ρ') ds d
+   join (Prim φ) (Prim _) = Prim φ -- TODO: require φ == φ'
+   join (Type τ) (Type τ') = Type (τ ≜ τ')
+   join (Partial φ vs) (Partial φ' vs') = Partial (φ ∨ φ') (vs ∨ vs')
    join _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Env a) where
-   join (Env γ) (Env γ') = Env (γ ∨ γ')
+   join (Env ρ) (Env ρ') = Env (ρ ∨ ρ')
 
 instance MeetSemilattice a => MeetSemilattice (Val a) where
+   meet = lift2 (∧)
+
+instance MeetSemilattice a => MeetSemilattice (ValWithDoc a) where
    meet = lift2 (∧)
 
 instance MeetSemilattice a => MeetSemilattice (Env a) where
    meet = lift2 (∧)
 
-instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
-   expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')
-
-instance BoundedJoinSemilattice a => Expandable (MatrixRep a) (Raw MatrixRep) where
-   expand (MatrixRep (vss × i × j)) (MatrixRep (vss' × i' × j')) =
-      MatrixRep (expand vss vss' × expand i i' × expand j j')
-
-instance BoundedJoinSemilattice a => Expandable (MatrixDim a) (Raw MatrixDim) where
-   expand (MatrixDim (i × α)) (MatrixDim (i' × _)) = MatrixDim ((i ≜ i') × α)
-
-instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
-   expand (Val α doc u) (Val _ doc' v) = Val α (expand doc doc') (expand u v)
-
-instance BoundedJoinSemilattice a => Expandable (BaseVal a) (Raw BaseVal) where
-   expand (Int n) (Int n') = Int (n ≜ n')
-   expand (Float n) (Float n') = Float (n ≜ n')
-   expand (Str s) (Str s') = Str (s ≜ s')
-   expand (Dictionary d) (Dictionary d') = Dictionary (expand d d')
-   expand (Constr c vs) (Constr c' us) = Constr (c ≜ c') (expand vs us)
-   expand (Matrix m) (Matrix m') = Matrix (expand m m')
-   expand (Fun φ) (Fun φ') = Fun (expand φ φ')
-   expand _ _ = shapeMismatch unit
-
-instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
-   expand (Closure γ ρ σ) (Closure γ' ρ' σ') =
-      Closure (expand γ γ') (expand ρ ρ') (expand σ σ')
-   expand (Foreign φ vs) (Foreign _ vs') = Foreign φ (expand vs vs') -- TODO: require φ == φ'
-   expand (PartialConstr c vs) (PartialConstr c' us) = PartialConstr (c ≜ c') (expand vs us)
-   expand _ _ = shapeMismatch unit
-
-instance BoundedJoinSemilattice a => Expandable (Env a) (Raw Env) where
-   expand (Env γ) (Env γ') = Env (expand γ γ')
-
 derive instance Eq a => Eq (Val a)
+derive newtype instance Eq a => Eq (ValWithDoc a)
+derive newtype instance Eq a => Eq (EnvWithDocs a)
 derive instance Eq a => Eq (BaseVal a)
 derive instance Eq a => Eq (DictRep a)
 derive instance Eq a => Eq (MatrixRep a)
-derive instance Eq a => Eq (MatrixDim a)
 derive instance Eq a => Eq (Fun a)
 derive instance Eq a => Eq (Env a)
-derive instance Eq a => Eq (EnvStmt a)
 
 derive instance Newtype (Env a) _
-
-instance TypeName (Val a) where
-   typeName _ = "Val"
-
-instance TypeName (MatrixDim a) where
-   typeName _ = "MatrixDim"
-
-instance TypeName (DictKey a) where
-   typeName _ = "DictKey"
-
-instance Vertices (Val Vertex) where
-   vertices v@(Val α _ v') = singleton (DVertex (α × pack v)) ∪ vertices v'
-
-instance Vertices (BaseVal Vertex) where
-   vertices (Int _) = empty
-   vertices (Float _) = empty
-   vertices (Str _) = empty
-   vertices (Constr _ vs) = unions (vertices <$> vs)
-   vertices (Dictionary d) = vertices d
-   vertices (Matrix m) = vertices m
-   vertices (Fun f) = vertices f
-
-instance Vertices (DictRep Vertex) where
-   vertices (DictRep d) = foldMap (\k (α × v) -> vertices (DictKey (k × α)) ∪ vertices v) (unwrap d)
-
-instance Vertices (DictKey Vertex) where
-   vertices dk@(DictKey (_ × α)) = singleton (DVertex (α × pack dk))
-
-instance Vertices (MatrixRep Vertex) where
-   vertices (MatrixRep (vss × i × j)) =
-      unions (concat (map vertices <$> vss))
-         ∪ vertices i
-         ∪ vertices j
-
-instance Vertices (MatrixDim Vertex) where
-   vertices md@(MatrixDim (_ × α)) = singleton (DVertex (α × pack md))
-
-instance Vertices (Fun Vertex) where
-   vertices (Closure γ ρ σ) = vertices γ ∪ vertices ρ ∪ vertices σ
-   vertices (Foreign _ vs) = unions (vertices <$> vs)
-   vertices (PartialConstr _ vs) = unions (vertices <$> vs)
-
-instance Vertices (Env Vertex) where
-   vertices (Env γ) = unions (vertices <$> values γ)
-
-instance Vertices (EnvStmt Vertex) where
-   vertices (EnvStmt γ s) = vertices γ ∪ vertices s
+derive instance Newtype (ValWithDoc a) _
+derive instance Newtype (EnvWithDocs a) _

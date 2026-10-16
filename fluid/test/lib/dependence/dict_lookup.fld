@@ -1,0 +1,3 @@
+d: dict[str, int] = @doc("d") { "a": 1, "b": 2 }
+
+d["a"]

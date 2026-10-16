@@ -3,14 +3,15 @@ module App.View.LineChart where
 import Prelude hiding (absurd)
 
 import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, contents, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
-import App.Util.Selector (ConstrArg, ViewSelSetter, listElement)
+import App.Util.Selector (ObjArg, ViewSelSetter, listElement)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.Axes (Orientation, create_xAxis, create_yAxis)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
-import DataType (cLineChart, cLinePlot, f_plots, f_points)
+
+import Types.Defs (cLineChart, cLinePlot, f_plots, f_points)
 import Data.Array (concat, elemIndex, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
 import Data.Foldable (length)
@@ -60,7 +61,7 @@ type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 instance Viewable LineChart Unit where
    isLeaf = const false
 
-   setSelection :: ConstrArg -> Unit -> LineChart -> Select -> D3.Selection -> Effect Unit
+   setSelection :: ObjArg -> Unit -> LineChart -> Select -> D3.Selection -> Effect Unit
    setSelection arg _ (LineChart { plots }) redraw rootElement = do
       points <- rootElement # selectAll ".linechart-point"
 
