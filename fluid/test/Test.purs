@@ -21,6 +21,7 @@ import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Specs.Misc (misc_cases)
 import Test.Specs.Paragraph (paragraph_cases)
+import Test.Specs.Scales (scales_suite)
 import Test.Util (TestSuite, fluidSrcPaths)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, SuiteFactory, depSuite, illFormedSuite, linkedInputsSuite, linkedOutputsSuite, suite)
@@ -40,7 +41,7 @@ filterSuite files cases makeSuite =
    second void <$> makeSuite (filter (\c -> c.file `elem` files) cases) (1 × false)
 
 allTests :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => TestSuite m
-allTests = concat (benchmarks <#> asTestSuite) <> depSuite dep_cases <> linkingTests <> illFormedTests
+allTests = concat (benchmarks <#> asTestSuite) <> depSuite dep_cases <> linkingTests <> illFormedTests <> scales_suite
 
 linkingTests :: forall m. HasClasses m => HasModuleStore m => MonadLoad m => TestSuite m
 linkingTests = linkedOutputsSuite linkedOutputs_cases <> linkedInputsSuite linkedInputs_cases
