@@ -49,7 +49,7 @@ nonco2: list[StackedBar] = map(get("Non-CO2"), [ssp126, ssp245])
 MultiView([
   ssp126,
   ssp245,
-  f"""Within each scenario bar plot, the bars represent: {Link(totals, "total warming (°C)")} ,
-      {Link(co2s, "warming from CO2 (°C) ")} and from
+  f"""Within each scenario bar plot, the bars represent: {Link(totals, "total warming (°C)")},
+      {Link(co2s, "warming from CO2 (°C)")} and from
       {Link(map(stackedBarHeight, nonco2), "Non-CO2 GHG's (°C)")}."""
 ])
