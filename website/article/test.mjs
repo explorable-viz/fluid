@@ -4,6 +4,15 @@ import {
 } from "@fluid-org/fluid/script/webtest-lib.mjs"
 
 export const main = async () => {
+   await testURL("co2", [
+      async page => {
+         const yTick = n => `#fig-output > svg:nth-of-type(${n}) g.y-axis .tick text`
+         await checkTextContent(page, yTick(1), "350.0")
+         await checkTextContent(page, yTick(2), "0.0")
+         await checkTextContent(page, yTick(3), "300.0")
+      }
+   ])
+
    // Convolution: 5×5 output matrix
    const rows = 5, cols = 5
    await testURL("convolution", [
