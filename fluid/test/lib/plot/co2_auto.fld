@@ -1,9 +1,0 @@
-from fluid.view import Dimensions, LineChart, LinePlot, Point, TickLabels, Default, Scales, Auto
-
-LineChart(
-  size=Dimensions(width=450, height=285),
-  tickLabels=TickLabels(x=Default(), y=Default()),
-  caption="CO2 concentration (ppm), illustrative",
-  scales=Scales(x=Auto(), y=Auto()),
-  plots=[LinePlot(name="CO2", points=[Point(x=1960, y=315), Point(x=1970, y=326), Point(x=1980, y=339), Point(x=1990, y=354), Point(x=2000, y=369), Point(x=2010, y=389), Point(x=2020, y=412), Point(x=2025, y=432)])]
-)
