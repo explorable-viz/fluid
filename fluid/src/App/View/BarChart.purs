@@ -19,6 +19,7 @@ import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
 import Data.Foldable (length)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
@@ -76,8 +77,11 @@ instance Viewable BarChart Unit where
       createAxes :: D3.Selection -> Effect (Coord D3.Selection)
       createAxes parent' = do
          let Point { x: xLabels, y: yLabels } = tickLabels
-         x <- create_xAxis parent' props.scales props.xs (unwrap props.interior).height (contents xLabels)
-         y <- create_yAxis parent' props.scales 3.0 0 (contents yLabels)
+         x <- create_xAxis parent' props.scales
+            { count: toNumber (length props.xs), values: Nothing, places: Nothing }
+            (unwrap props.interior).height
+            (contents xLabels)
+         y <- create_yAxis parent' props.scales { count: 3.0, values: Nothing, places: 0 } (contents yLabels)
          pure { x, y }
 
       createStackedBars :: D3.Selection -> Effect Unit

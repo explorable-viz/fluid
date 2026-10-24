@@ -6,10 +6,11 @@ import App.Util (classes)
 import App.View.Util.D3 (ElementType(..), create, rotate, selectAll, setAttrs, setStyles, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.List (List(..))
+import Data.Maybe (Maybe)
+import Data.Nullable (toNullable)
 import Types.Defs (cDefault, cRotated)
 import Effect (Effect)
 import Primitive (ToFrom, typeMismatch)
@@ -38,9 +39,16 @@ orientation =
         v -> Left (typeMismatch v "Orientation")
    }
 
-create_xAxis :: forall a r. D3.Selection -> { x :: a -> Number | r } -> NonEmptyArray a -> Int -> Orientation -> Effect D3.Selection
-create_xAxis parent' to ticks y orient = do
-   x <- xAxis to ticks =<<
+-- count is a "hint" only, ignored if values given; labels unformatted if places not given
+type TickSpec places =
+   { count :: Number
+   , values :: Maybe (Array Number)
+   , places :: places
+   }
+
+create_xAxis :: forall a r. D3.Selection -> { x :: a -> Number | r } -> TickSpec (Maybe Int) -> Int -> Orientation -> Effect D3.Selection
+create_xAxis parent' to { count, values, places } y orient = do
+   x <- xAxis to count (toNullable values) (toNullable places) =<<
       (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y } ])
    when (orient == Rotated) do
       labels <- x # selectAll "text"
@@ -48,10 +56,9 @@ create_xAxis parent' to ticks y orient = do
          setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
    pure x
 
--- numTicks is a "hint" only
-create_yAxis :: forall a r. D3.Selection -> { y :: a -> Number | r } -> Number -> Int -> Orientation -> Effect D3.Selection
-create_yAxis parent' to nTicks decPlaces orient = do
-   y <- yAxis to nTicks decPlaces =<<
+create_yAxis :: forall a r. D3.Selection -> { y :: a -> Number | r } -> TickSpec Int -> Orientation -> Effect D3.Selection
+create_yAxis parent' to { count, values, places } orient = do
+   y <- yAxis to count (toNullable values) places =<<
       (parent' # create G [ classes [ "y-axis" ] ])
    when (orient == Rotated) do
       labels <- y # selectAll "text"

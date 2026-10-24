@@ -5,9 +5,9 @@ import Prelude
 import App.Util (Attrs, Dimensions)
 import App.View.Util.Scale (Interval)
 import Bind (Bind, (↦), (⟼))
-import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Generic.Rep (class Generic)
 import Data.Newtype (unwrap)
+import Data.Nullable (Nullable)
 import Data.Show.Generic (genericShow)
 import Data.String (toLower)
 import Effect (Effect)
@@ -111,8 +111,8 @@ foreign import scaleLinear :: Interval -> Interval -> Endo Number
 foreign import scaleBand :: Int -> Array String -> String -> Number
 foreign import bandwidth :: (String -> Number) -> Number
 -- Currently two different protocols for x and y axis; will subsume into something more general
-foreign import xAxis :: forall a r. { x :: a -> Number | r } -> NonEmptyArray a -> Selection -> Effect Selection
-foreign import yAxis :: forall a r. { y :: a -> Number | r } -> Number -> Int -> Selection -> Effect Selection
+foreign import xAxis :: forall a r. { x :: a -> Number | r } -> Number -> Nullable (Array Number) -> Nullable Int -> Selection -> Effect Selection
+foreign import yAxis :: forall a r. { y :: a -> Number | r } -> Number -> Nullable (Array Number) -> Int -> Selection -> Effect Selection
 foreign import numericXAxis :: Endo Number -> Selection -> Effect Selection
 foreign import numericYAxis :: Endo Number -> Selection -> Effect Selection
 foreign import isEmpty :: Selection -> Effect Boolean
