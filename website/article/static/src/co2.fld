@@ -1,0 +1,18 @@
+from co2_data import co2
+
+from fluid.view import Dimensions, LineChart, LinePlot, MultiView, TickLabels, Default, Scales, Auto, FromZero, Fixed
+
+def chart(caption: str, scales: Scales) -> LineChart:
+  return LineChart(
+    size=Dimensions(width=450, height=285),
+    tickLabels=TickLabels(x=Default(), y=Default()),
+    caption=caption,
+    scales=scales,
+    plots=[LinePlot(name="CO2", points=co2)]
+  )
+
+MultiView([
+  chart("CO2 concentration (ppm), y scale Auto", Scales(x=Auto(), y=Auto())),
+  chart("CO2 concentration (ppm), y scale FromZero", Scales(x=Auto(), y=FromZero())),
+  chart("CO2 concentration (ppm), y scale Fixed(300, 450)", Scales(x=Auto(), y=Fixed(300, 450)))
+])
