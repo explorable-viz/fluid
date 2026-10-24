@@ -1,0 +1,34 @@
+from ticks_data import co2, monthly
+
+from fluid.view import Dimensions, LineChart, LinePlot, MultiView, Point, TickLabels, Default, Scales, Auto, Fixed, Ticks, AxisTicks, AutoFormat, Count, Decimals, Every
+
+def chart(caption: str, points: list[Point], scales: Scales, ticks: Ticks) -> LineChart:
+  return LineChart(
+    size=Dimensions(width=450, height=285),
+    tickLabels=TickLabels(x=Default(), y=Default()),
+    caption=caption,
+    scales=scales,
+    ticks=ticks,
+    plots=[LinePlot(name="Series", points=points)]
+  )
+
+MultiView([
+  chart(
+    "x every 10 to 0 places, y every 25 to 0 places",
+    co2,
+    Scales(x=Auto(), y=Fixed(300, 450)),
+    Ticks(x=AxisTicks(Every(10), Decimals(0)), y=AxisTicks(Every(25), Decimals(0)))
+  ),
+  chart(
+    "x every 0.25 to 2 places, y every 0.25 to 2 places",
+    monthly,
+    Scales(x=Auto(), y=Auto()),
+    Ticks(x=AxisTicks(Every(0.25), Decimals(2)), y=AxisTicks(Every(0.25), Decimals(2)))
+  ),
+  chart(
+    "x count 5, y count 4 to 0 places",
+    co2,
+    Scales(x=Auto(), y=Auto()),
+    Ticks(x=AxisTicks(Count(5), AutoFormat()), y=AxisTicks(Count(4), Decimals(0)))
+  )
+])

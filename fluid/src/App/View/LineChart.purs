@@ -9,7 +9,7 @@ import App.View.Util.Axes (Orientation, create_xAxis, create_yAxis)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
-import App.View.Util.Scale (Interval, Scales(..), resolveScale)
+import App.View.Util.Scale (AxisTicks(..), Interval, Scales(..), Ticks(..), decimalPlaces, resolveScale, resolveTicks, tickCount)
 import Bind ((↦), (⟼))
 
 import Types.Defs (cLineChart, cLinePlot, f_plots, f_points)
@@ -17,7 +17,7 @@ import Data.Array (concat, elemIndex, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
 import Data.Foldable (length)
 import Data.Int (toNumber)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd, uncurry)
@@ -30,6 +30,7 @@ newtype LineChart = LineChart
    , tickLabels :: Point Orientation
    , caption :: Selectable String
    , scales :: Scales
+   , ticks :: Ticks
    , plots :: Array LinePlot
    }
 
@@ -105,7 +106,7 @@ instance Viewable LineChart Unit where
          listElement j >>> arg cLinePlot f_points >>> listElement i >>> arg cLineChart f_plots
 
    createElement :: Unit -> LineChart -> D3.Selection -> Effect D3.Selection
-   createElement _ (LineChart { size, tickLabels, caption, scales: Scales scales, plots }) parent = do
+   createElement _ (LineChart { size, tickLabels, caption, scales: Scales scales, ticks: Ticks ticks, plots }) parent = do
       svg <- parent # create SVG [ "width" ⟼ width, "height" ⟼ height ]
       { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
 
@@ -144,6 +145,8 @@ instance Viewable LineChart Unit where
       caption_class = "title-text"
       caption_height = textHeight caption_class (fst caption) * 2
       Dimensions { height, width } = size <#> fst
+      AxisTicks xTicks = ticks.x
+      AxisTicks yTicks = ticks.y
 
       axisWidth :: D3.Selection -> Effect (Coord Int)
       axisWidth parent' = do
@@ -157,8 +160,19 @@ instance Viewable LineChart Unit where
       createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
       createAxes range parent' = do
          let Point { x: xLabels, y: yLabels } = tickLabels
-         x <- create_xAxis parent' (to range) (nub points.x) (unwrap range).height (contents xLabels)
-         y <- create_yAxis parent' (to range) 3.0 1 (contents yLabels)
+         x <- create_xAxis parent' (to range)
+            { count: tickCount xTicks.spacing (toNumber (length (nub points.x)))
+            , values: resolveTicks xTicks.spacing domain.x
+            , places: decimalPlaces xTicks.format
+            }
+            (unwrap range).height
+            (contents xLabels)
+         y <- create_yAxis parent' (to range)
+            { count: tickCount yTicks.spacing 3.0
+            , values: resolveTicks yTicks.spacing domain.y
+            , places: fromMaybe 1 (decimalPlaces yTicks.format)
+            }
+            (contents yLabels)
          pure { x, y }
 
       createLines :: Dimensions Int -> D3.Selection -> Effect Unit

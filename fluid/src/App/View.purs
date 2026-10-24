@@ -17,7 +17,7 @@ import App.View.Text (Text(..))
 import App.View.Util (Filter(..), View, pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
-import App.View.Util.Scale (Scale(..), Scales(..))
+import App.View.Util.Scale (AxisTicks(..), LabelFormat(..), Scale(..), Scales(..), TickSpacing(..), Ticks(..))
 import Data.Array as A
 import Data.Array.NonEmpty (NonEmptyArray)
 import Bind (Name, Var)
@@ -25,7 +25,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.List (List)
 import Data.Tuple (fst, snd)
 
-import Types.Defs (cAxisLabels, cAuto, cBarChart, cDimensions, cFixed, cFromZero, cLineChart, cLinePlot, cLink, cMultiView, cParagraph, cPoint, cScales, cScatterPlot, cSegment, cStackedBar, cText, cTickLabels, f_caption, f_fragments, f_height, f_label, f_labels, f_legend, f_max, f_min, f_name, f_plots, f_points, f_scales, f_segments, f_size, f_stackedBars, f_text, f_tickLabels, f_value, f_views, f_width, f_x, f_y, f_z)
+import Types.Defs (cAutoFormat, cAutoTicks, cAxisLabels, cAuto, cAxisTicks, cBarChart, cCount, cDecimals, cDimensions, cEvery, cFixed, cFromZero, cLineChart, cLinePlot, cLink, cMultiView, cParagraph, cPoint, cScales, cScatterPlot, cSegment, cStackedBar, cText, cTickLabels, cTicks, f_caption, f_format, f_fragments, f_height, f_label, f_labels, f_legend, f_max, f_min, f_n, f_name, f_places, f_plots, f_points, f_scales, f_segments, f_size, f_spacing, f_stackedBars, f_step, f_text, f_tickLabels, f_ticks, f_value, f_views, f_width, f_x, f_y, f_z)
 import Dict (Dict)
 import Link (Link(..))
 import Literal (Literal(..))
@@ -120,6 +120,7 @@ instance Reflect LineChart where
          , tickLabels: reflect options (attr f_tickLabels v)
          , caption: P.unpack' string (attr f_caption v)
          , scales: reflect options (attr f_scales v)
+         , ticks: reflect options (attr f_ticks v)
          , plots: reflect options (attr f_plots v)
          }
       _ -> typeError u "LineChart"
@@ -185,6 +186,38 @@ instance Reflect Scale where
          | c == cFromZero -> FromZero
          | c == cFixed -> Fixed (fst (unpackIntOrNumber (attr f_min v))) (fst (unpackIntOrNumber (attr f_max v)))
       _ -> typeError u "Scale"
+
+instance Reflect Ticks where
+   reflect options v@(Val _ u) = case u of
+      Obj c _ | c == cTicks -> Ticks { x: reflect options (attr f_x v), y: reflect options (attr f_y v) }
+      _ -> typeError u "Ticks"
+
+instance Reflect AxisTicks where
+   reflect options v@(Val _ u) = case u of
+      Obj c _ | c == cAxisTicks -> AxisTicks
+         { spacing: reflect options (attr f_spacing v)
+         , format: reflect options (attr f_format v)
+         }
+      _ -> typeError u "AxisTicks"
+
+instance Reflect TickSpacing where
+   reflect _ v@(Val _ u) = case u of
+      Obj c _
+         | c == cAutoTicks -> AutoTicks
+         | c == cCount -> Count (fst (P.unpack' int (attr f_n v)))
+         | c == cEvery ->
+              let
+                 step = fst (unpackIntOrNumber (attr f_step v))
+              in
+                 if step > 0.0 then Every step else error ("Every step must be positive; got " <> show step)
+      _ -> typeError u "TickSpacing"
+
+instance Reflect LabelFormat where
+   reflect _ v@(Val _ u) = case u of
+      Obj c _
+         | c == cAutoFormat -> AutoFormat
+         | c == cDecimals -> Decimals (fst (P.unpack' int (attr f_places v)))
+      _ -> typeError u "LabelFormat"
 
 instance Reflect Segment where
    reflect _ v@(Val _ u) = case u of

@@ -1,6 +1,6 @@
 from co2_data import co2
 
-from fluid.view import Dimensions, LineChart, LinePlot, MultiView, TickLabels, Default, Scales, Auto, FromZero, Fixed
+from fluid.view import Dimensions, LineChart, LinePlot, MultiView, TickLabels, Default, Scales, Auto, FromZero, Fixed, default_ticks
 
 def chart(caption: str, scales: Scales) -> LineChart:
   return LineChart(
@@ -8,6 +8,7 @@ def chart(caption: str, scales: Scales) -> LineChart:
     tickLabels=TickLabels(x=Default(), y=Default()),
     caption=caption,
     scales=scales,
+    ticks=default_ticks,
     plots=[LinePlot(name="CO2", points=co2)]
   )
 
