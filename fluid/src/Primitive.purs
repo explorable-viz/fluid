@@ -189,10 +189,10 @@ binop op (Val α u) (Val β u') = do
    x <- operand u
    y <- operand u'
    case op of
-      Lt -> compare (<) x y
-      Le -> compare (<=) x y
-      Gt -> compare (>) x y
-      Ge -> compare (>=) x y
+      Lt -> comparison (_ == LT) x y
+      Le -> comparison (_ /= GT) x y
+      Gt -> comparison (_ == GT) x y
+      Ge -> comparison (_ /= LT) x y
       Add -> (_ × both) <$> arith (+) (+) x y
       Sub -> (_ × both) <$> arith (-) (-) x y
       Mul -> (_ × zeroDeps x y) <$> arith (*) (*) x y
@@ -213,21 +213,8 @@ binop op (Val α u) (Val β u') = do
       | isZero y = Set.singleton β
       | otherwise = both
 
-   operand :: BaseVal a -> MayFail Operand
-   operand (Lit (Int n)) = pure (Left n)
-   operand (Lit (Float r)) = pure (Right (Left r))
-   operand (Lit (Str w)) = pure (Right (Right w))
-   operand u'' = Left (typeMismatch u'' "int, float or str")
-
-   float :: Operand -> MayFail Number
-   float (Left n) = pure (toNumber n)
-   float (Right (Left r)) = pure r
-   float (Right (Right w)) = Left (typeMismatch (Lit (Str w)) "int or float")
-
-   compare :: (forall b. Ord b => b -> b -> Boolean) -> Operand -> Operand -> MayFail (BaseVal a × Set a)
-   compare f (Right (Right w)) (Right (Right w')) = pure (Lit (Bool (f w w')) × both)
-   compare f (Left m) (Left n) = pure (Lit (Bool (f m n)) × both)
-   compare f x y = (\r r' -> Lit (Bool (f r r')) × both) <$> float x <*> float y
+   comparison :: (Ordering -> Boolean) -> Operand -> Operand -> MayFail (BaseVal a × Set a)
+   comparison f x y = ordering x y <#> \o -> Lit (Bool (f o)) × both
 
    arith :: (Int -> Int -> Int) -> (Number -> Number -> Number) -> Operand -> Operand -> MayFail (BaseVal a)
    arith f _ (Left m) (Left n) = pure (Lit (Int (f m n)))
@@ -245,6 +232,23 @@ binop op (Val α u) (Val β u') = do
    isZero _ = false
 
 type Operand = Int + Number + String
+
+operand :: forall a. BaseVal a -> MayFail Operand
+operand (Lit (Int n)) = pure (Left n)
+operand (Lit (Float r)) = pure (Right (Left r))
+operand (Lit (Str w)) = pure (Right (Right w))
+operand u = Left (typeMismatch u "int, float or str")
+
+float :: Operand -> MayFail Number
+float (Left n) = pure (toNumber n)
+float (Right (Left r)) = pure r
+float (Right (Right w)) = Left (typeMismatch (Lit (Str w)) "int or float")
+
+-- Order of two strings or two numbers
+ordering :: Operand -> Operand -> MayFail Ordering
+ordering (Right (Right w)) (Right (Right w')) = pure (compare w w')
+ordering (Left m) (Left n) = pure (compare m n)
+ordering x y = compare <$> float x <*> float y
 
 bothNan :: forall a. Val a -> Val a -> Boolean
 bothNan (Val _ (Lit (Float r))) (Val _ (Lit (Float r'))) = N.isNaN r && N.isNaN r'

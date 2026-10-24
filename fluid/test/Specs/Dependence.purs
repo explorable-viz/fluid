@@ -170,6 +170,11 @@ dep_cases =
           [ Bwd Output (\_ -> select) "⸨362⸩\n⸨9⸩\n⸨40.2222222222⸩"
           ]
      }
+   , { file: "dependence/sorted.fld"
+     , queries:
+          [ Bwd Output (\_ -> listElement 0 select) "⸨[⸨3⸩, ⸨1⸩, ⸨2⸩]⸩\n[⸨1⸩, 2, 3]"
+          ]
+     }
    , { file: "dependence/multiply.fld"
      , queries:
           [ Bwd Output (\_ -> select) "5\n⸨0⸩\n3\n⸨0⸩"

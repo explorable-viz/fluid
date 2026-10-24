@@ -119,5 +119,6 @@ misc_cases =
    , { file: "ternary/right_assoc_false.fld", fwd_expect: "3" }
    , { file: "ternary/right_assoc_true.fld", fwd_expect: "1" }
    , { file: "ternary/untaken_branch.fld", fwd_expect: "3" }
+   , { file: "sorted.fld", fwd_expect: """([1, 2, 3], [1, 2, 2.5], ["a", "b", "c"])""" }
    , { file: "zero_arg.fld", fwd_expect: "\"hello\"" }
    ]
