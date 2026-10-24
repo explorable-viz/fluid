@@ -9,6 +9,7 @@ import App.View.Util.Axes (Orientation, create_xAxis, create_yAxis)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
+import App.View.Util.Scale (Interval, Scales(..), resolveScale)
 import Bind ((↦), (⟼))
 
 import Types.Defs (cLineChart, cLinePlot, f_plots, f_points)
@@ -28,6 +29,7 @@ newtype LineChart = LineChart
    { size :: Dimensions (Selectable Int)
    , tickLabels :: Point Orientation
    , caption :: Selectable String
+   , scales :: Scales
    , plots :: Array LinePlot
    }
 
@@ -103,7 +105,7 @@ instance Viewable LineChart Unit where
          listElement j >>> arg cLinePlot f_points >>> listElement i >>> arg cLineChart f_plots
 
    createElement :: Unit -> LineChart -> D3.Selection -> Effect D3.Selection
-   createElement _ (LineChart { size, tickLabels, caption, plots }) parent = do
+   createElement _ (LineChart { size, tickLabels, caption, scales: Scales scales, plots }) parent = do
       svg <- parent # create SVG [ "width" ⟼ width, "height" ⟼ height ]
       { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
 
@@ -224,16 +226,16 @@ instance Viewable LineChart Unit where
          entry_y :: Int -> Int
          entry_y i = i * lineHeight + 2 -- tweak to emulate vertical centering of text
 
-      min' :: Coord Number
-      min' = { x: minimum points.x, y: minimum points.y }
-
-      max' :: Coord Number
-      max' = { x: maximum points.x, y: maximum points.y }
+      domain :: Coord Interval
+      domain =
+         { x: resolveScale scales.x { min: minimum points.x, max: maximum points.x }
+         , y: resolveScale scales.y { min: minimum points.y, max: maximum points.y }
+         }
 
       to :: Dimensions Int -> Coord (Endo Number)
       to (Dimensions range) =
-         { x: scaleLinear { min: min'.x, max: max'.x } { min: 0.0, max: toNumber range.width }
-         , y: scaleLinear { min: 0.0, max: max'.y } { min: toNumber range.height, max: 0.0 }
+         { x: scaleLinear domain.x { min: 0.0, max: toNumber range.width }
+         , y: scaleLinear domain.y { min: toNumber range.height, max: 0.0 }
          }
 
       points :: Coord (NonEmptyArray Number)
