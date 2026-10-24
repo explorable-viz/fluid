@@ -11,7 +11,7 @@ import Data.Argonaut.Decode (parseJson)
 import Data.Array as Array
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.Foldable (foldM, foldl)
+import Data.Foldable (foldM, foldl, for_)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.Int as Int
@@ -31,7 +31,7 @@ import Data.String.Regex as Regex
 import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (for, traverse)
 import Data.Lazy (defer, force)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst, snd, uncurry)
 import Classes (ClassTable, askClasses, fields)
 import Types.Defs (cMatrix, cRange, callable, matrix, var)
 import Cxt (CxtEntry(..)) as Cxt
@@ -43,9 +43,9 @@ import Eval (apply) as Dep
 import File (class LoadFile, File(..), loadFileFromPath)
 import DepGraph (zeros)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, ctrlWeight)
-import Literal (Literal(..))
-import Primitive (int, intOrNumber, number, string, typeMismatch, unary, union1)
-import Util (MayFail, cons, type (+), type (×), definitely, definitely', orElse, orThrow, quoted, quotedList, singleton, throw, whenever, (×))
+import Literal (Literal(..), showFloat)
+import Primitive (int, intOrNumber, number, operand, ordering, string, typeMismatch, unary, union1)
+import Util (MayFail, cons, type (+), type (×), definitely, definitely', definitelyRight, orElse, orThrow, quoted, quotedList, singleton, throw, whenever, (×))
 import Module.Defs (ModuleName, builtins, dataclasses, math, sys, typing)
 import Foreign.Object (keys, lookup) as O
 import Pretty (prettyP)
@@ -74,6 +74,7 @@ predefined = M.fromFoldable
         [ cRange, cMatrix ]
         [ extern print_ × generalise (callable [ T.object ] T.none)
         , extern len × generalise (callable [ T.PrimitiveTy T.Sized ] T.int)
+        , extern sorted × generalise (callable [ T.ListTy (var "T") ] (T.ListTy (var "T")))
         , unary "round" { i: intOrNumber, o: int, fwd: identity `union1` round } × generalise (callable [ T.float ] T.int)
         , extern dims × generalise (callable [ matrix (var "T") ] T.intPair)
         , extern loadJson × generalise (callable [ T.TypeTy (var "T"), T.str ] (var "T"))
@@ -130,6 +131,22 @@ len =
    depRel (v@(Val α u) : Nil) = case elementCount v of
       Just n -> Right (Val α (Lit (Int n)))
       Nothing -> Left (typeMismatch u "Sized")
+   depRel _ = Left "Single argument expected"
+
+-- Every position of the result depends on every element, since perturbing any one could reorder them
+sorted :: ForeignOp
+sorted =
+   ForeignOp ("sorted" × ForeignOp' { arity: 1, depOp: pureRel depRel })
+   where
+   depRel :: forall a. Semiring a => List (Val a) -> MayFail (Val a)
+   depRel (Val α (List vs) : Nil) = do
+      xs <- traverse (\(Val _ u) -> operand u) vs
+      for_ (Array.zip xs (Array.drop 1 xs)) (uncurry ordering) -- adjacent elements comparable, so all are
+      pure (Val β (List (relabel <$> Array.sortBy (\(x × _) (y × _) -> definitelyRight (ordering x y)) (Array.zip xs vs))))
+      where
+      β = foldl (+) α (root <$> vs)
+      relabel (_ × Val _ u) = Val β u
+   depRel (Val _ u : Nil) = Left (typeMismatch u "list")
    depRel _ = Left "Single argument expected"
 
 exit :: ForeignOp
@@ -369,4 +386,4 @@ round x = definitely "round of non-finite or out-of-range number" (Int.fromNumbe
    r = if x - N.floor x == 0.5 then 2.0 * N.round (x / 2.0) else N.round x
 
 numToStr :: Int + Number -> String
-numToStr = show `union1` show
+numToStr = show `union1` showFloat
