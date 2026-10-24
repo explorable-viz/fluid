@@ -167,7 +167,7 @@ dep_cases =
      }
    , { file: "dependence/divide.fld"
      , queries:
-          [ Bwd Output (\_ -> select) "⸨362⸩\n⸨9⸩\n⸨40.22222222222222⸩"
+          [ Bwd Output (\_ -> select) "⸨362⸩\n⸨9⸩\n⸨40.2222222222⸩"
           ]
      }
    , { file: "dependence/multiply.fld"

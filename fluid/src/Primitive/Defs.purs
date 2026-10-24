@@ -43,7 +43,7 @@ import Eval (apply) as Dep
 import File (class LoadFile, File(..), loadFileFromPath)
 import DepGraph (zeros)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, ctrlWeight)
-import Literal (Literal(..))
+import Literal (Literal(..), showFloat)
 import Primitive (int, intOrNumber, number, string, typeMismatch, unary, union1)
 import Util (MayFail, cons, type (+), type (×), definitely, definitely', orElse, orThrow, quoted, quotedList, singleton, throw, whenever, (×))
 import Module.Defs (ModuleName, builtins, dataclasses, math, sys, typing)
@@ -369,4 +369,4 @@ round x = definitely "round of non-finite or out-of-range number" (Int.fromNumbe
    r = if x - N.floor x == 0.5 then 2.0 * N.round (x / 2.0) else N.round x
 
 numToStr :: Int + Number -> String
-numToStr = show `union1` show
+numToStr = show `union1` showFloat
